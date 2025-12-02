@@ -1,0 +1,6 @@
+{
+  "name": "@quran-project/go-pkg",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Go helpers metadata placeholder for pnpm workspace"
+}

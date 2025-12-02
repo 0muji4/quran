@@ -1,0 +1,8 @@
+packages:
+  - "apps/web"
+  - "apps/bff"
+  - "packages/ui"
+  - "packages/ts-config"
+  - "packages/eslint-config"
+  - "packages/shared-ts"
+  - "packages/go-pkg"
