@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ../../apps/backend
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8080:8080"
+
+  bff:
+    build:
+      context: ../../apps/bff
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "4000:4000"
+
+  worker:
+    build:
+      context: ../../apps/worker
+    depends_on:
+      - backend
+      - redis
+    environment:
+      BACKEND_URL: http://backend:8080
+      REDIS_URL: redis://redis:6379
+
+  web:
+    build:
+      context: ../../apps/web
+    depends_on:
+      - bff
+    environment:
+      BFF_URL: http://bff:4000
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  minio_data:
