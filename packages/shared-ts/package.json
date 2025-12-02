@@ -1,0 +1,6 @@
+{
+  "name": "@quran-project/shared-ts",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared TypeScript utilities"
+}

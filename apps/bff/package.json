@@ -1,0 +1,6 @@
+{
+  "name": "@quran-project/bff",
+  "private": true,
+  "version": "0.0.0",
+  "description": "GraphQL and REST BFF placeholder"
+}
