@@ -2,17 +2,27 @@
   "name": "@quran-project/web",
   "private": true,
   "version": "0.0.0",
-  "description": "Next.js RSC app placeholder",
-  "main": "dist/index.js",
-  "types": "src/index.ts",
+  "description": "Next.js RSC app",
   "scripts": {
-    "build": "tsc -b"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@quran-project/shared-ts": "workspace:*"
+    "@quran-project/shared-ts": "workspace:*",
+    "@quran-project/ui": "workspace:*",
+    "next": "^15.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@quran-project/eslint-config": "workspace:*",
     "@types/node": "^20.11.30",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^9.11.1",
     "typescript": "^5.6.3"
   }
 }
