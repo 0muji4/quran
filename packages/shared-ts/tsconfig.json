@@ -1,0 +1,11 @@
+{
+  "extends": "@quran-project/ts-config",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "composite": true,
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*", "codegen.ts"]
+}
