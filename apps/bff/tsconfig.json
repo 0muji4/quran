@@ -1,0 +1,9 @@
+{
+  "extends": "@quran-project/ts-config",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*"]
+}

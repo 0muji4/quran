@@ -1,0 +1,75 @@
+scalar JSONObject
+scalar DateTime
+
+type Surah {
+  id: ID!
+  nameAr: String!
+  nameEn: String!
+  revelationPlace: String!
+  ayahCount: Int!
+  metadata: JSONObject
+  ayahs(limit: Int, offset: Int): [Ayah!]!
+}
+
+type Ayah {
+  id: ID!
+  surahId: ID!
+  ayahNumber: Int!
+  textAr: String!
+  textEn: String
+  transliteration: String
+  metadata: JSONObject
+}
+
+type ScoreSegment {
+  label: String!
+  score: Float!
+  metrics: JSONObject
+}
+
+enum ScoringStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+type ScoringResult {
+  jobId: ID!
+  uploadKey: String!
+  status: ScoringStatus!
+  score: Float
+  verdict: String
+  segments: [ScoreSegment!]!
+  createdAt: DateTime!
+  evaluation: JSONObject
+}
+
+type SignedUploadUrl {
+  url: String!
+  fields: JSONObject
+  expiresAt: DateTime!
+}
+
+input SignedUploadInput {
+  filename: String!
+  contentType: String!
+}
+
+input CreateScoringJobInput {
+  surahId: ID!
+  ayahNumber: Int
+  uploadKey: String!
+  transcript: String
+}
+
+type Query {
+  surahs(limit: Int, offset: Int): [Surah!]!
+  surah(id: ID!): Surah
+  ayah(surahId: ID!, ayahNumber: Int!): Ayah
+}
+
+type Mutation {
+  getSignedUploadUrl(input: SignedUploadInput!): SignedUploadUrl!
+  createScoringJob(input: CreateScoringJobInput!): ScoringResult!
+}

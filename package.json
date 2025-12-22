@@ -2,7 +2,7 @@
   "name": "quran-project",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "pnpm@8",
+  "packageManager": "pnpm@8.15.9",
   "scripts": {
     "lint": "pnpm -r lint",
     "test": "pnpm -r test"
