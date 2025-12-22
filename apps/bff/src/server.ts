@@ -11,6 +11,7 @@ import {
 import { authMiddleware, buildContext, type AuthedRequest } from './auth';
 import { resolvers } from './resolvers';
 import { rscRouter } from './rsc';
+import { restRouter } from './rest';
 
 const typeDefs = readFileSync(
   path.resolve(__dirname, '../../..', 'schemas/graphql/schema.graphql'),
@@ -26,6 +27,7 @@ app.get('/healthz', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use(restRouter);
 app.all('/graphql', async (req: AuthedRequest, res) => {
   const request = {
     body: req.body,
