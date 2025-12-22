@@ -1,0 +1,13 @@
+{
+  "extends": "@quran-project/ts-config",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "declaration": true,
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "lib": ["dom", "dom.iterable", "es2020"],
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*"]
+}
