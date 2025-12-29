@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY go.work go.work.sum ./
 COPY apps/backend ./apps/backend
+COPY apps/worker ./apps/worker
 COPY packages ./packages
 
 ENV CGO_ENABLED=0
