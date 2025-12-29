@@ -67,6 +67,7 @@ type Query {
   surahs(limit: Int, offset: Int): [Surah!]!
   surah(id: ID!): Surah
   ayah(surahId: ID!, ayahNumber: Int!): Ayah
+  scoringJob(jobId: ID!): ScoringResult
 }
 
 type Mutation {
