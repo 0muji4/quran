@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { Router } from 'express';
 import type { AuthedRequest } from './auth';
+import { requireAuth } from './auth';
 import { findSurah, surahs } from './data';
 import { getScoringJob } from './scoringJobs';
 import { telemetry } from './telemetry';
@@ -47,6 +48,8 @@ rscRouter.get('/surah/:surahId/ayahs', (req: AuthedRequest, res) => {
 rscRouter.get('/scores/:sessionId', (req: AuthedRequest, res) => {
   const startedAt = Date.now();
   const sessionId = req.params.sessionId;
+  const session = requireAuth(req, res);
+  if (!session) return;
   const job = getScoringJob(sessionId);
 
   if (!job) {
