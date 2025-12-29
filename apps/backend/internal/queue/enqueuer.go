@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -15,7 +16,8 @@ import (
 
 // Enqueuer publishes ASR jobs to Redis so that the worker can consume them.
 type Enqueuer struct {
-	client *queue.Client
+	client    *queue.Client
+	authToken string
 }
 
 var (
@@ -37,7 +39,10 @@ func NewEnqueuer(cfg queue.Config) (*Enqueuer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("enqueue: build client: %w", err)
 	}
-	return &Enqueuer{client: client}, nil
+	return &Enqueuer{
+		client:    client,
+		authToken: os.Getenv("QUEUE_AUTH_TOKEN"),
+	}, nil
 }
 
 // PublishASRJob pushes a single job for the given session/audio/ayah combination.
@@ -57,6 +62,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 		AyahID:         ayahID,
 		ExpectedTextAR: expectedTextAR,
 		EnqueuedAt:     time.Now().UTC(),
+		AuthToken:      e.authToken,
 	}
 	err := e.client.Enqueue(ctx, job)
 	enqueueDurationMs := float64(time.Since(startedAt).Milliseconds())

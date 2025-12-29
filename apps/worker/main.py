@@ -106,6 +106,7 @@ class WorkerConfig:
     whisper_device: str = "cpu"
     whisper_compute_type: str = "float16"
     alignment_prefix: str = "alignments/"
+    queue_auth_token: Optional[str] = None
 
     @classmethod
     def from_env(cls) -> "WorkerConfig":
@@ -123,6 +124,7 @@ class WorkerConfig:
             whisper_device=os.getenv("WHISPER_DEVICE", "cpu"),
             whisper_compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"),
             alignment_prefix=os.getenv("ALIGNMENT_PREFIX", "alignments/"),
+            queue_auth_token=os.getenv("QUEUE_AUTH_TOKEN"),
         )
 
 
@@ -227,6 +229,18 @@ class ResultWriter:
                 },
             )
 
+    def update_alignment_reference(self, session_id: str, alignment_object_key: str) -> None:
+        with self.pg.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE user_data_objects
+                SET alignment_object_key = %(alignment_object_key)s,
+                    updated_at = NOW()
+                WHERE session_id = %(session_id)s;
+                """,
+                {"session_id": session_id, "alignment_object_key": alignment_object_key},
+            )
+
 
 class AsrWorker:
     def __init__(self, cfg: WorkerConfig):
@@ -273,6 +287,11 @@ class AsrWorker:
         required_keys = {"session_id", "audio_key", "ayah_id", "expected_text_ar"}
         if missing := required_keys - job.keys():
             raise ValueError(f"job missing keys: {', '.join(sorted(missing))}")
+
+        if self.cfg.queue_auth_token:
+            job_token = str(job.get("auth_token") or "")
+            if job_token != self.cfg.queue_auth_token:
+                raise ValueError("job auth token mismatch")
 
         session_id = str(job["session_id"])
         audio_key = str(job["audio_key"])
@@ -325,6 +344,7 @@ class AsrWorker:
                 wer=wer,
                 alignment_object_key=alignment_key,
             )
+            self.writer.update_alignment_reference(session_id, alignment_key)
             logger.info(
                 "processed session_id=%s ayah_id=%s words=%d wer=%s alignment=%s",
                 session_id,

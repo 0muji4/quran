@@ -26,6 +26,7 @@ type Job struct {
 	AyahID         int64  `json:"ayah_id"`
 	ExpectedTextAR string `json:"expected_text_ar"`
 	EnqueuedAt     time.Time `json:"enqueued_at"`
+	AuthToken      string `json:"auth_token,omitempty"`
 }
 
 // Config defines how the queue client connects to Redis and which list to use.

@@ -41,6 +41,7 @@ services:
     environment:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       REDIS_URL: redis://redis:6379
+      QUEUE_AUTH_TOKEN: local-queue-token
     ports:
       - "8080:8080"
 
@@ -49,8 +50,20 @@ services:
       context: ../../apps/bff
     depends_on:
       - backend
+      - minio
     environment:
       BACKEND_URL: http://backend:8080
+      DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
+      JWT_SECRET: local-jwt-secret
+      REFRESH_TOKEN_SECRET: local-refresh-secret
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_BUCKET: quran-alignments
+      MINIO_SECURE: "false"
+      MINIO_UPLOAD_PREFIX: uploads/
+      MINIO_APPLY_BUCKET_POLICY: "true"
+      SIGNED_URL_TTL_SECONDS: "900"
     ports:
       - "4000:4000"
 
@@ -60,9 +73,17 @@ services:
     depends_on:
       - backend
       - redis
+      - minio
     environment:
       BACKEND_URL: http://backend:8080
       REDIS_URL: redis://redis:6379
+      POSTGRES_DSN: postgres://app:app@postgres:5432/app?sslmode=disable
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_BUCKET: quran-alignments
+      MINIO_SECURE: "false"
+      QUEUE_AUTH_TOKEN: local-queue-token
 
   web:
     build:
