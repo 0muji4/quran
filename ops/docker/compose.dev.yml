@@ -34,7 +34,8 @@ services:
 
   backend:
     build:
-      context: ../../apps/backend
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
     depends_on:
       - postgres
       - redis
@@ -47,7 +48,8 @@ services:
 
   bff:
     build:
-      context: ../../apps/bff
+      context: ../..
+      dockerfile: apps/bff/Dockerfile
     depends_on:
       - backend
       - minio
@@ -69,7 +71,8 @@ services:
 
   worker:
     build:
-      context: ../../apps/worker
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
     depends_on:
       - backend
       - redis
@@ -87,7 +90,8 @@ services:
 
   web:
     build:
-      context: ../../apps/web
+      context: ../..
+      dockerfile: apps/web/Dockerfile
     depends_on:
       - bff
     environment:
