@@ -1,9 +1,7 @@
-import { randomUUID } from 'crypto';
 import { GraphQLScalarType, Kind, valueFromASTUntyped } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
 import { findAyah, findSurah, surahs } from './data';
-
-const secondsFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
+import { createScoringJob, createSignedUploadUrl, getScoringJob } from './scoringJobs';
 
 const JSONObjectScalar = new GraphQLScalarType({
   name: 'JSONObject',
@@ -35,44 +33,19 @@ export const resolvers: Resolvers<GraphQLContext> = {
       return surahs.slice(offset, end);
     },
     surah: (_parent, args) => findSurah(args.id),
-    ayah: (_parent, args) => findAyah(args.surahId, args.ayahNumber)
+    ayah: (_parent, args) => findAyah(args.surahId, args.ayahNumber),
+    scoringJob: (_parent, args) => getScoringJob(args.jobId)
   },
   Mutation: {
-    getSignedUploadUrl: (_parent, { input }) => {
-      const uploadKey = `${Date.now()}-${encodeURIComponent(input.filename)}`;
-      const baseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
-
-      return {
-        url: `${baseUrl}/${uploadKey}`,
-        fields: {
-          key: uploadKey,
-          'Content-Type': input.contentType
-        },
-        expiresAt: secondsFromNow(900)
-      };
-    },
-    createScoringJob: (_parent, { input }, context) => {
-      const surah = findSurah(input.surahId);
-
-      return {
-        jobId: randomUUID(),
+    getSignedUploadUrl: (_parent, { input }) => createSignedUploadUrl(input),
+    createScoringJob: (_parent, { input }, context) =>
+      createScoringJob({
         uploadKey: input.uploadKey,
-        status: 'COMPLETED',
-        score: 0.92,
-        verdict: 'Audio accepted for review',
-        segments: [
-          { label: 'tajweed', score: 0.88, metrics: { pace: 'steady' } },
-          { label: 'pronunciation', score: 0.95 }
-        ],
-        createdAt: new Date().toISOString(),
-        evaluation: {
-          userId: context.session?.id ?? null,
-          surah: surah?.nameEn,
-          ayahNumber: input.ayahNumber ?? null,
-          notes: input.transcript ? 'Transcript included' : 'Audio only'
-        }
-      };
-    }
+        surahId: input.surahId,
+        ayahNumber: input.ayahNumber ?? null,
+        transcript: input.transcript ?? null,
+        userId: context.session?.id ?? null
+      })
   },
   Surah: {
     ayahs: (parent, args) => {
