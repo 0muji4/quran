@@ -1,3 +1,4 @@
+import './telemetry';
 import { readFileSync } from 'fs';
 import path from 'path';
 import express from 'express';
