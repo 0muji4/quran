@@ -22,19 +22,37 @@ const decodeJwt = (token: string, secret?: string): UserSession | null => {
       email: (payload.email as string) ?? undefined,
       displayName: (payload.name as string) ?? (payload.displayName as string) ?? undefined
     };
-  } catch (error) {
+  } catch {
     return null;
   }
+};
+
+const parseCookies = (header?: string): Record<string, string> => {
+  if (!header) return {};
+  return header.split(';').reduce<Record<string, string>>((acc, chunk) => {
+    const [rawKey, ...rawValue] = chunk.trim().split('=');
+    if (!rawKey || rawValue.length === 0) return acc;
+    acc[rawKey] = decodeURIComponent(rawValue.join('='));
+    return acc;
+  }, {});
 };
 
 export const authenticateRequest = (req: AuthedRequest): UserSession | null => {
   const authHeader = req.headers.authorization;
   const secret = process.env.JWT_SECRET;
+  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'session';
 
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '').trim();
     const session = decodeJwt(token, secret);
 
+    if (session) return session;
+  }
+
+  const cookies = parseCookies(req.headers.cookie);
+  const cookieToken = cookies[cookieName];
+  if (cookieToken) {
+    const session = decodeJwt(cookieToken, secret);
     if (session) return session;
   }
 
@@ -48,6 +66,15 @@ export const authenticateRequest = (req: AuthedRequest): UserSession | null => {
 export const authMiddleware = (req: AuthedRequest, _res: Response, next: NextFunction): void => {
   req.session = authenticateRequest(req);
   next();
+};
+
+export const requireAuth = (req: AuthedRequest, res: Response): UserSession | null => {
+  const session = req.session ?? null;
+  if (!session) {
+    res.status(401).json({ error: 'authentication required' });
+    return null;
+  }
+  return session;
 };
 
 export const buildContext = (req: AuthedRequest): GraphQLContext => ({

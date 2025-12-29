@@ -13,6 +13,7 @@ import { authMiddleware, buildContext, type AuthedRequest } from './auth';
 import { resolvers } from './resolvers';
 import { rscRouter } from './rsc';
 import { restRouter } from './rest';
+import { ensureBucketPolicy } from './storage';
 
 const typeDefs = readFileSync(
   path.resolve(__dirname, '../../..', 'schemas/graphql/schema.graphql'),
@@ -23,6 +24,10 @@ const schema = makeExecutableSchema({ typeDefs, resolvers });
 const app = express();
 app.use(express.json());
 app.use(authMiddleware);
+
+void ensureBucketPolicy().catch((error) => {
+  console.error('failed to ensure bucket policy', error);
+});
 
 app.get('/healthz', (_req, res) => {
   res.json({ status: 'ok' });
