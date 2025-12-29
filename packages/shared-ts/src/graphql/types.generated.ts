@@ -59,6 +59,7 @@ export type MutationGetSignedUploadUrlArgs = {
 export type Query = {
   __typename?: 'Query';
   ayah?: Maybe<Ayah>;
+  scoringJob?: Maybe<ScoringResult>;
   surah?: Maybe<Surah>;
   surahs: Array<Surah>;
 };
@@ -70,6 +71,10 @@ export type QueryAyahArgs = {
 
 export type QuerySurahArgs = {
   id: Scalars['ID'];
+};
+
+export type QueryScoringJobArgs = {
+  jobId: Scalars['ID'];
 };
 
 export type QuerySurahsArgs = {
@@ -269,6 +274,12 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   ayah?: Resolver<Maybe<ResolversTypes['Ayah']>, ParentType, ContextType, RequireFields<QueryAyahArgs, 'ayahNumber' | 'surahId'>>;
+  scoringJob?: Resolver<
+    Maybe<ResolversTypes['ScoringResult']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryScoringJobArgs, 'jobId'>
+  >;
   surah?: Resolver<Maybe<ResolversTypes['Surah']>, ParentType, ContextType, RequireFields<QuerySurahArgs, 'id'>>;
   surahs?: Resolver<Array<ResolversTypes['Surah']>, ParentType, ContextType, Partial<QuerySurahsArgs>>;
 };
