@@ -25,6 +25,7 @@ type Job struct {
 	AudioKey       string `json:"audio_key"`
 	AyahID         int64  `json:"ayah_id"`
 	ExpectedTextAR string `json:"expected_text_ar"`
+	EnqueuedAt     time.Time `json:"enqueued_at"`
 }
 
 // Config defines how the queue client connects to Redis and which list to use.
@@ -224,6 +225,9 @@ func NewClient(cfg Config) (*Client, error) {
 func (c *Client) Enqueue(ctx context.Context, job Job) error {
 	if job.SessionID == "" || job.AudioKey == "" || job.AyahID == 0 {
 		return errors.New("queue: job requires session_id, audio_key, and ayah_id")
+	}
+	if job.EnqueuedAt.IsZero() {
+		job.EnqueuedAt = time.Now().UTC()
 	}
 
 	payload, err := json.Marshal(job)

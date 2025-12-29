@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import tempfile
+import time
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -12,6 +14,14 @@ from dotenv import load_dotenv
 from faster_whisper import WhisperModel
 from minio import Minio
 from minio.error import S3Error
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 load_dotenv()
 
@@ -21,6 +31,65 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("worker")
+
+
+def init_telemetry() -> None:
+    service_name = os.getenv("OTEL_SERVICE_NAME", "quran-worker")
+    service_version = os.getenv("SERVICE_VERSION", "0.0.0")
+    endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    trace_endpoint = f"{endpoint.rstrip('/')}/v1/traces" if endpoint else None
+    metric_endpoint = f"{endpoint.rstrip('/')}/v1/metrics" if endpoint else None
+
+    resource = Resource.create(
+        {
+            "service.name": service_name,
+            "service.version": service_version,
+            "service.namespace": "quran-project",
+        }
+    )
+
+    tracer_provider = TracerProvider(resource=resource)
+    tracer_provider.add_span_processor(
+        BatchSpanProcessor(
+            OTLPSpanExporter(endpoint=trace_endpoint) if trace_endpoint else OTLPSpanExporter()
+        )
+    )
+    trace.set_tracer_provider(tracer_provider)
+
+    metric_reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(endpoint=metric_endpoint) if metric_endpoint else OTLPMetricExporter(),
+        export_interval_millis=10_000,
+    )
+    metrics.set_meter_provider(MeterProvider(resource=resource, metric_readers=[metric_reader]))
+
+
+init_telemetry()
+tracer = trace.get_tracer("quran-worker")
+meter = metrics.get_meter("quran-worker")
+queue_wait_histogram = meter.create_histogram(
+    "worker.queue.wait.duration",
+    unit="ms",
+    description="Time spent waiting in the queue before processing",
+)
+processing_duration_histogram = meter.create_histogram(
+    "worker.queue.processing.duration",
+    unit="ms",
+    description="Time spent processing queue jobs",
+)
+
+
+def parse_enqueued_at(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    if value.endswith("Z"):
+        value = value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 @dataclass
@@ -210,45 +279,63 @@ class AsrWorker:
         ayah_id = int(job["ayah_id"])
         expected_text_ar = str(job.get("expected_text_ar") or "")
 
-        audio_path = self._download_audio(audio_key)
-        try:
-            transcript, words = self._transcribe(audio_path)
-        finally:
+        enqueued_at = parse_enqueued_at(job.get("enqueued_at"))
+        if enqueued_at:
+            queue_wait_ms = (datetime.now(timezone.utc) - enqueued_at).total_seconds() * 1000
+            queue_wait_histogram.record(queue_wait_ms, {"session_id": session_id})
+            logger.info("queue wait recorded session_id=%s wait_ms=%.2f", session_id, queue_wait_ms)
+
+        processing_start = time.perf_counter()
+        with tracer.start_as_current_span(
+            "worker.process_job",
+            attributes={
+                "session_id": session_id,
+                "audio_key": audio_key,
+                "ayah_id": ayah_id,
+            },
+        ):
+            audio_path = self._download_audio(audio_key)
             try:
-                os.remove(audio_path)
-            except OSError:
-                pass
+                transcript, words = self._transcribe(audio_path)
+            finally:
+                try:
+                    os.remove(audio_path)
+                except OSError:
+                    pass
 
-        wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
+            wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
 
-        alignment_payload = {
-            "session_id": session_id,
-            "ayah_id": ayah_id,
-            "audio_key": audio_key,
-            "expected_text_ar": expected_text_ar,
-            "transcript": transcript,
-            "word_timestamps": words,
-        }
-        alignment_key = self.writer.save_alignment(session_id, alignment_payload)
+            alignment_payload = {
+                "session_id": session_id,
+                "ayah_id": ayah_id,
+                "audio_key": audio_key,
+                "expected_text_ar": expected_text_ar,
+                "transcript": transcript,
+                "word_timestamps": words,
+            }
+            alignment_key = self.writer.save_alignment(session_id, alignment_payload)
 
-        self.writer.upsert_result(
-            session_id=session_id,
-            ayah_id=ayah_id,
-            audio_key=audio_key,
-            expected_text_ar=expected_text_ar,
-            transcript=transcript,
-            word_timestamps=words,
-            wer=wer,
-            alignment_object_key=alignment_key,
-        )
-        logger.info(
-            "processed session=%s ayah_id=%s words=%d wer=%s alignment=%s",
-            session_id,
-            ayah_id,
-            len(words),
-            f"{wer:.4f}" if wer is not None else "n/a",
-            alignment_key,
-        )
+            self.writer.upsert_result(
+                session_id=session_id,
+                ayah_id=ayah_id,
+                audio_key=audio_key,
+                expected_text_ar=expected_text_ar,
+                transcript=transcript,
+                word_timestamps=words,
+                wer=wer,
+                alignment_object_key=alignment_key,
+            )
+            logger.info(
+                "processed session_id=%s ayah_id=%s words=%d wer=%s alignment=%s",
+                session_id,
+                ayah_id,
+                len(words),
+                f"{wer:.4f}" if wer is not None else "n/a",
+                alignment_key,
+            )
+
+        processing_ms = (time.perf_counter() - processing_start) * 1000
+        processing_duration_histogram.record(processing_ms, {"session_id": session_id})
 
     def run_forever(self) -> None:
         logger.info("listening on queue %s via %s", self.cfg.queue_name, self.cfg.redis_url)
@@ -267,7 +354,8 @@ class AsrWorker:
             try:
                 self.process_job(job)
             except Exception as err:  # noqa: BLE001
-                logger.exception("failed to process job: %s", err)
+                session_id = job.get("session_id", "unknown") if isinstance(job, dict) else "unknown"
+                logger.exception("failed to process job session_id=%s: %s", session_id, err)
 
 
 def main() -> None:
