@@ -49,6 +49,7 @@ export const ensureBucketPolicy = async (): Promise<void> => {
     Statement: [
       {
         Effect: 'Allow',
+        Principal: { AWS: ['*'] },
         Action: ['s3:GetObject', 's3:PutObject'],
         Resource: [resource]
       }
