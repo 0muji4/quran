@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@quran-project/eslint-config": "workspace:*",
+    "@quran-project/ts-config": "workspace:*",
     "@types/node": "^20.11.30",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

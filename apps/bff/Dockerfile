@@ -2,11 +2,12 @@ FROM node:20-slim
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages ./packages
-COPY apps/bff ./apps/bff
+COPY apps ./apps
+COPY schemas ./schemas
 
-RUN corepack enable && pnpm install --filter @quran-project/bff...
+RUN corepack enable && pnpm install --frozen-lockfile
 
 WORKDIR /app/apps/bff
 
