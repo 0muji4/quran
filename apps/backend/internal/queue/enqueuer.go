@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"quran-project/apps/backend/internal/telemetry"
 	"quran-project/packages/go-pkg/queue"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // Enqueuer publishes ASR jobs to Redis so that the worker can consume them.
@@ -66,7 +67,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 	}
 	err := e.client.Enqueue(ctx, job)
 	enqueueDurationMs := float64(time.Since(startedAt).Milliseconds())
-	enqueueDurationMetric.Record(ctx, enqueueDurationMs, attribute.String("session_id", sessionID))
+	enqueueDurationMetric.Record(ctx, enqueueDurationMs, metric.WithAttributes(attribute.String("session_id", sessionID)))
 	if err != nil {
 		log.Printf("enqueue failed session_id=%s ayah_id=%d err=%v", sessionID, ayahID, err)
 		return err
