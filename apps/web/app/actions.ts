@@ -5,6 +5,23 @@ import 'server-only';
 
 type SignedUploadResponse = SignedUploadUrl & { uploadKey?: string };
 
+export type SurahSummary = {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  ayahCount: number;
+  revelationPlace: string;
+};
+
+export type AyahRecord = {
+  id: string;
+  surahId: string;
+  ayahNumber: number;
+  textAr: string;
+  textEn?: string;
+  transliteration?: string;
+};
+
 const BFF_BASE_URL = process.env.BFF_BASE_URL ?? 'http://localhost:4000';
 
 const jsonHeaders = {
@@ -46,7 +63,7 @@ export const requestSignedUploadUrl = async (input: {
 export const createScoringJobFromUpload = async (input: {
   uploadKey: string;
   surahId: string;
-  ayahNumber?: number;
+  ayahNumber: number;
   transcript?: string;
 }): Promise<ScoringResult> => {
   const response = await fetch(`${BFF_BASE_URL}/scoring-jobs`, {
@@ -61,4 +78,16 @@ export const createScoringJobFromUpload = async (input: {
 export const fetchScoringJob = async (jobId: string): Promise<ScoringResult> => {
   const response = await fetch(`${BFF_BASE_URL}/scoring-jobs/${jobId}`, withNoStore);
   return parseJson<ScoringResult>(response);
+};
+
+export const fetchSurahs = async (): Promise<SurahSummary[]> => {
+  const response = await fetch(`${BFF_BASE_URL}/rsc/surahs`, withNoStore);
+  const payload = await parseJson<{ surahs: SurahSummary[] }>(response);
+  return payload.surahs;
+};
+
+export const fetchSurahAyahs = async (surahId: string): Promise<AyahRecord[]> => {
+  const response = await fetch(`${BFF_BASE_URL}/rsc/surah/${surahId}/ayahs`, withNoStore);
+  const payload = await parseJson<{ ayahs: AyahRecord[] }>(response);
+  return payload.ayahs;
 };
