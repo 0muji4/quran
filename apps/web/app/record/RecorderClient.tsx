@@ -6,9 +6,12 @@ import { SegmentHighlights } from '@quran-project/ui';
 import {
   createScoringJobFromUpload,
   fetchScoringJob,
+  fetchSurahAyahs,
+  fetchSurahs,
   requestSignedUploadUrl
 } from '../actions';
-import { describeUploadTarget } from '../../src';
+import type { AyahRecord, SurahSummary } from '../actions';
+import { describeUploadTarget, summarizeSurah } from '../../src';
 
 const recordingMimeType = 'audio/webm';
 
@@ -34,8 +37,13 @@ export function RecorderClient() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [surahId, setSurahId] = useState('1');
   const [ayahNumber, setAyahNumber] = useState<string>('');
+  const [surahs, setSurahs] = useState<SurahSummary[]>([]);
+  const [ayahs, setAyahs] = useState<AyahRecord[]>([]);
+  const [selectedAyah, setSelectedAyah] = useState<AyahRecord | null>(null);
   const [transcript, setTranscript] = useState('');
   const [polling, setPolling] = useState(false);
+  const [loadingSurahs, setLoadingSurahs] = useState(false);
+  const [loadingAyahs, setLoadingAyahs] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -53,6 +61,87 @@ export function RecorderClient() {
       clearPolling();
     };
   }, [clearPolling]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSurahs = async () => {
+      setLoadingSurahs(true);
+      try {
+        const result = await fetchSurahs();
+        if (!active) return;
+        setSurahs(result);
+        if (result.length > 0 && !result.some((surah) => surah.id === surahId)) {
+          setSurahId(result[0].id);
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(formatError(loadError));
+        }
+      } finally {
+        if (active) {
+          setLoadingSurahs(false);
+        }
+      }
+    };
+
+    void loadSurahs();
+    return () => {
+      active = false;
+    };
+  }, [surahId]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!surahId) {
+      setAyahs([]);
+      setAyahNumber('');
+      setSelectedAyah(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadAyahs = async () => {
+      setLoadingAyahs(true);
+      try {
+        const result = await fetchSurahAyahs(surahId);
+        if (!active) return;
+        setAyahs(result);
+        setAyahNumber((current) => {
+          if (result.length === 0) {
+            return '';
+          }
+          const hasMatch = result.some((ayah) => String(ayah.ayahNumber) === current);
+          return hasMatch ? current : String(result[0].ayahNumber);
+        });
+      } catch (loadError) {
+        if (active) {
+          setError(formatError(loadError));
+        }
+      } finally {
+        if (active) {
+          setLoadingAyahs(false);
+        }
+      }
+    };
+
+    void loadAyahs();
+    return () => {
+      active = false;
+    };
+  }, [surahId]);
+
+  useEffect(() => {
+    if (!ayahNumber) {
+      setSelectedAyah(null);
+      return;
+    }
+
+    const match = ayahs.find((ayah) => String(ayah.ayahNumber) === ayahNumber) ?? null;
+    setSelectedAyah(match);
+  }, [ayahNumber, ayahs]);
 
   const resetJobState = useCallback(() => {
     clearPolling();
@@ -99,6 +188,11 @@ export function RecorderClient() {
   const uploadRecording = useCallback(
     async (blob: Blob) => {
       setError(null);
+      const parsedAyahNumber = Number(ayahNumber);
+      if (!surahId || !ayahNumber || Number.isNaN(parsedAyahNumber)) {
+        setError('Please select a surah and ayah before submitting your recording.');
+        return;
+      }
       setStatus('Requesting signed upload URL...');
       setIsUploading(true);
 
@@ -138,7 +232,7 @@ export function RecorderClient() {
         const result = await createScoringJobFromUpload({
           uploadKey,
           surahId,
-          ayahNumber: ayahNumber ? Number(ayahNumber) : undefined,
+          ayahNumber: parsedAyahNumber,
           transcript: transcript.trim() || undefined
         });
 
@@ -166,6 +260,11 @@ export function RecorderClient() {
 
   const handleRecord = useCallback(async () => {
     resetJobState();
+
+    if (!surahId || !ayahNumber) {
+      setError('Please select a surah and ayah before recording.');
+      return;
+    }
 
     if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
       setError('MediaRecorder is not supported in this environment');
@@ -209,26 +308,40 @@ export function RecorderClient() {
   }, [resetJobState, uploadRecording]);
 
   const disabled = isRecording || isUploading;
+  const hasSelection = Boolean(surahId && ayahNumber);
 
   return (
     <div className="card stack">
       <div className="inputs">
         <label>
-          Surah ID
-          <input
+          Surah
+          <select
             value={surahId}
             onChange={(event) => setSurahId(event.target.value)}
-            placeholder="e.g. 1"
-          />
+            disabled={loadingSurahs}
+          >
+            {surahs.length === 0 && <option value="">No surahs available</option>}
+            {surahs.map((surah) => (
+              <option key={surah.id} value={surah.id}>
+                {surah.nameAr} — {summarizeSurah(surah)}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
-          Ayah number (optional)
-          <input
-            type="number"
+          Ayah
+          <select
             value={ayahNumber}
             onChange={(event) => setAyahNumber(event.target.value)}
-            placeholder="e.g. 2"
-          />
+            disabled={loadingAyahs || ayahs.length === 0}
+          >
+            {ayahs.length === 0 && <option value="">No ayahs available</option>}
+            {ayahs.map((ayah) => (
+              <option key={ayah.id} value={ayah.ayahNumber}>
+                Ayah {ayah.ayahNumber}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Transcript or notes (optional)
@@ -241,12 +354,23 @@ export function RecorderClient() {
         </label>
       </div>
 
+      {selectedAyah && (
+        <div className="stack">
+          <p className="pill">Selected ayah</p>
+          <p dir="rtl" lang="ar">
+            {selectedAyah.textAr}
+          </p>
+          {selectedAyah.textEn && <p>{selectedAyah.textEn}</p>}
+          {selectedAyah.transliteration && <p>{selectedAyah.transliteration}</p>}
+        </div>
+      )}
+
       <div className="controls">
         <button
           type="button"
           className="primary"
           onClick={isRecording ? handleStop : handleRecord}
-          disabled={isUploading}
+          disabled={isUploading || !hasSelection}
         >
           {isRecording ? 'Stop recording' : 'Start recording'}
         </button>
