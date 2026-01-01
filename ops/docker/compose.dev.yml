@@ -101,7 +101,7 @@ services:
     depends_on:
       - bff
     environment:
-      BFF_URL: http://bff:4000
+      BFF_BASE_URL: http://bff:4000
     ports:
       - "3000:3000"
 
