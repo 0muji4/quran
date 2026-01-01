@@ -102,7 +102,15 @@ export const createSignedUploadUrl = async (input: {
   const bucket = process.env.MINIO_BUCKET;
 
   if (client && bucket) {
-    const url = await client.presignedPutObject(bucket, uploadKey, expiresIn);
+    let url = await client.presignedPutObject(bucket, uploadKey, expiresIn);
+
+    // Replace internal endpoint with external endpoint for browser access
+    const internalEndpoint = process.env.MINIO_ENDPOINT;
+    const externalEndpoint = process.env.MINIO_EXTERNAL_ENDPOINT;
+    if (internalEndpoint && externalEndpoint && url.includes(internalEndpoint)) {
+      url = url.replace(internalEndpoint, externalEndpoint);
+    }
+
     await recordUploadKey({
       sessionId: uploadKey,
       userId: input.userId,

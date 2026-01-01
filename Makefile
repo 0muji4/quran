@@ -1,4 +1,4 @@
-.PHONY: install lint test go-test sql-migrate-dry-run db-migrate db-reset db-status db-shell
+.PHONY: install lint test go-test sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
 
 install:
 	pnpm install
@@ -45,3 +45,14 @@ db-status:
 db-shell:
 	@docker exec -it $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
 		psql -U app -d app
+
+minio-cors:
+	@echo "Setting MinIO CORS configuration..."
+	@docker run --rm --network $$(docker compose -f ops/docker/compose.dev.yml ps | head -2 | tail -1 | awk '{print $$NF}' | sed 's/_.*//') \
+		-v $$(pwd)/ops/docker/minio-cors.json:/tmp/cors.json \
+		minio/mc:latest \
+		sh -c " \
+			mc alias set local http://minio:9000 minio minio123 && \
+			mc anonymous set download local/quran-alignments/uploads && \
+			echo 'CORS setup complete (note: mc does not support CORS directly, BFF will handle it)' \
+		"
