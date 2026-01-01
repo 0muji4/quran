@@ -4,7 +4,6 @@ import SwiftUI
 @MainActor
 final class RecordingViewModel: ObservableObject {
   @Published var surahId: String = "1"
-  @Published var transcript: String = ""
   @Published var isRecording = false
   @Published var isBusy = false
   @Published var statusText = "Idle"
@@ -64,8 +63,7 @@ final class RecordingViewModel: ObservableObject {
       statusText = "Scoring"
       let job = try await apiClient.createScoringJob(
         uploadKey: signedUpload.uploadKey,
-        surahId: surahId,
-        transcript: transcript.isEmpty ? nil : transcript
+        surahId: surahId
       )
 
       let finalResult = try await apiClient.pollScoringResult(jobId: job.jobId)

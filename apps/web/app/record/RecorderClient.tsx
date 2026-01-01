@@ -40,7 +40,6 @@ export function RecorderClient() {
   const [surahs, setSurahs] = useState<SurahSummary[]>([]);
   const [ayahs, setAyahs] = useState<AyahRecord[]>([]);
   const [selectedAyah, setSelectedAyah] = useState<AyahRecord | null>(null);
-  const [transcript, setTranscript] = useState('');
   const [polling, setPolling] = useState(false);
   const [loadingSurahs, setLoadingSurahs] = useState(false);
   const [loadingAyahs, setLoadingAyahs] = useState(false);
@@ -232,8 +231,7 @@ export function RecorderClient() {
         const result = await createScoringJobFromUpload({
           uploadKey,
           surahId,
-          ayahNumber: parsedAyahNumber,
-          transcript: transcript.trim() || undefined
+          ayahNumber: parsedAyahNumber
         });
 
         setJob(result);
@@ -246,7 +244,7 @@ export function RecorderClient() {
         setIsUploading(false);
       }
     },
-    [ayahNumber, startPolling, surahId, transcript]
+    [ayahNumber, startPolling, surahId]
   );
 
   const handleStop = useCallback(() => {
@@ -342,15 +340,6 @@ export function RecorderClient() {
               </option>
             ))}
           </select>
-        </label>
-        <label>
-          Transcript or notes (optional)
-          <textarea
-            rows={3}
-            value={transcript}
-            onChange={(event) => setTranscript(event.target.value)}
-            placeholder="Share any context that helps the scorer"
-          />
         </label>
       </div>
 

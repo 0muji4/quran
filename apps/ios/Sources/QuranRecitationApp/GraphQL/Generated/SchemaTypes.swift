@@ -26,12 +26,11 @@ public struct CreateScoringJobInput: InputObject {
   public static let _typeName: String = "CreateScoringJobInput"
   public private(set) var __data: InputDict
 
-  public init(surahId: String, ayahNumber: Int?, uploadKey: String, transcript: String?) {
+  public init(surahId: String, ayahNumber: Int?, uploadKey: String) {
     __data = InputDict([
       "surahId": surahId,
       "ayahNumber": ayahNumber,
-      "uploadKey": uploadKey,
-      "transcript": transcript
+      "uploadKey": uploadKey
     ])
   }
 }

@@ -57,7 +57,6 @@ export const createScoringJob = (input: {
   uploadKey: string;
   surahId: string;
   ayahNumber?: number | null;
-  transcript?: string | null;
   userId?: string | null;
 }): ScoringResult => {
   const jobId = randomUUID();
@@ -75,8 +74,7 @@ export const createScoringJob = (input: {
     evaluation: {
       userId: input.userId ?? null,
       surah: surah?.nameEn ?? input.surahId,
-      ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
-      transcript: input.transcript ?? null
+      ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null
     }
   };
 
