@@ -16,12 +16,11 @@ final class QuranAPIClient {
     return SignedUploadPayload(from: result.getSignedUploadUrl)
   }
 
-  func createScoringJob(uploadKey: String, surahId: String, transcript: String?) async throws -> ScoringResultPayload {
+  func createScoringJob(uploadKey: String, surahId: String) async throws -> ScoringResultPayload {
     let input = CreateScoringJobInput(
       surahId: surahId,
       ayahNumber: nil,
-      uploadKey: uploadKey,
-      transcript: transcript
+      uploadKey: uploadKey
     )
     let mutation = CreateScoringJobMutation(input: input)
     let result = try await perform(mutation: mutation)

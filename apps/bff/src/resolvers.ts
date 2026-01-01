@@ -43,7 +43,6 @@ export const resolvers: Resolvers<GraphQLContext> = {
         uploadKey: input.uploadKey,
         surahId: input.surahId,
         ayahNumber: input.ayahNumber ?? null,
-        transcript: input.transcript ?? null,
         userId: context.session?.id ?? null
       })
   },

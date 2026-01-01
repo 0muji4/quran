@@ -60,7 +60,6 @@ input CreateScoringJobInput {
   surahId: ID!
   ayahNumber: Int
   uploadKey: String!
-  transcript: String
 }
 
 type Query {

@@ -28,15 +28,6 @@ struct RecorderView: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Transcript (optional)")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        TextField("Transcript", text: $viewModel.transcript)
-          .textFieldStyle(.roundedBorder)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-
       Button(action: viewModel.toggleRecording) {
         Text(viewModel.isRecording ? "Stop & Score" : "Start Recording")
           .frame(maxWidth: .infinity)
