@@ -64,7 +64,6 @@ export const createScoringJobFromUpload = async (input: {
   uploadKey: string;
   surahId: string;
   ayahNumber: number;
-  transcript?: string;
 }): Promise<ScoringResult> => {
   const response = await fetch(`${BFF_BASE_URL}/scoring-jobs`, {
     ...withNoStore,

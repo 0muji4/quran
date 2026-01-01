@@ -38,7 +38,6 @@ export type Ayah = {
 export type CreateScoringJobInput = {
   ayahNumber?: InputMaybe<Scalars['Int']>;
   surahId: Scalars['ID'];
-  transcript?: InputMaybe<Scalars['String']>;
   uploadKey: Scalars['String'];
 };
 

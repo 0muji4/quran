@@ -39,7 +39,7 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
 
 restRouter.post('/scoring-jobs', (req: AuthedRequest, res) => {
   const startedAt = Date.now();
-  const { uploadKey, surahId, ayahNumber, transcript } = req.body ?? {};
+  const { uploadKey, surahId, ayahNumber } = req.body ?? {};
   const sessionId = typeof uploadKey === 'string' ? uploadKey : 'unknown';
 
   if (!uploadKey || !surahId) {
@@ -61,7 +61,6 @@ restRouter.post('/scoring-jobs', (req: AuthedRequest, res) => {
     uploadKey,
     surahId,
     ayahNumber: typeof ayahNumber === 'number' ? ayahNumber : null,
-    transcript,
     userId: session.id
   });
 
