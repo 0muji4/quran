@@ -2,6 +2,7 @@ import './telemetry';
 import { readFileSync } from 'fs';
 import path from 'path';
 import express from 'express';
+import cors from 'cors';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import {
   getGraphQLParameters,
@@ -22,6 +23,10 @@ const typeDefs = readFileSync(
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 const app = express();
+app.use(cors({
+  origin: process.env.WEB_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(authMiddleware);
 
