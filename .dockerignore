@@ -1,0 +1,33 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+docs
+*.md
+README.md
