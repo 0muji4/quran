@@ -8,9 +8,14 @@ import (
 	"os"
 
 	"quran-project/apps/backend/internal/handler"
+	backendqueue "quran-project/apps/backend/internal/queue"
 	"quran-project/apps/backend/internal/repo"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/telemetry"
+	"quran-project/packages/go-pkg/db"
+	queuepkg "quran-project/packages/go-pkg/queue"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
@@ -25,8 +30,27 @@ func main() {
 		AyahRepo:  repository,
 	}
 
+	dbConn, err := db.Connect(ctx, db.Config{
+		DSN: os.Getenv("DATABASE_URL"),
+	})
+	if err != nil {
+		log.Fatalf("db connect failed: %v", err)
+	}
+
+	queueName := os.Getenv("QUEUE_NAME")
+	if queueName == "" {
+		queueName = "quran:asr_jobs"
+	}
+	enqueuer, err := backendqueue.NewEnqueuer(queuepkg.Config{
+		RedisURL:  os.Getenv("REDIS_URL"),
+		QueueName: queueName,
+	})
+	if err != nil {
+		log.Fatalf("queue init failed: %v", err)
+	}
+
 	mux := http.NewServeMux()
-	rest := handler.REST{SurahService: svc}
+	rest := handler.REST{SurahService: svc, DB: dbConn, Enqueuer: enqueuer}
 	rest.Register(mux)
 	mux.Handle("/graphql", handler.GraphQLHandler{SurahService: svc})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {

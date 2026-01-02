@@ -45,12 +45,25 @@ rscRouter.get('/surah/:surahId/ayahs', (req: AuthedRequest, res) => {
   });
 });
 
-rscRouter.get('/scores/:sessionId', (req: AuthedRequest, res) => {
+rscRouter.get('/scores/:sessionId', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
   const sessionId = req.params.sessionId;
   const session = requireAuth(req, res);
   if (!session) return;
-  const job = getScoringJob(sessionId);
+  let job;
+  try {
+    job = await getScoringJob(sessionId);
+  } catch (error) {
+    res.status(502).json({ error: 'Scores unavailable' });
+    scoresRequestDuration.record(Date.now() - startedAt, {
+      route: '/scores/:sessionId',
+      method: 'GET',
+      session_id: sessionId,
+      status: 'backend_error'
+    });
+    console.error('scores fetch failed', { session_id: sessionId, error });
+    return;
+  }
 
   if (!job) {
     res.status(404).json({ error: 'Scores not found' });

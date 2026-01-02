@@ -34,11 +34,11 @@ export const resolvers: Resolvers<GraphQLContext> = {
     },
     surah: (_parent, args) => findSurah(args.id),
     ayah: (_parent, args) => findAyah(args.surahId, args.ayahNumber),
-    scoringJob: (_parent, args) => getScoringJob(args.jobId)
+    scoringJob: async (_parent, args) => getScoringJob(args.jobId)
   },
   Mutation: {
     getSignedUploadUrl: (_parent, { input }) => createSignedUploadUrl(input),
-    createScoringJob: (_parent, { input }, context) =>
+    createScoringJob: async (_parent, { input }, context) =>
       createScoringJob({
         uploadKey: input.uploadKey,
         surahId: input.surahId,
