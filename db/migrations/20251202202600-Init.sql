@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS ayahs (
     text_ar         TEXT         NOT NULL,
     text_en         TEXT,
     transliteration TEXT,
+    reference_audio_key TEXT,
     metadata        JSONB        DEFAULT '{}'::jsonb,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
