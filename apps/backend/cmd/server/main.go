@@ -31,7 +31,8 @@ func main() {
 	}
 
 	dbConn, err := db.Connect(ctx, db.Config{
-		DSN: os.Getenv("DATABASE_URL"),
+		DSN:        os.Getenv("DATABASE_URL"),
+		DriverName: "pgx",
 	})
 	if err != nil {
 		log.Fatalf("db connect failed: %v", err)

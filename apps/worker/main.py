@@ -2,6 +2,7 @@ import io
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from datetime import datetime, timezone
@@ -128,9 +129,20 @@ class WorkerConfig:
         )
 
 
+def normalize_arabic(text: str) -> str:
+    """Remove Arabic diacritics (tashkeel) for comparison."""
+    # Arabic diacritics Unicode range: U+064B to U+065F, U+0670, U+06D6 to U+06ED
+    arabic_diacritics = re.compile(r'[\u064B-\u065F\u0670\u06D6-\u06ED]')
+    return arabic_diacritics.sub('', text)
+
+
 def compute_wer(reference: str, hypothesis: str) -> float:
-    ref_tokens = reference.strip().split()
-    hyp_tokens = hypothesis.strip().split()
+    # Normalize both strings by removing diacritics
+    ref_normalized = normalize_arabic(reference.strip())
+    hyp_normalized = normalize_arabic(hypothesis.strip())
+
+    ref_tokens = ref_normalized.split()
+    hyp_tokens = hyp_normalized.split()
 
     if not ref_tokens:
         return 0.0 if not hyp_tokens else 1.0
@@ -154,8 +166,12 @@ def compute_wer(reference: str, hypothesis: str) -> float:
 
 
 def align_words(reference: str, hypothesis: str) -> List[Dict[str, Optional[str]]]:
-    ref_tokens = reference.strip().split()
-    hyp_tokens = hypothesis.strip().split()
+    # Normalize both strings by removing diacritics
+    ref_normalized = normalize_arabic(reference.strip())
+    hyp_normalized = normalize_arabic(hypothesis.strip())
+
+    ref_tokens = ref_normalized.split()
+    hyp_tokens = hyp_normalized.split()
     ref_len = len(ref_tokens)
     hyp_len = len(hyp_tokens)
 
@@ -358,8 +374,14 @@ class AsrWorker:
         return temp_path
 
     def _transcribe(self, audio_path: str) -> Tuple[str, List[Dict[str, Any]]]:
+        # Provide context to improve Quran recitation accuracy
+        initial_prompt = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
         segments, _ = self.model.transcribe(
-            audio_path, language="ar", beam_size=5, word_timestamps=True
+            audio_path,
+            language="ar",
+            beam_size=5,
+            word_timestamps=True,
+            initial_prompt=initial_prompt,
         )
 
         words: List[Dict[str, Any]] = []
