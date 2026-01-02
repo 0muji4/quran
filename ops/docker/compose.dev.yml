@@ -98,6 +98,10 @@ services:
       MINIO_BUCKET: quran-alignments
       MINIO_SECURE: "false"
       QUEUE_AUTH_TOKEN: local-queue-token
+      # Whisper configuration - balance between speed and accuracy
+      WHISPER_MODEL_SIZE: small
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
 
   web:
     build:
