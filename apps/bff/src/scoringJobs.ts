@@ -13,6 +13,7 @@ const uploadTtlSeconds = (): number =>
   Number(process.env.SIGNED_URL_TTL_SECONDS ?? '900');
 
 const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8080';
+const uploadBaseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
 
 const parseJson = async <T>(response: Response): Promise<T> => {
   const payload = (await response.json()) as unknown;
@@ -64,9 +65,10 @@ type RawTimestamp = {
 const buildPronunciationFeedback = (
   wordAlignments: RawAlignment[],
   wordTimestamps: RawTimestamp[],
-  wer: number | null
+  wer: number | null,
+  referenceAudioUrl: string | null
 ): PronunciationFeedback | null => {
-  if (wordAlignments.length === 0 && wordTimestamps.length === 0 && wer === null) {
+  if (wordAlignments.length === 0 && wordTimestamps.length === 0 && wer === null && !referenceAudioUrl) {
     return null;
   }
 
@@ -101,8 +103,22 @@ const buildPronunciationFeedback = (
     fluency,
     completeness,
     overall,
+    referenceAudioUrl,
     wordAlignments: normalizedAlignments
   };
+};
+
+const createReferenceAudioUrl = async (referenceAudioKey: string | null): Promise<string | null> => {
+  if (!referenceAudioKey) return null;
+  const client = getMinioClientForPresignedUrls();
+  const bucket = process.env.MINIO_BUCKET;
+  const expiresIn = uploadTtlSeconds();
+
+  if (client && bucket) {
+    return client.presignedGetObject(bucket, referenceAudioKey, expiresIn);
+  }
+
+  return `${uploadBaseUrl}/${referenceAudioKey}`;
 };
 
 export const createScoringJob = async (input: {
@@ -161,9 +177,11 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
       scoring_jobs.created_at,
       asr_results.word_alignments,
       asr_results.word_timestamps,
-      asr_results.wer
+      asr_results.wer,
+      ayahs.reference_audio_key
     FROM scoring_jobs
     LEFT JOIN asr_results ON asr_results.session_id = scoring_jobs.session_id
+    LEFT JOIN ayahs ON ayahs.id = scoring_jobs.ayah_id
     WHERE scoring_jobs.session_id = $1
     `,
     [jobId]
@@ -176,8 +194,9 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
   const wordAlignments = parseJsonValue<RawAlignment[]>(row.word_alignments, []);
   const wordTimestamps = parseJsonValue<RawTimestamp[]>(row.word_timestamps, []);
   const wer = numberOrNull(row.wer);
-
-  const feedback = buildPronunciationFeedback(wordAlignments, wordTimestamps, wer);
+  const referenceAudioKey = row.reference_audio_key as string | null;
+  const referenceAudioUrl = await createReferenceAudioUrl(referenceAudioKey);
+  const feedback = buildPronunciationFeedback(wordAlignments, wordTimestamps, wer, referenceAudioUrl);
 
   return {
     jobId: row.session_id as string,
@@ -232,7 +251,6 @@ export const createSignedUploadUrl = async (input: {
     };
   }
 
-  const baseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
   await recordUploadKey({
     sessionId,
     userId: input.userId,
@@ -243,7 +261,7 @@ export const createSignedUploadUrl = async (input: {
   return {
     sessionId,
     uploadKey,
-    url: `${baseUrl}/${uploadKey}`,
+    url: `${uploadBaseUrl}/${uploadKey}`,
     fields: {
       key: uploadKey,
       'Content-Type': input.contentType
