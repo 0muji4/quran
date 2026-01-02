@@ -101,6 +101,7 @@ export type PronunciationFeedback = {
   completeness: Scalars['Float'];
   fluency: Scalars['Float'];
   overall: Scalars['Float'];
+  referenceAudioUrl?: Maybe<Scalars['String']>;
   wordAlignments: Array<WordAlignment>;
 };
 
@@ -329,6 +330,7 @@ export type PronunciationFeedbackResolvers<ContextType = GraphQLContext, ParentT
   completeness?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   fluency?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   overall?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  referenceAudioUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   wordAlignments?: Resolver<Array<ResolversTypes['WordAlignment']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
