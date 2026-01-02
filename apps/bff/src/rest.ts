@@ -39,8 +39,13 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
 
 restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
-  const { uploadKey, surahId, ayahNumber } = req.body ?? {};
-  const sessionId = typeof uploadKey === 'string' ? uploadKey : 'unknown';
+  const { uploadKey, surahId, ayahNumber, sessionId: requestSessionId } = req.body ?? {};
+  const sessionId =
+    typeof requestSessionId === 'string'
+      ? requestSessionId
+      : typeof uploadKey === 'string'
+        ? uploadKey
+        : 'unknown';
 
   if (!uploadKey || !surahId) {
     res.status(400).json({ error: 'uploadKey and surahId are required' });
@@ -60,6 +65,7 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   let job: JobResponse;
   try {
     job = await createScoringJob({
+      sessionId: typeof requestSessionId === 'string' ? requestSessionId : null,
       uploadKey,
       surahId,
       ayahNumber: typeof ayahNumber === 'number' ? ayahNumber : null,

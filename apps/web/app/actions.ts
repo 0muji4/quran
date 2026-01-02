@@ -3,7 +3,7 @@
 import type { ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
 import 'server-only';
 
-type SignedUploadResponse = SignedUploadUrl & { uploadKey?: string };
+type SignedUploadResponse = SignedUploadUrl & { uploadKey?: string; sessionId?: string };
 
 export type SurahSummary = {
   id: string;
@@ -61,6 +61,7 @@ export const requestSignedUploadUrl = async (input: {
 };
 
 export const createScoringJobFromUpload = async (input: {
+  sessionId?: string;
   uploadKey: string;
   surahId: string;
   ayahNumber: number;

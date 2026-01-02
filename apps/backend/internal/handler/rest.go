@@ -87,6 +87,7 @@ func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
 }
 
 type scoringJobRequest struct {
+	SessionID  string `json:"sessionId"`
 	UploadKey  string `json:"uploadKey"`
 	SurahID    string `json:"surahId"`
 	AyahNumber *int32 `json:"ayahNumber"`
@@ -170,7 +171,10 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := req.UploadKey
+	sessionID := req.SessionID
+	if sessionID == "" {
+		sessionID = req.UploadKey
+	}
 	query := `
 		INSERT INTO scoring_jobs (
 			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, status, created_at, updated_at
