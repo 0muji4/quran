@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 
 let pool: Pool | null = null;
 let minio: MinioClient | null = null;
+let minioExternal: MinioClient | null = null;
 
 const getPool = (): Pool | null => {
   if (pool) return pool;
@@ -27,6 +28,23 @@ export const getMinioClient = (): MinioClient | null => {
     useSSL: secure
   });
   return minio;
+};
+
+export const getMinioClientForPresignedUrls = (): MinioClient | null => {
+  if (minioExternal) return minioExternal;
+  const endpoint = process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT;
+  const accessKey = process.env.MINIO_ACCESS_KEY;
+  const secretKey = process.env.MINIO_SECRET_KEY;
+  if (!endpoint || !accessKey || !secretKey) return null;
+  const secure = process.env.MINIO_SECURE?.toLowerCase() === 'true';
+  minioExternal = new MinioClient({
+    endPoint: endpoint.split(':')[0],
+    port: endpoint.includes(':') ? Number(endpoint.split(':')[1]) : undefined,
+    accessKey,
+    secretKey,
+    useSSL: secure
+  });
+  return minioExternal;
 };
 
 export const ensureBucketPolicy = async (): Promise<void> => {
