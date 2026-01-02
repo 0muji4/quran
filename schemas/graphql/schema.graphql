@@ -38,6 +38,7 @@ type PronunciationFeedback {
   fluency: Float!
   completeness: Float!
   overall: Float!
+  referenceAudioUrl: String
   wordAlignments: [WordAlignment!]!
 }
 
