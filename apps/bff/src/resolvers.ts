@@ -37,7 +37,11 @@ export const resolvers: Resolvers<GraphQLContext> = {
     scoringJob: async (_parent, args) => getScoringJob(args.jobId)
   },
   Mutation: {
-    getSignedUploadUrl: (_parent, { input }) => createSignedUploadUrl(input),
+    getSignedUploadUrl: (_parent, { input }, context) =>
+      createSignedUploadUrl({
+        ...input,
+        userId: context.session?.id ?? null
+      }),
     createScoringJob: async (_parent, { input }, context) =>
       createScoringJob({
         uploadKey: input.uploadKey,

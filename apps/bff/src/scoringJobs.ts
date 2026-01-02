@@ -1,5 +1,6 @@
+import { randomUUID } from 'crypto';
 import type { ScoringResult } from '@quran-project/shared-ts';
-import { getMinioClientForPresignedUrls, recordUploadKey } from './storage';
+import { findSessionIdForUploadKey, getMinioClientForPresignedUrls, recordUploadKey } from './storage';
 
 const secondsFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
 const uploadPrefix = (): string => process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';
@@ -23,11 +24,23 @@ const parseJson = async <T>(response: Response): Promise<T> => {
 };
 
 export const createScoringJob = async (input: {
+  sessionId?: string | null;
   uploadKey: string;
   surahId: string;
   ayahNumber?: number | null;
   userId?: string | null;
 }): Promise<ScoringResult> => {
+  const sessionId =
+    input.sessionId ??
+    (await findSessionIdForUploadKey({
+      audioKey: input.uploadKey,
+      userId: input.userId ?? null
+    }));
+
+  if (!sessionId) {
+    throw new Error('Session ID not found for upload key');
+  }
+
   const response = await fetch(`${backendUrl}/api/scoring-jobs`, {
     method: 'POST',
     headers: {
@@ -35,6 +48,7 @@ export const createScoringJob = async (input: {
     },
     body: JSON.stringify({
       uploadKey: input.uploadKey,
+      sessionId,
       surahId: input.surahId,
       ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
       userId: input.userId ?? null
@@ -54,9 +68,16 @@ export const createSignedUploadUrl = async (input: {
   filename: string;
   contentType: string;
   userId: string | null;
-}): Promise<{ uploadKey: string; url: string; fields: Record<string, unknown>; expiresAt: string }> => {
+}): Promise<{
+  sessionId: string;
+  uploadKey: string;
+  url: string;
+  fields: Record<string, unknown>;
+  expiresAt: string;
+}> => {
   const prefix = uploadPrefix();
   const uploadKey = `${prefix}${Date.now()}-${encodeURIComponent(input.filename)}`;
+  const sessionId = randomUUID();
   const expiresIn = uploadTtlSeconds();
   const expiresAt = secondsFromNow(expiresIn);
   const client = getMinioClientForPresignedUrls();
@@ -66,12 +87,13 @@ export const createSignedUploadUrl = async (input: {
     const url = await client.presignedPutObject(bucket, uploadKey, expiresIn);
 
     await recordUploadKey({
-      sessionId: uploadKey,
+      sessionId,
       userId: input.userId,
       audioKey: uploadKey,
       expiresAt: new Date(Date.now() + expiresIn * 1000)
     });
     return {
+      sessionId,
       uploadKey,
       url,
       fields: {
@@ -84,13 +106,14 @@ export const createSignedUploadUrl = async (input: {
 
   const baseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
   await recordUploadKey({
-    sessionId: uploadKey,
+    sessionId,
     userId: input.userId,
     audioKey: uploadKey,
     expiresAt: new Date(Date.now() + expiresIn * 1000)
   });
 
   return {
+    sessionId,
     uploadKey,
     url: `${baseUrl}/${uploadKey}`,
     fields: {

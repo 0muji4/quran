@@ -206,6 +206,7 @@ export function RecorderClient() {
           (upload.fields && typeof upload.fields === 'object'
             ? (upload.fields as Record<string, unknown>).key
             : undefined);
+        const sessionId = typeof upload.sessionId === 'string' ? upload.sessionId : undefined;
 
         if (!uploadKey || typeof uploadKey !== 'string') {
           throw new Error('Upload key missing from signed URL response');
@@ -229,6 +230,7 @@ export function RecorderClient() {
         setStatus('Creating scoring job...');
 
         const result = await createScoringJobFromUpload({
+          sessionId,
           uploadKey,
           surahId,
           ayahNumber: parsedAyahNumber
