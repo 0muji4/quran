@@ -13,6 +13,8 @@ const getPool = (): Pool | null => {
   return pool;
 };
 
+export const getDatabasePool = (): Pool | null => getPool();
+
 export const getMinioClient = (): MinioClient | null => {
   if (minio) return minio;
   const endpoint = process.env.MINIO_ENDPOINT;

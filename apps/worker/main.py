@@ -208,6 +208,42 @@ def align_words(reference: str, hypothesis: str) -> List[Dict[str, Optional[str]
     return alignments
 
 
+def compute_pronunciation_score(
+    word_alignments: List[Dict[str, Optional[str]]],
+    word_timestamps: List[Dict[str, Any]],
+    wer: Optional[float],
+) -> Dict[str, float]:
+    ref_count = sum(1 for alignment in word_alignments if alignment.get("ref_word"))
+    match_count = sum(1 for alignment in word_alignments if alignment.get("op") == "match")
+    substitute_count = sum(1 for alignment in word_alignments if alignment.get("op") == "substitute")
+    delete_count = sum(1 for alignment in word_alignments if alignment.get("op") == "delete")
+
+    def clamp(value: float, minimum: float = 0.0, maximum: float = 1.0) -> float:
+        return max(min(value, maximum), minimum)
+
+    if wer is not None:
+        accuracy = clamp(1.0 - wer)
+    else:
+        accuracy = clamp(match_count / max(1, match_count + substitute_count + delete_count))
+
+    completeness = clamp((ref_count - delete_count) / max(1, ref_count))
+
+    probabilities = [
+        float(word.get("probability"))
+        for word in word_timestamps
+        if isinstance(word.get("probability"), (int, float))
+    ]
+    fluency = clamp(sum(probabilities) / len(probabilities)) if probabilities else 0.0
+
+    overall = clamp((accuracy + fluency + completeness) / 3.0)
+    return {
+        "accuracy": accuracy,
+        "fluency": fluency,
+        "completeness": completeness,
+        "overall": overall,
+    }
+
+
 class ResultWriter:
     def __init__(self, cfg: WorkerConfig):
         if not cfg.postgres_dsn:
@@ -383,6 +419,7 @@ class AsrWorker:
 
             wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
             word_alignments = align_words(expected_text_ar, transcript)
+            pronunciation_score = compute_pronunciation_score(word_alignments, words, wer)
 
             alignment_payload = {
                 "session_id": session_id,
@@ -392,6 +429,7 @@ class AsrWorker:
                 "transcript": transcript,
                 "word_timestamps": words,
                 "word_alignments": word_alignments,
+                "pronunciation_score": pronunciation_score,
             }
             alignment_key = self.writer.save_alignment(session_id, alignment_payload)
 
