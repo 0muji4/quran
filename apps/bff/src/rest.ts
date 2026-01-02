@@ -37,7 +37,7 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
   res.json(response);
 });
 
-restRouter.post('/scoring-jobs', (req: AuthedRequest, res) => {
+restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
   const { uploadKey, surahId, ayahNumber } = req.body ?? {};
   const sessionId = typeof uploadKey === 'string' ? uploadKey : 'unknown';
@@ -57,12 +57,25 @@ restRouter.post('/scoring-jobs', (req: AuthedRequest, res) => {
   const session = requireAuth(req, res);
   if (!session) return;
 
-  const job: JobResponse = createScoringJob({
-    uploadKey,
-    surahId,
-    ayahNumber: typeof ayahNumber === 'number' ? ayahNumber : null,
-    userId: session.id
-  });
+  let job: JobResponse;
+  try {
+    job = await createScoringJob({
+      uploadKey,
+      surahId,
+      ayahNumber: typeof ayahNumber === 'number' ? ayahNumber : null,
+      userId: session.id
+    });
+  } catch (error) {
+    res.status(502).json({ error: 'Failed to create scoring job' });
+    scoringRequestDuration.record(Date.now() - startedAt, {
+      route: '/scoring-jobs',
+      method: 'POST',
+      session_id: sessionId,
+      status: 'backend_error'
+    });
+    console.error('scoring job create failed', { session_id: sessionId, error });
+    return;
+  }
 
   res.status(201).json(job);
   scoringRequestDuration.record(Date.now() - startedAt, {
@@ -74,12 +87,25 @@ restRouter.post('/scoring-jobs', (req: AuthedRequest, res) => {
   console.info('scoring job created', { session_id: job.jobId, status: job.status });
 });
 
-restRouter.get('/scoring-jobs/:jobId', (req: AuthedRequest, res) => {
+restRouter.get('/scoring-jobs/:jobId', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
   const sessionId = req.params.jobId;
   const session = requireAuth(req, res);
   if (!session) return;
-  const job = getScoringJob(req.params.jobId);
+  let job: JobResponse | null;
+  try {
+    job = await getScoringJob(req.params.jobId);
+  } catch (error) {
+    res.status(502).json({ error: 'Failed to fetch scoring job' });
+    scoringRequestDuration.record(Date.now() - startedAt, {
+      route: '/scoring-jobs/:jobId',
+      method: 'GET',
+      session_id: sessionId,
+      status: 'backend_error'
+    });
+    console.error('scoring job fetch failed', { session_id: sessionId, error });
+    return;
+  }
 
   if (!job) {
     res.status(404).json({ error: 'Job not found' });
