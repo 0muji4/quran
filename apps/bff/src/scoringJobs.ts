@@ -1,92 +1,53 @@
-import { randomUUID } from 'crypto';
-import type { ScoreSegment, ScoringResult, ScoringStatus } from '@quran-project/shared-ts';
-import { findSurah } from './data';
+import type { ScoringResult } from '@quran-project/shared-ts';
 import { getMinioClientForPresignedUrls, recordUploadKey } from './storage';
-
-type StoredJob = {
-  jobId: string;
-  uploadKey: string;
-  status: ScoringStatus;
-  score: number | null;
-  segments: ScoreSegment[];
-  verdict: string | null;
-  createdAt: string;
-  evaluation: Record<string, unknown> | null;
-};
 
 const secondsFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
 const uploadPrefix = (): string => process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';
 const uploadTtlSeconds = (): number =>
   Number(process.env.SIGNED_URL_TTL_SECONDS ?? '900');
 
-const defaultSegments: ScoreSegment[] = [
-  { label: 'tajweed', score: 0.88, metrics: { pace: 'steady' } },
-  { label: 'pronunciation', score: 0.95 }
-];
+const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
-const jobs = new Map<string, StoredJob>();
+const parseJson = async <T>(response: Response): Promise<T> => {
+  const payload = (await response.json()) as unknown;
 
-const toResult = (job: StoredJob): ScoringResult => ({
-  ...job,
-  verdict: job.verdict ?? undefined,
-  score: job.score ?? undefined,
-  evaluation: job.evaluation ?? undefined
-});
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' && payload && 'error' in (payload as Record<string, unknown>)
+        ? (payload as Record<string, unknown>).error
+        : response.statusText;
+    throw new Error(typeof message === 'string' ? message : 'Request failed');
+  }
 
-const markForCompletion = (jobId: string, evaluation: Record<string, unknown> | null) => {
-  setTimeout(() => {
-    const job = jobs.get(jobId);
-    if (!job) return;
-
-    job.status = 'RUNNING';
-
-    setTimeout(() => {
-      const currentJob = jobs.get(jobId);
-      if (!currentJob) return;
-
-      currentJob.status = 'COMPLETED';
-      currentJob.score = 0.92;
-      currentJob.verdict = 'Audio accepted for review';
-      currentJob.segments = defaultSegments;
-      currentJob.evaluation = evaluation;
-    }, 800);
-  }, 400);
+  return payload as T;
 };
 
-export const createScoringJob = (input: {
+export const createScoringJob = async (input: {
   uploadKey: string;
   surahId: string;
   ayahNumber?: number | null;
   userId?: string | null;
-}): ScoringResult => {
-  const jobId = randomUUID();
-  const now = new Date().toISOString();
-  const surah = findSurah(input.surahId);
+}): Promise<ScoringResult> => {
+  const response = await fetch(`${backendUrl}/api/scoring-jobs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      uploadKey: input.uploadKey,
+      surahId: input.surahId,
+      ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
+      userId: input.userId ?? null
+    })
+  });
 
-  const job: StoredJob = {
-    jobId,
-    uploadKey: input.uploadKey,
-    status: 'QUEUED',
-    score: null,
-    segments: [],
-    verdict: null,
-    createdAt: now,
-    evaluation: {
-      userId: input.userId ?? null,
-      surah: surah?.nameEn ?? input.surahId,
-      ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null
-    }
-  };
-
-  jobs.set(jobId, job);
-  markForCompletion(jobId, job.evaluation);
-
-  return toResult(job);
+  return parseJson<ScoringResult>(response);
 };
 
-export const getScoringJob = (jobId: string): ScoringResult | null => {
-  const job = jobs.get(jobId);
-  return job ? toResult(job) : null;
+export const getScoringJob = async (jobId: string): Promise<ScoringResult | null> => {
+  const response = await fetch(`${backendUrl}/api/scoring-jobs/${jobId}`);
+  if (response.status === 404) return null;
+  return parseJson<ScoringResult>(response);
 };
 
 export const createSignedUploadUrl = async (input: {
