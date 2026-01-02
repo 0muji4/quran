@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { ScoreSegment, ScoringResult, ScoringStatus } from '@quran-project/shared-ts';
 import { findSurah } from './data';
-import { getMinioClient, recordUploadKey } from './storage';
+import { getMinioClientForPresignedUrls, recordUploadKey } from './storage';
 
 type StoredJob = {
   jobId: string;
@@ -98,18 +98,11 @@ export const createSignedUploadUrl = async (input: {
   const uploadKey = `${prefix}${Date.now()}-${encodeURIComponent(input.filename)}`;
   const expiresIn = uploadTtlSeconds();
   const expiresAt = secondsFromNow(expiresIn);
-  const client = getMinioClient();
+  const client = getMinioClientForPresignedUrls();
   const bucket = process.env.MINIO_BUCKET;
 
   if (client && bucket) {
-    let url = await client.presignedPutObject(bucket, uploadKey, expiresIn);
-
-    // Replace internal endpoint with external endpoint for browser access
-    const internalEndpoint = process.env.MINIO_ENDPOINT;
-    const externalEndpoint = process.env.MINIO_EXTERNAL_ENDPOINT;
-    if (internalEndpoint && externalEndpoint && url.includes(internalEndpoint)) {
-      url = url.replace(internalEndpoint, externalEndpoint);
-    }
+    const url = await client.presignedPutObject(bucket, uploadKey, expiresIn);
 
     await recordUploadKey({
       sessionId: uploadKey,
