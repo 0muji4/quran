@@ -153,6 +153,61 @@ def compute_wer(reference: str, hypothesis: str) -> float:
     return dp[-1][-1] / len(ref_tokens)
 
 
+def align_words(reference: str, hypothesis: str) -> List[Dict[str, Optional[str]]]:
+    ref_tokens = reference.strip().split()
+    hyp_tokens = hypothesis.strip().split()
+    ref_len = len(ref_tokens)
+    hyp_len = len(hyp_tokens)
+
+    dp = [[0] * (hyp_len + 1) for _ in range(ref_len + 1)]
+    ops: List[List[Optional[str]]] = [[None] * (hyp_len + 1) for _ in range(ref_len + 1)]
+
+    for i in range(1, ref_len + 1):
+        dp[i][0] = i
+        ops[i][0] = "delete"
+    for j in range(1, hyp_len + 1):
+        dp[0][j] = j
+        ops[0][j] = "insert"
+
+    priority = {"match": 0, "substitute": 1, "delete": 2, "insert": 3}
+
+    for i, ref_word in enumerate(ref_tokens, 1):
+        for j, hyp_word in enumerate(hyp_tokens, 1):
+            cost = 0 if ref_word == hyp_word else 1
+            candidates = [
+                (dp[i - 1][j - 1] + cost, "match" if cost == 0 else "substitute"),
+                (dp[i - 1][j] + 1, "delete"),
+                (dp[i][j - 1] + 1, "insert"),
+            ]
+            candidates.sort(key=lambda item: (item[0], priority[item[1]]))
+            best_cost, best_op = candidates[0]
+            dp[i][j] = best_cost
+            ops[i][j] = best_op
+
+    alignments: List[Dict[str, Optional[str]]] = []
+    i = ref_len
+    j = hyp_len
+    while i > 0 or j > 0:
+        op = ops[i][j]
+        if op in {"match", "substitute"}:
+            alignments.append(
+                {"ref_word": ref_tokens[i - 1], "hyp_word": hyp_tokens[j - 1], "op": op}
+            )
+            i -= 1
+            j -= 1
+        elif op == "delete":
+            alignments.append({"ref_word": ref_tokens[i - 1], "hyp_word": None, "op": op})
+            i -= 1
+        elif op == "insert":
+            alignments.append({"ref_word": None, "hyp_word": hyp_tokens[j - 1], "op": op})
+            j -= 1
+        else:
+            break
+
+    alignments.reverse()
+    return alignments
+
+
 class ResultWriter:
     def __init__(self, cfg: WorkerConfig):
         if not cfg.postgres_dsn:
@@ -195,6 +250,7 @@ class ResultWriter:
         expected_text_ar: str,
         transcript: str,
         word_timestamps: List[Dict[str, Any]],
+        word_alignments: List[Dict[str, Optional[str]]],
         wer: Optional[float],
         alignment_object_key: str,
     ) -> None:
@@ -203,16 +259,18 @@ class ResultWriter:
                 """
                 INSERT INTO asr_results (
                     session_id, ayah_id, audio_key, expected_text_ar,
-                    transcript, word_timestamps, wer, alignment_object_key,
+                    transcript, word_timestamps, word_alignments, wer, alignment_object_key,
                     created_at, updated_at
                 ) VALUES (%(session_id)s, %(ayah_id)s, %(audio_key)s, %(expected_text_ar)s,
-                          %(transcript)s, %(word_timestamps)s, %(wer)s, %(alignment_object_key)s,
+                          %(transcript)s, %(word_timestamps)s, %(word_alignments)s, %(wer)s,
+                          %(alignment_object_key)s,
                           NOW(), NOW())
                 ON CONFLICT (session_id) DO UPDATE
                 SET audio_key = EXCLUDED.audio_key,
                     expected_text_ar = EXCLUDED.expected_text_ar,
                     transcript = EXCLUDED.transcript,
                     word_timestamps = EXCLUDED.word_timestamps,
+                    word_alignments = EXCLUDED.word_alignments,
                     wer = EXCLUDED.wer,
                     alignment_object_key = EXCLUDED.alignment_object_key,
                     updated_at = NOW();
@@ -224,6 +282,7 @@ class ResultWriter:
                     "expected_text_ar": expected_text_ar,
                     "transcript": transcript,
                     "word_timestamps": json.dumps(word_timestamps, ensure_ascii=False),
+                    "word_alignments": json.dumps(word_alignments, ensure_ascii=False),
                     "wer": wer,
                     "alignment_object_key": alignment_object_key,
                 },
@@ -323,6 +382,7 @@ class AsrWorker:
                     pass
 
             wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
+            word_alignments = align_words(expected_text_ar, transcript)
 
             alignment_payload = {
                 "session_id": session_id,
@@ -331,6 +391,7 @@ class AsrWorker:
                 "expected_text_ar": expected_text_ar,
                 "transcript": transcript,
                 "word_timestamps": words,
+                "word_alignments": word_alignments,
             }
             alignment_key = self.writer.save_alignment(session_id, alignment_payload)
 
@@ -341,6 +402,7 @@ class AsrWorker:
                 expected_text_ar=expected_text_ar,
                 transcript=transcript,
                 word_timestamps=words,
+                word_alignments=word_alignments,
                 wer=wer,
                 alignment_object_key=alignment_key,
             )
