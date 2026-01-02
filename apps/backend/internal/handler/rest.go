@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -207,6 +208,7 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		ayahID,
 		*req.AyahNumber,
 	).Scan(&createdAt); err != nil {
+		log.Printf("failed to persist scoring job: %v", err)
 		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
 		return
 	}

@@ -16,16 +16,14 @@ const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8080';
 const uploadBaseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
 
 const parseJson = async <T>(response: Response): Promise<T> => {
-  const payload = (await response.json()) as unknown;
-
   if (!response.ok) {
-    const message =
-      typeof payload === 'object' && payload && 'error' in (payload as Record<string, unknown>)
-        ? (payload as Record<string, unknown>).error
-        : response.statusText;
-    throw new Error(typeof message === 'string' ? message : 'Request failed');
+    // Try to get error message from response body
+    const text = await response.text();
+    console.error('Backend error response:', { status: response.status, body: text });
+    throw new Error(`Backend returned ${response.status}: ${text}`);
   }
 
+  const payload = (await response.json()) as unknown;
   return payload as T;
 };
 
@@ -139,18 +137,21 @@ export const createScoringJob = async (input: {
     throw new Error('Session ID not found for upload key');
   }
 
+  const payload = {
+    uploadKey: input.uploadKey,
+    sessionId,
+    surahId: input.surahId,
+    ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
+    userId: input.userId ?? null
+  };
+  console.log('Creating scoring job with payload:', JSON.stringify(payload, null, 2));
+
   const response = await fetch(`${backendUrl}/api/scoring-jobs`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      uploadKey: input.uploadKey,
-      sessionId,
-      surahId: input.surahId,
-      ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
-      userId: input.userId ?? null
-    })
+    body: JSON.stringify(payload)
   });
 
   return parseJson<ScoringResult>(response);
@@ -175,13 +176,10 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
       scoring_jobs.segments,
       scoring_jobs.evaluation,
       scoring_jobs.created_at,
-      asr_results.word_alignments,
-      asr_results.word_timestamps,
-      asr_results.wer,
-      ayahs.reference_audio_key
+      asr_results.transcript,
+      asr_results.wer
     FROM scoring_jobs
     LEFT JOIN asr_results ON asr_results.session_id = scoring_jobs.session_id
-    LEFT JOIN ayahs ON ayahs.id = scoring_jobs.ayah_id
     WHERE scoring_jobs.session_id = $1
     `,
     [jobId]
@@ -191,17 +189,18 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
   const row = result.rows[0];
   const segments = parseJsonValue<unknown[]>(row.segments, []);
   const evaluation = parseJsonValue<Record<string, unknown> | null>(row.evaluation, null);
-  const wordAlignments = parseJsonValue<RawAlignment[]>(row.word_alignments, []);
-  const wordTimestamps = parseJsonValue<RawTimestamp[]>(row.word_timestamps, []);
-  const wer = numberOrNull(row.wer);
-  const referenceAudioKey = row.reference_audio_key as string | null;
-  const referenceAudioUrl = await createReferenceAudioUrl(referenceAudioKey);
-  const feedback = buildPronunciationFeedback(wordAlignments, wordTimestamps, wer, referenceAudioUrl);
+
+  // If asr_results exists, the job is completed
+  const hasResults = row.transcript !== null;
+  const actualStatus = hasResults ? 'COMPLETED' : row.status;
+
+  // Feedback will be null until word-level alignment is implemented (Phase 2)
+  const feedback = null;
 
   return {
     jobId: row.session_id as string,
     uploadKey: row.upload_key as string,
-    status: row.status as ScoringResult['status'],
+    status: actualStatus as ScoringResult['status'],
     score: numberOrNull(row.score),
     verdict: row.verdict ?? null,
     segments: Array.isArray(segments) ? (segments as ScoringResult['segments']) : [],
