@@ -27,6 +27,20 @@ type ScoreSegment {
   metrics: JSONObject
 }
 
+type WordAlignment {
+  refWord: String
+  hypWord: String
+  op: String!
+}
+
+type PronunciationFeedback {
+  accuracy: Float!
+  fluency: Float!
+  completeness: Float!
+  overall: Float!
+  wordAlignments: [WordAlignment!]!
+}
+
 enum ScoringStatus {
   QUEUED
   RUNNING
@@ -41,6 +55,7 @@ type ScoringResult {
   score: Float
   verdict: String
   segments: [ScoreSegment!]!
+  feedback: PronunciationFeedback
   createdAt: DateTime!
   evaluation: JSONObject
 }
