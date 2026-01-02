@@ -32,6 +32,7 @@ export const getMinioClient = (): MinioClient | null => {
 
 export const getMinioClientForPresignedUrls = (): MinioClient | null => {
   if (minioExternal) return minioExternal;
+  // Use external endpoint for presigned URLs so signature matches the URL host
   const endpoint = process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT;
   const accessKey = process.env.MINIO_ACCESS_KEY;
   const secretKey = process.env.MINIO_SECRET_KEY;
