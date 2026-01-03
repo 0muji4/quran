@@ -103,6 +103,8 @@ export type PronunciationFeedback = {
   overall: Scalars['Float'];
   referenceAudioUrl?: Maybe<Scalars['String']>;
   wordAlignments: Array<WordAlignment>;
+  transcript?: Maybe<Scalars['String']>;
+  wer?: Maybe<Scalars['Float']>;
 };
 
 export type ScoringResult = {
@@ -332,6 +334,8 @@ export type PronunciationFeedbackResolvers<ContextType = GraphQLContext, ParentT
   overall?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   referenceAudioUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   wordAlignments?: Resolver<Array<ResolversTypes['WordAlignment']>, ParentType, ContextType>;
+  transcript?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  wer?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 

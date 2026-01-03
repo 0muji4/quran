@@ -40,6 +40,8 @@ type PronunciationFeedback {
   overall: Float!
   referenceAudioUrl: String
   wordAlignments: [WordAlignment!]!
+  transcript: String
+  wer: Float
 }
 
 enum ScoringStatus {

@@ -400,9 +400,37 @@ export function RecorderClient() {
             {job.verdict ? ` — ${job.verdict}` : null}
           </div>
           {job.score !== null && job.score !== undefined && (
-            <p>
-              Overall score: <strong>{(job.score * 100).toFixed(1)}%</strong>
-            </p>
+            <div className="stack">
+              <p>
+                Overall score: <strong>{(job.score * 100).toFixed(1)}%</strong>
+              </p>
+            </div>
+          )}
+          {job.feedback && job.status === 'COMPLETED' && (
+            <div className="stack">
+              <h4>Pronunciation Assessment Results</h4>
+              {job.feedback.transcript && (
+                <div>
+                  <p><strong>Transcript:</strong></p>
+                  <p dir="rtl" lang="ar" style={{ fontSize: '1.2em' }}>
+                    {job.feedback.transcript}
+                  </p>
+                </div>
+              )}
+              {job.feedback.wer !== null && job.feedback.wer !== undefined && (
+                <p>
+                  <strong>Word Error Rate (WER):</strong> {(job.feedback.wer * 100).toFixed(1)}%
+                </p>
+              )}
+              <div className="stack">
+                <p><strong>Detailed Scores:</strong></p>
+                <ul>
+                  <li>Accuracy: {(job.feedback.accuracy * 100).toFixed(1)}%</li>
+                  <li>Fluency: {(job.feedback.fluency * 100).toFixed(1)}%</li>
+                  <li>Completeness: {(job.feedback.completeness * 100).toFixed(1)}%</li>
+                </ul>
+              </div>
+            </div>
           )}
           {polling && <p>Polling for updates…</p>}
         </div>
