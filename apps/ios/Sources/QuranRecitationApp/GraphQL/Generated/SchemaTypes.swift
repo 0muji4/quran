@@ -45,9 +45,11 @@ public enum ScoringStatus: String, EnumType {
 public struct SignedUploadPayload {
   public let uploadKey: String
   public let url: String
+  public let expiresAt: String
 
   init(from data: GetSignedUploadUrlMutation.Data.GetSignedUploadUrl) {
     url = data.url
+    expiresAt = data.expiresAt
     uploadKey = URL(string: data.url)?.lastPathComponent ?? ""
   }
 }

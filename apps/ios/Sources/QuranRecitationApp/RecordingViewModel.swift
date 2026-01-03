@@ -11,6 +11,7 @@ final class RecordingViewModel: ObservableObject {
   @Published var surahSummary: SurahSummary?
   @Published var showError = false
   @Published var errorMessage = ""
+  @Published var uploadDestinationDescription: String?
 
   private let recorder = AudioRecorder()
   private let apiClient = QuranAPIClient()
@@ -59,6 +60,9 @@ final class RecordingViewModel: ObservableObject {
         filename: recording.lastPathComponent,
         contentType: "audio/m4a"
       )
+      let destinationDescription = uploadDestinationDescription(from: signedUpload)
+      uploadDestinationDescription = destinationDescription
+      print("Upload destination: \(destinationDescription)")
       try await apiClient.uploadAudio(fileURL: recording, to: signedUpload.url)
 
       statusText = "Scoring"
