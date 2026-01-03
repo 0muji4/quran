@@ -24,18 +24,18 @@ func main() {
 		log.Printf("telemetry init failed: %v", err)
 	}
 
-	repository := repo.NewInMemoryRepository()
-	svc := service.SurahService{
-		SurahRepo: repository,
-		AyahRepo:  repository,
-	}
-
 	dbConn, err := db.Connect(ctx, db.Config{
 		DSN:        os.Getenv("DATABASE_URL"),
 		DriverName: "pgx",
 	})
 	if err != nil {
 		log.Fatalf("db connect failed: %v", err)
+	}
+
+	repository := repo.NewPostgresRepository(dbConn)
+	svc := service.SurahService{
+		SurahRepo: repository,
+		AyahRepo:  repository,
 	}
 
 	queueName := os.Getenv("QUEUE_NAME")

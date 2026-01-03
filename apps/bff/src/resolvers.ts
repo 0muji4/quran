@@ -1,6 +1,10 @@
 import { GraphQLScalarType, Kind, valueFromASTUntyped } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
-import { findAyah, findSurah, surahs } from './data';
+import {
+  fetchSurahsFromBackend,
+  fetchSurahFromBackend,
+  fetchAyahFromBackend
+} from './backendClient';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from './scoringJobs';
 
 const JSONObjectScalar = new GraphQLScalarType({
@@ -27,13 +31,14 @@ export const resolvers: Resolvers<GraphQLContext> = {
   JSONObject: JSONObjectScalar,
   DateTime: DateTimeScalar,
   Query: {
-    surahs: (_parent, args) => {
+    surahs: async (_parent, args) => {
+      const allSurahs = await fetchSurahsFromBackend();
       const offset = args.offset ?? 0;
       const end = args.limit ? offset + args.limit : undefined;
-      return surahs.slice(offset, end);
+      return allSurahs.slice(offset, end);
     },
-    surah: (_parent, args) => findSurah(args.id),
-    ayah: (_parent, args) => findAyah(args.surahId, args.ayahNumber),
+    surah: async (_parent, args) => fetchSurahFromBackend(args.id),
+    ayah: async (_parent, args) => fetchAyahFromBackend(args.surahId, args.ayahNumber),
     scoringJob: async (_parent, args) => getScoringJob(args.jobId)
   },
   Mutation: {
