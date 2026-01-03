@@ -8,6 +8,7 @@ final class RecordingViewModel: ObservableObject {
   @Published var isBusy = false
   @Published var statusText = "Idle"
   @Published var scoringResult: ScoringResultViewData?
+  @Published var surahSummary: SurahSummary?
   @Published var showError = false
   @Published var errorMessage = ""
 
