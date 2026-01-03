@@ -15,8 +15,8 @@ import com.quranproject.android.network.model.CreateScoringJobRequest
 import com.quranproject.android.network.model.ScoringResult
 import com.quranproject.android.network.model.ScoringStatus
 import com.quranproject.android.network.model.SignedUploadRequest
-import com.quranproject.android.network.model.SignedUploadResponse
 import com.quranproject.android.network.model.SurahSummary
+import com.quranproject.android.util.describeUploadTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
@@ -258,10 +258,6 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun extractUploadKey(fields: JsonObject?): String? {
         return fields?.get("key")?.asString
-    }
-
-    private fun describeUploadTarget(upload: SignedUploadResponse): String {
-        return "PUT ${upload.url} (expires ${upload.expiresAt})"
     }
 
     private fun statusLabel(job: ScoringResult): String {
