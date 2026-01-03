@@ -17,7 +17,7 @@ import (
 
 // Enqueuer publishes ASR jobs to Redis so that the worker can consume them.
 type Enqueuer struct {
-	client    *queue.Client
+	client    Client
 	authToken string
 }
 
@@ -25,6 +25,11 @@ var (
 	enqueueMetricsOnce    sync.Once
 	enqueueDurationMetric metric.Float64Histogram
 )
+
+// Client abstracts queue client behavior for testing.
+type Client interface {
+	Enqueue(ctx context.Context, job queue.Job) error
+}
 
 // NewEnqueuer constructs an Enqueuer with the provided queue configuration.
 func NewEnqueuer(cfg queue.Config) (*Enqueuer, error) {
@@ -40,10 +45,14 @@ func NewEnqueuer(cfg queue.Config) (*Enqueuer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("enqueue: build client: %w", err)
 	}
+	return newEnqueuerWithClient(client, os.Getenv("QUEUE_AUTH_TOKEN")), nil
+}
+
+func newEnqueuerWithClient(client Client, authToken string) *Enqueuer {
 	return &Enqueuer{
 		client:    client,
-		authToken: os.Getenv("QUEUE_AUTH_TOKEN"),
-	}, nil
+		authToken: authToken,
+	}
 }
 
 // PublishASRJob pushes a single job for the given session/audio/ayah combination.
@@ -67,7 +76,9 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 	}
 	err := e.client.Enqueue(ctx, job)
 	enqueueDurationMs := float64(time.Since(startedAt).Milliseconds())
-	enqueueDurationMetric.Record(ctx, enqueueDurationMs, metric.WithAttributes(attribute.String("session_id", sessionID)))
+	if enqueueDurationMetric != nil {
+		enqueueDurationMetric.Record(ctx, enqueueDurationMs, metric.WithAttributes(attribute.String("session_id", sessionID)))
+	}
 	if err != nil {
 		log.Printf("enqueue failed session_id=%s ayah_id=%d err=%v", sessionID, ayahID, err)
 		return err
