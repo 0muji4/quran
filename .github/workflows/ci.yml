@@ -36,6 +36,9 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      - name: Run build
+        run: pnpm build
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
