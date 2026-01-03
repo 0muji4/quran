@@ -1,6 +1,6 @@
-import type { ScoringResult, SignedUploadUrl, Surah } from '@quran-project/shared-ts';
+import type { ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
 
-export type SurahSummary = Pick<Surah, 'id' | 'nameAr' | 'nameEn' | 'ayahCount' | 'revelationPlace'>;
+import type { SurahSummary } from './types';
 
 export const summarizeSurah = (surah: SurahSummary): string =>
   `${surah.nameEn} • ${surah.revelationPlace} • ${surah.ayahCount} ayahs`;
