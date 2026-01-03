@@ -72,3 +72,4 @@ make sql-migrate-dry-run
 ## Notes
 - See `ops/docker/compose.dev.yml` for local service definitions and environment variables.
 - Web/BFF/Backend/Worker are organized under `apps/`.
+- The Next.js web app (`apps/web`) uses the App Router exclusively; shared client/server types and helpers live under `apps/web/app/lib`.
