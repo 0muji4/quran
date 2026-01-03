@@ -13,6 +13,11 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        val bffBaseUrl =
+            (project.findProperty("BFF_BASE_URL") as String?)
+                ?: System.getenv("BFF_BASE_URL")
+                ?: "http://localhost:4000"
+        buildConfigField("String", "BFF_BASE_URL", "\"$bffBaseUrl\"")
     }
 
     buildTypes {
@@ -27,6 +32,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -45,6 +51,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
