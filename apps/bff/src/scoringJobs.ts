@@ -194,8 +194,19 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
   const hasResults = row.transcript !== null;
   const actualStatus = hasResults ? 'COMPLETED' : row.status;
 
-  // Feedback will be null until word-level alignment is implemented (Phase 2)
-  const feedback = null;
+  // Build feedback from asr_results if available
+  const feedback = hasResults
+    ? {
+        accuracy: row.wer !== null ? Math.max(0, Math.min(1, 1 - parseFloat(row.wer))) : 0,
+        fluency: 0, // Will be calculated from word_timestamps in future
+        completeness: 0, // Will be calculated in future
+        overall: 0, // Will be calculated in future
+        referenceAudioUrl: null,
+        wordAlignments: [],
+        transcript: row.transcript as string,
+        wer: row.wer !== null ? parseFloat(row.wer) : null,
+      }
+    : null;
 
   return {
     jobId: row.session_id as string,
