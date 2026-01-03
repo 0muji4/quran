@@ -7,10 +7,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY apps/worker/requirements.txt /app/apps/worker/requirements.txt
+COPY apps/worker/python/requirements.txt /app/apps/worker/python/requirements.txt
 
-RUN pip install --no-cache-dir -r /app/apps/worker/requirements.txt
+RUN pip install --no-cache-dir -r /app/apps/worker/python/requirements.txt
 
 COPY apps/worker /app/apps/worker
 
-CMD ["python", "-u", "/app/apps/worker/main.py"]
+CMD ["python", "-u", "/app/apps/worker/python/main.py"]

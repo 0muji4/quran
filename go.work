@@ -2,6 +2,6 @@ go 1.24.0
 
 use (
 ./apps/backend
-./apps/worker
+./apps/worker/go
 ./packages/go-pkg
 )

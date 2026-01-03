@@ -13,10 +13,18 @@ Set the following environment variables:
 - `WHISPER_MODEL_SIZE` – `"small"` or `"medium"` depending on GPU/CPU availability.
 - `WHISPER_DEVICE`, `WHISPER_COMPUTE_TYPE` – device tuning (`cpu`/`cuda`, `"int8"`, `"float16"`, etc.).
 
+## Runtime standard
+
+The Python implementation under `apps/worker/python` is the operational standard. The Go
+implementation under `apps/worker/go` is a placeholder for future optimization work and
+is not currently deployed.
+
+## Local development
+
 Install dependencies and start the worker:
 
 ```bash
-cd apps/worker
+cd apps/worker/python
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
