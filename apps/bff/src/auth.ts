@@ -56,7 +56,7 @@ export const authenticateRequest = (req: AuthedRequest): UserSession | null => {
     if (session) return session;
   }
 
-  if (process.env.MOCK_SESSION === 'true') {
+  if (process.env.MOCK_SESSION === 'true' && process.env.NODE_ENV !== 'production') {
     return buildMockSession();
   }
 
