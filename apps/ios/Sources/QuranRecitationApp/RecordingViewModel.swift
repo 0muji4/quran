@@ -96,7 +96,7 @@ struct ScoringResultViewData {
   init(result: ScoringResultPayload) {
     score = result.score
     verdict = result.verdict
-    segments = result.segments.map { ScoreSegmentViewData(segment: $0) }
+    segments = result.segmentLabelScores().map { ScoreSegmentViewData(data: $0) }
   }
 
   var scoreText: String {
@@ -105,12 +105,13 @@ struct ScoringResultViewData {
   }
 }
 
+/// UI-friendly presentation of a scoring segment.
 struct ScoreSegmentViewData {
   let label: String
   let score: Double
 
-  init(segment: ScoreSegmentPayload) {
-    label = segment.label
-    score = segment.score
+  init(data: ScoreSegmentData) {
+    label = data.label
+    score = data.score
   }
 }
