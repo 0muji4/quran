@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,6 +67,90 @@ func TestRESTHandleGetSurah(t *testing.T) {
 	require.Equal(t, "Al-Fatiha", result.NameEN)
 }
 
+func TestRESTHandleGetSurahInvalidID(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{},
+		AyahRepo:  fakeAyahRepo{},
+	}
+	handler := REST{SurahService: svc}
+
+	tests := []struct {
+		name           string
+		path           string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "string id",
+			path:           "/api/surahs/abc",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "invalid surah id\n",
+		},
+		{
+			name:           "empty id",
+			path:           "/api/surahs/",
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "404 page not found\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, test.path, nil)
+			req.URL.Path = test.path
+			recorder := httptest.NewRecorder()
+
+			handler.handleGetSurah(recorder, req)
+
+			require.Equal(t, test.expectedStatus, recorder.Code)
+			require.Equal(t, test.expectedBody, recorder.Body.String())
+		})
+	}
+}
+
+func TestRESTHandleGetSurahRepoError(t *testing.T) {
+	expectedErr := errors.New("db failure")
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{
+			getFn: func(ctx context.Context, id int32) (domain.Surah, error) {
+				return domain.Surah{}, expectedErr
+			},
+		},
+		AyahRepo: fakeAyahRepo{},
+	}
+
+	handler := REST{SurahService: svc}
+	req := httptest.NewRequest(http.MethodGet, "/api/surahs/1", nil)
+	req.URL.Path = "/api/surahs/1"
+	recorder := httptest.NewRecorder()
+
+	handler.handleGetSurah(recorder, req)
+
+	require.Equal(t, http.StatusNotFound, recorder.Code)
+	require.Equal(t, "db failure\n", recorder.Body.String())
+}
+
+func TestRESTHandleGetSurahNotFound(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{
+			getFn: func(ctx context.Context, id int32) (domain.Surah, error) {
+				return domain.Surah{}, errors.New("surah not found")
+			},
+		},
+		AyahRepo: fakeAyahRepo{},
+	}
+
+	handler := REST{SurahService: svc}
+	req := httptest.NewRequest(http.MethodGet, "/api/surahs/99", nil)
+	req.URL.Path = "/api/surahs/99"
+	recorder := httptest.NewRecorder()
+
+	handler.handleGetSurah(recorder, req)
+
+	require.Equal(t, http.StatusNotFound, recorder.Code)
+	require.Equal(t, "surah not found\n", recorder.Body.String())
+}
+
 func TestRESTHandleGetSurahAyahs(t *testing.T) {
 	svc := service.SurahService{
 		SurahRepo: fakeSurahRepo{},
@@ -89,6 +174,44 @@ func TestRESTHandleGetSurahAyahs(t *testing.T) {
 	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
 	require.Len(t, result, 1)
 	require.Equal(t, int32(2), result[0].SurahID)
+}
+
+func TestRESTHandleGetSurahAyahsInvalidID(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{},
+		AyahRepo:  fakeAyahRepo{},
+	}
+
+	handler := REST{SurahService: svc}
+	req := httptest.NewRequest(http.MethodGet, "/api/surahs/abc/ayahs", nil)
+	req.URL.Path = "/api/surahs/abc/ayahs"
+	recorder := httptest.NewRecorder()
+
+	handler.handleGetSurah(recorder, req)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid surah id\n", recorder.Body.String())
+}
+
+func TestRESTHandleGetSurahAyahsRepoError(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{},
+		AyahRepo: fakeAyahRepo{
+			listFn: func(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
+				return nil, errors.New("list failed")
+			},
+		},
+	}
+
+	handler := REST{SurahService: svc}
+	req := httptest.NewRequest(http.MethodGet, "/api/surahs/2/ayahs", nil)
+	req.URL.Path = "/api/surahs/2/ayahs"
+	recorder := httptest.NewRecorder()
+
+	handler.handleGetSurah(recorder, req)
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code)
+	require.Equal(t, "list failed\n", recorder.Body.String())
 }
 
 func TestGraphQLHandlerServeHTTP(t *testing.T) {
