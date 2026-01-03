@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "codegen": "graphql-codegen --config codegen.ts",
+    "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check ../shared-ts"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.3",
