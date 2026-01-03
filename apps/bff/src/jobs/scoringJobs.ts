@@ -5,7 +5,7 @@ import {
   getDatabasePool,
   getMinioClientForPresignedUrls,
   recordUploadKey
-} from './storage';
+} from '../infra';
 
 const secondsFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
 const uploadPrefix = (): string => process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';

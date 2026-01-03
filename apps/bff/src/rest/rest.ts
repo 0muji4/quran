@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import jwt from 'jsonwebtoken';
-import type { AuthedRequest } from './auth';
-import { requireAuth } from './auth';
-import { createScoringJob, createSignedUploadUrl, getScoringJob } from './scoringJobs';
-import { deleteUserData } from './storage';
-import { telemetry } from './telemetry';
+import type { AuthedRequest } from '../auth';
+import { requireAuth } from '../auth';
+import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
+import { deleteUserData } from '../infra';
+import { telemetry } from '../telemetry';
 
 type SignedUploadResponse = Awaited<ReturnType<typeof createSignedUploadUrl>>;
 
