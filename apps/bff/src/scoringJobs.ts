@@ -144,7 +144,11 @@ export const createScoringJob = async (input: {
     ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
     userId: input.userId ?? null
   };
-  console.log('Creating scoring job with payload:', JSON.stringify(payload, null, 2));
+  console.log('Creating scoring job', {
+    sessionId: payload.sessionId,
+    surahId: payload.surahId,
+    ayahNumber: payload.ayahNumber
+  });
 
   const response = await fetch(`${backendUrl}/api/scoring-jobs`, {
     method: 'POST',

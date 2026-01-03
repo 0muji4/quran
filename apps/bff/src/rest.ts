@@ -47,8 +47,8 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
         ? uploadKey
         : 'unknown';
 
-  if (!uploadKey || !surahId) {
-    res.status(400).json({ error: 'uploadKey and surahId are required' });
+  if (!uploadKey || !surahId || typeof ayahNumber !== 'number') {
+    res.status(400).json({ error: 'uploadKey, surahId, and ayahNumber are required' });
     scoringRequestDuration.record(Date.now() - startedAt, {
       route: '/scoring-jobs',
       method: 'POST',
