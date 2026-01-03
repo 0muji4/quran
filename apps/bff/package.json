@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "description": "GraphQL and REST BFF placeholder",
-  "main": "dist/server.js",
-  "types": "src/server.ts",
+  "main": "dist/server/server.js",
+  "types": "src/server/server.ts",
   "scripts": {
-    "dev": "tsx src/server.ts",
-    "dev:local": "tsx --env-file=.env src/server.ts",
+    "dev": "tsx src/server/server.ts",
+    "dev:local": "tsx --env-file=.env src/server/server.ts",
     "build": "tsc -b",
-    "start": "node dist/server.js",
+    "start": "node dist/server/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

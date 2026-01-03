@@ -1,4 +1,4 @@
-import './telemetry';
+import '../telemetry';
 import { readFileSync } from 'fs';
 import path from 'path';
 import express from 'express';
@@ -10,11 +10,10 @@ import {
   renderGraphiQL,
   shouldRenderGraphiQL
 } from 'graphql-helix';
-import { authMiddleware, buildContext, type AuthedRequest } from './auth';
-import { resolvers } from './resolvers';
-import { rscRouter } from './rsc';
-import { restRouter } from './rest';
-import { ensureBucketPolicy } from './storage';
+import { authMiddleware, buildContext, type AuthedRequest } from '../auth';
+import { resolvers } from '../graphql';
+import { rscRouter, restRouter } from '../rest';
+import { ensureBucketPolicy } from '../infra';
 
 const typeDefs = readFileSync(
   path.resolve(__dirname, '../../..', 'schemas/graphql/schema.graphql'),
