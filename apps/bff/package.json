@@ -12,7 +12,9 @@
     "start": "node dist/server/server.js",
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check ../../apps/bff",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.12",
@@ -35,12 +37,15 @@
   "devDependencies": {
     "@quran-project/eslint-config": "workspace:*",
     "@quran-project/ts-config": "workspace:*",
+    "@types/supertest": "^6.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.11.30",
     "eslint": "^9.11.1",
+    "supertest": "^7.0.0",
     "tsx": "^4.15.7",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }
