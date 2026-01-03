@@ -10,8 +10,8 @@ import {
   fetchSurahs,
   requestSignedUploadUrl
 } from '../actions';
-import type { AyahRecord, SurahSummary } from '../actions';
-import { describeUploadTarget, summarizeSurah } from '../../src';
+import type { AyahRecord, SurahSummary } from '../lib/types';
+import { describeUploadTarget, summarizeSurah } from '../lib/formatters';
 
 const recordingMimeType = 'audio/webm';
 
