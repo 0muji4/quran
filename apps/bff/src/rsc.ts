@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { Router } from 'express';
 import type { AuthedRequest } from './auth';
 import { requireAuth } from './auth';
-import { findSurah, surahs } from './data';
+import { fetchSurahsFromBackend, fetchSurahFromBackend } from './backendClient';
 import { getScoringJob } from './scoringJobs';
 import { telemetry } from './telemetry';
 
@@ -13,36 +13,47 @@ const scoresRequestDuration = telemetry.meter.createHistogram('bff.rsc.scores.re
   unit: 'ms'
 });
 
-rscRouter.get('/surahs', (req: AuthedRequest, res) => {
-  res.json({
-    user: req.session ?? null,
-    surahs: surahs.map((surah) => ({
-      id: surah.id,
-      nameEn: surah.nameEn,
-      nameAr: surah.nameAr,
-      ayahCount: surah.ayahCount,
-      revelationPlace: surah.revelationPlace
-    }))
-  });
+rscRouter.get('/surahs', async (req: AuthedRequest, res) => {
+  try {
+    const surahs = await fetchSurahsFromBackend();
+    res.json({
+      user: req.session ?? null,
+      surahs: surahs.map((surah) => ({
+        id: surah.id,
+        nameEn: surah.nameEn,
+        nameAr: surah.nameAr,
+        ayahCount: surah.ayahCount,
+        revelationPlace: surah.revelationPlace
+      }))
+    });
+  } catch (error) {
+    console.error('Failed to fetch surahs from backend:', error);
+    res.status(502).json({ error: 'Failed to fetch surahs' });
+  }
 });
 
-rscRouter.get('/surah/:surahId/ayahs', (req: AuthedRequest, res) => {
-  const surah = findSurah(req.params.surahId);
+rscRouter.get('/surah/:surahId/ayahs', async (req: AuthedRequest, res) => {
+  try {
+    const surah = await fetchSurahFromBackend(req.params.surahId);
 
-  if (!surah) {
-    res.status(404).json({ error: 'Surah not found' });
-    return;
+    if (!surah) {
+      res.status(404).json({ error: 'Surah not found' });
+      return;
+    }
+
+    res.json({
+      user: req.session ?? null,
+      surah: {
+        id: surah.id,
+        nameEn: surah.nameEn,
+        nameAr: surah.nameAr
+      },
+      ayahs: surah.ayahs
+    });
+  } catch (error) {
+    console.error(`Failed to fetch surah ${req.params.surahId} from backend:`, error);
+    res.status(502).json({ error: 'Failed to fetch surah' });
   }
-
-  res.json({
-    user: req.session ?? null,
-    surah: {
-      id: surah.id,
-      nameEn: surah.nameEn,
-      nameAr: surah.nameAr
-    },
-    ayahs: surah.ayahs
-  });
 });
 
 rscRouter.get('/scores/:sessionId', async (req: AuthedRequest, res) => {
