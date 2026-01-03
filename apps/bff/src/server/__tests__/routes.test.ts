@@ -48,6 +48,19 @@ describe('REST routes', () => {
     });
   });
 
+  it('returns a server error when signed upload url creation fails', async () => {
+    vi.mocked(createSignedUploadUrl).mockRejectedValue(new Error('upload url failure'));
+
+    const app = createApp();
+    const response = await request(app).post('/signed-upload-url').send({
+      filename: 'audio.wav',
+      contentType: 'audio/wav'
+    });
+
+    expect(response.status).toBe(502);
+    expect(response.body).toEqual({ error: 'Failed to create signed upload url' });
+  });
+
   it('validates signed upload url payloads', async () => {
     const app = createApp();
     const response = await request(app).post('/signed-upload-url').send({});
