@@ -4,8 +4,8 @@ import {
   fetchSurahsFromBackend,
   fetchSurahFromBackend,
   fetchAyahFromBackend
-} from './backendClient';
-import { createScoringJob, createSignedUploadUrl, getScoringJob } from './scoringJobs';
+} from '../infra';
+import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
 
 const JSONObjectScalar = new GraphQLScalarType({
   name: 'JSONObject',
