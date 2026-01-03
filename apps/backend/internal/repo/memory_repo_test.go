@@ -22,6 +22,10 @@ func TestMemoryRepositorySurahs(t *testing.T) {
 	surah, err := repo.GetSurah(context.Background(), 1)
 	require.NoError(t, err)
 	require.Equal(t, "Al-Fatiha", surah.NameEN)
+
+	missingSurah, err := repo.GetSurah(context.Background(), 99)
+	require.EqualError(t, err, "surah not found")
+	require.Equal(t, domain.Surah{}, missingSurah)
 }
 
 func TestMemoryRepositoryAyahs(t *testing.T) {
@@ -37,4 +41,13 @@ func TestMemoryRepositoryAyahs(t *testing.T) {
 	ayah, err := repo.GetAyah(context.Background(), 11)
 	require.NoError(t, err)
 	require.Equal(t, int32(1), ayah.AyahNumber)
+
+	missingAyah, err := repo.GetAyah(context.Background(), 99)
+	require.EqualError(t, err, "ayah not found")
+	require.Equal(t, domain.Ayah{}, missingAyah)
+
+	emptyAyahs, err := repo.ListBySurah(context.Background(), 3)
+	require.NoError(t, err)
+	require.Empty(t, emptyAyahs)
+	require.Nil(t, emptyAyahs)
 }
