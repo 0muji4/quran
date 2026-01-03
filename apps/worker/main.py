@@ -33,6 +33,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("worker")
 
+MAX_PROMPT_WORDS = 8
+
 
 def init_telemetry() -> None:
     service_name = os.getenv("OTEL_SERVICE_NAME", "quran-worker")
@@ -384,9 +386,11 @@ class AsrWorker:
             raise
         return temp_path
 
-    def _transcribe(self, audio_path: str) -> Tuple[str, List[Dict[str, Any]]]:
-        # Provide context to improve Quran recitation accuracy
-        initial_prompt = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+    def _transcribe(self, audio_path: str, expected_text_ar: str) -> Tuple[str, List[Dict[str, Any]]]:
+        prompt_tokens = expected_text_ar.split() if expected_text_ar else []
+        initial_prompt = None
+        if prompt_tokens:
+            initial_prompt = " ".join(prompt_tokens[:MAX_PROMPT_WORDS]).strip() or None
         segments, _ = self.model.transcribe(
             audio_path,
             language="ar",
@@ -443,7 +447,7 @@ class AsrWorker:
         ):
             audio_path = self._download_audio(audio_key)
             try:
-                transcript, words = self._transcribe(audio_path)
+                transcript, words = self._transcribe(audio_path, expected_text_ar)
             finally:
                 try:
                     os.remove(audio_path)
