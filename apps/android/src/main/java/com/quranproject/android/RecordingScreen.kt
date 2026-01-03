@@ -41,6 +41,7 @@ import com.quranproject.android.network.model.AyahRecord
 import com.quranproject.android.network.model.ScoringResult
 import com.quranproject.android.network.model.ScoringStatus
 import com.quranproject.android.network.model.SurahSummary
+import com.quranproject.android.util.summarizeSurah
 import java.io.File
 
 @Composable
@@ -385,10 +386,6 @@ private fun AyahSelector(
             }
         }
     }
-}
-
-private fun summarizeSurah(surah: SurahSummary): String {
-    return "${surah.nameEn} • ${surah.revelationPlace} • ${surah.ayahCount} ayahs"
 }
 
 private fun Double.formatPercent(): String {
