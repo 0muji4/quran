@@ -35,6 +35,17 @@ struct RecorderView: View {
       .buttonStyle(.borderedProminent)
       .disabled(viewModel.isBusy)
 
+      if let surahSummary = viewModel.surahSummary {
+        VStack(alignment: .leading, spacing: 4) {
+          Text(surahSummary.nameAr)
+            .font(.headline)
+          Text(summarizeSurah(surahSummary))
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+
       statusView
 
       scoreView
