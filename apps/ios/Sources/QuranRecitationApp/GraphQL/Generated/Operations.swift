@@ -8,6 +8,7 @@ public struct GetSignedUploadUrlMutation: GraphQLMutation {
       mutation GetSignedUploadUrl($input: SignedUploadInput!) {
         getSignedUploadUrl(input: $input) {
           url
+          expiresAt
         }
       }
       """
@@ -34,9 +35,15 @@ public struct GetSignedUploadUrlMutation: GraphQLMutation {
 
     public struct GetSignedUploadUrl: SelectionSet {
       public static var __parentType: ParentType { QuranSchema.Objects.SignedUploadUrl }
-      public static var __selections: [Selection] { [ .field("url", String.self) ] }
+      public static var __selections: [Selection] {
+        [
+          .field("url", String.self),
+          .field("expiresAt", String.self)
+        ]
+      }
 
       public var url: String { __data["url"] }
+      public var expiresAt: String { __data["expiresAt"] }
     }
   }
 }
