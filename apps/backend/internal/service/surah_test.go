@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,9 +12,13 @@ import (
 
 type stubSurahRepo struct {
 	surah domain.Surah
+	err   error
 }
 
 func (s stubSurahRepo) List(ctx context.Context) ([]domain.Surah, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
 	return []domain.Surah{s.surah}, nil
 }
 
@@ -23,6 +28,7 @@ func (s stubSurahRepo) GetSurah(ctx context.Context, id int32) (domain.Surah, er
 
 type stubAyahRepo struct {
 	ayah domain.Ayah
+	err  error
 }
 
 func (s stubAyahRepo) ListBySurah(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
@@ -30,6 +36,9 @@ func (s stubAyahRepo) ListBySurah(ctx context.Context, surahID int32) ([]domain.
 }
 
 func (s stubAyahRepo) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
+	if s.err != nil {
+		return domain.Ayah{}, s.err
+	}
 	return domain.Ayah{ID: id, TextAR: s.ayah.TextAR}, nil
 }
 
@@ -48,4 +57,26 @@ func TestSurahService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(42), ayah.ID)
 	require.Equal(t, "بسم", ayah.TextAR)
+}
+
+func TestSurahService_ListSurahsError(t *testing.T) {
+	listErr := errors.New("list failed")
+	svc := SurahService{
+		SurahRepo: stubSurahRepo{err: listErr},
+		AyahRepo:  stubAyahRepo{},
+	}
+
+	_, err := svc.ListSurahs(context.Background())
+	require.ErrorIs(t, err, listErr)
+}
+
+func TestSurahService_GetAyahError(t *testing.T) {
+	getErr := errors.New("get failed")
+	svc := SurahService{
+		SurahRepo: stubSurahRepo{},
+		AyahRepo:  stubAyahRepo{err: getErr},
+	}
+
+	_, err := svc.GetAyah(context.Background(), 1)
+	require.ErrorIs(t, err, getErr)
 }
