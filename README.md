@@ -69,6 +69,48 @@ If you use `sql-migrate`, add a `dbconfig.yml` and run a dry-run via:
 make sql-migrate-dry-run
 ```
 
+## Mobile Apps (Android / iOS)
+### Android
+**Prerequisites**
+- Android Studio + Android SDK (API 34, Build Tools 34.x)
+- JDK 17
+- Gradle (8.x)
+- `ANDROID_HOME`/`ANDROID_SDK_ROOT` set and SDK licenses accepted
+
+**Build**
+```bash
+gradle :apps:android:assembleDebug
+```
+
+**Test**
+```bash
+gradle :apps:android:testDebugUnitTest
+```
+
+**Lint**
+```bash
+gradle :apps:android:lintDebug
+```
+
+> Note: Set `BFF_BASE_URL` (Gradle property or env var) to point at your BFF if you are not using the default `http://localhost:4000`.
+
+### iOS
+**Prerequisites**
+- macOS with Xcode 15+ (Swift 5.9) and iOS 16+ SDK
+
+**Build (Xcode CLI)**
+```bash
+xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" build
+```
+
+**Test (if/when tests are added)**
+```bash
+xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" test
+```
+
+**Build (Xcode UI)**
+- Open `apps/ios/Package.swift` in Xcode, select the `QuranRecitationApp` scheme, and run.
+
 ## Notes
 - See `ops/docker/compose.dev.yml` for local service definitions and environment variables.
 - Web/BFF/Backend/Worker are organized under `apps/`.
