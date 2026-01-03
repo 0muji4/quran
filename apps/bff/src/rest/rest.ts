@@ -29,11 +29,19 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
   const session = requireAuth(req, res);
   if (!session) return;
 
-  const response: SignedUploadResponse = await createSignedUploadUrl({
-    filename,
-    contentType,
-    userId: session.id
-  });
+  let response: SignedUploadResponse;
+  try {
+    response = await createSignedUploadUrl({
+      filename,
+      contentType,
+      userId: session.id
+    });
+  } catch (error) {
+    res.status(502).json({ error: 'Failed to create signed upload url' });
+    console.error('signed upload url create failed', { user_id: session.id, error });
+    return;
+  }
+
   res.json(response);
 });
 
