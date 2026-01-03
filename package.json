@@ -6,6 +6,7 @@
   "scripts": {
     "format:check": "pnpm -r --if-present format:check",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "build": "pnpm -r --if-present build"
   }
 }
