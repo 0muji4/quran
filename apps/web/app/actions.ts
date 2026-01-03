@@ -1,26 +1,10 @@
 'use server';
 
+import type { AyahRecord, SurahSummary } from './lib/types';
 import type { ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
 import 'server-only';
 
 type SignedUploadResponse = SignedUploadUrl & { uploadKey?: string; sessionId?: string };
-
-export type SurahSummary = {
-  id: string;
-  nameAr: string;
-  nameEn: string;
-  ayahCount: number;
-  revelationPlace: string;
-};
-
-export type AyahRecord = {
-  id: string;
-  surahId: string;
-  ayahNumber: number;
-  textAr: string;
-  textEn?: string;
-  transliteration?: string;
-};
 
 const BFF_BASE_URL = process.env.BFF_BASE_URL ?? 'http://localhost:4000';
 
