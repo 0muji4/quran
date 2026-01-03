@@ -352,6 +352,17 @@ class ResultWriter:
                 {"session_id": session_id, "alignment_object_key": alignment_object_key},
             )
 
+    def update_scoring_job_score(self, session_id: str, score: float) -> None:
+        with self.pg.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE scoring_jobs
+                SET score = %(score)s
+                WHERE session_id = %(session_id)s;
+                """,
+                {"session_id": session_id, "score": score},
+            )
+
 
 class AsrWorker:
     def __init__(self, cfg: WorkerConfig):
@@ -467,6 +478,9 @@ class AsrWorker:
                 alignment_object_key=alignment_key,
             )
             self.writer.update_alignment_reference(session_id, alignment_key)
+
+            # Update scoring_jobs with pronunciation score
+            self.writer.update_scoring_job_score(session_id, pronunciation_score["overall"])
             logger.info(
                 "processed session_id=%s ayah_id=%s words=%d wer=%s alignment=%s",
                 session_id,
