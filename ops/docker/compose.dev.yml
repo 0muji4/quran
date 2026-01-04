@@ -8,6 +8,11 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
@@ -38,8 +43,10 @@ services:
       context: ../..
       dockerfile: apps/backend/Dockerfile
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       REDIS_URL: redis://redis:6379
@@ -52,8 +59,10 @@ services:
       context: ../..
       dockerfile: apps/bff/Dockerfile
     depends_on:
-      - backend
-      - minio
+      backend:
+        condition: service_started
+      minio:
+        condition: service_started
     extra_hosts:
       - "localhost:host-gateway"
     environment:
@@ -80,7 +89,7 @@ services:
       dockerfile: apps/worker/Dockerfile
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       backend:
         condition: service_started
       redis:
