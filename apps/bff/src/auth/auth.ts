@@ -11,7 +11,8 @@ const buildMockSession = (): UserSession => ({
   displayName: 'Mock User'
 });
 
-const decodeJwt = (token: string, secret?: string): UserSession | null => {
+// Exported for testing
+export const decodeJwt = (token: string, secret?: string): UserSession | null => {
   if (!secret) return null;
 
   try {
@@ -27,7 +28,8 @@ const decodeJwt = (token: string, secret?: string): UserSession | null => {
   }
 };
 
-const parseCookies = (header?: string): Record<string, string> => {
+// Exported for testing
+export const parseCookies = (header?: string): Record<string, string> => {
   if (!header) return {};
   return header.split(';').reduce<Record<string, string>>((acc, chunk) => {
     const [rawKey, ...rawValue] = chunk.trim().split('=');
