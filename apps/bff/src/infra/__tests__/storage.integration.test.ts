@@ -130,10 +130,9 @@ describe('storage integration', () => {
         expiresAt
       });
 
-      const result = await pool.query(
-        'SELECT * FROM user_data_objects WHERE session_id = $1',
-        ['session-123']
-      );
+      const result = await pool.query('SELECT * FROM user_data_objects WHERE session_id = $1', [
+        'session-123'
+      ]);
 
       expect(result.rowCount).toBe(1);
       expect(result.rows[0]).toMatchObject({
@@ -163,10 +162,9 @@ describe('storage integration', () => {
         expiresAt: expiresAt2
       });
 
-      const result = await pool.query(
-        'SELECT * FROM user_data_objects WHERE session_id = $1',
-        ['session-789']
-      );
+      const result = await pool.query('SELECT * FROM user_data_objects WHERE session_id = $1', [
+        'session-789'
+      ]);
 
       expect(result.rowCount).toBe(1);
       expect(result.rows[0]).toMatchObject({
@@ -186,10 +184,9 @@ describe('storage integration', () => {
         expiresAt
       });
 
-      const result = await pool.query(
-        'SELECT * FROM user_data_objects WHERE session_id = $1',
-        ['session-null-user']
-      );
+      const result = await pool.query('SELECT * FROM user_data_objects WHERE session_id = $1', [
+        'session-null-user'
+      ]);
 
       expect(result.rowCount).toBe(1);
       expect(result.rows[0].user_id).toBeNull();
@@ -266,7 +263,13 @@ describe('storage integration', () => {
       await pool.query(
         `INSERT INTO user_data_objects (session_id, user_id, audio_key, alignment_object_key, expires_at)
          VALUES ($1, $2, $3, $4, $5)`,
-        ['session-delete', 'user-delete', 'uploads/delete.opus', 'alignments/delete.json', expiresAt]
+        [
+          'session-delete',
+          'user-delete',
+          'uploads/delete.opus',
+          'alignments/delete.json',
+          expiresAt
+        ]
       );
 
       // Upload test objects to MinIO
@@ -290,10 +293,9 @@ describe('storage integration', () => {
       });
 
       // Verify database deletion
-      const dbResult = await pool.query(
-        'SELECT * FROM user_data_objects WHERE session_id = $1',
-        ['session-delete']
-      );
+      const dbResult = await pool.query('SELECT * FROM user_data_objects WHERE session_id = $1', [
+        'session-delete'
+      ]);
       expect(dbResult.rowCount).toBe(0);
 
       // Verify MinIO object deletion
@@ -364,10 +366,9 @@ describe('storage integration', () => {
       });
 
       // Verify database deletion
-      const dbResult = await pool.query(
-        'SELECT * FROM user_data_objects WHERE session_id = $1',
-        ['session-missing-object']
-      );
+      const dbResult = await pool.query('SELECT * FROM user_data_objects WHERE session_id = $1', [
+        'session-missing-object'
+      ]);
       expect(dbResult.rowCount).toBe(0);
     });
   });
