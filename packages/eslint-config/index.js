@@ -29,9 +29,9 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      'react': reactPlugin,
+      react: reactPlugin,
       'react-hooks': reactHooksPlugin,
-      'prettier': prettierPlugin
+      prettier: prettierPlugin
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
