@@ -60,6 +60,7 @@ type RawTimestamp = {
   probability?: number | null;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const buildPronunciationFeedback = (
   wordAlignments: RawAlignment[],
   wordTimestamps: RawTimestamp[],
@@ -113,6 +114,7 @@ const buildPronunciationFeedback = (
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createReferenceAudioUrl = async (
   referenceAudioKey: string | null
 ): Promise<string | null> => {

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
+import jwt from 'jsonwebtoken';
 import { restRouter } from '../rest';
 import { authMiddleware } from '../../auth';
 
