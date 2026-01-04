@@ -11,6 +11,14 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "test:go": "go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "build": "pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
   }
 }
