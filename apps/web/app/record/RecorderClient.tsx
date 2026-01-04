@@ -305,7 +305,7 @@ export function RecorderClient() {
       setError(formatError(recordError));
       setIsRecording(false);
     }
-  }, [resetJobState, uploadRecording]);
+  }, [ayahNumber, recordingMimeType, resetJobState, surahId, uploadRecording]);
 
   const disabled = isRecording || isUploading;
   const hasSelection = Boolean(surahId && ayahNumber);
