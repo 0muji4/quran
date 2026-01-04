@@ -4,10 +4,5 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts']
-  },
-  resolve: {
-    alias: {
-      'server-only': new URL('./test/mocks/server-only.ts', import.meta.url).pathname
-    }
   }
 });
