@@ -1,1 +1,6 @@
-module.exports = require('@quran-project/eslint-config/prettier.config.cjs');
+module.exports = {
+  singleQuote: true,
+  semi: true,
+  trailingComma: 'none',
+  printWidth: 100
+};
