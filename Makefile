@@ -1,18 +1,53 @@
-.PHONY: install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test
+.PHONY: help install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci
 
-install:
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Available targets:'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+install: ## Install all dependencies
 	pnpm install
 
-lint:
+build: ## Build all packages
+	pnpm build
+
+lint: ## Run linters for all packages
 	pnpm lint
 
-test:
+format-check: ## Check code formatting
+	pnpm format:check
+
+format: ## Format all code
+	pnpm --filter @quran-project/eslint-config exec prettier --write .
+
+test: ## Run all JS/TS tests
 	pnpm test
 	$(MAKE) worker-py-test
 
-go-test:
-	@echo "Running Go unit tests..."
-	@go test -short ./...
+go-test: ## Run Go tests for all modules
+	@echo "Running Go tests..."
+	@go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
+
+go-fmt: ## Format Go code
+	@echo "Formatting Go code..."
+	@gofmt -w $$(find ./apps/backend ./apps/worker/go ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")
+	@echo "✓ Go code formatted"
+
+go-fmt-check: ## Check Go code formatting
+	@echo "Checking Go code formatting..."
+	@unformatted=$$(gofmt -l $$(find ./apps/backend ./apps/worker/go ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")); \
+	if [ -n "$$unformatted" ]; then \
+		echo "gofmt needed on:"; \
+		echo "$$unformatted"; \
+		exit 1; \
+	else \
+		echo "✓ All Go files are properly formatted"; \
+	fi
+
+ci: format-check lint test build go-fmt-check go-test ## Run all CI checks locally
+	@echo ""
+	@echo "✓ All CI checks passed!"
 
 bff-test:
 	@echo "Running BFF tests..."
