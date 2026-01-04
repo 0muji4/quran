@@ -3,11 +3,6 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 const config: CodegenConfig = {
   schema: '../../schemas/graphql/schema.graphql',
   documents: ['../../apps/**/*.{ts,tsx}'],
-  hooks: {
-    afterOneFileWrite: [
-      'pnpm --filter @quran-project/eslint-config exec prettier --write ../shared-ts/src/graphql/types.generated.ts'
-    ]
-  },
   generates: {
     'src/graphql/types.generated.ts': {
       plugins: ['typescript', 'typescript-resolvers'],
