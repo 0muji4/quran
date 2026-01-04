@@ -8,5 +8,7 @@ export const summarizeSurah = (surah: SurahSummary): string =>
 export const describeUploadTarget = (upload: SignedUploadUrl): string =>
   `PUT ${upload.url} (expires ${upload.expiresAt})`;
 
-export const extractSegmentScores = (result: ScoringResult): Array<{ label: string; score: number }> =>
+export const extractSegmentScores = (
+  result: ScoringResult
+): Array<{ label: string; score: number }> =>
   result.segments.map((segment) => ({ label: segment.label, score: segment.score }));
