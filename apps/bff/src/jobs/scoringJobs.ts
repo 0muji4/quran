@@ -7,10 +7,10 @@ import {
   recordUploadKey
 } from '../infra';
 
-const secondsFromNow = (seconds: number): string =>
-  new Date(Date.now() + seconds * 1000).toISOString();
+const secondsFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
 const uploadPrefix = (): string => process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';
-const uploadTtlSeconds = (): number => Number(process.env.SIGNED_URL_TTL_SECONDS ?? '900');
+const uploadTtlSeconds = (): number =>
+  Number(process.env.SIGNED_URL_TTL_SECONDS ?? '900');
 
 const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8080';
 const uploadBaseUrl = process.env.UPLOAD_BASE_URL ?? 'https://uploads.local';
@@ -66,20 +66,13 @@ const buildPronunciationFeedback = (
   wer: number | null,
   referenceAudioUrl: string | null
 ): PronunciationFeedback | null => {
-  if (
-    wordAlignments.length === 0 &&
-    wordTimestamps.length === 0 &&
-    wer === null &&
-    !referenceAudioUrl
-  ) {
+  if (wordAlignments.length === 0 && wordTimestamps.length === 0 && wer === null && !referenceAudioUrl) {
     return null;
   }
 
   const refCount = wordAlignments.filter((alignment) => alignment.ref_word).length;
   const matchCount = wordAlignments.filter((alignment) => alignment.op === 'match').length;
-  const substituteCount = wordAlignments.filter(
-    (alignment) => alignment.op === 'substitute'
-  ).length;
+  const substituteCount = wordAlignments.filter((alignment) => alignment.op === 'substitute').length;
   const deleteCount = wordAlignments.filter((alignment) => alignment.op === 'delete').length;
 
   const accuracy =
@@ -113,9 +106,7 @@ const buildPronunciationFeedback = (
   };
 };
 
-const createReferenceAudioUrl = async (
-  referenceAudioKey: string | null
-): Promise<string | null> => {
+const createReferenceAudioUrl = async (referenceAudioKey: string | null): Promise<string | null> => {
   if (!referenceAudioKey) return null;
   const client = getMinioClientForPresignedUrls();
   const bucket = process.env.MINIO_BUCKET;
@@ -217,7 +208,7 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
         referenceAudioUrl: null,
         wordAlignments: [],
         transcript: row.transcript as string,
-        wer: row.wer !== null ? parseFloat(row.wer) : null
+        wer: row.wer !== null ? parseFloat(row.wer) : null,
       }
     : null;
 
