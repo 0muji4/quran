@@ -58,26 +58,35 @@ describe('RecorderClient', () => {
     it('renders surah and ayah dropdowns', async () => {
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/surah/i)).toBeInTheDocument();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(screen.getByLabelText(/surah/i)).toBeInTheDocument();
+        },
+        { timeout: 10000 }
+      );
       expect(screen.getByLabelText(/ayah/i)).toBeInTheDocument();
     });
 
     it('calls fetchSurahs on mount', async () => {
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(actions.fetchSurahs).toHaveBeenCalled();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(actions.fetchSurahs).toHaveBeenCalled();
+        },
+        { timeout: 10000 }
+      );
     });
 
     it('populates surah dropdown with fetched data', async () => {
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(screen.getByText(/Al-Fatihah/i)).toBeInTheDocument();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/Al-Fatihah/i)).toBeInTheDocument();
+        },
+        { timeout: 10000 }
+      );
     });
 
     it('handles error when fetchSurahs fails', async () => {
@@ -85,9 +94,12 @@ describe('RecorderClient', () => {
 
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(screen.getByText(/Network error/i)).toBeInTheDocument();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/Network error/i)).toBeInTheDocument();
+        },
+        { timeout: 10000 }
+      );
     });
   });
 
@@ -95,17 +107,23 @@ describe('RecorderClient', () => {
     it('displays selected ayah details', async () => {
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(actions.fetchSurahAyahs).toHaveBeenCalled();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(actions.fetchSurahAyahs).toHaveBeenCalled();
+        },
+        { timeout: 10000 }
+      );
 
       // Wait for ayah selection to load
-      await waitFor(() => {
-        const arabicText = screen.queryByText(/بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ/i);
-        if (arabicText) {
-          expect(arabicText).toBeInTheDocument();
-        }
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          const arabicText = screen.queryByText(/بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ/i);
+          if (arabicText) {
+            expect(arabicText).toBeInTheDocument();
+          }
+        },
+        { timeout: 10000 }
+      );
     });
   });
 
@@ -116,26 +134,35 @@ describe('RecorderClient', () => {
 
       render(<RecorderClient />);
 
-      await waitFor(() => {
-        expect(actions.fetchSurahs).toHaveBeenCalled();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(actions.fetchSurahs).toHaveBeenCalled();
+        },
+        { timeout: 10000 }
+      );
 
       // Wait for record button
-      await waitFor(() => {
-        const recordButton = screen.queryByRole('button', { name: /start recording/i });
-        if (recordButton && !recordButton.hasAttribute('disabled')) {
-          return true;
-        }
-        throw new Error('Button not ready');
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          const recordButton = screen.queryByRole('button', { name: /start recording/i });
+          if (recordButton && !recordButton.hasAttribute('disabled')) {
+            return true;
+          }
+          throw new Error('Button not ready');
+        },
+        { timeout: 10000 }
+      );
 
       const user = userEvent.setup();
       const recordButton = screen.getByRole('button', { name: /start recording/i });
       await user.click(recordButton);
 
-      await waitFor(() => {
-        expect(screen.getByText(/MediaRecorder is not supported/i)).toBeInTheDocument();
-      }, { timeout: 10000 });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/MediaRecorder is not supported/i)).toBeInTheDocument();
+        },
+        { timeout: 10000 }
+      );
     });
   });
 });
