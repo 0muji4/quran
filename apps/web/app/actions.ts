@@ -12,6 +12,7 @@ const jsonHeaders = {
   'Content-Type': 'application/json'
 };
 
+// eslint-disable-next-line no-undef
 const withNoStore: RequestInit = {
   cache: 'no-store',
   headers: jsonHeaders
