@@ -13,10 +13,15 @@ import { authMiddleware, buildContext, type AuthedRequest } from '../auth';
 import { resolvers } from '../graphql';
 import { rscRouter, restRouter } from '../rest';
 
-const typeDefs = readFileSync(
-  path.resolve(__dirname, '../../..', 'schemas/graphql/schema.graphql'),
-  'utf8'
-);
+// Navigate up from bff app to project root for schema file
+// In dev: __dirname is apps/bff/dist/server (go up 4 levels)
+// In test: __dirname is apps/bff/src/server (go up 4 levels)
+// But process.cwd() might be apps/bff, so go up 2 from there
+const projectRoot = process.cwd().endsWith('apps/bff')
+  ? path.resolve(process.cwd(), '../..')
+  : process.cwd();
+const schemaPath = path.resolve(projectRoot, 'schemas/graphql/schema.graphql');
+const typeDefs = readFileSync(schemaPath, 'utf8');
 
 export const schema = makeExecutableSchema({ typeDefs, resolvers });
 

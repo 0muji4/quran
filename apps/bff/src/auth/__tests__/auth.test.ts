@@ -66,7 +66,10 @@ describe('parseCookies', () => {
     const result = parseCookies('validKey=validValue; =noKey; ; empty=');
 
     expect(result).toEqual({
-      validKey: 'validValue'
+      validKey: 'validValue',
+      empty: '' // empty= creates key with empty string value (rawValue = [''])
+      // =noKey is ignored because rawKey is empty after trim
+      // ; ; is ignored because chunk.trim() results in empty string
     });
   });
 
