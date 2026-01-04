@@ -1,5 +1,11 @@
 import { vi } from 'vitest';
 
+type RecordingState = 'inactive' | 'recording' | 'paused';
+
+type MediaRecorderOptions = {
+  mimeType?: string;
+};
+
 export class MockMediaRecorder {
   stream: MediaStream;
   mimeType: string;
@@ -56,30 +62,34 @@ export const mockGetUserMedia = vi.fn();
 
 export function setupMediaRecorderMock() {
   // Mock MediaRecorder
-  global.MediaRecorder = MockMediaRecorder as any;
+  global.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder;
 
   // Mock navigator.mediaDevices.getUserMedia
-  global.navigator = {
-    ...global.navigator,
-    mediaDevices: {
-      getUserMedia: mockGetUserMedia.mockResolvedValue({
-        getTracks: () => [
-          {
-            stop: vi.fn(),
-            kind: 'audio',
-            enabled: true
-          }
-        ],
-        getAudioTracks: () => [],
-        getVideoTracks: () => [],
-        addTrack: vi.fn(),
-        removeTrack: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn()
-      } as any)
-    } as any
-  } as any;
+  const mediaStream = {
+    getTracks: () => [
+      {
+        stop: vi.fn(),
+        kind: 'audio',
+        enabled: true
+      }
+    ],
+    getAudioTracks: () => [],
+    getVideoTracks: () => [],
+    addTrack: vi.fn(),
+    removeTrack: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  } as MediaStream;
+
+  const mediaDevices = {
+    getUserMedia: mockGetUserMedia.mockResolvedValue(mediaStream)
+  } as MediaDevices;
+
+  Object.defineProperty(global.navigator, 'mediaDevices', {
+    value: mediaDevices,
+    configurable: true
+  });
 
   // Mock URL.createObjectURL
   global.URL.createObjectURL = vi.fn(() => 'blob:mock-audio-url');

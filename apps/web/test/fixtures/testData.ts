@@ -75,7 +75,7 @@ export const mockSegments: ScoreSegment[] = [
   }
 ];
 
-export const mockSignedUploadUrl = {
+export const mockSignedUploadUrl: SignedUploadUrl = {
   url: 'https://storage.example.com/upload',
   uploadKey: 'uploads/test-upload-key.webm',
   sessionId: 'session-123',
