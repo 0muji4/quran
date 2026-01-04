@@ -23,8 +23,10 @@ const mockSurahs = vi.hoisted(() => [
   }
 ]);
 
-vi.mock('../infra', () => ({
-  fetchSurahsFromBackend: vi.fn().mockResolvedValue(mockSurahs),
+const fetchSurahsFromBackend = vi.fn().mockResolvedValue(mockSurahs);
+
+vi.mock('../../infra/backendClient', () => ({
+  fetchSurahsFromBackend,
   fetchSurahFromBackend: vi.fn(),
   fetchAyahFromBackend: vi.fn()
 }));
@@ -64,9 +66,8 @@ describe('GraphQL helix integration', () => {
   });
 
   it('returns surahs data from the resolver', async () => {
-    // Get mock reference before executing query
-    const { fetchSurahsFromBackend } = await import('../infra');
-    vi.mocked(fetchSurahsFromBackend).mockClear(); // Clear any previous calls
+    // Clear any previous calls
+    fetchSurahsFromBackend.mockClear();
 
     const queryText =
       'query SurahList($limit: Int, $offset: Int) { surahs(limit: $limit, offset: $offset) { id nameEn nameAr ayahCount revelationPlace metadata } }';
