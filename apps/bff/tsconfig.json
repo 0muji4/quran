@@ -1,9 +1,11 @@
 {
-  "extends": "@quran-project/ts-config",
+  "extends": "../../packages/ts-config/tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts"]
 }

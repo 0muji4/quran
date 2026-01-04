@@ -39,10 +39,11 @@ const resource = new Resource({
 const sdk = new NodeSDK({
   resource,
   traceExporter,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metricReader: new PeriodicExportingMetricReader({
     exporter: metricExporter,
     exportIntervalMillis: 10_000
-  })
+  }) as any
 });
 
 sdk.start();
