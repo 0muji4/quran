@@ -21,6 +21,7 @@ export const setupTestDB = async (): Promise<{ pool: Pool; cleanup: () => Promis
     await adminPool.query(`CREATE DATABASE ${dbName}`);
   } catch (error) {
     console.error('Failed to create test database:', error);
+    await adminPool.end();
     throw error;
   }
 
