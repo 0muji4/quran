@@ -1,4 +1,4 @@
-.PHONY: install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
+.PHONY: install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test
 
 install:
 	pnpm install
@@ -8,6 +8,7 @@ lint:
 
 test:
 	pnpm test
+	$(MAKE) worker-py-test
 
 go-test:
 	@echo "Running Go unit tests..."
@@ -20,6 +21,17 @@ bff-test:
 bff-test-coverage:
 	@echo "Running BFF tests with coverage..."
 	@pnpm --filter @quran-project/bff test --coverage
+
+worker-py-test:
+	@echo "Running Python worker tests..."
+	@if [ ! -d "apps/worker/python/.venv" ]; then \
+		echo "Creating Python virtual environment..."; \
+		python3 -m venv apps/worker/python/.venv; \
+	fi
+	@echo "Installing dependencies into virtual environment..."
+	@apps/worker/python/.venv/bin/python -m pip install -r apps/worker/python/requirements-dev.txt
+	@echo "Running tests using virtual environment..."
+	@DISABLE_TELEMETRY=true apps/worker/python/.venv/bin/python -m pytest apps/worker/python/tests/
 
 go-test-integration:
 	@echo "Running Go integration tests..."

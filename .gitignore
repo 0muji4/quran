@@ -41,3 +41,6 @@ coverage.html
 
 # OS
 Thumbs.db
+
+# Worker
+.venv
