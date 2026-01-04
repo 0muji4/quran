@@ -4,7 +4,9 @@ const config: CodegenConfig = {
   schema: '../../schemas/graphql/schema.graphql',
   documents: ['../../apps/**/*.{ts,tsx}'],
   hooks: {
-    afterOneFileWrite: ['prettier --write src/graphql/types.generated.ts']
+    afterOneFileWrite: [
+      'pnpm --filter @quran-project/eslint-config exec prettier --write ../shared-ts/src/graphql/types.generated.ts'
+    ]
   },
   generates: {
     'src/graphql/types.generated.ts': {
