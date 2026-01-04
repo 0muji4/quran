@@ -23,7 +23,7 @@ vi.mock('../../actions', () => ({
 
 // Mock SegmentHighlights component
 vi.mock('@quran-project/ui', () => ({
-  SegmentHighlights: ({ segments }: any) => (
+  SegmentHighlights: ({ segments }: { segments: Array<unknown> }) => (
     <div data-testid="segment-highlights">
       {segments.length > 0 && `${segments.length} segments`}
     </div>
@@ -129,7 +129,7 @@ describe('RecorderClient', () => {
 
   describe('Recording Flow', () => {
     it('shows error when MediaRecorder is not available', async () => {
-      // @ts-ignore - intentionally set to undefined
+      // @ts-expect-error - intentionally set to undefined
       global.MediaRecorder = undefined;
 
       render(<RecorderClient />);
