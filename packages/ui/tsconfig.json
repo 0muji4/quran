@@ -1,5 +1,5 @@
 {
-  "extends": "@quran-project/ts-config",
+  "extends": "../ts-config/tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",

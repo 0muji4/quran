@@ -3,7 +3,10 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import type { GraphQLContext, UserSession } from '@quran-project/shared-ts';
 
-export type AuthedRequest = Request & { session?: UserSession | null };
+export type AuthedRequest = Request & {
+  session?: UserSession | null;
+  signal?: AbortSignal;
+};
 
 const buildMockSession = (): UserSession => ({
   id: 'mock-user',

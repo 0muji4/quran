@@ -72,14 +72,16 @@ export const createApp = () => {
       result.headers.forEach(({ name, value }) => res.setHeader(name, value));
       res.status(result.status).json(result.payload);
     } else if (result.type === 'MULTIPART_RESPONSE') {
-      res.writeHead(result.status ?? 200, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const multipartResult = result as any;
+      res.writeHead(multipartResult.status ?? 200, {
         Connection: 'keep-alive',
         'Content-Type': 'multipart/mixed; boundary="-"',
         'Transfer-Encoding': 'chunked',
-        ...Object.fromEntries(result.headers)
+        ...Object.fromEntries(multipartResult.headers)
       });
 
-      for await (const chunk of result.subscriptions) {
+      for await (const chunk of multipartResult.subscriptions) {
         const payload = `---\nContent-Type: application/json\n\n${JSON.stringify(chunk)}\n`;
         res.write(payload);
       }
@@ -87,14 +89,16 @@ export const createApp = () => {
       res.write('-----\n');
       res.end();
     } else {
-      res.writeHead(result.status ?? 200, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pushResult = result as any;
+      res.writeHead(pushResult.status ?? 200, {
         Connection: 'keep-alive',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        ...Object.fromEntries(result.headers)
+        ...Object.fromEntries(pushResult.headers)
       });
 
-      for await (const chunk of result.subscribe()) {
+      for await (const chunk of pushResult.subscribe(req.signal)) {
         res.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
 

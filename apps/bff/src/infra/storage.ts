@@ -121,7 +121,7 @@ export const findSessionIdForUploadKey = async (input: {
       `,
       [input.audioKey, input.userId]
     );
-    return result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
+    return result.rowCount && result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
   }
 
   const result = await connection.query(
@@ -132,7 +132,7 @@ export const findSessionIdForUploadKey = async (input: {
     `,
     [input.audioKey]
   );
-  return result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
+  return result.rowCount && result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
 };
 
 export const deleteUserData = async (input: {
