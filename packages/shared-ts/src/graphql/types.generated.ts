@@ -11,8 +11,12 @@ export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends '$fragmentName' | '__typename' ? T[P] : never };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = {
+  [_ in K]?: never;
+};
+export type Incremental<T> =
+  | T
+  | { [P in keyof T]?: P extends '$fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values. */
 export type Scalars = {
   ID: string;
@@ -185,7 +189,13 @@ export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (
   info: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
 
-export interface SubscriptionSubscriberObject<TResult, TKey extends string, TParent, TContext, TArgs> {
+export interface SubscriptionSubscriberObject<
+  TResult,
+  TKey extends string,
+  TParent,
+  TContext,
+  TArgs
+> {
   subscribe: SubscriptionSubscribeFn<{ [key in TKey]: TResult }, TParent, TContext, TArgs>;
   resolve?: SubscriptionResolveFn<TResult, { [key in TKey]: TResult }, TContext, TArgs>;
 }
@@ -199,9 +209,13 @@ export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, 
   | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
   | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
 
-export type SubscriptionResolver<TResult, TKey extends string, TParent = {}, TContext = {}, TArgs = {}> = (
-  ...args: any
-) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
+export type SubscriptionResolver<
+  TResult,
+  TKey extends string,
+  TParent = {},
+  TContext = {},
+  TArgs = {}
+> = (...args: any) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
 
 export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (
   parent: TParent,
@@ -271,7 +285,10 @@ export type ResolversParentTypes = {
   WordAlignment: WordAlignment;
 };
 
-export type AyahResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Ayah'] = ResolversParentTypes['Ayah']> = {
+export type AyahResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['Ayah'] = ResolversParentTypes['Ayah']
+> = {
   ayahNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   metadata?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
@@ -282,39 +299,82 @@ export type AyahResolvers<ContextType = GraphQLContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
+export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<
+  ResolversTypes['DateTime'],
+  any
+> {
   name: 'DateTime';
 }
 
-export interface JSONObjectScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['JSONObject'], any> {
+export interface JSONObjectScalarConfig extends GraphQLScalarTypeConfig<
+  ResolversTypes['JSONObject'],
+  any
+> {
   name: 'JSONObject';
 }
 
-export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  createScoringJob?: Resolver<ResolversTypes['ScoringResult'], ParentType, ContextType, RequireFields<MutationCreateScoringJobArgs, 'input'>>;
-  getSignedUploadUrl?: Resolver<ResolversTypes['SignedUploadUrl'], ParentType, ContextType, RequireFields<MutationGetSignedUploadUrlArgs, 'input'>>;
+export type MutationResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']
+> = {
+  createScoringJob?: Resolver<
+    ResolversTypes['ScoringResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateScoringJobArgs, 'input'>
+  >;
+  getSignedUploadUrl?: Resolver<
+    ResolversTypes['SignedUploadUrl'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationGetSignedUploadUrlArgs, 'input'>
+  >;
 };
 
-export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  ayah?: Resolver<Maybe<ResolversTypes['Ayah']>, ParentType, ContextType, RequireFields<QueryAyahArgs, 'ayahNumber' | 'surahId'>>;
+export type QueryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']
+> = {
+  ayah?: Resolver<
+    Maybe<ResolversTypes['Ayah']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryAyahArgs, 'ayahNumber' | 'surahId'>
+  >;
   scoringJob?: Resolver<
     Maybe<ResolversTypes['ScoringResult']>,
     ParentType,
     ContextType,
     RequireFields<QueryScoringJobArgs, 'jobId'>
   >;
-  surah?: Resolver<Maybe<ResolversTypes['Surah']>, ParentType, ContextType, RequireFields<QuerySurahArgs, 'id'>>;
-  surahs?: Resolver<Array<ResolversTypes['Surah']>, ParentType, ContextType, Partial<QuerySurahsArgs>>;
+  surah?: Resolver<
+    Maybe<ResolversTypes['Surah']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySurahArgs, 'id'>
+  >;
+  surahs?: Resolver<
+    Array<ResolversTypes['Surah']>,
+    ParentType,
+    ContextType,
+    Partial<QuerySurahsArgs>
+  >;
 };
 
-export type ScoreSegmentResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ScoreSegment'] = ResolversParentTypes['ScoreSegment']> = {
+export type ScoreSegmentResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['ScoreSegment'] = ResolversParentTypes['ScoreSegment']
+> = {
   label?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   metrics?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   score?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ScoringResultResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ScoringResult'] = ResolversParentTypes['ScoringResult']> = {
+export type ScoringResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['ScoringResult'] = ResolversParentTypes['ScoringResult']
+> = {
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   evaluation?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   feedback?: Resolver<Maybe<ResolversTypes['PronunciationFeedback']>, ParentType, ContextType>;
@@ -327,7 +387,11 @@ export type ScoringResultResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type PronunciationFeedbackResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['PronunciationFeedback'] = ResolversParentTypes['PronunciationFeedback']> = {
+export type PronunciationFeedbackResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['PronunciationFeedback'] =
+    ResolversParentTypes['PronunciationFeedback']
+> = {
   accuracy?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   completeness?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   fluency?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -339,21 +403,31 @@ export type PronunciationFeedbackResolvers<ContextType = GraphQLContext, ParentT
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type WordAlignmentResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['WordAlignment'] = ResolversParentTypes['WordAlignment']> = {
+export type WordAlignmentResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['WordAlignment'] = ResolversParentTypes['WordAlignment']
+> = {
   hypWord?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   op?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   refWord?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type SignedUploadUrlResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SignedUploadUrl'] = ResolversParentTypes['SignedUploadUrl']> = {
+export type SignedUploadUrlResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['SignedUploadUrl'] =
+    ResolversParentTypes['SignedUploadUrl']
+> = {
   expiresAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   fields?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type SurahResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Surah'] = ResolversParentTypes['Surah']> = {
+export type SurahResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends ResolversParentTypes['Surah'] = ResolversParentTypes['Surah']
+> = {
   ayahCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   ayahs?: Resolver<Array<ResolversTypes['Ayah']>, ParentType, ContextType, Partial<SurahAyahsArgs>>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
