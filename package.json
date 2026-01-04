@@ -7,6 +7,7 @@
     "format:check": "pnpm -r --if-present format:check",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
+    "test:go": "go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...",
     "build": "pnpm -r --if-present build"
   }
 }
