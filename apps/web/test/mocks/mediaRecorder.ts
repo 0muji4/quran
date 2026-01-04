@@ -80,11 +80,11 @@ export function setupMediaRecorderMock() {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn()
-  } as MediaStream;
+  } as unknown as MediaStream;
 
   const mediaDevices = {
     getUserMedia: mockGetUserMedia.mockResolvedValue(mediaStream)
-  } as MediaDevices;
+  } as unknown as MediaDevices;
 
   Object.defineProperty(global.navigator, 'mediaDevices', {
     value: mediaDevices,

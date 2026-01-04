@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      globals:
+        specifier: ^15.15.0
+        version: 15.15.0
 
   apps/bff:
     dependencies:
