@@ -29,7 +29,7 @@ func Connect(ctx context.Context, cfg Config) (*sql.DB, error) {
 
 	driver := cfg.DriverName
 	if driver == "" {
-		driver = "postgres"
+		driver = "pgx"
 	}
 
 	conn, err := sql.Open(driver, cfg.DSN)
