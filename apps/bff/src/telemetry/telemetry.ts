@@ -36,14 +36,16 @@ const resource = new Resource({
   [SEMRESATTRS_SERVICE_VERSION]: serviceVersion
 });
 
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: metricExporter,
+  exportIntervalMillis: 10_000
+});
+
 const sdk = new NodeSDK({
   resource,
   traceExporter,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: metricExporter,
-    exportIntervalMillis: 10_000
-  }) as any
+  metricReader: metricReader as any
 });
 
 sdk.start();
