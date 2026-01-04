@@ -11,7 +11,30 @@ import {
 } from '../storage';
 import { setupTestDB, setupTestMinIO } from '../../__tests__/setup';
 
-describe('storage integration', () => {
+// Check if PostgreSQL is available
+const isPostgresAvailable = async (): Promise<boolean> => {
+  const testPool = new Pool({
+    host: process.env.TEST_POSTGRES_HOST || 'localhost',
+    port: parseInt(process.env.TEST_POSTGRES_PORT || '5432'),
+    user: process.env.TEST_POSTGRES_USER || 'app',
+    password: process.env.TEST_POSTGRES_PASSWORD || 'app',
+    database: 'postgres',
+    connectionTimeoutMillis: 2000
+  });
+
+  try {
+    await testPool.query('SELECT 1');
+    await testPool.end();
+    return true;
+  } catch {
+    await testPool.end();
+    return false;
+  }
+};
+
+const postgresAvailable = await isPostgresAvailable();
+
+describe.skipIf(!postgresAvailable)('storage integration', () => {
   let pool: Pool;
   let minioClient: MinioClient;
   let bucket: string;
