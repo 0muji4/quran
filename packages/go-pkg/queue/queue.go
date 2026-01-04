@@ -79,8 +79,15 @@ func newRedisConn(u *url.URL, useTLS bool) (*redisConn, error) {
 	}
 
 	if pwd, ok := u.User.Password(); ok && pwd != "" {
-		if _, err := rc.do(context.Background(), "AUTH", u.User.Username(), pwd); err != nil {
-			return nil, fmt.Errorf("queue: auth: %w", err)
+		username := u.User.Username()
+		if username != "" {
+			if _, err := rc.do(context.Background(), "AUTH", username, pwd); err != nil {
+				return nil, fmt.Errorf("queue: auth: %w", err)
+			}
+		} else {
+			if _, err := rc.do(context.Background(), "AUTH", pwd); err != nil {
+				return nil, fmt.Errorf("queue: auth: %w", err)
+			}
 		}
 	}
 

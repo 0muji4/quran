@@ -1,4 +1,4 @@
-.PHONY: install lint test go-test sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
+.PHONY: install lint test go-test go-test-integration go-test-all sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
 
 install:
 	pnpm install
@@ -10,7 +10,18 @@ test:
 	pnpm test
 
 go-test:
-	go test ./...
+	@echo "Running Go unit tests..."
+	@go test -short ./...
+
+go-test-integration:
+	@echo "Running Go integration tests..."
+	@echo "This will start Docker containers for PostgreSQL and Redis"
+	@go test -tags=integration -v ./packages/go-pkg/db/... ./packages/go-pkg/queue/... ./apps/backend/internal/repo/...
+
+go-test-all:
+	@echo "Running all Go tests (unit + integration)..."
+	@go test -short ./...
+	@go test -tags=integration -v ./packages/go-pkg/db/... ./packages/go-pkg/queue/... ./apps/backend/internal/repo/...
 
 sql-migrate-dry-run:
 	if [ -f dbconfig.yml ]; then \
