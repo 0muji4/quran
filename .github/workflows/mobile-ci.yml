@@ -2,7 +2,7 @@ name: Mobile CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'apps/android/**'
       - 'apps/ios/**'
@@ -10,7 +10,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'apps/android/**'
       - 'apps/ios/**'
