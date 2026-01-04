@@ -80,8 +80,8 @@ func BuildAyah(opts ...AyahOption) domain.Ayah {
 		TextEN:          "In the name of Allah, the Entirely Merciful, the Especially Merciful",
 		Transliteration: "Bismillah ir-Rahman ir-Raheem",
 		Metadata: map[string]any{
-			"juz":   1,
-			"page":  1,
+			"juz":    1,
+			"page":   1,
 			"manzil": 1,
 		},
 		CreatedAt: time.Now().UTC(),

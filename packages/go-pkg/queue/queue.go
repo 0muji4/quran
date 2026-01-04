@@ -21,12 +21,12 @@ var errNil = errors.New("queue: nil reply")
 // A consumer (Go or Python) will download the audio from object storage,
 // run ASR, align with the expected Arabic text, and persist the results.
 type Job struct {
-	SessionID      string `json:"session_id"`
-	AudioKey       string `json:"audio_key"`
-	AyahID         int64  `json:"ayah_id"`
-	ExpectedTextAR string `json:"expected_text_ar"`
+	SessionID      string    `json:"session_id"`
+	AudioKey       string    `json:"audio_key"`
+	AyahID         int64     `json:"ayah_id"`
+	ExpectedTextAR string    `json:"expected_text_ar"`
 	EnqueuedAt     time.Time `json:"enqueued_at"`
-	AuthToken      string `json:"auth_token,omitempty"`
+	AuthToken      string    `json:"auth_token,omitempty"`
 }
 
 // Config defines how the queue client connects to Redis and which list to use.

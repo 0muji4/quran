@@ -25,8 +25,8 @@ func TestDirectoryLoader_List(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	migrations := map[string]string{
-		"001_create_users.sql":  "CREATE TABLE users (id SERIAL PRIMARY KEY);",
-		"002_create_posts.sql":  "CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INT);",
+		"001_create_users.sql":    "CREATE TABLE users (id SERIAL PRIMARY KEY);",
+		"002_create_posts.sql":    "CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INT);",
 		"003_create_comments.sql": "CREATE TABLE comments (id SERIAL PRIMARY KEY, post_id INT);",
 	}
 
