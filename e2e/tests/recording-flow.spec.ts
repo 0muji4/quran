@@ -18,7 +18,7 @@ test.describe('Recording Flow', () => {
     await recordPage.goto();
 
     // Select Al-Fatihah, Ayah 1
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     // Start recording
@@ -52,7 +52,7 @@ test.describe('Recording Flow', () => {
     await recordPage.goto();
 
     // Select surah and ayah
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     // Verify selects are enabled initially
@@ -75,7 +75,7 @@ test.describe('Recording Flow', () => {
     await recordPage.goto();
 
     // Select and record
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(2);
 
     await recordPage.startRecording();
@@ -95,7 +95,7 @@ test.describe('Recording Flow', () => {
     await recordPage.goto();
 
     // Select and record
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     await recordPage.startRecording();
@@ -121,7 +121,7 @@ test.describe('Recording Flow', () => {
     await recordPage.goto();
 
     // Select first surah
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
 
     // Verify ayah options populated
     const ayahOptions = await recordPage.ayahSelect.locator('option').count();
