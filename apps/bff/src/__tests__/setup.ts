@@ -99,10 +99,7 @@ export const setupTestMinIO = (): {
 };
 
 // JWT token generation for testing
-export const generateTestToken = (
-  session: Partial<UserSession>,
-  secret: string = 'test-secret'
-): string => {
+export const generateTestToken = (session: Partial<UserSession>, secret: string = 'test-secret'): string => {
   const payload = {
     sub: session.id || 'test-user',
     email: session.email,
@@ -113,5 +110,4 @@ export const generateTestToken = (
 };
 
 // Wait for async operations
-export const waitFor = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const waitFor = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));

@@ -1,6 +1,10 @@
 import { GraphQLScalarType, Kind, valueFromASTUntyped } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
-import { fetchSurahsFromBackend, fetchSurahFromBackend, fetchAyahFromBackend } from '../infra';
+import {
+  fetchSurahsFromBackend,
+  fetchSurahFromBackend,
+  fetchAyahFromBackend
+} from '../infra';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
 
 const JSONObjectScalar = new GraphQLScalarType({
