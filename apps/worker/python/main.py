@@ -37,6 +37,9 @@ MAX_PROMPT_WORDS = 8
 
 
 def init_telemetry() -> None:
+    if os.getenv("DISABLE_TELEMETRY"):
+        logger.info("Telemetry is disabled.")
+        return
     service_name = os.getenv("OTEL_SERVICE_NAME", "quran-worker")
     service_version = os.getenv("SERVICE_VERSION", "0.0.0")
     endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
