@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "packageManager": "pnpm@8.15.9",
+  "dependencies": {
+    "globals": "^15.15.0"
+  },
   "scripts": {
     "format:check": "pnpm -r --if-present format:check",
     "lint": "pnpm -r lint",

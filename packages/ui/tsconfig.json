@@ -7,7 +7,9 @@
     "declarationDir": "dist",
     "outDir": "dist",
     "lib": ["dom", "dom.iterable", "es2020"],
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "types": []
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/__tests__/**/*"]
 }

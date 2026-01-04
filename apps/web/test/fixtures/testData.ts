@@ -1,4 +1,5 @@
-import type { ScoreSegment, ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
+import { ScoringStatus } from '@quran-project/shared-ts';
+import type { ScoreSegment, ScoringResult } from '@quran-project/shared-ts';
 import type { AyahRecord, SurahSummary } from '../../app/lib/types';
 
 export const mockSurahs: SurahSummary[] = [
@@ -88,7 +89,7 @@ export const mockSignedUploadUrl = {
 
 export const mockScoringResult: ScoringResult = {
   jobId: 'job-123',
-  status: 'COMPLETED',
+  status: ScoringStatus.Completed,
   createdAt: '2024-01-04T12:00:00.000Z',
   uploadKey: 'uploads/test-upload-key.webm',
   score: 0.85,
@@ -102,22 +103,19 @@ export const mockScoringResult: ScoringResult = {
     wer: 0.1,
     wordAlignments: [
       {
-        word: 'bismillahir',
-        start: 0,
-        end: 0.5,
-        score: 0.95
+        op: 'correct',
+        hypWord: 'bismillahir',
+        refWord: 'bismillahir'
       },
       {
-        word: 'rahmanir',
-        start: 0.5,
-        end: 1.0,
-        score: 0.9
+        op: 'correct',
+        hypWord: 'rahmanir',
+        refWord: 'rahmanir'
       },
       {
-        word: 'raheem',
-        start: 1.0,
-        end: 1.5,
-        score: 0.88
+        op: 'correct',
+        hypWord: 'raheem',
+        refWord: 'raheem'
       }
     ],
     referenceAudioUrl: 'https://example.com/reference.mp3'
@@ -131,7 +129,7 @@ export const mockScoringResult: ScoringResult = {
 
 export const mockScoringResultQueued: ScoringResult = {
   ...mockScoringResult,
-  status: 'QUEUED',
+  status: ScoringStatus.Queued,
   score: undefined,
   segments: [],
   feedback: undefined,
@@ -141,7 +139,7 @@ export const mockScoringResultQueued: ScoringResult = {
 
 export const mockScoringResultRunning: ScoringResult = {
   ...mockScoringResult,
-  status: 'RUNNING',
+  status: ScoringStatus.Running,
   score: undefined,
   segments: [mockSegments[0]],
   feedback: undefined,
@@ -151,7 +149,7 @@ export const mockScoringResultRunning: ScoringResult = {
 
 export const mockScoringResultFailed: ScoringResult = {
   ...mockScoringResult,
-  status: 'FAILED',
+  status: ScoringStatus.Failed,
   score: undefined,
   segments: [],
   feedback: undefined,
