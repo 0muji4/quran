@@ -1,11 +1,12 @@
 {
-  "extends": "@quran-project/ts-config",
+  "extends": "../ts-config/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "declaration": true,
     "composite": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*", "codegen.ts"]
 }
