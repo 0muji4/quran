@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { summarizeSurah, describeUploadTarget, extractSegmentScores } from '../formatters';
-import { mockSurahs, mockSignedUploadUrl, mockScoringResult } from '../../../test/fixtures/testData';
+import {
+  mockSurahs,
+  mockSignedUploadUrl,
+  mockScoringResult
+} from '../../../test/fixtures/testData';
 
 describe('formatters', () => {
   describe('summarizeSurah', () => {
