@@ -9,6 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../ui/.prettierignore ../ui",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,9 +19,13 @@
   },
   "devDependencies": {
     "@quran-project/eslint-config": "workspace:*",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
     "@types/node": "^20.11.30",
     "@types/react": "^18.3.11",
     "eslint": "^9.11.1",
-    "typescript": "^5.6.3"
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }
