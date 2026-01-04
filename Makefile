@@ -1,4 +1,4 @@
-.PHONY: install lint test go-test go-test-integration go-test-all sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
+.PHONY: install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors
 
 install:
 	pnpm install
@@ -12,6 +12,14 @@ test:
 go-test:
 	@echo "Running Go unit tests..."
 	@go test -short ./...
+
+bff-test:
+	@echo "Running BFF tests..."
+	@pnpm --filter @quran-project/bff test
+
+bff-test-coverage:
+	@echo "Running BFF tests with coverage..."
+	@pnpm --filter @quran-project/bff test --coverage
 
 go-test-integration:
 	@echo "Running Go integration tests..."
