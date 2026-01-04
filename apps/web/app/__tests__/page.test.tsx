@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import React from 'react';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import HomePage from '../page';
 
 describe('HomePage', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders the welcome message and recorder link', () => {
     render(<HomePage />);
 
