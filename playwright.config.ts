@@ -65,12 +65,14 @@ export default defineConfig({
   ],
 
   // Start Docker Compose stack if not already running
-  webServer: {
-    command: 'docker compose -f ops/docker/compose.dev.yml up',
-    url: 'http://localhost:3000',
-    timeout: 180000, // 3 minutes for full stack startup
-    reuseExistingServer: !process.env.CI,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: 'docker compose -f ops/docker/compose.dev.yml up',
+        url: 'http://localhost:3000',
+        timeout: 180000, // 3 minutes for full stack startup
+        reuseExistingServer: true,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      },
 });
