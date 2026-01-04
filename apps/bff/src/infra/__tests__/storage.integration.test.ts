@@ -15,8 +15,8 @@ describe('storage integration', () => {
   let pool: Pool;
   let minioClient: MinioClient;
   let bucket: string;
-  let dbCleanup: () => Promise<void>;
-  let minioCleanup: () => Promise<void>;
+  let dbCleanup: (() => Promise<void>) | undefined;
+  let minioCleanup: (() => Promise<void>) | undefined;
 
   beforeAll(async () => {
     // Setup test database
@@ -44,8 +44,8 @@ describe('storage integration', () => {
   });
 
   afterAll(async () => {
-    await dbCleanup();
-    await minioCleanup();
+    if (dbCleanup) await dbCleanup();
+    if (minioCleanup) await minioCleanup();
   });
 
   beforeEach(async () => {

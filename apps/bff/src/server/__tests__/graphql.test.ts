@@ -64,6 +64,10 @@ describe('GraphQL helix integration', () => {
   });
 
   it('returns surahs data from the resolver', async () => {
+    // Get mock reference before executing query
+    const { fetchSurahsFromBackend } = await import('../infra');
+    vi.mocked(fetchSurahsFromBackend).mockClear(); // Clear any previous calls
+
     const queryText =
       'query SurahList($limit: Int, $offset: Int) { surahs(limit: $limit, offset: $offset) { id nameEn nameAr ayahCount revelationPlace metadata } }';
     const request = {
@@ -84,8 +88,6 @@ describe('GraphQL helix integration', () => {
       schema,
       contextFactory: () => ({ session: null, requestId: 'test-request' })
     });
-
-    const { fetchSurahsFromBackend } = await import('../infra');
 
     expect(fetchSurahsFromBackend).toHaveBeenCalledTimes(1);
     expect(result.type).toBe('RESPONSE');
