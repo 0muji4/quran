@@ -75,9 +75,9 @@ describe('SegmentHighlights', () => {
 
   it('applies correct color coding based on custom threshold', () => {
     const segments: ScoreSegment[] = [
-      { label: 'High', score: 0.90, metrics: null },
+      { label: 'High', score: 0.9, metrics: null },
       { label: 'Mid', score: 0.82, metrics: null },
-      { label: 'Low', score: 0.70, metrics: null }
+      { label: 'Low', score: 0.7, metrics: null }
     ];
 
     const { container } = render(<SegmentHighlights segments={segments} threshold={0.85} />);
@@ -106,9 +106,7 @@ describe('SegmentHighlights', () => {
   });
 
   it('handles segments without metrics', () => {
-    const segments: ScoreSegment[] = [
-      { label: 'NoMetrics', score: 0.85, metrics: null }
-    ];
+    const segments: ScoreSegment[] = [{ label: 'NoMetrics', score: 0.85, metrics: null }];
 
     render(<SegmentHighlights segments={segments} />);
 
