@@ -140,7 +140,9 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockRejectedValue(new Error('Backend error'));
 
-      await expect(resolvers.Query!.surahs!(null, {}, mockContext)).rejects.toThrow('Backend error');
+      await expect(resolvers.Query!.surahs!(null, {}, mockContext)).rejects.toThrow(
+        'Backend error'
+      );
     });
   });
 
@@ -182,7 +184,11 @@ describe('GraphQL Resolvers', () => {
       const { fetchAyahFromBackend } = await import('../../infra');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(mockAyahs[0]);
 
-      const result = await resolvers.Query!.ayah!(null, { surahId: '1', ayahNumber: 1 }, mockContext);
+      const result = await resolvers.Query!.ayah!(
+        null,
+        { surahId: '1', ayahNumber: 1 },
+        mockContext
+      );
 
       expect(fetchAyahFromBackend).toHaveBeenCalledWith('1', 1);
       expect(result).toEqual(mockAyahs[0]);
@@ -193,7 +199,11 @@ describe('GraphQL Resolvers', () => {
       const { fetchAyahFromBackend } = await import('../../infra');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(null);
 
-      const result = await resolvers.Query!.ayah!(null, { surahId: '1', ayahNumber: 999 }, mockContext);
+      const result = await resolvers.Query!.ayah!(
+        null,
+        { surahId: '1', ayahNumber: 999 },
+        mockContext
+      );
 
       expect(result).toBeNull();
     });
@@ -237,7 +247,11 @@ describe('GraphQL Resolvers', () => {
       const { getScoringJob } = await import('../../jobs');
       vi.mocked(getScoringJob).mockResolvedValue(null);
 
-      const result = await resolvers.Query!.scoringJob!(null, { jobId: 'nonexistent' }, mockContext);
+      const result = await resolvers.Query!.scoringJob!(
+        null,
+        { jobId: 'nonexistent' },
+        mockContext
+      );
 
       expect(result).toBeNull();
     });

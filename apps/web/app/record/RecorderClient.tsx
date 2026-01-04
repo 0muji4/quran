@@ -411,7 +411,9 @@ export function RecorderClient() {
               <h4>Pronunciation Assessment Results</h4>
               {job.feedback.transcript && (
                 <div>
-                  <p><strong>Transcript:</strong></p>
+                  <p>
+                    <strong>Transcript:</strong>
+                  </p>
                   <p dir="rtl" lang="ar" style={{ fontSize: '1.2em' }}>
                     {job.feedback.transcript}
                   </p>
@@ -423,7 +425,9 @@ export function RecorderClient() {
                 </p>
               )}
               <div className="stack">
-                <p><strong>Detailed Scores:</strong></p>
+                <p>
+                  <strong>Detailed Scores:</strong>
+                </p>
                 <ul>
                   <li>Accuracy: {(job.feedback.accuracy * 100).toFixed(1)}%</li>
                   <li>Fluency: {(job.feedback.fluency * 100).toFixed(1)}%</li>
