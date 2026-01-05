@@ -44,7 +44,16 @@ export class RecordPage extends BasePage {
    * Select a surah by name
    */
   async selectSurah(surahName: string) {
-    await this.surahSelect.selectOption({ label: new RegExp(surahName, 'i') });
+    const option = this.surahSelect
+      .locator('option')
+      .filter({ hasText: new RegExp(surahName, 'i') })
+      .first();
+    const value = await option.getAttribute('value');
+    if (value) {
+      await this.surahSelect.selectOption({ value });
+    } else {
+      await this.surahSelect.selectOption({ label: surahName });
+    }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
   }
@@ -53,7 +62,17 @@ export class RecordPage extends BasePage {
    * Select an ayah by number
    */
   async selectAyah(ayahNumber: number) {
-    await this.ayahSelect.selectOption({ label: new RegExp(`Ayah ${ayahNumber}`, 'i') });
+    const label = `Ayah ${ayahNumber}`;
+    const option = this.ayahSelect
+      .locator('option')
+      .filter({ hasText: new RegExp(label, 'i') })
+      .first();
+    const value = await option.getAttribute('value');
+    if (value) {
+      await this.ayahSelect.selectOption({ value });
+    } else {
+      await this.ayahSelect.selectOption({ label });
+    }
   }
 
   /**
