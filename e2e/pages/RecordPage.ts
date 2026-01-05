@@ -41,10 +41,10 @@ export class RecordPage extends BasePage {
   }
 
   /**
-   * Select a surah by name
+   * Select a surah by ID
    */
-  async selectSurah(surahName: string) {
-    await this.surahSelect.selectOption({ label: new RegExp(surahName, 'i') });
+  async selectSurah(surahId: string) {
+    await this.surahSelect.selectOption({ value: surahId });
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
   }
@@ -53,7 +53,7 @@ export class RecordPage extends BasePage {
    * Select an ayah by number
    */
   async selectAyah(ayahNumber: number) {
-    await this.ayahSelect.selectOption({ label: new RegExp(`Ayah ${ayahNumber}`, 'i') });
+    await this.ayahSelect.selectOption({ value: String(ayahNumber) });
   }
 
   /**

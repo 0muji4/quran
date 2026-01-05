@@ -16,7 +16,7 @@ test.describe('Error Handling', () => {
     await recordPage.goto();
 
     // Select only surah, not ayah
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
 
     // Try to start recording (might be disabled or show error)
     // Check if button is disabled or shows validation message
@@ -43,7 +43,7 @@ test.describe('Error Handling', () => {
     await recordPage.goto();
 
     // Select and record normally
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     await recordPage.startRecording();
@@ -74,7 +74,7 @@ test.describe('Error Handling', () => {
   test('should handle quick start-stop recording', async ({ recordPage }) => {
     await recordPage.goto();
 
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     // Start and immediately stop (very short recording)
@@ -89,7 +89,7 @@ test.describe('Error Handling', () => {
   test('should handle page reload during recording', async ({ page, recordPage }) => {
     await recordPage.goto();
 
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
 
     // Start recording
@@ -125,7 +125,7 @@ test.describe('Error Handling', () => {
     await expect(recordPage.surahSelect).toBeEnabled();
 
     // Should be able to use normally
-    await recordPage.selectSurah(testSurahs.alFatihah.nameEn);
+    await recordPage.selectSurah(testSurahs.alFatihah.id);
     await recordPage.selectAyah(1);
     await recordPage.startRecording();
     await recordPage.waitForStatus(/recording/i);
