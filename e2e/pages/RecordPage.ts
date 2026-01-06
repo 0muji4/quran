@@ -44,6 +44,14 @@ export class RecordPage extends BasePage {
    * Select a surah by ID or name
    */
   async selectSurah(surahIdOrName: string) {
+    await this.surahSelect.waitFor({ state: 'visible' });
+    await expect(this.surahSelect).toBeEnabled();
+    await this.page.waitForFunction(
+      (select) =>
+        select.options.length > 0 &&
+        Array.from(select.options).some((option) => option.value !== ''),
+      this.surahSelect
+    );
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
         const options = Array.from(select.options);
@@ -77,6 +85,14 @@ export class RecordPage extends BasePage {
    * Select an ayah by number
    */
   async selectAyah(ayahNumber: number) {
+    await this.ayahSelect.waitFor({ state: 'visible' });
+    await expect(this.ayahSelect).toBeEnabled();
+    await this.page.waitForFunction(
+      (select) =>
+        select.options.length > 0 &&
+        Array.from(select.options).some((option) => option.value !== ''),
+      this.ayahSelect
+    );
     const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
       (select, ayahLabel, ayahValue) => {
