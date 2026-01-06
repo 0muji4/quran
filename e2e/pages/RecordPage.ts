@@ -41,10 +41,34 @@ export class RecordPage extends BasePage {
   }
 
   /**
-   * Select a surah by name
+   * Select a surah by ID or name
    */
-  async selectSurah(surahName: string) {
-    await this.surahSelect.selectOption({ label: new RegExp(surahName, 'i') });
+  async selectSurah(surahIdOrName: string) {
+    const matched = await this.surahSelect.evaluate(
+      (select, candidate) => {
+        const options = Array.from(select.options);
+        const byValue = options.find((option) => option.value === candidate);
+        if (byValue) {
+          select.value = byValue.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+
+        const regex = new RegExp(candidate, 'i');
+        const byLabel = options.find((option) => regex.test(option.label));
+        if (byLabel) {
+          select.value = byLabel.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+
+        return false;
+      },
+      surahIdOrName
+    );
+    if (!matched) {
+      await this.surahSelect.selectOption({ label: surahIdOrName });
+    }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
   }
@@ -53,7 +77,33 @@ export class RecordPage extends BasePage {
    * Select an ayah by number
    */
   async selectAyah(ayahNumber: number) {
-    await this.ayahSelect.selectOption({ label: new RegExp(`Ayah ${ayahNumber}`, 'i') });
+    const label = `Ayah ${ayahNumber}`;
+    const matched = await this.ayahSelect.evaluate(
+      (select, ayahLabel, ayahValue) => {
+        const options = Array.from(select.options);
+        const byValue = options.find((option) => option.value === ayahValue);
+        if (byValue) {
+          select.value = byValue.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+
+        const regex = new RegExp(ayahLabel, 'i');
+        const byLabel = options.find((option) => regex.test(option.label));
+        if (byLabel) {
+          select.value = byLabel.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+
+        return false;
+      },
+      label,
+      String(ayahNumber)
+    );
+    if (!matched) {
+      await this.ayahSelect.selectOption({ value: String(ayahNumber) });
+    }
   }
 
   /**
