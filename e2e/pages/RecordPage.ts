@@ -44,6 +44,8 @@ export class RecordPage extends BasePage {
    * Select a surah by ID or name
    */
   async selectSurah(surahIdOrName: string) {
+    await this.surahSelect.waitFor({ state: 'visible' });
+    await expect(this.surahSelect).toBeEnabled();
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
         const options = Array.from(select.options);
@@ -67,7 +69,7 @@ export class RecordPage extends BasePage {
       surahIdOrName
     );
     if (!matched) {
-      await this.surahSelect.selectOption({ label: surahIdOrName });
+      await this.surahSelect.selectOption({ value: surahIdOrName, timeout: 60000 });
     }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
@@ -77,6 +79,8 @@ export class RecordPage extends BasePage {
    * Select an ayah by number
    */
   async selectAyah(ayahNumber: number) {
+    await this.ayahSelect.waitFor({ state: 'visible' });
+    await expect(this.ayahSelect).toBeEnabled();
     const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
       (select, ayahLabel, ayahValue) => {
@@ -102,7 +106,7 @@ export class RecordPage extends BasePage {
       String(ayahNumber)
     );
     if (!matched) {
-      await this.ayahSelect.selectOption({ value: String(ayahNumber) });
+      await this.ayahSelect.selectOption({ value: String(ayahNumber), timeout: 60000 });
     }
   }
 
