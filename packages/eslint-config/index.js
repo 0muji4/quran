@@ -8,41 +8,72 @@ import prettierPlugin from 'eslint-plugin-prettier';
 import globals from 'globals';
 
 export default [
+  // Global ignores
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**']
+    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**'],
   },
+
+  // Base ESLint recommended config
   js.configs.recommended,
+
+  // TypeScript configuration
   {
     files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaFeatures: { jsx: true },
-        ecmaVersion: 2020,
-        sourceType: 'module'
+        ecmaVersion: 'latest',
+        sourceType: 'module',
       },
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2020
-      }
+        ...globals.es2020,
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
-      prettier: prettierPlugin
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      ...prettierConfig.rules,
-      'react/react-in-jsx-scope': 'off',
-      'prettier/prettier': ['warn', { endOfLine: 'auto' }]
+    },
+  },
+
+  // React configuration
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      react: reactPlugin,
     },
     settings: {
-      react: { version: 'detect' }
-    }
-  }
+      react: { version: 'detect' },
+    },
+    rules: {
+      ...reactPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+    },
+  },
+
+  // React Hooks configuration
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      'react-hooks': reactHooksPlugin,
+    },
+    rules: {
+      ...reactHooksPlugin.configs.recommended.rules,
+    },
+  },
+
+  // Prettier configuration
+  {
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      ...prettierConfig.rules,
+      'prettier/prettier': ['warn', { endOfLine: 'auto' }],
+    },
+  },
 ];
