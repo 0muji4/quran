@@ -69,6 +69,73 @@ If you use `sql-migrate`, add a `dbconfig.yml` and run a dry-run via:
 make sql-migrate-dry-run
 ```
 
+## Test Coverage
+
+We maintain 80%+ test coverage across all packages to ensure code quality and reliability.
+
+### Running Tests Locally
+
+**All tests with coverage:**
+```bash
+make test-coverage-all
+```
+
+**Go tests with coverage:**
+```bash
+make go-test-coverage-check
+```
+
+**TypeScript tests with coverage:**
+```bash
+pnpm run test:coverage
+```
+
+**Individual package tests:**
+```bash
+# Backend Go tests
+make go-test-integration
+
+# BFF tests
+pnpm --filter @quran-project/bff test:coverage
+
+# Web tests
+pnpm --filter @quran-project/web test:coverage
+
+# UI package tests
+pnpm --filter @quran-project/ui test:coverage
+```
+
+### View Coverage Reports
+
+After running tests with coverage, you can view detailed HTML reports:
+
+```bash
+# Go coverage
+open coverage.html
+
+# BFF coverage
+open apps/bff/coverage/index.html
+
+# Web coverage
+open apps/web/coverage/index.html
+
+# UI coverage
+open packages/ui/coverage/index.html
+```
+
+### Coverage Thresholds
+
+All packages must maintain minimum coverage thresholds. CI will fail if coverage falls below these levels:
+
+- **Lines**: 80%
+- **Functions**: 80%
+- **Branches**: 80%
+- **Statements**: 80%
+
+### CI Integration
+
+Coverage is automatically checked in CI for every pull request. Coverage artifacts are uploaded and retained for 30 days for inspection.
+
 ## Mobile Apps (Android / iOS)
 ### Android
 **Prerequisites**

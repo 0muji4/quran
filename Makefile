@@ -1,4 +1,4 @@
-.PHONY: help install lint test go-test go-test-integration go-test-all bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci
+.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -77,6 +77,19 @@ go-test-all:
 	@echo "Running all Go tests (unit + integration)..."
 	@go test -short ./...
 	@go test -tags=integration -v ./packages/go-pkg/db/... ./packages/go-pkg/queue/... ./apps/backend/internal/repo/...
+
+go-test-coverage-check: ## Run Go tests with coverage check (80% threshold)
+	@echo "Running Go tests with coverage check..."
+	@go test -tags=integration -coverprofile=coverage.out -covermode=atomic ./apps/backend/... ./packages/go-pkg/...
+	@./scripts/check-go-coverage.sh coverage.out 80.0
+
+test-coverage-all: go-test-coverage-check ## Run all tests with coverage (Go + TypeScript)
+	@echo "Running TypeScript tests with coverage..."
+	@pnpm run test:coverage
+
+ci-test: go-test-coverage-check ## Run CI tests with coverage
+	@pnpm run test:coverage
+	@pnpm run test:e2e
 
 sql-migrate-dry-run:
 	if [ -f dbconfig.yml ]; then \
