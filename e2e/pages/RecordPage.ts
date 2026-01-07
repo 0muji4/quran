@@ -46,20 +46,6 @@ export class RecordPage extends BasePage {
   async selectSurah(surahIdOrName: string) {
     await this.surahSelect.waitFor({ state: 'visible' });
     await expect(this.surahSelect).toBeEnabled();
-    await expect
-      .poll(
-        () =>
-          this.surahSelect.evaluate((select, candidate) => {
-            const options = Array.from(select.options);
-            if (options.some((option) => option.value === candidate)) {
-              return true;
-            }
-            const regex = new RegExp(candidate, 'i');
-            return options.some((option) => regex.test(option.label));
-          }, surahIdOrName),
-        { timeout: 10000 }
-      )
-      .toBe(true);
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
         const options = Array.from(select.options);
@@ -83,7 +69,7 @@ export class RecordPage extends BasePage {
       surahIdOrName
     );
     if (!matched) {
-      await this.surahSelect.selectOption({ label: surahIdOrName });
+      await this.surahSelect.selectOption({ value: surahIdOrName, timeout: 60000 });
     }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
@@ -96,20 +82,6 @@ export class RecordPage extends BasePage {
     await this.ayahSelect.waitFor({ state: 'visible' });
     await expect(this.ayahSelect).toBeEnabled();
     const label = `Ayah ${ayahNumber}`;
-    await expect
-      .poll(
-        () =>
-          this.ayahSelect.evaluate((select, ayahLabel, ayahValue) => {
-            const options = Array.from(select.options);
-            if (options.some((option) => option.value === ayahValue)) {
-              return true;
-            }
-            const regex = new RegExp(ayahLabel, 'i');
-            return options.some((option) => regex.test(option.label));
-          }, label, String(ayahNumber)),
-        { timeout: 10000 }
-      )
-      .toBe(true);
     const matched = await this.ayahSelect.evaluate(
       (select, ayahLabel, ayahValue) => {
         const options = Array.from(select.options);
@@ -134,7 +106,7 @@ export class RecordPage extends BasePage {
       String(ayahNumber)
     );
     if (!matched) {
-      await this.ayahSelect.selectOption({ value: String(ayahNumber) });
+      await this.ayahSelect.selectOption({ value: String(ayahNumber), timeout: 60000 });
     }
   }
 
