@@ -49,11 +49,14 @@ export class RecordPage extends BasePage {
     await expect
       .poll(
         () =>
-          this.surahSelect.evaluate(
-            (select) =>
-              select.options.length > 0 &&
-              Array.from(select.options).some((option) => option.value !== '')
-          ),
+          this.surahSelect.evaluate((select, candidate) => {
+            const options = Array.from(select.options);
+            if (options.some((option) => option.value === candidate)) {
+              return true;
+            }
+            const regex = new RegExp(candidate, 'i');
+            return options.some((option) => regex.test(option.label));
+          }, surahIdOrName),
         { timeout: 10000 }
       )
       .toBe(true);
@@ -92,18 +95,21 @@ export class RecordPage extends BasePage {
   async selectAyah(ayahNumber: number) {
     await this.ayahSelect.waitFor({ state: 'visible' });
     await expect(this.ayahSelect).toBeEnabled();
+    const label = `Ayah ${ayahNumber}`;
     await expect
       .poll(
         () =>
-          this.ayahSelect.evaluate(
-            (select) =>
-              select.options.length > 0 &&
-              Array.from(select.options).some((option) => option.value !== '')
-          ),
+          this.ayahSelect.evaluate((select, ayahLabel, ayahValue) => {
+            const options = Array.from(select.options);
+            if (options.some((option) => option.value === ayahValue)) {
+              return true;
+            }
+            const regex = new RegExp(ayahLabel, 'i');
+            return options.some((option) => regex.test(option.label));
+          }, label, String(ayahNumber)),
         { timeout: 10000 }
       )
       .toBe(true);
-    const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
       (select, ayahLabel, ayahValue) => {
         const options = Array.from(select.options);
