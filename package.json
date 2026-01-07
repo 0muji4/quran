@@ -10,6 +10,7 @@
     "format:check": "pnpm -r --if-present format:check",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
+    "test:coverage": "pnpm -r --if-present run test:coverage",
     "test:go": "go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

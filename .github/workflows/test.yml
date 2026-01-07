@@ -58,7 +58,29 @@ jobs:
           cache: true
 
       - name: Run backend tests with coverage
-        run: go test -tags=integration -coverprofile=coverage.out ./apps/backend/...
+        run: go test -tags=integration -coverprofile=coverage.out -covermode=atomic ./apps/backend/... ./packages/go-pkg/...
+
+      - name: Check Go coverage threshold
+        run: |
+          chmod +x scripts/check-go-coverage.sh
+          ./scripts/check-go-coverage.sh coverage.out 80.0
+
+      - name: Upload Go coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage
+          path: coverage.out
+          retention-days: 30
+
+      - name: Generate Go coverage HTML report
+        run: go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload Go coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage-html
+          path: coverage.html
+          retention-days: 30
 
   bff-tests:
     runs-on: ubuntu-latest
@@ -108,4 +130,71 @@ jobs:
         run: pnpm install
 
       - name: Run BFF tests with coverage
-        run: pnpm --filter @quran-project/bff test --coverage
+        run: pnpm --filter @quran-project/bff test:coverage
+
+      - name: Upload BFF coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bff-coverage
+          path: apps/bff/coverage/
+          retention-days: 30
+
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Web tests with coverage
+        run: pnpm --filter @quran-project/web test:coverage
+
+      - name: Upload Web coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coverage
+          path: apps/web/coverage/
+          retention-days: 30
+
+  ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run UI tests with coverage
+        run: pnpm --filter @quran-project/ui test:coverage
+
+      - name: Upload UI coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-coverage
+          path: packages/ui/coverage/
+          retention-days: 30
