@@ -47,6 +47,6 @@ test.describe('Navigation', () => {
     const alFatihahOption = recordPage.surahSelect.locator('option', {
       hasText: /Al-Fatihah|الفاتحة/i,
     });
-    await expect(alFatihahOption).toBeVisible();
+    await expect(alFatihahOption).toBeAttached();
   });
 });

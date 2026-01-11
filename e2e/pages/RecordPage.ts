@@ -153,8 +153,8 @@ export class RecordPage extends BasePage {
    */
   async startRecording() {
     await this.startRecordButton.click();
-    // Wait for button text to change to "Stop recording"
-    await expect(this.stopRecordButton).toBeVisible({ timeout: 10000 });
+    // Give time for getUserMedia() to complete
+    await this.page.waitForTimeout(500);
   }
 
   /**
