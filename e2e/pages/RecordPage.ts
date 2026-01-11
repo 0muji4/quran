@@ -41,25 +41,30 @@ export class RecordPage extends BasePage {
   }
 
   /**
-   * Wait for select dropdown to have options populated (not just "No surahs available")
-   * Handles race condition with async data loading
+   * Wait for select dropdown to have options populated
+   * Uses polling to handle race condition with async data loading
    */
   private async waitForSelectHasOptions(
     selectLocator: Locator,
+    minOptions = 1,
     timeout = 30000
   ): Promise<void> {
-    // Wait until the select has at least 2 options (more than just the "No surahs available" option)
-    await this.page.waitForFunction(
-      (select) => {
-        const selectElement = select as HTMLSelectElement;
-        const options = Array.from(selectElement.options);
-        // Filter out the placeholder/error option
-        const validOptions = options.filter(opt => opt.value && opt.value !== '');
-        return validOptions.length > 0;
-      },
-      selectLocator,
-      { timeout }
-    );
+    await expect
+      .poll(
+        async () => {
+          const options = await selectLocator.locator('option').all();
+          const validOptions = [];
+          for (const option of options) {
+            const value = await option.getAttribute('value');
+            if (value && value !== '') {
+              validOptions.push(value);
+            }
+          }
+          return validOptions.length;
+        },
+        { timeout }
+      )
+      .toBeGreaterThanOrEqual(minOptions);
   }
 
   /**
