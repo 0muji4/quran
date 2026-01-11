@@ -318,7 +318,7 @@ export function RecorderClient() {
           <select
             value={surahId}
             onChange={(event) => setSurahId(event.target.value)}
-            disabled={loadingSurahs}
+            disabled={disabled || loadingSurahs}
           >
             {surahs.length === 0 && <option value="">No surahs available</option>}
             {surahs.map((surah) => (
@@ -333,7 +333,7 @@ export function RecorderClient() {
           <select
             value={ayahNumber}
             onChange={(event) => setAyahNumber(event.target.value)}
-            disabled={loadingAyahs || ayahs.length === 0}
+            disabled={disabled || loadingAyahs || ayahs.length === 0}
           >
             {ayahs.length === 0 && <option value="">No ayahs available</option>}
             {ayahs.map((ayah) => (
