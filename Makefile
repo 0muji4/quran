@@ -107,6 +107,12 @@ db-migrate:
 	done
 	@echo "All migrations applied successfully!"
 
+db-seed:
+	@echo "Seeding database with initial data..."
+	@docker exec -i $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
+		psql -U app -d app < db/seed.sql
+	@echo "Database seeded successfully!"
+
 db-reset:
 	@echo "Resetting database..."
 	@docker exec -i $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \

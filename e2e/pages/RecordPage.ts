@@ -41,11 +41,43 @@ export class RecordPage extends BasePage {
   }
 
   /**
+   * Wait for select dropdown to have options populated
+   * Uses polling to handle race condition with async data loading
+   */
+  private async waitForSelectHasOptions(
+    selectLocator: Locator,
+    minOptions = 1,
+    timeout = 30000
+  ): Promise<void> {
+    await expect
+      .poll(
+        async () => {
+          const options = await selectLocator.locator('option').all();
+          const validOptions = [];
+          for (const option of options) {
+            const value = await option.getAttribute('value');
+            if (value && value !== '') {
+              validOptions.push(value);
+            }
+          }
+          return validOptions.length;
+        },
+        { timeout }
+      )
+      .toBeGreaterThanOrEqual(minOptions);
+  }
+
+  /**
    * Select a surah by ID or name
    */
   async selectSurah(surahIdOrName: string) {
     await this.surahSelect.waitFor({ state: 'visible' });
     await expect(this.surahSelect).toBeEnabled();
+
+    // Wait for options to be populated in the dropdown
+    // This handles the race condition where API hasn't completed yet
+    await this.waitForSelectHasOptions(this.surahSelect);
+
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
         const options = Array.from(select.options);
@@ -69,7 +101,7 @@ export class RecordPage extends BasePage {
       surahIdOrName
     );
     if (!matched) {
-      await this.surahSelect.selectOption({ value: surahIdOrName, timeout: 60000 });
+      await this.surahSelect.selectOption({ value: surahIdOrName });
     }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
@@ -81,11 +113,17 @@ export class RecordPage extends BasePage {
   async selectAyah(ayahNumber: number) {
     await this.ayahSelect.waitFor({ state: 'visible' });
     await expect(this.ayahSelect).toBeEnabled();
+
+    const ayahValue = String(ayahNumber);
+
+    // Wait for ayah options to be populated
+    await this.waitForSelectHasOptions(this.ayahSelect);
+
     const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
-      (select, ayahLabel, ayahValue) => {
+      (select, ayahLabel, ayahValueParam) => {
         const options = Array.from(select.options);
-        const byValue = options.find((option) => option.value === ayahValue);
+        const byValue = options.find((option) => option.value === ayahValueParam);
         if (byValue) {
           select.value = byValue.value;
           select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -103,10 +141,10 @@ export class RecordPage extends BasePage {
         return false;
       },
       label,
-      String(ayahNumber)
+      ayahValue
     );
     if (!matched) {
-      await this.ayahSelect.selectOption({ value: String(ayahNumber), timeout: 60000 });
+      await this.ayahSelect.selectOption({ value: ayahValue });
     }
   }
 
@@ -115,6 +153,8 @@ export class RecordPage extends BasePage {
    */
   async startRecording() {
     await this.startRecordButton.click();
+    // Give time for getUserMedia() to complete
+    await this.page.waitForTimeout(500);
   }
 
   /**
@@ -135,7 +175,7 @@ export class RecordPage extends BasePage {
    * Wait for a specific status message to appear
    */
   async waitForStatus(statusText: string | RegExp, timeout = 10000) {
-    await expect(this.page.getByText(statusText)).toBeVisible({ timeout });
+    await expect(this.page.getByText(statusText).first()).toBeVisible({ timeout });
   }
 
   /**
