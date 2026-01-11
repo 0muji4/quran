@@ -41,16 +41,25 @@ export class RecordPage extends BasePage {
   }
 
   /**
-   * Wait for select dropdown to have a specific option populated
+   * Wait for select dropdown to have options populated (not just "No surahs available")
    * Handles race condition with async data loading
    */
-  private async waitForSelectOption(
+  private async waitForSelectHasOptions(
     selectLocator: Locator,
-    optionValue: string,
-    timeout = 10000
+    timeout = 30000
   ): Promise<void> {
-    const optionLocator = selectLocator.locator(`option[value="${optionValue}"]`);
-    await expect(optionLocator).toBeAttached({ timeout });
+    // Wait until the select has at least 2 options (more than just the "No surahs available" option)
+    await this.page.waitForFunction(
+      (select) => {
+        const selectElement = select as HTMLSelectElement;
+        const options = Array.from(selectElement.options);
+        // Filter out the placeholder/error option
+        const validOptions = options.filter(opt => opt.value && opt.value !== '');
+        return validOptions.length > 0;
+      },
+      selectLocator,
+      { timeout }
+    );
   }
 
   /**
@@ -60,9 +69,9 @@ export class RecordPage extends BasePage {
     await this.surahSelect.waitFor({ state: 'visible' });
     await expect(this.surahSelect).toBeEnabled();
 
-    // Wait for the specific option to be populated in the dropdown
+    // Wait for options to be populated in the dropdown
     // This handles the race condition where API hasn't completed yet
-    await this.waitForSelectOption(this.surahSelect, surahIdOrName);
+    await this.waitForSelectHasOptions(this.surahSelect);
 
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
@@ -102,8 +111,8 @@ export class RecordPage extends BasePage {
 
     const ayahValue = String(ayahNumber);
 
-    // Wait for the specific ayah option to be populated
-    await this.waitForSelectOption(this.ayahSelect, ayahValue);
+    // Wait for ayah options to be populated
+    await this.waitForSelectHasOptions(this.ayahSelect);
 
     const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
