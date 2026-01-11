@@ -153,6 +153,8 @@ export class RecordPage extends BasePage {
    */
   async startRecording() {
     await this.startRecordButton.click();
+    // Wait for button text to change to "Stop recording"
+    await expect(this.stopRecordButton).toBeVisible({ timeout: 10000 });
   }
 
   /**
@@ -173,7 +175,7 @@ export class RecordPage extends BasePage {
    * Wait for a specific status message to appear
    */
   async waitForStatus(statusText: string | RegExp, timeout = 10000) {
-    await expect(this.page.getByText(statusText)).toBeVisible({ timeout });
+    await expect(this.page.getByText(statusText).first()).toBeVisible({ timeout });
   }
 
   /**
