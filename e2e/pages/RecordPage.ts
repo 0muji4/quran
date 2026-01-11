@@ -41,11 +41,29 @@ export class RecordPage extends BasePage {
   }
 
   /**
+   * Wait for select dropdown to have a specific option populated
+   * Handles race condition with async data loading
+   */
+  private async waitForSelectOption(
+    selectLocator: Locator,
+    optionValue: string,
+    timeout = 10000
+  ): Promise<void> {
+    const optionLocator = selectLocator.locator(`option[value="${optionValue}"]`);
+    await expect(optionLocator).toBeAttached({ timeout });
+  }
+
+  /**
    * Select a surah by ID or name
    */
   async selectSurah(surahIdOrName: string) {
     await this.surahSelect.waitFor({ state: 'visible' });
     await expect(this.surahSelect).toBeEnabled();
+
+    // Wait for the specific option to be populated in the dropdown
+    // This handles the race condition where API hasn't completed yet
+    await this.waitForSelectOption(this.surahSelect, surahIdOrName);
+
     const matched = await this.surahSelect.evaluate(
       (select, candidate) => {
         const options = Array.from(select.options);
@@ -69,7 +87,7 @@ export class RecordPage extends BasePage {
       surahIdOrName
     );
     if (!matched) {
-      await this.surahSelect.selectOption({ value: surahIdOrName, timeout: 60000 });
+      await this.surahSelect.selectOption({ value: surahIdOrName });
     }
     // Wait for ayah dropdown to populate
     await this.page.waitForTimeout(500);
@@ -81,11 +99,17 @@ export class RecordPage extends BasePage {
   async selectAyah(ayahNumber: number) {
     await this.ayahSelect.waitFor({ state: 'visible' });
     await expect(this.ayahSelect).toBeEnabled();
+
+    const ayahValue = String(ayahNumber);
+
+    // Wait for the specific ayah option to be populated
+    await this.waitForSelectOption(this.ayahSelect, ayahValue);
+
     const label = `Ayah ${ayahNumber}`;
     const matched = await this.ayahSelect.evaluate(
-      (select, ayahLabel, ayahValue) => {
+      (select, ayahLabel, ayahValueParam) => {
         const options = Array.from(select.options);
-        const byValue = options.find((option) => option.value === ayahValue);
+        const byValue = options.find((option) => option.value === ayahValueParam);
         if (byValue) {
           select.value = byValue.value;
           select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -103,10 +127,10 @@ export class RecordPage extends BasePage {
         return false;
       },
       label,
-      String(ayahNumber)
+      ayahValue
     );
     if (!matched) {
-      await this.ayahSelect.selectOption({ value: String(ayahNumber), timeout: 60000 });
+      await this.ayahSelect.selectOption({ value: ayahValue });
     }
   }
 
