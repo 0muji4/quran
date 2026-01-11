@@ -72,6 +72,9 @@ jobs:
       - name: Run database migrations
         run: make db-migrate
 
+      - name: Seed database with test data
+        run: make db-seed
+
       - name: Run E2E tests
         run: pnpm exec playwright test --shard=${{ matrix.shard }}/${{ matrix.total }}
         env:
