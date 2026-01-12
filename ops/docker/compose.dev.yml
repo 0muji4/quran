@@ -38,6 +38,72 @@ services:
     ports:
       - "6379:6379"
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.95.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - otel_data:/var/lib/otelcol
+    ports:
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics (collector internal)
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+    restart: unless-stopped
+    volumes:
+      - jaeger_data:/tmp
+
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.4
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3200
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3200:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    restart: unless-stopped
+
   backend:
     build:
       context: ../..
@@ -47,10 +113,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      otel-collector:
+        condition: service_started
     environment:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       REDIS_URL: redis://redis:6379
       QUEUE_AUTH_TOKEN: local-queue-token
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: quran-backend
+      SERVICE_VERSION: "0.1.0"
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
     ports:
       - "8080:8080"
 
@@ -62,6 +135,8 @@ services:
       backend:
         condition: service_started
       minio:
+        condition: service_started
+      otel-collector:
         condition: service_started
     extra_hosts:
       - "localhost:host-gateway"
@@ -80,6 +155,11 @@ services:
       MINIO_UPLOAD_PREFIX: uploads/
       MINIO_APPLY_BUCKET_POLICY: "true"
       SIGNED_URL_TTL_SECONDS: "900"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: quran-bff
+      SERVICE_VERSION: "0.1.0"
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
     ports:
       - "4000:4000"
 
@@ -96,6 +176,8 @@ services:
         condition: service_started
       minio:
         condition: service_started
+      otel-collector:
+        condition: service_started
     restart: on-failure
     environment:
       BACKEND_URL: http://backend:8080
@@ -111,6 +193,11 @@ services:
       WHISPER_MODEL_SIZE: small
       WHISPER_DEVICE: cpu
       WHISPER_COMPUTE_TYPE: int8
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: quran-worker
+      SERVICE_VERSION: "0.1.0"
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
 
   web:
     build:
@@ -126,3 +213,8 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  otel_data:
+  jaeger_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:

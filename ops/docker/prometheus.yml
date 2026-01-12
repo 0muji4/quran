@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'quran-project-dev'
+    environment: 'development'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'backend'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['backend:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'go_.*'
+        action: keep
+      - source_labels: [__name__]
+        regex: 'http_.*'
+        action: keep
+      - source_labels: [__name__]
+        regex: 'quran_.*'
+        action: keep
+
+  - job_name: 'bff'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bff:4000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'nodejs_.*'
+        action: keep
+      - source_labels: [__name__]
+        regex: 'http_.*'
+        action: keep
+      - source_labels: [__name__]
+        regex: 'quran_.*'
+        action: keep
+
+  - job_name: 'otel-collector'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['otel-collector:8888']

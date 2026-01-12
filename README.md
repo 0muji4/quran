@@ -12,6 +12,7 @@ quran-project is a cross-platform pronunciation practice app for Quran recitatio
 - Object Storage: S3-compatible (e.g., MinIO)
 - Cache/Queue: Redis
 - Containers/Dev: Docker Compose
+- Observability: OpenTelemetry, Jaeger, Prometheus, Loki, Grafana
 
 ## Getting Started
 ### Prerequisites
@@ -26,7 +27,11 @@ pnpm install
 
 ### Build and start the full stack (dev)
 ```bash
+# Using Docker Compose directly
 docker compose -f ops/docker/compose.dev.yml up --build
+
+# Or using Make
+make dev-up
 ```
 
 This will start:
@@ -36,6 +41,9 @@ This will start:
 - Postgres: localhost:5432
 - MinIO API: http://localhost:9000 (Console: http://localhost:9001)
 - Redis: localhost:6379
+- Jaeger UI: http://localhost:16686
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3200 (admin/admin)
 
 ### Start only dependencies (db/minio/redis)
 ```bash
@@ -68,6 +76,66 @@ If you use `sql-migrate`, add a `dbconfig.yml` and run a dry-run via:
 ```bash
 make sql-migrate-dry-run
 ```
+
+## Observability
+
+The project includes a comprehensive observability stack for monitoring, tracing, and logging.
+
+### Starting Observability Stack
+
+```bash
+# Start only observability services
+make observability-up
+
+# Check status of observability services
+make observability-status
+
+# View logs
+make observability-logs
+
+# Stop observability services
+make observability-down
+```
+
+### Available UIs
+
+Once started, the following interfaces are available:
+
+- **Jaeger** (http://localhost:16686): Distributed tracing UI for viewing request traces across services
+- **Prometheus** (http://localhost:9090): Metrics and time-series data exploration
+- **Grafana** (http://localhost:3200): Unified dashboards with pre-configured datasources
+  - Login: `admin` / `admin`
+  - Pre-configured dashboards:
+    - Service Health Overview
+    - ASR Worker Performance
+    - Business Metrics
+
+### OpenTelemetry Endpoints
+
+- **OTLP HTTP**: http://localhost:4318 (for sending traces/metrics/logs)
+- **Collector Metrics**: http://localhost:8888/metrics (collector self-monitoring)
+
+### Features
+
+- **Distributed Tracing**: Track requests from Web → BFF → Backend → Worker with a single trace ID
+- **Metrics Collection**: Monitor request rates, latencies, error rates, and custom business metrics
+- **Structured Logging**: JSON-formatted logs with automatic trace context injection
+- **Correlation**: Seamlessly navigate between logs, traces, and metrics using trace IDs
+- **Pre-configured Dashboards**: Ready-to-use Grafana dashboards for key system metrics
+
+### Architecture
+
+```
+Applications (Web/BFF/Backend/Worker)
+           ↓ OTLP HTTP
+    OpenTelemetry Collector
+     ↓        ↓         ↓
+  Jaeger  Prometheus  Loki
+     ↓        ↓         ↓
+       Grafana (Unified View)
+```
+
+For detailed implementation information, see `/ops/docker/` configuration files.
 
 ## Test Coverage
 
