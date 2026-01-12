@@ -1,4 +1,4 @@
-.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci
+.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -141,3 +141,75 @@ minio-cors:
 			mc anonymous set download local/quran-alignments/uploads && \
 			echo 'CORS setup complete (note: mc does not support CORS directly, BFF will handle it)' \
 		"
+
+## Development Environment
+
+dev-up: ## Start all development services (infra + observability + apps)
+	@echo "Starting development environment..."
+	docker compose -f ops/docker/compose.dev.yml up -d
+	@echo ""
+	@echo "✓ Development environment started!"
+	@echo ""
+	@echo "Services:"
+	@echo "  Web:         http://localhost:3000"
+	@echo "  BFF:         http://localhost:4000"
+	@echo "  Backend:     http://localhost:8080"
+	@echo "  Postgres:    localhost:5432"
+	@echo "  Redis:       localhost:6379"
+	@echo "  MinIO:       http://localhost:9001 (admin/admin)"
+	@echo ""
+	@echo "Observability:"
+	@echo "  Jaeger:      http://localhost:16686"
+	@echo "  Prometheus:  http://localhost:9090"
+	@echo "  Grafana:     http://localhost:3200 (admin/admin)"
+	@echo ""
+
+dev-down: ## Stop all development services
+	@echo "Stopping development environment..."
+	docker compose -f ops/docker/compose.dev.yml down
+	@echo "✓ Development environment stopped!"
+
+dev-logs: ## Show logs from all development services
+	docker compose -f ops/docker/compose.dev.yml logs -f
+
+## Observability Stack
+
+observability-up: ## Start observability stack (OTEL, Jaeger, Prometheus, Loki, Grafana)
+	@echo "Starting observability stack..."
+	docker compose -f ops/docker/compose.dev.yml up -d otel-collector jaeger prometheus loki grafana
+	@echo ""
+	@echo "✓ Observability stack started!"
+	@echo ""
+	@echo "UIs available at:"
+	@echo "  Jaeger:      http://localhost:16686 - Distributed tracing"
+	@echo "  Prometheus:  http://localhost:9090 - Metrics & alerts"
+	@echo "  Grafana:     http://localhost:3200 - Unified dashboards (admin/admin)"
+	@echo ""
+	@echo "OTEL Collector endpoints:"
+	@echo "  OTLP HTTP:   http://localhost:4318"
+	@echo "  Metrics:     http://localhost:8888/metrics"
+	@echo ""
+
+observability-down: ## Stop observability stack
+	@echo "Stopping observability stack..."
+	docker compose -f ops/docker/compose.dev.yml stop otel-collector jaeger prometheus loki grafana
+	@echo "✓ Observability stack stopped!"
+
+observability-logs: ## Show logs from observability services
+	docker compose -f ops/docker/compose.dev.yml logs -f otel-collector jaeger prometheus loki grafana
+
+observability-status: ## Check status of observability services
+	@echo "=== Observability Stack Status ==="
+	@docker compose -f ops/docker/compose.dev.yml ps otel-collector jaeger prometheus loki grafana
+	@echo ""
+	@echo "=== Endpoint Health Checks ==="
+	@printf "%-20s " "Jaeger UI:"
+	@curl -s -o /dev/null -w '%{http_code}\n' http://localhost:16686/ || echo "DOWN"
+	@printf "%-20s " "Prometheus:"
+	@curl -s -o /dev/null -w '%{http_code}\n' http://localhost:9090/-/ready || echo "DOWN"
+	@printf "%-20s " "Loki:"
+	@curl -s http://localhost:3100/ready 2>/dev/null || echo "DOWN"
+	@printf "%-20s " "Grafana:"
+	@curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3200/api/health || echo "DOWN"
+	@printf "%-20s " "OTEL Collector:"
+	@curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8888/metrics || echo "DOWN"
