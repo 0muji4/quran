@@ -2,6 +2,11 @@
  * Client for calling the backend Go API
  */
 
+import { context, propagation } from '@opentelemetry/api';
+import { telemetry } from '../telemetry/telemetry';
+
+const tracer = telemetry.tracer;
+
 type BackendSurah = {
   id: number;
   name_ar: string;
@@ -27,6 +32,40 @@ type BackendAyah = {
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
+/**
+ * Helper function to create fetch with trace context propagation
+ */
+const fetchWithTracing = async (url: string, options?: RequestInit): Promise<Response> => {
+  return tracer.startActiveSpan(`HTTP ${options?.method ?? 'GET'} ${url}`, async (span) => {
+    try {
+      // Inject trace context into request headers
+      const headers: Record<string, string> = {};
+      propagation.inject(context.active(), headers);
+
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options?.headers,
+          ...headers
+        }
+      });
+
+      // Set span attributes
+      span.setAttribute('http.method', options?.method ?? 'GET');
+      span.setAttribute('http.url', url);
+      span.setAttribute('http.status_code', response.status);
+
+      if (!response.ok) {
+        span.recordException(new Error(`HTTP ${response.status}: ${response.statusText}`));
+      }
+
+      return response;
+    } finally {
+      span.end();
+    }
+  });
+};
+
 export type SurahRecord = {
   id: string;
   nameAr: string;
@@ -51,7 +90,7 @@ export type AyahRecord = {
  * Fetch all surahs from the backend API
  */
 export const fetchSurahsFromBackend = async (): Promise<SurahRecord[]> => {
-  const response = await fetch(`${BACKEND_URL}/api/surahs`);
+  const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch surahs: ${response.statusText}`);
@@ -75,7 +114,7 @@ export const fetchSurahsFromBackend = async (): Promise<SurahRecord[]> => {
  * Fetch a specific surah by ID from the backend API
  */
 export const fetchSurahFromBackend = async (surahId: string): Promise<SurahRecord | null> => {
-  const response = await fetch(`${BACKEND_URL}/api/surahs/${surahId}`);
+  const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs/${surahId}`);
 
   if (response.status === 404) {
     return null;
@@ -88,7 +127,7 @@ export const fetchSurahFromBackend = async (surahId: string): Promise<SurahRecor
   const surah = (await response.json()) as BackendSurah;
 
   // Fetch ayahs for this surah
-  const ayahsResponse = await fetch(`${BACKEND_URL}/api/surahs/${surahId}/ayahs`);
+  const ayahsResponse = await fetchWithTracing(`${BACKEND_URL}/api/surahs/${surahId}/ayahs`);
   let ayahs: AyahRecord[] = [];
 
   if (ayahsResponse.ok) {
@@ -119,7 +158,7 @@ export const fetchSurahFromBackend = async (surahId: string): Promise<SurahRecor
  * Fetch ayahs for a specific surah from the backend API
  */
 export const fetchAyahsFromBackend = async (surahId: string): Promise<AyahRecord[]> => {
-  const response = await fetch(`${BACKEND_URL}/api/surahs/${surahId}/ayahs`);
+  const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs/${surahId}/ayahs`);
 
   if (response.status === 404) {
     return [];
