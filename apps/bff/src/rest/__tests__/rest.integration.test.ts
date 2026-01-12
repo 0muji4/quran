@@ -23,7 +23,9 @@ vi.mock('../../telemetry', () => ({
         record: vi.fn()
       }))
     }
-  }
+  },
+  recordSessionCreated: vi.fn(),
+  recordSessionCompleted: vi.fn()
 }));
 
 describe('REST API Integration', () => {
