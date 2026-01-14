@@ -35,7 +35,7 @@ const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 /**
  * Helper function to create fetch with trace context propagation
  */
-const fetchWithTracing = async (url: string, options?: RequestInit): Promise<Response> => {
+export const fetchWithTracing = async (url: string, options?: RequestInit): Promise<Response> => {
   return tracer.startActiveSpan(`HTTP ${options?.method ?? 'GET'} ${url}`, async (span) => {
     try {
       // Inject trace context into request headers
