@@ -130,6 +130,17 @@ const createReferenceAudioUrl = async (
   return `${uploadBaseUrl}/${referenceAudioKey}`;
 };
 
+/**
+ * Creates a scoring job for Quran recitation analysis
+ *
+ * @param input.sessionId - Optional session ID (auto-generated if not provided)
+ * @param input.uploadKey - S3/MinIO upload key for the audio file
+ * @param input.surahId - String representation of Surah ID (valid range: "1" to "114")
+ * @param input.ayahNumber - Integer Ayah number (valid range: 1 to 286, varies by surah)
+ * @param input.userId - Optional user ID for tracking
+ * @returns Promise resolving to ScoringResult with job details and status
+ * @throws Error if session ID cannot be found for the upload key
+ */
 export const createScoringJob = async (input: {
   sessionId?: string | null;
   uploadKey: string;
