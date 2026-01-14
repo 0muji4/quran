@@ -1,7 +1,8 @@
-import { GraphQLScalarType, Kind, valueFromASTUntyped } from 'graphql';
+import { GraphQLScalarType, Kind, valueFromASTUntyped, GraphQLError } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
 import { fetchSurahsFromBackend, fetchSurahFromBackend, fetchAyahFromBackend } from '../infra';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
+import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
 const JSONObjectScalar = new GraphQLScalarType({
   name: 'JSONObject',
@@ -43,13 +44,38 @@ export const resolvers: Resolvers<GraphQLContext> = {
         ...input,
         userId: context.session?.id ?? null
       }),
-    createScoringJob: async (_parent, { input }, context) =>
-      createScoringJob({
+    createScoringJob: async (_parent, { input }, context) => {
+      // Validate surahId
+      const surahIdValidation = surahIdSchema.safeParse(input.surahId);
+      if (!surahIdValidation.success) {
+        throw new GraphQLError('Invalid surahId', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            issues: surahIdValidation.error.issues
+          }
+        });
+      }
+
+      // Validate ayahNumber if provided
+      if (input.ayahNumber !== null && input.ayahNumber !== undefined) {
+        const ayahNumberValidation = ayahNumberSchema.safeParse(input.ayahNumber);
+        if (!ayahNumberValidation.success) {
+          throw new GraphQLError('Invalid ayahNumber', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              issues: ayahNumberValidation.error.issues
+            }
+          });
+        }
+      }
+
+      return createScoringJob({
         uploadKey: input.uploadKey,
         surahId: input.surahId,
         ayahNumber: input.ayahNumber ?? null,
         userId: context.session?.id ?? null
-      })
+      });
+    }
   },
   Surah: {
     ayahs: (parent, args) => {

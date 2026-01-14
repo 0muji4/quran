@@ -7,6 +7,7 @@ import { requireAuth } from '../auth';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
 import { deleteUserData } from '../infra';
 import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
+import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
 // #region Schemas
 const signedUploadUrlSchema = z.object({
@@ -19,8 +20,8 @@ const signedUploadUrlSchema = z.object({
 const createScoringJobSchema = z.object({
   body: z.object({
     uploadKey: z.string().min(1),
-    surahId: z.number().int(),
-    ayahNumber: z.number().int(),
+    surahId: surahIdSchema,
+    ayahNumber: ayahNumberSchema,
     sessionId: z.string().optional()
   })
 });
@@ -103,7 +104,7 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
     job = await createScoringJob({
       sessionId: requestSessionId ?? null,
       uploadKey,
-      surahId: String(surahId),
+      surahId,
       ayahNumber,
       userId: session.id
     });
