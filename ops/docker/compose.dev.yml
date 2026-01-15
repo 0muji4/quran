@@ -207,6 +207,12 @@ services:
       - bff
     environment:
       BFF_BASE_URL: http://bff:4000
+      # OpenTelemetry configuration
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: quran-web
+      SERVICE_VERSION: "0.1.0"
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
     ports:
       - "3000:3000"
 
