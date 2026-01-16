@@ -94,7 +94,6 @@ services:
       GF_SERVER_ROOT_URL: http://localhost:3200
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafana_data:/var/lib/grafana
     ports:
       - "3200:3000"
