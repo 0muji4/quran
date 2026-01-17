@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -11,6 +12,7 @@ var (
 	sessionsCreatedCounter   metric.Int64Counter
 	sessionsCompletedCounter metric.Int64Counter
 	queueDepthGauge          metric.Int64ObservableGauge
+	dbQueryDuration          metric.Float64Histogram
 )
 
 // InitMetrics initializes custom business metrics.
@@ -34,6 +36,16 @@ func InitMetrics() error {
 	)
 	if err != nil {
 		return err
+	}
+
+	// DB Query Duration
+	dbQueryDuration, err = meter.Float64Histogram(
+		"db.query.duration",
+		metric.WithDescription("Database query duration in milliseconds"),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create db.query.duration histogram: %w", err)
 	}
 
 	return nil
@@ -60,4 +72,9 @@ func RecordSessionCompleted(ctx context.Context, userID string, score float64) {
 			),
 		)
 	}
+}
+
+// DBQueryDuration returns the database query duration histogram.
+func DBQueryDuration() metric.Float64Histogram {
+	return dbQueryDuration
 }

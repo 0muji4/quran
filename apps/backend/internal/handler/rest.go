@@ -12,6 +12,10 @@ import (
 
 	"quran-project/apps/backend/internal/queue"
 	"quran-project/apps/backend/internal/service"
+	"quran-project/apps/backend/internal/telemetry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // REST exposes minimal read-only endpoints for surahs and ayahs.
@@ -198,7 +202,15 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 	if req.UserID != "" {
 		userID = sql.NullString{String: req.UserID, Valid: true}
 	}
-	if err := h.DB.QueryRowContext(
+
+	// Start timing for INSERT scoring_jobs
+	insertStart := time.Now()
+	insertAttrs := []attribute.KeyValue{
+		attribute.String("db.operation", "INSERT"),
+		attribute.String("db.table", "scoring_jobs"),
+	}
+
+	err = h.DB.QueryRowContext(
 		r.Context(),
 		query,
 		sessionID,
@@ -207,18 +219,46 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		int32(surahIDInt),
 		ayahID,
 		*req.AyahNumber,
-	).Scan(&createdAt); err != nil {
+	).Scan(&createdAt)
+
+	// Calculate duration and record metrics
+	insertDuration := float64(time.Since(insertStart).Milliseconds())
+	if err != nil {
+		insertAttrs = append(insertAttrs, attribute.String("db.status", "error"))
+	} else {
+		insertAttrs = append(insertAttrs, attribute.String("db.status", "success"))
+	}
+	telemetry.DBQueryDuration().Record(r.Context(), insertDuration, metric.WithAttributes(insertAttrs...))
+
+	if err != nil {
 		log.Printf("failed to persist scoring job: %v", err)
 		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.Enqueuer.PublishASRJob(r.Context(), sessionID, req.UploadKey, ayahID, expectedText); err != nil {
-		_, _ = h.DB.ExecContext(
+		// Start timing for UPDATE scoring_jobs
+		updateStart := time.Now()
+		updateAttrs := []attribute.KeyValue{
+			attribute.String("db.operation", "UPDATE"),
+			attribute.String("db.table", "scoring_jobs"),
+		}
+
+		_, updateErr := h.DB.ExecContext(
 			r.Context(),
 			`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
 			sessionID,
 		)
+
+		// Calculate duration and record metrics
+		updateDuration := float64(time.Since(updateStart).Milliseconds())
+		if updateErr != nil {
+			updateAttrs = append(updateAttrs, attribute.String("db.status", "error"))
+		} else {
+			updateAttrs = append(updateAttrs, attribute.String("db.status", "success"))
+		}
+		telemetry.DBQueryDuration().Record(r.Context(), updateDuration, metric.WithAttributes(updateAttrs...))
+
 		http.Error(w, "failed to enqueue scoring job", http.StatusInternalServerError)
 		return
 	}
@@ -260,6 +300,13 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 		createdAt     time.Time
 	)
 
+	// Start timing for SELECT scoring_jobs
+	selectStart := time.Now()
+	selectAttrs := []attribute.KeyValue{
+		attribute.String("db.operation", "SELECT"),
+		attribute.String("db.table", "scoring_jobs"),
+	}
+
 	err := h.DB.QueryRowContext(r.Context(), query, sessionID).Scan(
 		&sessionID,
 		&uploadKey,
@@ -270,6 +317,16 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 		&segmentsRaw,
 		&createdAt,
 	)
+
+	// Calculate duration and record metrics
+	selectDuration := float64(time.Since(selectStart).Milliseconds())
+	if err != nil {
+		selectAttrs = append(selectAttrs, attribute.String("db.status", "error"))
+	} else {
+		selectAttrs = append(selectAttrs, attribute.String("db.status", "success"))
+	}
+	telemetry.DBQueryDuration().Record(r.Context(), selectDuration, metric.WithAttributes(selectAttrs...))
+
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return

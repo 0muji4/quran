@@ -204,8 +204,8 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_bucket{job=~\".*backend.*\"}[5m])) by (le, operation))",
-          "legendFormat": "{{operation}} P95",
+          "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_milliseconds_bucket{job=~\".*backend.*\"}[5m])) by (le, db_operation, db_table))",
+          "legendFormat": "{{db_operation}} {{db_table}} P95",
           "refId": "A"
         },
         {
@@ -213,8 +213,8 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_bucket{job=~\".*backend.*\"}[5m])) by (le, operation))",
-          "legendFormat": "{{operation}} P99",
+          "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_milliseconds_bucket{job=~\".*backend.*\"}[5m])) by (le, db_operation, db_table))",
+          "legendFormat": "{{db_operation}} {{db_table}} P99",
           "refId": "B"
         }
       ],
