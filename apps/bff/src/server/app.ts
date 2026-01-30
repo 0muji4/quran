@@ -12,6 +12,7 @@ import {
 import { authMiddleware, buildContext, type AuthedRequest } from '../auth';
 import { resolvers } from '../graphql';
 import { rscRouter, restRouter } from '../rest';
+import { otelMiddleware } from '../telemetry';
 
 // Navigate up from bff app to project root for schema file
 // In dev: __dirname is apps/bff/dist/server (go up 4 levels)
@@ -27,6 +28,10 @@ export const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 export const createApp = () => {
   const app = express();
+
+  // Apply OTEL middleware first to trace all requests
+  app.use(otelMiddleware);
+
   app.use(
     cors({
       origin: process.env.WEB_URL || 'http://localhost:3000',

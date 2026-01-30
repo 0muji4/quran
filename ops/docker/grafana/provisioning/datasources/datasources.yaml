@@ -2,6 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: Prometheus
+    uid: Prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
@@ -14,6 +15,7 @@ datasources:
       timeInterval: 15s
 
   - name: Loki
+    uid: Loki
     type: loki
     access: proxy
     url: http://loki:3100
@@ -27,6 +29,7 @@ datasources:
           url: "$${__value.raw}"
 
   - name: Jaeger
+    uid: Jaeger
     type: jaeger
     access: proxy
     url: http://jaeger:16686

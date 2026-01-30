@@ -21,6 +21,7 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.51.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.51.1",
+    "@opentelemetry/instrumentation-winston": "^0.53.0",
     "@opentelemetry/resources": "^1.27.0",
     "@opentelemetry/sdk-metrics": "^1.27.0",
     "@opentelemetry/sdk-node": "^0.51.1",
@@ -32,9 +33,13 @@
     "graphql-helix": "^1.13.0",
     "jsonwebtoken": "^9.0.2",
     "minio": "^7.1.3",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "winston": "^3.19.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@opentelemetry/core": "^2.3.0",
+    "@opentelemetry/sdk-trace-node": "^2.3.0",
     "@quran-project/eslint-config": "workspace:*",
     "@quran-project/ts-config": "workspace:*",
     "@types/cors": "^2.8.17",
