@@ -11,8 +11,10 @@ import (
 	"quran-project/apps/backend/internal/telemetry"
 	"quran-project/packages/go-pkg/queue"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // Enqueuer publishes ASR jobs to Redis so that the worker can consume them.
@@ -66,6 +68,10 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 	)
 	defer span.End()
 
+	// Inject trace context into job
+	traceContext := make(map[string]string)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(traceContext))
+
 	job := queue.Job{
 		SessionID:      sessionID,
 		AudioKey:       audioKey,
@@ -73,6 +79,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 		ExpectedTextAR: expectedTextAR,
 		EnqueuedAt:     time.Now().UTC(),
 		AuthToken:      e.authToken,
+		TraceContext:   traceContext,
 	}
 	err := e.client.Enqueue(ctx, job)
 	enqueueDurationMs := float64(time.Since(startedAt).Milliseconds())

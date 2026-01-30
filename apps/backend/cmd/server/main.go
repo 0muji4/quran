@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"quran-project/apps/backend/internal/handler"
+	"quran-project/apps/backend/internal/middleware"
 	backendqueue "quran-project/apps/backend/internal/queue"
 	"quran-project/apps/backend/internal/repo"
 	"quran-project/apps/backend/internal/service"
@@ -20,9 +21,18 @@ import (
 
 func main() {
 	ctx := context.Background()
+
+	// Initialize telemetry (OTEL + logger + metrics)
 	if err := telemetry.Init(ctx); err != nil {
 		log.Printf("telemetry init failed: %v", err)
 	}
+	telemetry.InitLogger()
+	if err := telemetry.InitMetrics(); err != nil {
+		log.Printf("metrics init failed: %v", err)
+	}
+
+	logger := telemetry.Logger()
+	logger.Info("Starting quran-backend service")
 
 	dbConn, err := db.Connect(ctx, db.Config{
 		DSN:        os.Getenv("DATABASE_URL"),
@@ -59,17 +69,26 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 
+	// Prometheus metrics endpoint
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("# Metrics exported via OTEL\n"))
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
+	// Wrap mux with OTEL middleware
+	handler := middleware.OTEL(mux)
+
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: mux,
+		Handler: handler,
 	}
 
-	log.Printf("backend listening on %s", server.Addr)
+	logger.Info("backend listening", "addr", server.Addr)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
