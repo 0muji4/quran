@@ -6,6 +6,7 @@ import {
   getMinioClientForPresignedUrls,
   recordUploadKey
 } from '../infra';
+import { fetchWithTracing } from '../infra/backendClient';
 
 const secondsFromNow = (seconds: number): string =>
   new Date(Date.now() + seconds * 1000).toISOString();
@@ -172,7 +173,7 @@ export const createScoringJob = async (input: {
     ayahNumber: payload.ayahNumber
   });
 
-  const response = await fetch(`${backendUrl}/api/scoring-jobs`, {
+  const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -186,7 +187,7 @@ export const createScoringJob = async (input: {
 export const getScoringJob = async (jobId: string): Promise<ScoringResult | null> => {
   const pool = getDatabasePool();
   if (!pool) {
-    const response = await fetch(`${backendUrl}/api/scoring-jobs/${jobId}`);
+    const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs/${jobId}`);
     if (response.status === 404) return null;
     return parseJson<ScoringResult>(response);
   }
