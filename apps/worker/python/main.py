@@ -15,22 +15,44 @@ from dotenv import load_dotenv
 from faster_whisper import WhisperModel
 from minio import Minio
 from minio.error import S3Error
-from opentelemetry import metrics, trace
+from opentelemetry import context, metrics, trace
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.propagate import extract
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
 load_dotenv()
 
 
+class TraceContextFilter(logging.Filter):
+    """Inject trace context into log records for distributed tracing"""
+
+    def filter(self, record):
+        span = trace.get_current_span()
+        ctx = span.get_span_context()
+        if ctx.is_valid:
+            record.trace_id = format(ctx.trace_id, "032x")
+            record.span_id = format(ctx.span_id, "016x")
+        else:
+            record.trace_id = ""
+            record.span_id = ""
+        return True
+
+
+# Configure logging with trace context
+trace_filter = TraceContextFilter()
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s | trace_id=%(trace_id)s span_id=%(span_id)s",
 )
+# Add TraceContextFilter to all handlers to ensure trace context is available
+for handler in logging.getLogger().handlers:
+    handler.addFilter(trace_filter)
 logger = logging.getLogger("worker")
 
 MAX_PROMPT_WORDS = 8
@@ -72,6 +94,8 @@ def init_telemetry() -> None:
 init_telemetry()
 tracer = trace.get_tracer("quran-worker")
 meter = metrics.get_meter("quran-worker")
+
+# Queue metrics
 queue_wait_histogram = meter.create_histogram(
     "worker.queue.wait.duration",
     unit="ms",
@@ -81,6 +105,33 @@ processing_duration_histogram = meter.create_histogram(
     "worker.queue.processing.duration",
     unit="ms",
     description="Time spent processing queue jobs",
+)
+
+# Business metrics
+job_status_counter = meter.create_counter(
+    "worker.jobs.total",
+    unit="1",
+    description="Total number of jobs processed",
+)
+audio_upload_counter = meter.create_counter(
+    "worker.audio.uploads.total",
+    unit="1",
+    description="Total number of audio files processed",
+)
+audio_upload_size_histogram = meter.create_histogram(
+    "worker.audio.upload.size",
+    unit="bytes",
+    description="Size of uploaded audio files",
+)
+transcription_wer_histogram = meter.create_histogram(
+    "worker.transcription.wer",
+    unit="1",
+    description="Word Error Rate of transcriptions",
+)
+pronunciation_score_histogram = meter.create_histogram(
+    "worker.pronunciation.score",
+    unit="1",
+    description="Overall pronunciation score",
 )
 
 
@@ -96,6 +147,19 @@ def parse_enqueued_at(value: Optional[str]) -> Optional[datetime]:
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed
+
+
+def get_accuracy_bucket(score: float) -> str:
+    """Helper function to bucket accuracy scores"""
+    if score >= 0.9:
+        return "90-100"
+    if score >= 0.8:
+        return "80-90"
+    if score >= 0.7:
+        return "70-80"
+    if score >= 0.6:
+        return "60-70"
+    return "below-60"
 
 
 @dataclass
@@ -288,16 +352,26 @@ class ResultWriter:
     def save_alignment(
         self, session_id: str, payload: Dict[str, Any], content_type: str = "application/json"
     ) -> str:
-        object_key = f"{self.cfg.alignment_prefix}{session_id}.json"
-        data = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
-        self.minio.put_object(
-            self.cfg.minio_bucket,
-            object_key,
-            io.BytesIO(data),
-            length=len(data),
-            content_type=content_type,
-        )
-        return object_key
+        with tracer.start_as_current_span(
+            "save_alignment_to_storage",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "session_id": session_id,
+                "storage.type": "minio",
+            },
+        ) as span:
+            object_key = f"{self.cfg.alignment_prefix}{session_id}.json"
+            data = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+            self.minio.put_object(
+                self.cfg.minio_bucket,
+                object_key,
+                io.BytesIO(data),
+                length=len(data),
+                content_type=content_type,
+            )
+            span.set_attribute("alignment.key", object_key)
+            span.set_status(Status(StatusCode.OK))
+            return object_key
 
     def upsert_result(
         self,
@@ -311,8 +385,17 @@ class ResultWriter:
         wer: Optional[float],
         alignment_object_key: str,
     ) -> None:
-        with self.pg.cursor() as cur:
-            cur.execute(
+        with tracer.start_as_current_span(
+            "db.upsert_asr_result",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "db.operation": "upsert",
+                "db.table": "asr_results",
+                "session_id": session_id,
+            },
+        ) as span:
+            with self.pg.cursor() as cur:
+                cur.execute(
                 """
                 INSERT INTO asr_results (
                     session_id, ayah_id, audio_key, expected_text_ar,
@@ -344,29 +427,51 @@ class ResultWriter:
                     "alignment_object_key": alignment_object_key,
                 },
             )
+            span.set_status(Status(StatusCode.OK))
 
     def update_alignment_reference(self, session_id: str, alignment_object_key: str) -> None:
-        with self.pg.cursor() as cur:
-            cur.execute(
-                """
-                UPDATE user_data_objects
-                SET alignment_object_key = %(alignment_object_key)s,
-                    updated_at = NOW()
-                WHERE session_id = %(session_id)s;
-                """,
-                {"session_id": session_id, "alignment_object_key": alignment_object_key},
-            )
+        with tracer.start_as_current_span(
+            "db.update_alignment_reference",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "db.operation": "update",
+                "db.table": "user_data_objects",
+                "session_id": session_id,
+            },
+        ) as span:
+            with self.pg.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE user_data_objects
+                    SET alignment_object_key = %(alignment_object_key)s,
+                        updated_at = NOW()
+                    WHERE session_id = %(session_id)s;
+                    """,
+                    {"session_id": session_id, "alignment_object_key": alignment_object_key},
+                )
+            span.set_status(Status(StatusCode.OK))
 
     def update_scoring_job_score(self, session_id: str, score: float) -> None:
-        with self.pg.cursor() as cur:
-            cur.execute(
-                """
-                UPDATE scoring_jobs
-                SET score = %(score)s
-                WHERE session_id = %(session_id)s;
-                """,
-                {"session_id": session_id, "score": score},
-            )
+        with tracer.start_as_current_span(
+            "db.update_scoring_job_score",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "db.operation": "update",
+                "db.table": "scoring_jobs",
+                "session_id": session_id,
+                "score": score,
+            },
+        ) as span:
+            with self.pg.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE scoring_jobs
+                    SET score = %(score)s
+                    WHERE session_id = %(session_id)s;
+                    """,
+                    {"session_id": session_id, "score": score},
+                )
+            span.set_status(Status(StatusCode.OK))
 
 
 class AsrWorker:
@@ -381,42 +486,65 @@ class AsrWorker:
         )
 
     def _download_audio(self, audio_key: str) -> str:
-        _, temp_path = tempfile.mkstemp(prefix="quran-audio-", suffix=".opus")
-        try:
-            self.writer.minio.fget_object(self.cfg.minio_bucket, audio_key, temp_path)
-        except S3Error as err:
-            logger.error("failed to download %s: %s", audio_key, err)
-            raise
-        return temp_path
+        with tracer.start_as_current_span(
+            "download_audio",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "audio.key": audio_key,
+                "storage.type": "minio",
+            },
+        ) as span:
+            _, temp_path = tempfile.mkstemp(prefix="quran-audio-", suffix=".opus")
+            try:
+                self.writer.minio.fget_object(self.cfg.minio_bucket, audio_key, temp_path)
+                file_size = os.path.getsize(temp_path)
+                span.set_attribute("audio.size_bytes", file_size)
+                span.set_status(Status(StatusCode.OK))
+                return temp_path
+            except S3Error as err:
+                span.set_status(Status(StatusCode.ERROR, f"MinIO error: {err}"))
+                span.record_exception(err)
+                logger.error("failed to download %s: %s", audio_key, err)
+                raise
 
     def _transcribe(self, audio_path: str, expected_text_ar: str) -> Tuple[str, List[Dict[str, Any]]]:
-        prompt_tokens = expected_text_ar.split() if expected_text_ar else []
-        initial_prompt = None
-        if prompt_tokens:
-            initial_prompt = " ".join(prompt_tokens[:MAX_PROMPT_WORDS]).strip() or None
-        segments, _ = self.model.transcribe(
-            audio_path,
-            language="ar",
-            beam_size=5,
-            word_timestamps=True,
-            initial_prompt=initial_prompt,
-        )
+        with tracer.start_as_current_span(
+            "transcribe_audio",
+            attributes={
+                "whisper.model": self.cfg.whisper_model_size,
+                "whisper.device": self.cfg.whisper_device,
+                "audio.language": "ar",
+            },
+        ) as span:
+            prompt_tokens = expected_text_ar.split() if expected_text_ar else []
+            initial_prompt = None
+            if prompt_tokens:
+                initial_prompt = " ".join(prompt_tokens[:MAX_PROMPT_WORDS]).strip() or None
+            segments, _ = self.model.transcribe(
+                audio_path,
+                language="ar",
+                beam_size=5,
+                word_timestamps=True,
+                initial_prompt=initial_prompt,
+            )
 
-        words: List[Dict[str, Any]] = []
-        texts: List[str] = []
-        for segment in segments:
-            texts.append(segment.text.strip())
-            for word in segment.words or []:
-                words.append(
-                    {
-                        "word": word.word,
-                        "start": word.start,
-                        "end": word.end,
-                        "probability": word.probability,
-                    }
-                )
-        transcript = " ".join(texts).strip()
-        return transcript, words
+            words: List[Dict[str, Any]] = []
+            texts: List[str] = []
+            for segment in segments:
+                texts.append(segment.text.strip())
+                for word in segment.words or []:
+                    words.append(
+                        {
+                            "word": word.word,
+                            "start": word.start,
+                            "end": word.end,
+                            "probability": word.probability,
+                        }
+                    )
+            transcript = " ".join(texts).strip()
+            span.set_attribute("transcript.word_count", len(words))
+            span.set_status(Status(StatusCode.OK))
+            return transcript, words
 
     def process_job(self, job: Dict[str, Any]) -> None:
         required_keys = {"session_id", "audio_key", "ayah_id", "expected_text_ar"}
@@ -433,6 +561,10 @@ class AsrWorker:
         ayah_id = int(job["ayah_id"])
         expected_text_ar = str(job.get("expected_text_ar") or "")
 
+        # Extract trace context from job payload for distributed tracing
+        trace_ctx = job.get("trace_context") or {}
+        parent_context = extract(trace_ctx) if trace_ctx else context.get_current()
+
         enqueued_at = parse_enqueued_at(job.get("enqueued_at"))
         if enqueued_at:
             queue_wait_ms = (datetime.now(timezone.utc) - enqueued_at).total_seconds() * 1000
@@ -442,13 +574,22 @@ class AsrWorker:
         processing_start = time.perf_counter()
         with tracer.start_as_current_span(
             "worker.process_job",
+            context=parent_context,
+            kind=SpanKind.CONSUMER,
             attributes={
                 "session_id": session_id,
                 "audio_key": audio_key,
                 "ayah_id": ayah_id,
             },
-        ):
+        ) as span:
             audio_path = self._download_audio(audio_key)
+
+            # Record audio upload metrics
+            file_size = os.path.getsize(audio_path)
+            user_id = job.get("user_id", "unknown")
+            audio_upload_counter.add(1, {"user_id": user_id})
+            audio_upload_size_histogram.record(file_size, {"user_id": user_id})
+
             try:
                 transcript, words = self._transcribe(audio_path, expected_text_ar)
             finally:
@@ -457,9 +598,22 @@ class AsrWorker:
                 except OSError:
                     pass
 
-            wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
-            word_alignments = align_words(expected_text_ar, transcript)
-            pronunciation_score = compute_pronunciation_score(word_alignments, words, wer)
+            # Compute alignment and scoring with span
+            with tracer.start_as_current_span(
+                "compute_alignment_score",
+                attributes={
+                    "alignment.reference_words": len(expected_text_ar.split()) if expected_text_ar else 0,
+                    "alignment.hypothesis_words": len(transcript.split()),
+                },
+            ) as align_span:
+                wer = compute_wer(expected_text_ar, transcript) if expected_text_ar else None
+                word_alignments = align_words(expected_text_ar, transcript)
+                pronunciation_score = compute_pronunciation_score(word_alignments, words, wer)
+                if wer is not None:
+                    align_span.set_attribute("score.wer", wer)
+                align_span.set_attribute("score.accuracy", pronunciation_score["accuracy"])
+                align_span.set_attribute("score.overall", pronunciation_score["overall"])
+                align_span.set_status(Status(StatusCode.OK))
 
             alignment_payload = {
                 "session_id": session_id,
@@ -488,6 +642,22 @@ class AsrWorker:
 
             # Update scoring_jobs with pronunciation score
             self.writer.update_scoring_job_score(session_id, pronunciation_score["overall"])
+
+            # Record business metrics
+            job_status_counter.add(1, {"status": "success", "ayah_id": str(ayah_id)})
+            if wer is not None:
+                transcription_wer_histogram.record(wer, {"ayah_id": str(ayah_id)})
+            pronunciation_score_histogram.record(
+                pronunciation_score["overall"],
+                {
+                    "ayah_id": str(ayah_id),
+                    "accuracy_bucket": get_accuracy_bucket(pronunciation_score["accuracy"]),
+                },
+            )
+
+            # Set span status
+            span.set_status(Status(StatusCode.OK))
+
             logger.info(
                 "processed session_id=%s ayah_id=%s words=%d wer=%s alignment=%s",
                 session_id,
@@ -518,6 +688,9 @@ class AsrWorker:
                 self.process_job(job)
             except Exception as err:  # noqa: BLE001
                 session_id = job.get("session_id", "unknown") if isinstance(job, dict) else "unknown"
+                ayah_id = job.get("ayah_id", "unknown") if isinstance(job, dict) else "unknown"
+                error_type = type(err).__name__
+                job_status_counter.add(1, {"status": "failed", "error_type": error_type, "ayah_id": str(ayah_id)})
                 logger.exception("failed to process job session_id=%s: %s", session_id, err)
 
 
