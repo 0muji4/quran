@@ -1,14 +1,51 @@
 import { Router } from 'express';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import type { AuthedRequest } from '../auth';
 import { requireAuth } from '../auth';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
 import { deleteUserData } from '../infra';
-import { telemetry } from '../telemetry';
+import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
+import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
+
+// #region Schemas
+const signedUploadUrlSchema = z.object({
+  body: z.object({
+    filename: z.string().min(1),
+    contentType: z.string().startsWith('audio/')
+  })
+});
+
+const createScoringJobSchema = z.object({
+  body: z.object({
+    uploadKey: z.string().min(1),
+    surahId: surahIdSchema,
+    ayahNumber: ayahNumberSchema,
+    sessionId: z.string().optional()
+  })
+});
+
+const getScoringJobSchema = z.object({
+  params: z.object({
+    jobId: z.string().min(1)
+  })
+});
+
+const refreshTokenSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1)
+  })
+});
+
+const deleteUserDataSchema = z.object({
+  params: z.object({
+    sessionId: z.string().min(1)
+  })
+});
+// #endregion
 
 type SignedUploadResponse = Awaited<ReturnType<typeof createSignedUploadUrl>>;
-
 type JobResponse = ScoringResult;
 
 export const restRouter = Router();
@@ -19,12 +56,11 @@ const scoringRequestDuration = telemetry.meter.createHistogram('bff.scoring.requ
 });
 
 restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
-  const { filename, contentType } = req.body ?? {};
-
-  if (!filename || !contentType) {
-    res.status(400).json({ error: 'filename and contentType are required' });
-    return;
+  const validation = signedUploadUrlSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
   }
+  const { filename, contentType } = validation.data.body;
 
   const session = requireAuth(req, res);
   if (!session) return;
@@ -38,7 +74,7 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
     });
   } catch (error) {
     res.status(502).json({ error: 'Failed to create signed upload url' });
-    console.error('signed upload url create failed', { user_id: session.id, error });
+    logger.error('signed upload url create failed', { user_id: session.id, error });
     return;
   }
 
@@ -47,25 +83,18 @@ restRouter.post('/signed-upload-url', async (req: AuthedRequest, res) => {
 
 restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
-  const { uploadKey, surahId, ayahNumber, sessionId: requestSessionId } = req.body ?? {};
-  const sessionId =
-    typeof requestSessionId === 'string'
-      ? requestSessionId
-      : typeof uploadKey === 'string'
-        ? uploadKey
-        : 'unknown';
-
-  if (!uploadKey || !surahId || typeof ayahNumber !== 'number') {
-    res.status(400).json({ error: 'uploadKey, surahId, and ayahNumber are required' });
+  const validation = createScoringJobSchema.safeParse(req);
+  if (!validation.success) {
     scoringRequestDuration.record(Date.now() - startedAt, {
       route: '/scoring-jobs',
       method: 'POST',
-      session_id: sessionId,
       status: 'bad_request'
     });
-    console.info('scoring job request rejected', { session_id: sessionId });
-    return;
+    return res.status(400).json({ errors: validation.error.issues });
   }
+
+  const { uploadKey, surahId, ayahNumber, sessionId: requestSessionId } = validation.data.body;
+  const sessionId = requestSessionId ?? uploadKey ?? 'unknown';
 
   const session = requireAuth(req, res);
   if (!session) return;
@@ -73,10 +102,10 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   let job: JobResponse;
   try {
     job = await createScoringJob({
-      sessionId: typeof requestSessionId === 'string' ? requestSessionId : null,
+      sessionId: requestSessionId ?? null,
       uploadKey,
       surahId,
-      ayahNumber: typeof ayahNumber === 'number' ? ayahNumber : null,
+      ayahNumber,
       userId: session.id
     });
   } catch (error) {
@@ -87,9 +116,12 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
       session_id: sessionId,
       status: 'backend_error'
     });
-    console.error('scoring job create failed', { session_id: sessionId, error });
+    logger.error('scoring job create failed', { session_id: sessionId, error });
     return;
   }
+
+  // Record session created metric
+  recordSessionCreated(session.id);
 
   res.status(201).json(job);
   scoringRequestDuration.record(Date.now() - startedAt, {
@@ -98,26 +130,32 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
     session_id: job.jobId,
     status: job.status
   });
-  console.info('scoring job created', { session_id: job.jobId, status: job.status });
+  logger.info('scoring job created', { session_id: job.jobId, status: job.status });
 });
 
 restRouter.get('/scoring-jobs/:jobId', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
-  const sessionId = req.params.jobId;
+  const validation = getScoringJobSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { jobId } = validation.data.params;
+
   const session = requireAuth(req, res);
   if (!session) return;
+
   let job: JobResponse | null;
   try {
-    job = await getScoringJob(req.params.jobId);
+    job = await getScoringJob(jobId);
   } catch (error) {
     res.status(502).json({ error: 'Failed to fetch scoring job' });
     scoringRequestDuration.record(Date.now() - startedAt, {
       route: '/scoring-jobs/:jobId',
       method: 'GET',
-      session_id: sessionId,
+      session_id: jobId,
       status: 'backend_error'
     });
-    console.error('scoring job fetch failed', { session_id: sessionId, error });
+    logger.error('scoring job fetch failed', { session_id: jobId, error });
     return;
   }
 
@@ -126,31 +164,41 @@ restRouter.get('/scoring-jobs/:jobId', async (req: AuthedRequest, res) => {
     scoringRequestDuration.record(Date.now() - startedAt, {
       route: '/scoring-jobs/:jobId',
       method: 'GET',
-      session_id: sessionId,
+      session_id: jobId,
       status: 'not_found'
     });
-    console.info('scoring job not found', { session_id: sessionId });
+    logger.info('scoring job not found', { session_id: jobId });
     return;
+  }
+
+  // Record session completed metric if job is completed
+  if (job.status === 'COMPLETED' && job.feedback?.accuracy !== undefined) {
+    recordSessionCompleted(session.id, job.feedback.accuracy);
   }
 
   res.json(job);
   scoringRequestDuration.record(Date.now() - startedAt, {
     route: '/scoring-jobs/:jobId',
     method: 'GET',
-    session_id: sessionId,
+    session_id: jobId,
     status: job.status
   });
-  console.info('scoring job fetched', { session_id: sessionId, status: job.status });
+  logger.info('scoring job fetched', { session_id: jobId, status: job.status });
 });
 
 restRouter.post('/auth/refresh', (req: AuthedRequest, res) => {
-  const { refreshToken } = req.body ?? {};
+  const validation = refreshTokenSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { refreshToken } = validation.data.body;
+
   const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
   const accessSecret = process.env.JWT_SECRET;
 
-  if (!refreshToken || !refreshSecret || !accessSecret) {
-    res.status(400).json({ error: 'refreshToken is required' });
-    return;
+  if (!refreshSecret || !accessSecret) {
+    logger.error('JWT secrets are not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
   }
 
   try {
@@ -168,13 +216,14 @@ restRouter.post('/auth/refresh', (req: AuthedRequest, res) => {
 });
 
 restRouter.delete('/user-data/:sessionId', async (req: AuthedRequest, res) => {
+  const validation = deleteUserDataSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { sessionId } = validation.data.params;
+
   const session = requireAuth(req, res);
   if (!session) return;
-  const { sessionId } = req.params;
-  if (!sessionId) {
-    res.status(400).json({ error: 'sessionId is required' });
-    return;
-  }
 
   const deleted = await deleteUserData({ sessionId, userId: session.id });
   if (!deleted) {
