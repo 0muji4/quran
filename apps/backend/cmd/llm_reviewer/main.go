@@ -1,71 +1,68 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"quran-project/apps/backend/internal/lsp"
 	"strings"
+
+	"quran-project/apps/backend/internal/agent"
+	"quran-project/apps/backend/internal/lsp"
 )
 
 func main() {
-	// 1. プロジェクトルートの取得
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		log.Fatal("Please set GEMINI_API_KEY environment variable")
+	}
+
+	ctx := context.Background()
+
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Initializing L5 Agent (LSP Client)...")
-
-	// 2. LSPクライアントの起動
-	client, err := lsp.NewClient(wd)
+	// 1. LSPの起動 (The Eyes)
+	fmt.Println("Initializing LSP (gopls)...")
+	lspClient, err := lsp.NewClient(wd)
 	if err != nil {
-		log.Fatalf("Failed to start LSP client: %v", err)
+		log.Fatalf("Failed to start LSP: %v", err)
 	}
-	defer client.Close()
+	defer lspClient.Close()
 
-	// 3. ターゲットの決定 (今回は自分自身)
-	relativePath := "cmd/llm_reviewer/main.go"
-	targetFile := filepath.Join(wd, relativePath)
-
-	// 動的に func main() を探すロジック（そのまま再利用）
-	targetLine := 0
-	targetChar := 5
-	content, err := os.ReadFile(targetFile)
+	// 2. Agentの起動 (The Brain)
+	fmt.Println("Initializing L5 Agent...")
+	bot, err := agent.NewL5Agent(ctx, apiKey, wd, lspClient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create agent: %v", err)
 	}
-	lines := strings.Split(string(content), "\n")
-	found := false
-	for i, line := range lines {
-		if strings.HasPrefix(line, "func main()") {
-			targetLine = i
-			found = true
+
+	// 3. インタラクティブモード
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("\n--- Google L5 Go Engineer Bot (Ready) ---")
+	fmt.Println("例: cmd/llm_reviewer/main.go の 16行目の5文字目にある関数の参照元を教えて")
+
+	for {
+		fmt.Print("\nUser > ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		if input == "exit" || input == "quit" {
 			break
 		}
-	}
-	if !found {
-		log.Fatal("Could not find 'func main()' in the file.")
-	}
-
-	// 4. 参照検索の実行
-	fmt.Printf("Analyzing references for %s at line %d...\n", relativePath, targetLine+1)
-
-	refs, err := client.References(targetFile, targetLine, targetChar)
-	if err != nil {
-		log.Fatalf("LSP Query failed: %v", err)
-	}
-
-	// 5. 結果表示
-	fmt.Printf("\nFound %d references:\n", len(refs))
-	for _, ref := range refs {
-		// 表示を見やすく整形
-		path := strings.TrimPrefix(ref.URI, "file://")
-		// プロジェクトルートからの相対パスに変換して表示
-		if rel, err := filepath.Rel(wd, path); err == nil {
-			path = rel
+		if input == "" {
+			continue
 		}
-		fmt.Printf("- %s (Line: %d)\n", path, ref.Range.Start.Line+1)
+
+		response, err := bot.Run(ctx, input)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			continue
+		}
+
+		fmt.Printf("\nL5 Bot > %s\n", response)
 	}
 }
