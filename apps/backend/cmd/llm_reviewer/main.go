@@ -10,6 +10,7 @@ import (
 
 	"quran-project/apps/backend/internal/agent"
 	"quran-project/apps/backend/internal/lsp"
+	"quran-project/apps/backend/internal/workspace"
 )
 
 func main() {
@@ -33,14 +34,18 @@ func main() {
 	}
 	defer lspClient.Close()
 
-	// 2. Agentの起動 (The Brain)
+	// 2. Workspace Tools (The Hands)
+	fsReader := workspace.NewFSReader(wd)
+	gitDiff := workspace.NewGitDiff(wd)
+
+	// 3. Agentの起動 (The Brain)
 	fmt.Println("Initializing L5 Agent...")
-	bot, err := agent.NewL5Agent(ctx, apiKey, wd, lspClient)
+	bot, err := agent.NewL5Agent(ctx, apiKey, wd, lspClient, fsReader, gitDiff)
 	if err != nil {
 		log.Fatalf("Failed to create agent: %v", err)
 	}
 
-	// 3. インタラクティブモード
+	// 4. インタラクティブモード
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("\n--- Google L5 Go Engineer Bot (Ready) ---")
 	fmt.Println("例: cmd/llm_reviewer/main.go の 16行目の5文字目にある関数の参照元を教えて")
