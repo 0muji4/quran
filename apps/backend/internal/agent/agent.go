@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"quran-project/apps/backend/internal/lsp"
+	"quran-project/apps/backend/internal/symbol"
 	"quran-project/apps/backend/internal/workspace"
 
 	"google.golang.org/genai"
@@ -20,6 +21,7 @@ type L5Agent struct {
 	analyzer lsp.CodeAnalyzer
 	reader   workspace.FileReader
 	differ   workspace.DiffProvider
+	resolver symbol.Resolver
 	history  []*genai.Content
 	rootPath string
 }
@@ -31,6 +33,7 @@ func NewL5Agent(
 	analyzer lsp.CodeAnalyzer,
 	reader workspace.FileReader,
 	differ workspace.DiffProvider,
+	resolver symbol.Resolver,
 ) (*L5Agent, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
@@ -45,6 +48,7 @@ func NewL5Agent(
 		analyzer: analyzer,
 		reader:   reader,
 		differ:   differ,
+		resolver: resolver,
 		rootPath: rootPath,
 	}, nil
 }
@@ -100,6 +104,20 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 						Properties: map[string]*genai.Schema{},
 					},
 				},
+				{
+					Name:        "find_symbol",
+					Description: "シンボル名（関数名、型名、変数名など）からソースコード上の定義位置（ファイルパス、行番号、文字位置）を検索します。シンボルの参照元を調べたいがファイルや行番号が不明な場合、まずこのツールで位置を特定してからfind_referencesを使ってください。",
+					Parameters: &genai.Schema{
+						Type: genai.TypeObject,
+						Properties: map[string]*genai.Schema{
+							"name": {
+								Type:        genai.TypeString,
+								Description: "検索するシンボル名（例: SurahService, NewClient, ListSurahs）",
+							},
+						},
+						Required: []string{"name"},
+					},
+				},
 			},
 		},
 	}
@@ -110,7 +128,8 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 			"あなたはGoogleのL5ソフトウェアエンジニアです。Go言語のエキスパートとして振る舞ってください。"+
 				"コードの変更や関数について聞かれたときは、必ずツールを使って事実を確認してから回答してください。"+
 				"推測で回答することは許されません。「事実はコードにある」が信条です。"+
-				"ファイルの中身を確認するには「read_file」、参照検索には「find_references」、Git差分の確認には「get_diff」を使ってください。",
+				"シンボル名（関数名や型名）だけが分かっている場合は、まず「find_symbol」で定義位置を特定し、その結果を使って「find_references」で参照元を検索してください。"+
+				"ファイルの中身を確認するには「read_file」、Git差分の確認には「get_diff」を使ってください。",
 			"user",
 		),
 	}
@@ -154,6 +173,11 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 				if resultText == "" && execErr == nil {
 					resultText = "No changes detected (working tree is clean)."
 				}
+
+			case "find_symbol":
+				name, _ := call.Args["name"].(string)
+				fmt.Printf("Calling Tool: find_symbol(%s)\n", name)
+				resultText, execErr = a.executeFindSymbol(name)
 			}
 
 			if execErr != nil {
@@ -173,6 +197,26 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 	}
 
 	return "", fmt.Errorf("loop limit exceeded")
+}
+
+func (a *L5Agent) executeFindSymbol(name string) (string, error) {
+	locations, err := a.resolver.FindSymbol(name)
+	if err != nil {
+		return "", err
+	}
+
+	if len(locations) == 0 {
+		return fmt.Sprintf("Symbol %q not found.", name), nil
+	}
+
+	var result []string
+	for _, loc := range locations {
+		result = append(result, fmt.Sprintf("%s:%d:%d", loc.FilePath, loc.Line, loc.Character))
+	}
+
+	output := fmt.Sprintf("Found symbol %q at:\n%s", name, strings.Join(result, "\n"))
+	fmt.Printf("   -> %s\n", output)
+	return output, nil
 }
 
 func (a *L5Agent) executeFindReferences(relPath string, line, char int) (string, error) {
