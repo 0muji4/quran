@@ -50,9 +50,20 @@ jobs:
     defaults:
       run:
         working-directory: apps/ios
+    env:
+      APOLLO_IOS_CLI_VERSION: 1.25.5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install Apollo iOS CLI
+        run: |
+          curl -sL "https://github.com/apollographql/apollo-ios/releases/download/${APOLLO_IOS_CLI_VERSION}/apollo-ios-cli.tar.gz" \
+            | tar -xz -C /usr/local/bin
+          apollo-ios-cli --version
+
+      - name: Verify GraphQL codegen is up-to-date
+        run: make codegen-check
 
       - name: Build iOS app
         run: xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" build

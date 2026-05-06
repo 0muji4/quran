@@ -1,0 +1,12 @@
+query ScoringJob($jobId: ID!) {
+  scoringJob(jobId: $jobId) {
+    jobId
+    status
+    score
+    verdict
+    segments {
+      label
+      score
+    }
+  }
+}
