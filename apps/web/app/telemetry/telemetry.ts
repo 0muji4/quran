@@ -34,10 +34,10 @@ export async function initTelemetry(): Promise<void> {
 
   sdk = new NodeSDK({
     traceExporter,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
       exportIntervalMillis: 10000 // 10秒間隔（BFF/Backendと統一）
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- NodeSDK and PeriodicExportingMetricReader come from different OTel SDK versions; the structural mismatch needs an `any` until the versions align
     }) as any,
     resource
   });
