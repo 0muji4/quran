@@ -1,7 +1,10 @@
 import { context, propagation, SpanStatusCode } from '@opentelemetry/api';
 import { tracer } from './telemetry';
 
-export async function fetchWithTracing(url: string, options?: RequestInit): Promise<Response> {
+export async function fetchWithTracing(
+  url: string,
+  options?: Parameters<typeof fetch>[1]
+): Promise<Response> {
   return tracer.startActiveSpan(`HTTP ${options?.method ?? 'GET'} ${url}`, async (span) => {
     try {
       // Inject trace context into HTTP headers
