@@ -45,7 +45,7 @@ public struct ScoringResultPayload {
 
   init(from data: CreateScoringJobMutation.Data.CreateScoringJob) {
     jobId = data.jobId
-    status = data.status
+    status = data.status.value ?? .failed
     score = data.score
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }
@@ -53,7 +53,7 @@ public struct ScoringResultPayload {
 
   init(from data: ScoringJobQuery.Data.ScoringJob) {
     jobId = data.jobId
-    status = data.status
+    status = data.status.value ?? .failed
     score = data.score
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }

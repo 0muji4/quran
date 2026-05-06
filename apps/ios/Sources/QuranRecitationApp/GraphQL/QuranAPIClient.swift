@@ -34,7 +34,10 @@ final class QuranAPIClient {
     repeat {
       let query = ScoringJobQuery(jobId: jobId)
       let result = try await fetch(query: query)
-      currentResult = ScoringResultPayload(from: result.scoringJob)
+      guard let scoringJob = result.scoringJob else {
+        throw QuranAPIError.graphQLError
+      }
+      currentResult = ScoringResultPayload(from: scoringJob)
 
       if currentResult.status == .completed || currentResult.status == .failed {
         return currentResult
