@@ -228,6 +228,10 @@ gradle :apps:android:lintDebug
 ```
 
 > Note: Set `BFF_BASE_URL` (Gradle property or env var) to point at your BFF if you are not using the default `http://localhost:4000`.
+>
+> 実機（USB 接続）で `localhost` 経由の BFF を叩く場合: `adb reverse tcp:4000 tcp:4000`
+> Android Emulator から叩く場合: `BFF_BASE_URL=http://10.0.2.2:4000` を Gradle property または環境変数で指定
+> debug ビルドのみ `localhost` / `10.0.2.2` / `127.0.0.1` への cleartext HTTP を許可しています（release は不可）
 
 ### iOS
 **Prerequisites**
