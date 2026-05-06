@@ -47,17 +47,20 @@ jobs:
 
   ios:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/ios
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build iOS app
-        run: xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" build
+        run: xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" build
 
       - name: Run iOS tests (if present)
         run: |
-          if [ -d apps/ios/Tests ]; then
-            xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" test
+          if [ -d Tests ]; then
+            xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" test
           else
             echo "No iOS tests directory; skipping tests."
           fi
