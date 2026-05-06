@@ -3,10 +3,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { Resource } from '@opentelemetry/resources';
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { trace, metrics } from '@opentelemetry/api';
 
 const serviceName = process.env.OTEL_SERVICE_NAME || 'quran-web';
@@ -22,17 +19,17 @@ export async function initTelemetry(): Promise<void> {
   }
 
   const traceExporter = new OTLPTraceExporter({
-    url: `${otlpEndpoint}/v1/traces`,
+    url: `${otlpEndpoint}/v1/traces`
   });
 
   const metricExporter = new OTLPMetricExporter({
-    url: `${otlpEndpoint}/v1/metrics`,
+    url: `${otlpEndpoint}/v1/metrics`
   });
 
   const resource = new Resource({
     [ATTR_SERVICE_NAME]: serviceName,
     [ATTR_SERVICE_VERSION]: serviceVersion,
-    'service.namespace': 'quran-project',
+    'service.namespace': 'quran-project'
   });
 
   sdk = new NodeSDK({
@@ -40,9 +37,9 @@ export async function initTelemetry(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
-      exportIntervalMillis: 10000, // 10秒間隔（BFF/Backendと統一）
+      exportIntervalMillis: 10000 // 10秒間隔（BFF/Backendと統一）
     }) as any,
-    resource,
+    resource
   });
 
   await sdk.start();
