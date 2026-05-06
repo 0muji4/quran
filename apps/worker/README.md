@@ -36,3 +36,17 @@ Jobs should be JSON objects with the following fields:
 - `audio_key` – object key in MinIO pointing to the uploaded audio.
 - `ayah_id` – verse id for context and relational integrity.
 - `expected_text_ar` – Arabic reference text for WER calculation.
+
+## Tests
+
+Python:
+
+```bash
+make worker-py-test
+```
+
+Go (placeholder; not deployed):
+
+```bash
+go test ./apps/worker/go/...
+```
