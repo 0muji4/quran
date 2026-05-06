@@ -4,6 +4,7 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { restRouter } from '../rest';
 import { authMiddleware } from '../../auth';
+import { expectZodPathError } from '../../__tests__/zodAssertions';
 
 // Mock dependencies
 vi.mock('../../jobs', () => ({
@@ -23,6 +24,12 @@ vi.mock('../../telemetry', () => ({
         record: vi.fn()
       }))
     }
+  },
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
   },
   recordSessionCreated: vi.fn(),
   recordSessionCompleted: vi.fn()
@@ -77,9 +84,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'filename and contentType are required'
-      });
+      expectZodPathError(response.body, ['body', 'filename']);
     });
 
     it('returns 400 when contentType is missing', async () => {
@@ -88,9 +93,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'filename and contentType are required'
-      });
+      expectZodPathError(response.body, ['body', 'contentType']);
     });
 
     it('returns 502 when createSignedUploadUrl fails', async () => {
@@ -187,9 +190,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'uploadKey, surahId, and ayahNumber are required'
-      });
+      expectZodPathError(response.body, ['body', 'uploadKey']);
     });
 
     it('returns 400 when surahId is missing', async () => {
@@ -199,9 +200,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'uploadKey, surahId, and ayahNumber are required'
-      });
+      expectZodPathError(response.body, ['body', 'surahId']);
     });
 
     it('returns 400 when ayahNumber is missing', async () => {
@@ -211,9 +210,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'uploadKey, surahId, and ayahNumber are required'
-      });
+      expectZodPathError(response.body, ['body', 'ayahNumber']);
     });
 
     it('returns 400 when ayahNumber is not a number', async () => {
@@ -224,9 +221,7 @@ describe('REST API Integration', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'uploadKey, surahId, and ayahNumber are required'
-      });
+      expectZodPathError(response.body, ['body', 'ayahNumber']);
     });
 
     it('returns 502 when createScoringJob fails', async () => {
@@ -358,9 +353,7 @@ describe('REST API Integration', () => {
       const response = await request(app).post('/auth/refresh').send({});
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'refreshToken is required'
-      });
+      expectZodPathError(response.body, ['body', 'refreshToken']);
     });
 
     it('returns 401 for invalid refresh token', async () => {
