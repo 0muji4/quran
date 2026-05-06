@@ -57,7 +57,7 @@ Coverage thresholds are **80% for lines / functions / branches / statements**. C
 
 - `apps/` — `web` / `bff` / `backend` / `worker` / `android` / `ios`
 - `packages/` — `ui` / `shared-ts` / `go-pkg` / `eslint-config` / `ts-config`
-- `db/` — migrations (`migrations/`) and seed data (`seed.sql`)
+- `db/` — migrations (`migrations/`), reference Quran seed (`seed_quran.sql`, auto-generated), and demo fixtures (`seed.sql`)
 - `ops/` — Docker Compose, observability, local dev tooling
 - `schemas/graphql/` — GraphQL schema
 - `e2e/` — Playwright end-to-end tests
@@ -67,3 +67,12 @@ Coverage thresholds are **80% for lines / functions / branches / statements**. C
 - BFF acts as a proxy in front of backend (`:8080`). When `/rsc/*` misbehaves, work backwards: BFF → backend → DB.
 - Web is App Router only; `pages/` is not used.
 - Run `make help` to list every Make target.
+
+## Attribution
+
+The Arabic Quran text shipped in `db/seed_quran.sql` is sourced verbatim from
+the [Tanzil Uthmani text](https://tanzil.net/) via
+[risan/quran-json](https://github.com/risan/quran-json). The Tanzil text is
+licensed under [CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/);
+it is reproduced without modification. Regenerate the seed via
+`pnpm gen:quran-seed` when the upstream dataset is bumped.
