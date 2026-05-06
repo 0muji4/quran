@@ -1,0 +1,22 @@
+{
+  "schemaNamespace": "QuranSchema",
+  "input": {
+    "schemaSearchPaths": ["../../schemas/graphql/schema.graphql"],
+    "operationSearchPaths": ["./Sources/QuranRecitationApp/GraphQL/Operations/**/*.graphql"]
+  },
+  "output": {
+    "testMocks": { "none": {} },
+    "schemaTypes": {
+      "path": "./Sources/QuranRecitationApp/GraphQL/Generated",
+      "moduleType": {
+        "embeddedInTarget": {
+          "name": "QuranRecitationApp",
+          "accessModifier": "public"
+        }
+      }
+    },
+    "operations": {
+      "inSchemaModule": {}
+    }
+  }
+}

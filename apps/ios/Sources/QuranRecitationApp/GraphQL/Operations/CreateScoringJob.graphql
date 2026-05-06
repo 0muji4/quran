@@ -1,0 +1,12 @@
+mutation CreateScoringJob($input: CreateScoringJobInput!) {
+  createScoringJob(input: $input) {
+    jobId
+    status
+    score
+    verdict
+    segments {
+      label
+      score
+    }
+  }
+}

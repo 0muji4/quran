@@ -60,7 +60,7 @@ final class RecordingViewModel: ObservableObject {
         filename: recording.lastPathComponent,
         contentType: "audio/m4a"
       )
-      let destinationDescription = uploadDestinationDescription(from: signedUpload)
+      let destinationDescription = "PUT \(signedUpload.url) (expires \(signedUpload.expiresAt))"
       uploadDestinationDescription = destinationDescription
       print("Upload destination: \(destinationDescription)")
       try await apiClient.uploadAudio(fileURL: recording, to: signedUpload.url)
