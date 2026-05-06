@@ -4,28 +4,28 @@ TypeScript / Express service that exposes GraphQL plus RSC-friendly REST endpoin
 
 ## Routes
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/healthz` | Health check |
-| GET | `/rsc/surahs` | List Surahs (forwarded to backend) |
-| GET | `/rsc/surah/:surahId/ayahs` | List Ayahs for a Surah |
-| GET | `/rsc/scores/:sessionId` | Fetch scoring results |
-| POST | `/signed-upload-url` | Issue a signed upload URL |
-| POST | `/scoring-jobs` | Submit a scoring job |
-| GET | `/scoring-jobs/:jobId` | Job status |
-| POST | `/auth/refresh` | Refresh access token |
-| (GraphQL) | `/graphql` | GraphQL endpoint |
+| Method    | Path                        | Purpose                            |
+| --------- | --------------------------- | ---------------------------------- |
+| GET       | `/healthz`                  | Health check                       |
+| GET       | `/rsc/surahs`               | List Surahs (forwarded to backend) |
+| GET       | `/rsc/surah/:surahId/ayahs` | List Ayahs for a Surah             |
+| GET       | `/rsc/scores/:sessionId`    | Fetch scoring results              |
+| POST      | `/signed-upload-url`        | Issue a signed upload URL          |
+| POST      | `/scoring-jobs`             | Submit a scoring job               |
+| GET       | `/scoring-jobs/:jobId`      | Job status                         |
+| POST      | `/auth/refresh`             | Refresh access token               |
+| (GraphQL) | `/graphql`                  | GraphQL endpoint                   |
 
 See `apps/bff/src/server/app.ts`, `apps/bff/src/rest/`, and `apps/bff/src/graphql/` for the full mount points.
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PORT` | `4000` | Listen port |
-| `BACKEND_URL` | `http://localhost:8080` | Upstream Go backend URL |
-| `JWT_SECRET` / `REFRESH_TOKEN_SECRET` | — | Auth secrets |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP collector endpoint (optional) |
+| Variable                              | Default                 | Purpose                            |
+| ------------------------------------- | ----------------------- | ---------------------------------- |
+| `PORT`                                | `4000`                  | Listen port                        |
+| `BACKEND_URL`                         | `http://localhost:8080` | Upstream Go backend URL            |
+| `JWT_SECRET` / `REFRESH_TOKEN_SECRET` | —                       | Auth secrets                       |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`         | —                       | OTLP collector endpoint (optional) |
 
 ## Local Development
 

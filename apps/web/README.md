@@ -8,9 +8,9 @@ This app is **App Router only** — `pages/` is not used. Shared client / server
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PORT` | `3000` | Next.js port |
+| Variable  | Default                 | Purpose      |
+| --------- | ----------------------- | ------------ |
+| `PORT`    | `3000`                  | Next.js port |
 | `BFF_URL` | `http://localhost:4000` | BFF endpoint |
 
 ## Local Development
