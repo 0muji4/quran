@@ -62,6 +62,7 @@ export const otelMiddleware = (req: Request, res: Response, next: NextFunction):
 
   // Override res.end to capture response information
   const originalEnd = res.end.bind(res);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Express end has overloaded signatures; spreading typed args back into originalEnd requires `any[]` here
   res.end = function (this: Response, ...args: any[]): Response {
     const duration = Date.now() - startTime;
 
