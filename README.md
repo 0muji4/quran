@@ -1,252 +1,69 @@
 # quran-project
 
-## Overview
-quran-project is a cross-platform pronunciation practice app for Quran recitation. It provides guided practice with model audio, user recording, automated scoring, and review workflows to help learners improve their tajwīd fundamentals.
+A cross-platform pronunciation practice app for Quran recitation. Provides guided practice with model audio, user recording, automated scoring, and review workflows so learners can improve their tajwīd fundamentals.
 
 ## Tech Stack
-- Web: React + TypeScript (Next.js with RSC)
-- BFF: TypeScript (GraphQL + RSC-friendly REST endpoints)
-- Backend/Core: Go
-- Worker: Go or Python (audio processing + scoring)
-- Database: PostgreSQL
-- Object Storage: S3-compatible (e.g., MinIO)
-- Cache/Queue: Redis
-- Containers/Dev: Docker Compose
-- Observability: OpenTelemetry, Jaeger, Prometheus, Loki, Grafana
 
-## Getting Started
-### Prerequisites
-- Docker & Docker Compose
-- Node.js + pnpm
-- Go
+| Layer | Technology |
+|---|---|
+| Web | React + TypeScript (Next.js / App Router) |
+| BFF | TypeScript (Express + GraphQL + RSC-friendly REST) |
+| Backend | Go |
+| Worker | Python (faster-whisper) / Go (placeholder) |
+| Mobile | Android (Kotlin / Compose), iOS (Swift / Apollo) |
+| Database | PostgreSQL |
+| Object Storage | S3-compatible (MinIO) |
+| Cache / Queue | Redis |
+| Containers / Dev | Docker Compose |
+| Observability | OpenTelemetry, Jaeger, Prometheus, Loki, Grafana |
 
-### Install dependencies
+## Per-domain READMEs
+
+Local setup, build, and test instructions live next to the code they describe:
+
+| Domain | Location |
+|---|---|
+| Local dev stack (Docker Compose / Make / DB) | [`ops/README.md`](./ops/README.md) |
+| Observability stack (OTEL / Jaeger / Prometheus / Loki / Grafana) | [`ops/observability/README.md`](./ops/observability/README.md) |
+| Backend (Go) | [`apps/backend/README.md`](./apps/backend/README.md) |
+| BFF (TypeScript) | [`apps/bff/README.md`](./apps/bff/README.md) |
+| Web (Next.js) | [`apps/web/README.md`](./apps/web/README.md) |
+| Worker (Python / Go) | [`apps/worker/README.md`](./apps/worker/README.md) |
+| Android | [`apps/android/README.md`](./apps/android/README.md) |
+| iOS | [`apps/ios/README.md`](./apps/ios/README.md) |
+
+## Quick Start
+
+To bring up the entire stack:
+
 ```bash
 pnpm install
-```
-
-### Build and start the full stack (dev)
-```bash
-# Using Docker Compose directly
-docker compose -f ops/docker/compose.dev.yml up --build
-
-# Or using Make
 make dev-up
+make db-migrate && make db-seed   # first time only
 ```
 
-This will start:
-- Web: http://localhost:3000
-- BFF: http://localhost:4000
-- Backend: http://localhost:8080
-- Postgres: localhost:5432
-- MinIO API: http://localhost:9000 (Console: http://localhost:9001)
-- Redis: localhost:6379
-- Jaeger UI: http://localhost:16686
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3200 (admin/admin)
+Default published ports: Web 3000 / BFF 4000 / Backend 8080 / Postgres 5432 / Redis 6379 / MinIO 9000-9001 / Jaeger 16686 / Prometheus 9090 / Grafana 3200. See [`ops/README.md`](./ops/README.md) for details.
 
-### Start only dependencies (db/minio/redis)
-```bash
-docker compose -f ops/docker/compose.dev.yml up -d postgres minio redis
-```
-
-### Start only the application services
-```bash
-docker compose -f ops/docker/compose.dev.yml up --build web bff backend worker
-```
-
-### View logs
-```bash
-docker compose -f ops/docker/compose.dev.yml logs -f
-```
-
-### Stop services
-```bash
-docker compose -f ops/docker/compose.dev.yml down
-```
-
-### Reset data (remove volumes)
-```bash
-docker compose -f ops/docker/compose.dev.yml down -v
-```
-
-### Database migrations
-SQL migrations live in `db/migrations`. Apply them with your preferred migration tool.
-If you use `sql-migrate`, add a `dbconfig.yml` and run a dry-run via:
-```bash
-make sql-migrate-dry-run
-```
-
-## Observability
-
-The project includes a comprehensive observability stack for monitoring, tracing, and logging.
-
-### Starting Observability Stack
+## Running All Tests
 
 ```bash
-# Start only observability services
-make observability-up
-
-# Check status of observability services
-make observability-status
-
-# View logs
-make observability-logs
-
-# Stop observability services
-make observability-down
+make ci                  # format / lint / test / build / Go fmt / Go test
+make test-coverage-all   # Go + TS coverage (80% threshold)
 ```
 
-### Available UIs
+Coverage thresholds are **80% for lines / functions / branches / statements**. CI checks coverage on every PR and retains reports for 30 days. Per-package coverage details live in each domain README.
 
-Once started, the following interfaces are available:
+## Repository Layout
 
-- **Jaeger** (http://localhost:16686): Distributed tracing UI for viewing request traces across services
-- **Prometheus** (http://localhost:9090): Metrics and time-series data exploration
-- **Grafana** (http://localhost:3200): Unified dashboards with pre-configured datasources
-  - Login: `admin` / `admin`
-  - Pre-configured dashboards:
-    - Service Health Overview
-    - ASR Worker Performance
-    - Business Metrics
-
-### OpenTelemetry Endpoints
-
-- **OTLP HTTP**: http://localhost:4318 (for sending traces/metrics/logs)
-- **Collector Metrics**: http://localhost:8888/metrics (collector self-monitoring)
-
-### Features
-
-- **Distributed Tracing**: Track requests from Web → BFF → Backend → Worker with a single trace ID
-- **Metrics Collection**: Monitor request rates, latencies, error rates, and custom business metrics
-- **Structured Logging**: JSON-formatted logs with automatic trace context injection
-- **Correlation**: Seamlessly navigate between logs, traces, and metrics using trace IDs
-- **Pre-configured Dashboards**: Ready-to-use Grafana dashboards for key system metrics
-
-### Architecture
-
-```
-Applications (Web/BFF/Backend/Worker)
-           ↓ OTLP HTTP
-    OpenTelemetry Collector
-     ↓        ↓         ↓
-  Jaeger  Prometheus  Loki
-     ↓        ↓         ↓
-       Grafana (Unified View)
-```
-
-For detailed implementation information, see `/ops/docker/` configuration files.
-
-## Test Coverage
-
-We maintain 80%+ test coverage across all packages to ensure code quality and reliability.
-
-### Running Tests Locally
-
-**All tests with coverage:**
-```bash
-make test-coverage-all
-```
-
-**Go tests with coverage:**
-```bash
-make go-test-coverage-check
-```
-
-**TypeScript tests with coverage:**
-```bash
-pnpm run test:coverage
-```
-
-**Individual package tests:**
-```bash
-# Backend Go tests
-make go-test-integration
-
-# BFF tests
-pnpm --filter @quran-project/bff test:coverage
-
-# Web tests
-pnpm --filter @quran-project/web test:coverage
-
-# UI package tests
-pnpm --filter @quran-project/ui test:coverage
-```
-
-### View Coverage Reports
-
-After running tests with coverage, you can view detailed HTML reports:
-
-```bash
-# Go coverage
-open coverage.html
-
-# BFF coverage
-open apps/bff/coverage/index.html
-
-# Web coverage
-open apps/web/coverage/index.html
-
-# UI coverage
-open packages/ui/coverage/index.html
-```
-
-### Coverage Thresholds
-
-All packages must maintain minimum coverage thresholds. CI will fail if coverage falls below these levels:
-
-- **Lines**: 80%
-- **Functions**: 80%
-- **Branches**: 80%
-- **Statements**: 80%
-
-### CI Integration
-
-Coverage is automatically checked in CI for every pull request. Coverage artifacts are uploaded and retained for 30 days for inspection.
-
-## Mobile Apps (Android / iOS)
-### Android
-**Prerequisites**
-- Android Studio + Android SDK (API 34, Build Tools 34.x)
-- JDK 17
-- Gradle (8.x)
-- `ANDROID_HOME`/`ANDROID_SDK_ROOT` set and SDK licenses accepted
-
-**Build**
-```bash
-gradle :apps:android:assembleDebug
-```
-
-**Test**
-```bash
-gradle :apps:android:testDebugUnitTest
-```
-
-**Lint**
-```bash
-gradle :apps:android:lintDebug
-```
-
-> Note: Set `BFF_BASE_URL` (Gradle property or env var) to point at your BFF if you are not using the default `http://localhost:4000`.
-
-### iOS
-**Prerequisites**
-- macOS with Xcode 15+ (Swift 5.9) and iOS 16+ SDK
-
-**Build (Xcode CLI)**
-```bash
-xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" build
-```
-
-**Test (if/when tests are added)**
-```bash
-xcodebuild -scheme QuranRecitationApp -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" test
-```
-
-**Build (Xcode UI)**
-- Open `apps/ios/Package.swift` in Xcode, select the `QuranRecitationApp` scheme, and run.
+- `apps/` — `web` / `bff` / `backend` / `worker` / `android` / `ios`
+- `packages/` — `ui` / `shared-ts` / `go-pkg` / `eslint-config` / `ts-config`
+- `db/` — migrations (`migrations/`) and seed data (`seed.sql`)
+- `ops/` — Docker Compose, observability, local dev tooling
+- `schemas/graphql/` — GraphQL schema
+- `e2e/` — Playwright end-to-end tests
 
 ## Notes
-- See `ops/docker/compose.dev.yml` for local service definitions and environment variables.
-- Web/BFF/Backend/Worker are organized under `apps/`.
-- The Next.js web app (`apps/web`) uses the App Router exclusively; shared client/server types and helpers live under `apps/web/app/lib`.
+
+- BFF acts as a proxy in front of backend (`:8080`). When `/rsc/*` misbehaves, work backwards: BFF → backend → DB.
+- Web is App Router only; `pages/` is not used.
+- Run `make help` to list every Make target.
