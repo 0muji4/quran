@@ -56,11 +56,18 @@ Helpers in the root Makefile apply each file in `db/migrations/` in order:
 
 ```bash
 make db-migrate   # apply all migrations
-make db-seed      # load initial data
+make db-seed      # load reference Quran data + demo fixtures
 make db-status    # list current tables
 make db-shell     # open psql
 make db-reset     # DROP → CREATE → migrate (destructive)
 ```
+
+`make db-seed` loads two files in this order:
+
+1. `db/seed_quran.sql` — reference data: 114 surahs and 6,236 ayahs, generated
+   from [risan/quran-json](https://github.com/risan/quran-json) (Tanzil
+   Uthmani text). Regenerate via `pnpm gen:quran-seed`.
+2. `db/seed.sql` — demo fixtures (mock users, sample attempts, etc.).
 
 If you prefer `sql-migrate`, drop a `dbconfig.yml` at the repo root and run:
 
