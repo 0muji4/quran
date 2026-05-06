@@ -29,17 +29,15 @@ export const logger = winston.createLogger({
     traceContextFormat(),
     logFormat === 'json'
       ? winston.format.json()
-      : winston.format.printf(
-          ({ timestamp, level, message, trace_id, span_id, ...meta }) => {
-            let log = `${timestamp} [${level}] ${message}`;
-            if (trace_id) log += ` trace_id=${trace_id}`;
-            if (span_id) log += ` span_id=${span_id}`;
-            if (Object.keys(meta).length > 0) {
-              log += ` ${JSON.stringify(meta)}`;
-            }
-            return log;
+      : winston.format.printf(({ timestamp, level, message, trace_id, span_id, ...meta }) => {
+          let log = `${timestamp} [${level}] ${message}`;
+          if (trace_id) log += ` trace_id=${trace_id}`;
+          if (span_id) log += ` span_id=${span_id}`;
+          if (Object.keys(meta).length > 0) {
+            log += ` ${JSON.stringify(meta)}`;
           }
-        )
+          return log;
+        })
   ),
   transports: [new winston.transports.Console()]
 });
