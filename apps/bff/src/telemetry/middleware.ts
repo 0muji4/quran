@@ -1,6 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import { context, propagation, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
-import { ATTR_HTTP_REQUEST_METHOD, ATTR_URL_FULL, ATTR_URL_PATH, ATTR_SERVER_ADDRESS, ATTR_URL_SCHEME, ATTR_USER_AGENT_ORIGINAL, ATTR_HTTP_ROUTE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_URL_FULL,
+  ATTR_URL_PATH,
+  ATTR_SERVER_ADDRESS,
+  ATTR_URL_SCHEME,
+  ATTR_USER_AGENT_ORIGINAL,
+  ATTR_HTTP_ROUTE,
+  ATTR_HTTP_RESPONSE_STATUS_CODE
+} from '@opentelemetry/semantic-conventions';
 import { telemetry } from './telemetry';
 import { logger } from './logger';
 
@@ -53,6 +62,7 @@ export const otelMiddleware = (req: Request, res: Response, next: NextFunction):
 
   // Override res.end to capture response information
   const originalEnd = res.end.bind(res);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Express end has overloaded signatures; spreading typed args back into originalEnd requires `any[]` here
   res.end = function (this: Response, ...args: any[]): Response {
     const duration = Date.now() - startTime;
 
