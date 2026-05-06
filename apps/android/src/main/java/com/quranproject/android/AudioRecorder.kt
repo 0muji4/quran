@@ -2,6 +2,7 @@ package com.quranproject.android
 
 import android.content.Context
 import android.media.MediaRecorder
+import android.os.Build
 import java.io.File
 
 class AudioRecorder(private val context: Context) {
@@ -14,7 +15,8 @@ class AudioRecorder(private val context: Context) {
         }
 
         val file = File(context.cacheDir, "recording-${System.currentTimeMillis()}.m4a")
-        val mediaRecorder = MediaRecorder().apply {
+        @Suppress("DEPRECATION")
+        val mediaRecorder = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(context) else MediaRecorder()).apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)

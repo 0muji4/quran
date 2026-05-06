@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -175,10 +176,9 @@ private fun SelectedAyahCard(ayah: AyahRecord) {
         )
         Text(
             text = ayah.textAr,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.copy(textDirection = TextDirection.Rtl),
             textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth(),
-            textDirection = TextDirection.Rtl
+            modifier = Modifier.fillMaxWidth()
         )
         ayah.textEn?.let {
             Text(text = it, style = MaterialTheme.typography.bodyMedium)
@@ -266,9 +266,9 @@ private fun JobStatusSection(job: ScoringResult, polling: Boolean) {
                     Text(text = "Transcript", style = MaterialTheme.typography.labelMedium)
                     Text(
                         text = transcript,
+                        style = TextStyle(textDirection = TextDirection.Rtl),
                         textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth(),
-                        textDirection = TextDirection.Rtl
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
                 feedback.wer?.let { wer ->

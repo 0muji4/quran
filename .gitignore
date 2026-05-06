@@ -50,3 +50,14 @@ Thumbs.db
 /playwright-report/
 /playwright/.cache/
 /e2e/screenshots/
+
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+captures/
+.cxx/
+.externalNativeBuild/
+*.iml
+!gradle/wrapper/gradle-wrapper.jar
