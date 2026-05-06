@@ -2,6 +2,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
 import { createSignedUploadUrl } from '../../jobs';
+import { expectZodPathError } from '../../__tests__/zodAssertions';
 
 vi.mock('../../jobs', () => ({
   createSignedUploadUrl: vi.fn(),
@@ -66,6 +67,6 @@ describe('REST routes', () => {
     const response = await request(app).post('/signed-upload-url').send({});
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: 'filename and contentType are required' });
+    expectZodPathError(response.body, ['body', 'filename']);
   });
 });
