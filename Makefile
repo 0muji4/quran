@@ -109,8 +109,12 @@ db-migrate:
 
 db-seed:
 	@echo "Seeding database with initial data..."
+	@echo "  Applying db/seed_quran.sql (reference Surah/Ayah data)..."
 	@docker exec -i $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
-		psql -U app -d app < db/seed.sql
+		psql -U app -d app -v ON_ERROR_STOP=1 < db/seed_quran.sql > /dev/null
+	@echo "  Applying db/seed.sql (demo fixtures)..."
+	@docker exec -i $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
+		psql -U app -d app -v ON_ERROR_STOP=1 < db/seed.sql > /dev/null
 	@echo "Database seeded successfully!"
 
 db-reset:
