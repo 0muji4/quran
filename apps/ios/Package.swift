@@ -8,7 +8,7 @@ let package = Package(
     .executable(name: "QuranRecitationApp", targets: ["QuranRecitationApp"])
   ],
   dependencies: [
-    .package(url: "https://github.com/apollographql/apollo-ios.git", from: "1.9.0")
+    .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "1.25.5")
   ],
   targets: [
     .executableTarget(
