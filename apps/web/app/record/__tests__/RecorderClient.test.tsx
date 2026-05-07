@@ -18,7 +18,8 @@ vi.mock('../../actions', () => ({
   createScoringJobFromUpload: vi.fn(),
   fetchScoringJob: vi.fn(),
   fetchSurahs: vi.fn(),
-  fetchSurahAyahs: vi.fn()
+  fetchSurahAyahs: vi.fn(),
+  fetchReferenceAudioUrl: vi.fn()
 }));
 
 // Mock SegmentHighlights component
@@ -40,6 +41,10 @@ describe('RecorderClient', () => {
     vi.mocked(actions.requestSignedUploadUrl).mockResolvedValue(mockSignedUploadUrl);
     vi.mocked(actions.createScoringJobFromUpload).mockResolvedValue(mockScoringResult);
     vi.mocked(actions.fetchScoringJob).mockResolvedValue(mockScoringResult);
+    vi.mocked(actions.fetchReferenceAudioUrl).mockResolvedValue({
+      url: 'http://localhost/mock-reference.mp3',
+      expiresAt: new Date(Date.now() + 60_000).toISOString()
+    });
 
     // Mock global fetch for file upload
     global.fetch = vi.fn().mockResolvedValue({

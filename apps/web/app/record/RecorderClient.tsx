@@ -12,6 +12,7 @@ import {
 } from '../actions';
 import type { AyahRecord, SurahSummary } from '../lib/types';
 import { describeUploadTarget, summarizeSurah } from '../lib/formatters';
+import { TeacherAudio } from './TeacherAudio';
 
 const recordingMimeType = 'audio/webm';
 
@@ -356,6 +357,14 @@ export function RecorderClient() {
         </div>
       )}
 
+      {selectedAyah && (
+        <TeacherAudio
+          surahId={Number(surahId)}
+          ayahNumber={Number(ayahNumber)}
+          isRecording={isRecording}
+        />
+      )}
+
       <div className="controls">
         <button
           type="button"
@@ -385,7 +394,7 @@ export function RecorderClient() {
       {audioUrl && (
         <div className="stack">
           <p className="pill warn">Preview of your last recording</p>
-          <audio controls src={audioUrl} />
+          <audio controls src={audioUrl} data-testid="audio-preview" />
         </div>
       )}
 

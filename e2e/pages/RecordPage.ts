@@ -30,7 +30,7 @@ export class RecordPage extends BasePage {
 
     // Status and results
     this.statusMessage = page.locator('.status').first();
-    this.audioPreview = page.locator('audio[controls]');
+    this.audioPreview = page.getByTestId('audio-preview');
   }
 
   /**

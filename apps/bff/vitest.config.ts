@@ -20,5 +20,11 @@ export default defineConfig({
         statements: 80
       }
     }
+  },
+  resolve: {
+    alias: {
+      '@quran-project/shared-ts': new URL('../../packages/shared-ts/src/index.ts', import.meta.url)
+        .pathname
+    }
   }
 });
