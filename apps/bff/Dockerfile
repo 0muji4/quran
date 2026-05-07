@@ -8,6 +8,7 @@ COPY apps ./apps
 COPY schemas ./schemas
 
 RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm --filter @quran-project/shared-ts build
 
 WORKDIR /app/apps/bff
 
