@@ -208,6 +208,46 @@ export const fetchSurahs = async (): Promise<SurahSummary[]> => {
   );
 };
 
+export const fetchReferenceAudioUrl = async (
+  surahId: number,
+  ayahNumber: number
+): Promise<{ url: string; expiresAt: string }> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchReferenceAudioUrl',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchReferenceAudioUrl');
+        span.setAttribute('action.surahId', surahId);
+        span.setAttribute('action.ayahNumber', ayahNumber);
+
+        const response = await fetchWithTracing(
+          `${BFF_BASE_URL}/reference-audio?surah=${surahId}&ayah=${ayahNumber}`,
+          withNoStore
+        );
+
+        const result = await parseJson<{ url: string; expiresAt: string }>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return result;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: (error as Error).message
+        });
+        logger.error('fetchReferenceAudioUrl failed', {
+          error: (error as Error).message,
+          surahId,
+          ayahNumber
+        });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 export const fetchSurahAyahs = async (surahId: string): Promise<AyahRecord[]> => {
   return tracer.startActiveSpan(
     'ServerAction: fetchSurahAyahs',
