@@ -25,14 +25,24 @@ func TestPublishASRJob(t *testing.T) {
 	client := &fakeClient{}
 	enqueuer := newEnqueuerWithClient(client, "token-123")
 
-	err := enqueuer.PublishASRJob(context.Background(), "session-1", "audio.wav", 99, "الْحَمْدُ")
+	err := enqueuer.PublishASRJob(context.Background(), "session-1", "audio.wav", 99, "الْحَمْدُ", "reference-audio/001001.mp3")
 	require.NoError(t, err)
 
 	require.Equal(t, "session-1", client.lastJob.SessionID)
 	require.Equal(t, "token-123", client.lastJob.AuthToken)
 	require.Equal(t, int64(99), client.lastJob.AyahID)
+	require.Equal(t, "reference-audio/001001.mp3", client.lastJob.ReferenceAudioKey)
 	require.False(t, client.lastJob.EnqueuedAt.IsZero())
 	require.Less(t, time.Since(client.lastJob.EnqueuedAt), time.Second)
+}
+
+func TestPublishASRJobOmitsReferenceAudioKeyWhenEmpty(t *testing.T) {
+	client := &fakeClient{}
+	enqueuer := newEnqueuerWithClient(client, "token-123")
+
+	err := enqueuer.PublishASRJob(context.Background(), "session-1", "audio.wav", 99, "الْحَمْدُ", "")
+	require.NoError(t, err)
+	require.Equal(t, "", client.lastJob.ReferenceAudioKey)
 }
 
 func TestPublishASRJobWithTraceContext(t *testing.T) {
@@ -53,7 +63,7 @@ func TestPublishASRJobWithTraceContext(t *testing.T) {
 	ctx, span := tp.Tracer("test").Start(context.Background(), "test-span")
 	defer span.End()
 
-	err := enqueuer.PublishASRJob(ctx, "session-1", "audio.wav", 99, "الْحَمْدُ")
+	err := enqueuer.PublishASRJob(ctx, "session-1", "audio.wav", 99, "الْحَمْدُ", "reference-audio/001001.mp3")
 	require.NoError(t, err)
 
 	// Verify TraceContext was injected
@@ -69,7 +79,7 @@ func TestPublishASRJobWithoutSpan(t *testing.T) {
 	enqueuer := newEnqueuerWithClient(client, "token-123")
 
 	// Call without span - should still work
-	err := enqueuer.PublishASRJob(context.Background(), "session-1", "audio.wav", 99, "الْحَمْدُ")
+	err := enqueuer.PublishASRJob(context.Background(), "session-1", "audio.wav", 99, "الْحَمْدُ", "reference-audio/001001.mp3")
 	require.NoError(t, err)
 
 	// TraceContext should exist but may be empty or contain default values

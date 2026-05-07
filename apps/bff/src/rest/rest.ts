@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { AuthedRequest } from '../auth';
 import { requireAuth } from '../auth';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
-import { deleteUserData } from '../infra';
+import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra';
 import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
 import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
@@ -41,6 +41,13 @@ const refreshTokenSchema = z.object({
 const deleteUserDataSchema = z.object({
   params: z.object({
     sessionId: z.string().min(1)
+  })
+});
+
+const referenceAudioSchema = z.object({
+  query: z.object({
+    surah: z.coerce.number().int().min(1).max(114),
+    ayah: z.coerce.number().int().min(1).max(286)
   })
 });
 // #endregion
@@ -212,6 +219,24 @@ restRouter.post('/auth/refresh', (req: AuthedRequest, res) => {
     res.json({ accessToken: token });
   } catch {
     res.status(401).json({ error: 'invalid refresh token' });
+  }
+});
+
+restRouter.get('/reference-audio', async (req, res) => {
+  const validation = referenceAudioSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { surah, ayah } = validation.data.query;
+  try {
+    const result = await ensureReferenceAudio(surah, ayah);
+    res.json({ url: result.signedUrl, expiresAt: result.expiresAt });
+  } catch (error) {
+    if (error instanceof ReferenceUnavailableError) {
+      return res.status(503).json({ error: 'REFERENCE_UNAVAILABLE' });
+    }
+    logger.error('reference audio fetch failed', { surah, ayah, error });
+    res.status(502).json({ error: 'STORAGE_OR_SOURCE_UNAVAILABLE' });
   }
 });
 

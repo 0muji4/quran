@@ -58,7 +58,9 @@ func newEnqueuerWithClient(client Client, authToken string) *Enqueuer {
 }
 
 // PublishASRJob pushes a single job for the given session/audio/ayah combination.
-func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string, ayahID int64, expectedTextAR string) error {
+// referenceAudioKey is optional and points to the cached teacher recitation in object storage;
+// the worker uses it for per-word pronunciation alignment in Phase 2 and silently ignores it today.
+func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string, ayahID int64, expectedTextAR, referenceAudioKey string) error {
 	startedAt := time.Now()
 	ctx, span := telemetry.Tracer().Start(ctx, "queue.enqueue")
 	span.SetAttributes(
@@ -73,13 +75,14 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(traceContext))
 
 	job := queue.Job{
-		SessionID:      sessionID,
-		AudioKey:       audioKey,
-		AyahID:         ayahID,
-		ExpectedTextAR: expectedTextAR,
-		EnqueuedAt:     time.Now().UTC(),
-		AuthToken:      e.authToken,
-		TraceContext:   traceContext,
+		SessionID:         sessionID,
+		AudioKey:          audioKey,
+		AyahID:            ayahID,
+		ExpectedTextAR:    expectedTextAR,
+		ReferenceAudioKey: referenceAudioKey,
+		EnqueuedAt:        time.Now().UTC(),
+		AuthToken:         e.authToken,
+		TraceContext:      traceContext,
 	}
 	err := e.client.Enqueue(ctx, job)
 	enqueueDurationMs := float64(time.Since(startedAt).Milliseconds())

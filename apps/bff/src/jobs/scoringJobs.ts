@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { PronunciationFeedback, ScoringResult, WordAlignment } from '@quran-project/shared-ts';
 import {
+  ensureReferenceAudio,
   findSessionIdForUploadKey,
   getDatabasePool,
   getMinioClientForPresignedUrls,
@@ -160,17 +161,35 @@ export const createScoringJob = async (input: {
     throw new Error('Session ID not found for upload key');
   }
 
+  let referenceAudioKey: string | null = null;
+  if (typeof input.ayahNumber === 'number') {
+    const surahNumeric = Number(input.surahId);
+    try {
+      const ensured = await ensureReferenceAudio(surahNumeric, input.ayahNumber);
+      referenceAudioKey = ensured.key;
+    } catch (error) {
+      console.error('Failed to ensure reference audio cache', {
+        surahId: input.surahId,
+        ayahNumber: input.ayahNumber,
+        error
+      });
+      throw error;
+    }
+  }
+
   const payload = {
     uploadKey: input.uploadKey,
     sessionId,
     surahId: input.surahId,
     ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
-    userId: input.userId ?? null
+    userId: input.userId ?? null,
+    referenceAudioKey
   };
   console.log('Creating scoring job', {
     sessionId: payload.sessionId,
     surahId: payload.surahId,
-    ayahNumber: payload.ayahNumber
+    ayahNumber: payload.ayahNumber,
+    referenceAudioKey: payload.referenceAudioKey
   });
 
   const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs`, {

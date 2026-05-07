@@ -88,11 +88,12 @@ func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
 }
 
 type scoringJobRequest struct {
-	SessionID  string `json:"sessionId"`
-	UploadKey  string `json:"uploadKey"`
-	SurahID    string `json:"surahId"`
-	AyahNumber *int32 `json:"ayahNumber"`
-	UserID     string `json:"userId"`
+	SessionID         string `json:"sessionId"`
+	UploadKey         string `json:"uploadKey"`
+	SurahID           string `json:"surahId"`
+	AyahNumber        *int32 `json:"ayahNumber"`
+	UserID            string `json:"userId"`
+	ReferenceAudioKey string `json:"referenceAudioKey,omitempty"`
 }
 
 type scoreSegment struct {
@@ -213,7 +214,7 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Enqueuer.PublishASRJob(r.Context(), sessionID, req.UploadKey, ayahID, expectedText); err != nil {
+	if err := h.Enqueuer.PublishASRJob(r.Context(), sessionID, req.UploadKey, ayahID, expectedText, req.ReferenceAudioKey); err != nil {
 		_, _ = h.DB.ExecContext(
 			r.Context(),
 			`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
