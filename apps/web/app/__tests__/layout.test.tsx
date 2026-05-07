@@ -1,30 +1,37 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 
-import RootLayout from '../layout';
+import { AppShell } from '../components/AppShell';
 
-describe('RootLayout', () => {
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/'
+}));
+
+describe('AppShell', () => {
   afterEach(() => {
     cleanup();
   });
 
-  it('renders header with brand title and subtitle', () => {
+  it('renders the Tilawah brand and primary tabs', () => {
     render(
-      <RootLayout>
+      <AppShell>
         <div>Test Content</div>
-      </RootLayout>
+      </AppShell>
     );
 
-    expect(screen.getByText('Quran Project')).toBeInTheDocument();
-    expect(screen.getByText('Recorder')).toBeInTheDocument();
+    expect(screen.getByText('Tilawah')).toBeInTheDocument();
+    expect(screen.getByText('Recitation Practice')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Surah library' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Practice' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'History' })).toBeInTheDocument();
   });
 
-  it('renders children in main element', () => {
+  it('renders children inside the main element', () => {
     render(
-      <RootLayout>
+      <AppShell>
         <div>Test Content</div>
-      </RootLayout>
+      </AppShell>
     );
 
     const main = screen.getByRole('main');
@@ -32,39 +39,17 @@ describe('RootLayout', () => {
     expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 
-  it('applies correct CSS classes', () => {
-    const { container } = render(
-      <RootLayout>
+  it('marks the active tab based on pathname', () => {
+    render(
+      <AppShell>
         <div>Test Content</div>
-      </RootLayout>
+      </AppShell>
     );
 
-    expect(container.querySelector('.page-shell')).toBeInTheDocument();
-    expect(container.querySelector('.page-header')).toBeInTheDocument();
-    expect(container.querySelector('.page-content')).toBeInTheDocument();
-    expect(container.querySelector('.brand')).toBeInTheDocument();
-  });
+    const surahTab = screen.getByRole('link', { name: 'Surah library' });
+    expect(surahTab).toHaveAttribute('aria-current', 'page');
 
-  it('renders emoji icon with aria-hidden', () => {
-    const { container } = render(
-      <RootLayout>
-        <div>Test Content</div>
-      </RootLayout>
-    );
-
-    const emoji = container.querySelector('[aria-hidden="true"]');
-    expect(emoji).toBeInTheDocument();
-    expect(emoji?.textContent).toBe('📖');
-  });
-
-  it('renders html with lang attribute', () => {
-    const { container } = render(
-      <RootLayout>
-        <div>Test Content</div>
-      </RootLayout>
-    );
-
-    const html = container.querySelector('html');
-    expect(html).toHaveAttribute('lang', 'en');
+    const practiceTab = screen.getByRole('link', { name: 'Practice' });
+    expect(practiceTab).not.toHaveAttribute('aria-current');
   });
 });
