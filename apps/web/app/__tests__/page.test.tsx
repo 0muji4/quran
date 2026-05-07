@@ -1,37 +1,67 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import HomePage from '../page';
+import { LibraryClient } from '../library/LibraryClient';
+import type { SurahSummary } from '../lib/types';
 
-describe('HomePage', () => {
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/'
+}));
+
+const mockSurahs: SurahSummary[] = [
+  { id: '1', nameEn: 'Al-Fatihah', nameAr: 'الفاتحة', ayahCount: 7, revelationPlace: 'Meccan' },
+  { id: '2', nameEn: 'Al-Baqarah', nameAr: 'البقرة', ayahCount: 286, revelationPlace: 'Medinan' },
+  { id: '112', nameEn: 'Al-Ikhlas', nameAr: 'الإخلاص', ayahCount: 4, revelationPlace: 'Meccan' }
+];
+
+describe('Surah library', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   afterEach(() => {
     cleanup();
   });
 
-  it('renders the welcome message and recorder link', () => {
-    render(<HomePage />);
+  it('renders the hero copy and the search input', () => {
+    render(<LibraryClient surahs={mockSurahs} />);
 
-    expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Use the recorder to capture your recitation, upload it to the BFF, and request a scoring job without leaving the browser.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Go to recorder' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Choose a surah to recite/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by surah name or number...')).toBeInTheDocument();
   });
 
-  it('supports accessible user navigation to the recorder link', async () => {
+  it('renders a card per surah with a link to the practice page', () => {
+    render(<LibraryClient surahs={mockSurahs} />);
+
+    const fatihahLink = screen.getByRole('link', { name: /Al-Fatihah/i });
+    expect(fatihahLink).toHaveAttribute('href', '/practice?surah=1&ayah=1');
+  });
+
+  it('filters surahs by search query', async () => {
     const user = userEvent.setup();
-    render(<HomePage />);
+    render(<LibraryClient surahs={mockSurahs} />);
 
-    const recorderLink = screen.getByRole('link', { name: 'Go to recorder' });
+    const search = screen.getByPlaceholderText('Search by surah name or number...');
+    await user.type(search, 'baqarah');
 
-    await user.tab();
-    expect(recorderLink).toHaveFocus();
+    expect(screen.getByRole('link', { name: /Al-Baqarah/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Al-Fatihah/i })).not.toBeInTheDocument();
+  });
 
-    await user.click(recorderLink);
-    expect(recorderLink).toHaveAttribute('href', '/record');
+  it('filters surahs by revelation place', async () => {
+    const user = userEvent.setup();
+    render(<LibraryClient surahs={mockSurahs} />);
+
+    await user.click(screen.getByRole('button', { name: /Medina/i }));
+
+    expect(screen.getByRole('link', { name: /Al-Baqarah/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Al-Fatihah/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the All counter reflecting the total surah count', () => {
+    render(<LibraryClient surahs={mockSurahs} />);
+    expect(screen.getByRole('button', { name: 'All 3' })).toBeInTheDocument();
   });
 });
