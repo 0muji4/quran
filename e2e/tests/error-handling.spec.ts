@@ -43,13 +43,15 @@ test.describe('Error Handling', () => {
     await recordPage.waitForRecordingEnded();
 
     // Whatever the result, the practice page must still be intact. After a
-    // quick stop the panel may transition straight into the analysing card,
-    // so accept that header in addition to the idle / recording ones.
+    // quick stop the panel may end up in any of the post-recording states —
+    // analysing if the audio made it through, or "couldn't process" if the
+    // client-side too-short guard kicked in (the test stops after 150 ms).
     await expect(recordPage.listenToTeacherHeading).toBeVisible();
     await expect(
       recordPage.nowYouReciteHeading
         .or(recordPage.recordingHeading)
         .or(recordPage.analysingHeading)
+        .or(recordPage.couldNotProcessHeading)
     ).toBeVisible();
   });
 
