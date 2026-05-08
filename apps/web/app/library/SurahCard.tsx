@@ -16,7 +16,7 @@ export function SurahCard({ surah, bestScore, isLastPracticed }: Props) {
     ? `${styles.surahCard} ${styles.surahCardActive}`
     : styles.surahCard;
   return (
-    <Link href={`/practice?surah=${surah.id}&ayah=1`} className={className}>
+    <Link href={`/practice/${surah.id}/1`} className={className}>
       <span className={styles.surahNumber} aria-hidden="true">
         {surah.id}
       </span>

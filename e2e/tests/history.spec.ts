@@ -36,6 +36,6 @@ test.describe('History', () => {
     await expect(page.getByText(/^87$/)).toBeVisible();
 
     await page.getByRole('link', { name: /al-fatihah/i }).first().click();
-    await expect(page).toHaveURL(/\/practice\?.*surah=1.*ayah=1/);
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
   });
 });

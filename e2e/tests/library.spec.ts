@@ -68,7 +68,7 @@ test.describe('Surah library', () => {
     await expect(resumeLink).toBeVisible();
     await expect(resumeLink).toHaveAttribute(
       'href',
-      `/practice?surah=${testSurahs.alFatihah.id}&ayah=3`
+      `/practice/${testSurahs.alFatihah.id}/3`
     );
   });
 

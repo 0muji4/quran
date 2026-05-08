@@ -3,7 +3,7 @@ import { BasePage } from './BasePage';
 
 /**
  * Practice Page Object Model
- * Represents the redesigned practice screen at /practice?surah=&ayah=
+ * Represents the redesigned practice screen at /practice/[surahId]/[ayahNumber]
  *
  * The class name remains `RecordPage` for backwards compatibility with
  * existing fixture wiring, but it targets the new mic-button driven UI.
@@ -42,7 +42,7 @@ export class RecordPage extends BasePage {
    * Navigate directly to a specific surah/ayah on the practice page.
    */
   async goto(surahId: string | number = '1', ayahNumber: number = 1) {
-    await this.navigate(`/practice?surah=${surahId}&ayah=${ayahNumber}`);
+    await this.navigate(`/practice/${surahId}/${ayahNumber}`);
   }
 
   /**

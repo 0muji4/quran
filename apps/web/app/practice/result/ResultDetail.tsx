@@ -46,10 +46,7 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
           <span className={styles.breadcrumbSep} aria-hidden="true">
             ›
           </span>
-          <Link
-            href={`/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`}
-            className={styles.breadcrumbLink}
-          >
+          <Link href={`/practice/${surah.id}/${ayah.ayahNumber}`} className={styles.breadcrumbLink}>
             {surah.nameEn}
           </Link>
           <span className={styles.breadcrumbSep} aria-hidden="true">
