@@ -42,9 +42,15 @@ test.describe('Error Handling', () => {
     await recordPage.stopRecording();
     await recordPage.waitForRecordingEnded();
 
-    // Whatever the result, the practice page must still be intact.
+    // Whatever the result, the practice page must still be intact. After a
+    // quick stop the panel may transition straight into the analysing card,
+    // so accept that header in addition to the idle / recording ones.
     await expect(recordPage.listenToTeacherHeading).toBeVisible();
-    await expect(recordPage.nowYouReciteHeading.or(recordPage.recordingHeading)).toBeVisible();
+    await expect(
+      recordPage.nowYouReciteHeading
+        .or(recordPage.recordingHeading)
+        .or(recordPage.analysingHeading)
+    ).toBeVisible();
   });
 
   test('should reset state on a page reload during recording', async ({ page, recordPage }) => {
