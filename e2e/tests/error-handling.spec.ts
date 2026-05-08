@@ -15,8 +15,10 @@ test.describe('Error Handling', () => {
     page,
     recordPage
   }) => {
+    // Legacy query-string URLs are 308-redirected to the canonical path-based
+    // form; no ayah → defaults to 1. We assert we landed on the new shape.
     await page.goto(`/practice?surah=${testSurahs.alFatihah.id}`);
-    await expect(page).toHaveURL(/ayah=1|ayah$|surah=1/);
+    await expect(page).toHaveURL(new RegExp(`/practice/${testSurahs.alFatihah.id}/1$`));
     await expect(recordPage.micButton).toBeVisible();
   });
 
@@ -24,7 +26,7 @@ test.describe('Error Handling', () => {
     page,
     homePage
   }) => {
-    await page.goto('/practice?surah=999&ayah=1');
+    await page.goto('/practice/999/1');
     // The server action throws; the page falls back to '/' which the
     // tolerant home renders even before BFF is ready.
     await expect(page).toHaveURL(/\/$|\/\?/);

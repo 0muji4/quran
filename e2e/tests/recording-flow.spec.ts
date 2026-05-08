@@ -53,7 +53,7 @@ test.describe('Recording Flow', () => {
     await expect(recordPage.listenToTeacherHeading).toBeVisible();
 
     await recordPage.previousAyahLink.click();
-    await expect(recordPage.page).toHaveURL(/ayah=1/);
+    await expect(recordPage.page).toHaveURL(/\/practice\/1\/1$/);
     await expect(recordPage.micButton).toBeVisible();
   });
 
