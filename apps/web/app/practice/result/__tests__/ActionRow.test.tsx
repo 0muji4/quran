@@ -1,8 +1,11 @@
-import { afterEach, describe, it, expect } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ActionRow } from '../ActionRow';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('ActionRow', () => {
   it('points "Continue to ayah N+1" at the next ayah on a non-final ayah', () => {
@@ -27,5 +30,30 @@ describe('ActionRow', () => {
     render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={3} totalAyahs={7} />);
     const tryAgain = screen.getByRole('link', { name: /try this ayah again/i });
     expect(tryAgain).toHaveAttribute('href', '/practice/1/3');
+  });
+
+  describe('Save attempt', () => {
+    it('shows the "Save attempt" button by default', () => {
+      render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={2} totalAyahs={7} />);
+      expect(screen.getByRole('button', { name: /save attempt/i })).toBeInTheDocument();
+    });
+
+    it('flips to "Saved to history" on click', () => {
+      render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={2} totalAyahs={7} />);
+      fireEvent.click(screen.getByRole('button', { name: /save attempt/i }));
+      expect(screen.getByRole('button', { name: /saved to history/i })).toBeInTheDocument();
+    });
+
+    it('reverts to "Save attempt" after the confirmation timeout', () => {
+      vi.useFakeTimers();
+      render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={2} totalAyahs={7} />);
+      fireEvent.click(screen.getByRole('button', { name: /save attempt/i }));
+      expect(screen.getByRole('button', { name: /saved to history/i })).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      expect(screen.getByRole('button', { name: /save attempt/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /saved to history/i })).not.toBeInTheDocument();
+    });
   });
 });
