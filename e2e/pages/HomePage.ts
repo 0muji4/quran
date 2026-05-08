@@ -1,34 +1,43 @@
-import { expect } from '@playwright/test';
+import { expect, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
  * Home Page Object Model
- * Represents the landing page at /
+ * Represents the Surah library landing page at /
  */
 export class HomePage extends BasePage {
-  // Locators
-  readonly welcomeHeading = this.page.getByRole('heading', { name: /welcome/i });
-  readonly recordButton = this.page.getByRole('link', { name: /recorder|record/i });
+  readonly heading: Locator = this.page.getByRole('heading', {
+    name: /choose a surah to recite/i
+  });
+
+  readonly searchInput: Locator = this.page.getByPlaceholder(/search by surah/i);
 
   /**
-   * Navigate to home page
+   * Navigate to home page.
    */
   async goto() {
     await this.navigate('/');
   }
 
   /**
-   * Verify page has loaded correctly
+   * Verify the page has loaded correctly.
    */
   async verifyLoaded() {
-    await expect(this.welcomeHeading).toBeVisible();
+    await expect(this.heading).toBeVisible();
   }
 
   /**
-   * Navigate to the record page
+   * Locate a surah card by its English name.
    */
-  async navigateToRecord() {
-    await this.recordButton.click();
-    await this.page.waitForURL('/record');
+  surahCard(name: string): Locator {
+    return this.page.getByRole('link', { name: new RegExp(name, 'i') }).first();
+  }
+
+  /**
+   * Click a surah card and wait for navigation to /practice.
+   */
+  async openSurah(name: string) {
+    await this.surahCard(name).click();
+    await this.page.waitForURL(/\/practice/);
   }
 }
