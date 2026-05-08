@@ -15,8 +15,18 @@ export function ScoreDial({ score, size = 156, strokeWidth = 12 }: Props) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - safe / 100);
 
+  const ariaLabel =
+    score === null || Number.isNaN(score)
+      ? 'Score not yet available'
+      : `Score: ${Math.round(score)} out of 100`;
+
   return (
-    <div className={styles.scoreDial} style={{ width: size, height: size }}>
+    <div
+      className={styles.scoreDial}
+      style={{ width: size, height: size }}
+      role="img"
+      aria-label={ariaLabel}
+    >
       <svg
         className={styles.scoreDialSvg}
         width={size}
@@ -45,7 +55,7 @@ export function ScoreDial({ score, size = 156, strokeWidth = 12 }: Props) {
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <div className={styles.scoreDialCenter}>
+      <div className={styles.scoreDialCenter} aria-hidden="true">
         <span className={styles.scoreDialNumber}>{display}</span>
         <span className={styles.scoreDialUnit}>OUT OF 100</span>
       </div>

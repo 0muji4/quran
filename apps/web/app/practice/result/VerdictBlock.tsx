@@ -1,4 +1,5 @@
 import styles from '../../styles/practice.module.css';
+import { AutoFocusHeading } from './AutoFocusHeading';
 import type { VerdictBand } from './verdict';
 
 type Props = {
@@ -8,8 +9,11 @@ type Props = {
 export function VerdictBlock({ verdict }: Props) {
   return (
     <div className={styles.verdictBlock}>
-      <span className={styles.verdictBadge}>← {verdict.badge}</span>
-      <h2 className={styles.verdictHeadline}>{verdict.headline}</h2>
+      <span className={styles.verdictBadge}>
+        <span aria-hidden="true">← </span>
+        {verdict.badge}
+      </span>
+      <AutoFocusHeading className={styles.verdictHeadline}>{verdict.headline}</AutoFocusHeading>
       <p className={styles.verdictSubhead}>{verdict.subhead}</p>
     </div>
   );
