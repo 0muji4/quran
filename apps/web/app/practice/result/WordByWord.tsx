@@ -39,6 +39,7 @@ const formatWer = (wer: number | null | undefined): string => {
 };
 
 export function WordByWord({ wordAlignments, wer }: Props) {
+  const hasAlignments = wordAlignments.length > 0;
   const expectedRow = wordAlignments.map((a, i) => ({
     key: `exp-${i}`,
     word: a.refWord ?? null,
@@ -77,45 +78,46 @@ export function WordByWord({ wordAlignments, wer }: Props) {
         </ul>
       </header>
 
-      <div className={styles.wordCompareRow}>
-        <span className={styles.wordCompareRowLabel}>EXPECTED (TEACHER)</span>
-        <div className={styles.wordCompareTiles} dir="rtl">
-          {expectedRow.length === 0 ? (
-            <span className={styles.wordCompareEmpty}>No reference words available.</span>
-          ) : (
-            expectedRow.map((tile) => (
-              <span
-                key={tile.key}
-                className={tileClass(tile.cat)}
-                lang="ar"
-                aria-hidden={tile.isPlaceholder || undefined}
-              >
-                {tile.word ?? '…'}
-              </span>
-            ))
-          )}
-        </div>
-      </div>
+      {!hasAlignments ? (
+        <p className={styles.wordCompareEmpty}>
+          Word-level alignment is not available for this attempt yet. Try recording again to surface
+          a word-by-word breakdown.
+        </p>
+      ) : (
+        <>
+          <div className={styles.wordCompareRow}>
+            <span className={styles.wordCompareRowLabel}>EXPECTED (TEACHER)</span>
+            <div className={styles.wordCompareTiles} dir="rtl">
+              {expectedRow.map((tile) => (
+                <span
+                  key={tile.key}
+                  className={tileClass(tile.cat)}
+                  lang="ar"
+                  aria-hidden={tile.isPlaceholder || undefined}
+                >
+                  {tile.word ?? '…'}
+                </span>
+              ))}
+            </div>
+          </div>
 
-      <div className={styles.wordCompareRow}>
-        <span className={styles.wordCompareRowLabel}>WHAT WE HEARD</span>
-        <div className={styles.wordCompareTiles} dir="rtl">
-          {heardRow.length === 0 ? (
-            <span className={styles.wordCompareEmpty}>No transcription available.</span>
-          ) : (
-            heardRow.map((tile) => (
-              <span
-                key={tile.key}
-                className={tileClass(tile.cat)}
-                lang="ar"
-                aria-hidden={tile.isPlaceholder || undefined}
-              >
-                {tile.word ?? '…'}
-              </span>
-            ))
-          )}
-        </div>
-      </div>
+          <div className={styles.wordCompareRow}>
+            <span className={styles.wordCompareRowLabel}>WHAT WE HEARD</span>
+            <div className={styles.wordCompareTiles} dir="rtl">
+              {heardRow.map((tile) => (
+                <span
+                  key={tile.key}
+                  className={tileClass(tile.cat)}
+                  lang="ar"
+                  aria-hidden={tile.isPlaceholder || undefined}
+                >
+                  {tile.word ?? '…'}
+                </span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }
