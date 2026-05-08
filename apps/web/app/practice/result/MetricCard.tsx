@@ -31,14 +31,29 @@ export function MetricCard({ label, value, description, tone }: Props) {
         ? styles.metricBarFillAmber
         : styles.metricBarFillRed;
 
+  const labelId = `metric-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const isUnknown = computed.display === '—';
+
   return (
     <div className={styles.metricCard}>
       <div className={styles.metricCardHead}>
-        <span className={styles.metricCardLabel}>{label}</span>
-        <span className={styles.metricCardValue}>{computed.display}</span>
+        <span id={labelId} className={styles.metricCardLabel}>
+          {label}
+        </span>
+        <span className={styles.metricCardValue} aria-hidden="true">
+          {computed.display}
+        </span>
       </div>
-      <div className={styles.metricBarTrack} aria-hidden="true">
-        <span className={trackClass} style={{ width: `${computed.pct}%` }} />
+      <div
+        className={styles.metricBarTrack}
+        role="progressbar"
+        aria-labelledby={labelId}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={isUnknown ? undefined : Math.round(computed.pct)}
+        aria-valuetext={isUnknown ? 'No score yet' : computed.display}
+      >
+        <span className={trackClass} style={{ width: `${computed.pct}%` }} aria-hidden="true" />
       </div>
       <p className={styles.metricCardDescription}>{description}</p>
     </div>

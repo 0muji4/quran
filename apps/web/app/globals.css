@@ -115,6 +115,18 @@ a {
   text-decoration: none;
 }
 
+/* Baseline keyboard-focus indicator. The brand uses gold accents on cream
+ * panels, so a teal ring with a small offset stays visible on every surface.
+ * Scoped to :focus-visible so mouse users are not affected. Programmatically
+ * focused elements (e.g. the AutoFocusHeading at the top of the result page)
+ * do not match :focus-visible, so they stay clean.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 button {
   font-family: inherit;
   cursor: pointer;
