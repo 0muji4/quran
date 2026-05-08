@@ -132,6 +132,27 @@ const createReferenceAudioUrl = async (
   return `${uploadBaseUrl}/${referenceAudioKey}`;
 };
 
+// Creates a presigned download URL for a user's recording so the result page
+// can play it back. Returns null when MinIO is not configured (e.g. during
+// some local-only modes); the consumer hides the player gracefully.
+const createRecordingUrl = async (uploadKey: string | null): Promise<string | null> => {
+  if (!uploadKey) return null;
+  const client = getMinioClientForPresignedUrls();
+  const bucket = process.env.MINIO_BUCKET;
+  const expiresIn = uploadTtlSeconds();
+
+  if (client && bucket) {
+    try {
+      return await client.presignedGetObject(bucket, uploadKey, expiresIn);
+    } catch (error) {
+      console.warn('Failed to presign recording URL', { uploadKey, error });
+      return null;
+    }
+  }
+
+  return `${uploadBaseUrl}/${uploadKey}`;
+};
+
 /**
  * Creates a scoring job for Quran recitation analysis
  *
@@ -200,7 +221,12 @@ export const createScoringJob = async (input: {
     body: JSON.stringify(payload)
   });
 
-  return parseJson<ScoringResult>(response);
+  const result = await parseJson<ScoringResult>(response);
+  // The Go backend doesn't sign download URLs; enrich here so the immediate
+  // post-create response (which the web caller drops straight into the
+  // result-page redirect) already has a playable recording URL.
+  result.recordingUrl = await createRecordingUrl(result.uploadKey ?? input.uploadKey);
+  return result;
 };
 
 export const getScoringJob = async (jobId: string): Promise<ScoringResult | null> => {
@@ -208,7 +234,9 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
   if (!pool) {
     const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs/${jobId}`);
     if (response.status === 404) return null;
-    return parseJson<ScoringResult>(response);
+    const result = await parseJson<ScoringResult>(response);
+    result.recordingUrl = await createRecordingUrl(result.uploadKey);
+    return result;
   }
 
   const result = await pool.query(
@@ -254,9 +282,13 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
       }
     : null;
 
+  const uploadKey = row.upload_key as string;
+  const recordingUrl = await createRecordingUrl(uploadKey);
+
   return {
     jobId: row.session_id as string,
-    uploadKey: row.upload_key as string,
+    uploadKey,
+    recordingUrl,
     status: actualStatus as ScoringResult['status'],
     score: numberOrNull(row.score),
     verdict: row.verdict ?? null,
