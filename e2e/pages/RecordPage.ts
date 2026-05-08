@@ -1,259 +1,120 @@
-import { expect, Locator } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
- * Record Page Object Model
- * Represents the recording/testing page at /record
- * Based on RecorderClient component state management
+ * Practice Page Object Model
+ * Represents the redesigned practice screen at /practice?surah=&ayah=
+ *
+ * The class name remains `RecordPage` for backwards compatibility with
+ * existing fixture wiring, but it targets the new mic-button driven UI.
  */
 export class RecordPage extends BasePage {
-  // Selectors - using semantic queries for stability
-  readonly surahSelect: Locator;
-  readonly ayahSelect: Locator;
-  readonly startRecordButton: Locator;
-  readonly stopRecordButton: Locator;
-  readonly resetButton: Locator;
-  readonly statusMessage: Locator;
-  readonly audioPreview: Locator;
+  readonly micButton: Locator;
+  readonly stopButton: Locator;
+  readonly nowYouReciteHeading: Locator;
+  readonly recordingHeading: Locator;
+  readonly listenToTeacherHeading: Locator;
+  readonly idleCaption: Locator;
+  readonly recordingCaption: Locator;
+  readonly previousAyahLink: Locator;
+  readonly nextAyahLink: Locator;
+  readonly tryAgainButton: Locator;
 
-  constructor(page: any) {
+  constructor(page: Page) {
     super(page);
 
-    // Dropdowns
-    this.surahSelect = page.locator('select').first();
-    this.ayahSelect = page.locator('select').nth(1);
+    this.micButton = page.getByRole('button', { name: /start recording/i });
+    this.stopButton = page.getByRole('button', { name: /stop recording/i });
 
-    // Buttons
-    this.startRecordButton = page.getByRole('button', { name: /start recording/i });
-    this.stopRecordButton = page.getByRole('button', { name: /stop recording/i });
-    this.resetButton = page.getByRole('button', { name: /reset/i });
+    this.nowYouReciteHeading = page.getByRole('heading', { name: /now you recite/i });
+    this.recordingHeading = page.getByRole('heading', { name: /^recording/i });
+    this.listenToTeacherHeading = page.getByRole('heading', { name: /listen to the teacher/i });
 
-    // Status and results
-    this.statusMessage = page.locator('.status').first();
-    this.audioPreview = page.getByTestId('audio-preview');
+    this.idleCaption = page.getByText(/tap the mic to begin/i);
+    this.recordingCaption = page.getByText(/tap to stop and submit/i);
+
+    this.previousAyahLink = page.getByRole('link', { name: /previous ayah/i });
+    this.nextAyahLink = page.getByRole('link', { name: /next ayah/i });
+    this.tryAgainButton = page.getByRole('button', { name: /try again/i });
   }
 
   /**
-   * Navigate to record page
+   * Navigate directly to a specific surah/ayah on the practice page.
    */
-  async goto() {
+  async goto(surahId: string | number = '1', ayahNumber: number = 1) {
+    await this.navigate(`/practice?surah=${surahId}&ayah=${ayahNumber}`);
+  }
+
+  /**
+   * Navigate to the legacy /record route (which now redirects to /practice).
+   */
+  async gotoLegacy() {
     await this.navigate('/record');
   }
 
   /**
-   * Wait for select dropdown to have options populated
-   * Uses polling to handle race condition with async data loading
-   */
-  private async waitForSelectHasOptions(
-    selectLocator: Locator,
-    minOptions = 1,
-    timeout = 30000
-  ): Promise<void> {
-    await expect
-      .poll(
-        async () => {
-          const options = await selectLocator.locator('option').all();
-          const validOptions = [];
-          for (const option of options) {
-            const value = await option.getAttribute('value');
-            if (value && value !== '') {
-              validOptions.push(value);
-            }
-          }
-          return validOptions.length;
-        },
-        { timeout }
-      )
-      .toBeGreaterThanOrEqual(minOptions);
-  }
-
-  /**
-   * Select a surah by ID or name
-   */
-  async selectSurah(surahIdOrName: string) {
-    await this.surahSelect.waitFor({ state: 'visible' });
-    await expect(this.surahSelect).toBeEnabled();
-
-    // Wait for options to be populated in the dropdown
-    // This handles the race condition where API hasn't completed yet
-    await this.waitForSelectHasOptions(this.surahSelect);
-
-    const matched = await this.surahSelect.evaluate(
-      (select, candidate) => {
-        const options = Array.from(select.options);
-        const byValue = options.find((option) => option.value === candidate);
-        if (byValue) {
-          select.value = byValue.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          return true;
-        }
-
-        const regex = new RegExp(candidate, 'i');
-        const byLabel = options.find((option) => regex.test(option.label));
-        if (byLabel) {
-          select.value = byLabel.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          return true;
-        }
-
-        return false;
-      },
-      surahIdOrName
-    );
-    if (!matched) {
-      await this.surahSelect.selectOption({ value: surahIdOrName });
-    }
-    // Wait for ayah dropdown to populate
-    await this.page.waitForTimeout(500);
-  }
-
-  /**
-   * Select an ayah by number
-   */
-  async selectAyah(ayahNumber: number) {
-    await this.ayahSelect.waitFor({ state: 'visible' });
-    await expect(this.ayahSelect).toBeEnabled();
-
-    const ayahValue = String(ayahNumber);
-
-    // Wait for ayah options to be populated
-    await this.waitForSelectHasOptions(this.ayahSelect);
-
-    const label = `Ayah ${ayahNumber}`;
-    const matched = await this.ayahSelect.evaluate(
-      (select, ayahLabel, ayahValueParam) => {
-        const options = Array.from(select.options);
-        const byValue = options.find((option) => option.value === ayahValueParam);
-        if (byValue) {
-          select.value = byValue.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          return true;
-        }
-
-        const regex = new RegExp(ayahLabel, 'i');
-        const byLabel = options.find((option) => regex.test(option.label));
-        if (byLabel) {
-          select.value = byLabel.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          return true;
-        }
-
-        return false;
-      },
-      label,
-      ayahValue
-    );
-    if (!matched) {
-      await this.ayahSelect.selectOption({ value: ayahValue });
-    }
-  }
-
-  /**
-   * Start recording
+   * Click the mic button to begin recording.
    */
   async startRecording() {
-    await this.startRecordButton.click();
-    // Give time for getUserMedia() to complete
+    await expect(this.micButton).toBeVisible();
+    await this.micButton.click();
+    // Allow getUserMedia + AudioContext to come online.
     await this.page.waitForTimeout(500);
   }
 
   /**
-   * Stop recording
+   * Click the stop button. The panel will progress through uploading/scoring
+   * states; we don't assert on those here because they depend on real audio.
    */
   async stopRecording() {
-    await this.stopRecordButton.click();
+    await expect(this.stopButton).toBeVisible();
+    await this.stopButton.click();
   }
 
   /**
-   * Click reset button
+   * Wait for the panel to enter the recording state.
    */
-  async reset() {
-    await this.resetButton.click();
+  async waitForRecordingState(timeout = 5000) {
+    await expect(this.recordingHeading).toBeVisible({ timeout });
   }
 
   /**
-   * Wait for a specific status message to appear
+   * Wait for the panel to leave the recording state (upload/score/error).
    */
-  async waitForStatus(statusText: string | RegExp, timeout = 10000) {
-    await expect(this.page.getByText(statusText).first()).toBeVisible({ timeout });
+  async waitForRecordingEnded(timeout = 10000) {
+    await expect(this.recordingHeading).not.toBeVisible({ timeout });
   }
 
   /**
-   * Wait for job ID to be created and displayed
+   * Verify the resting state (mic visible, "Tap the mic to begin" caption).
    */
-  async waitForJobCreation(timeout = 15000) {
-    // Wait for job ID text or pill to appear
-    await expect(
-      this.page.locator('text=/job.*id|session/i').first()
-    ).toBeVisible({ timeout });
+  async verifyIdleState() {
+    await expect(this.nowYouReciteHeading).toBeVisible();
+    await expect(this.micButton).toBeVisible();
+    await expect(this.idleCaption).toBeVisible();
   }
 
   /**
-   * Wait for scoring job to complete (COMPLETED or FAILED status)
-   * This can take 30-60s for real worker processing
+   * Read the score number once the done state is reached.
+   * In CI without real worker output this generally won't appear, so callers
+   * should treat this as best-effort.
    */
-  async waitForJobCompletion(timeout = 65000) {
-    // Wait for either COMPLETED or FAILED status
-    await expect(
-      this.page.locator('text=/Status:.*(?:COMPLETED|FAILED)/i').first()
-    ).toBeVisible({ timeout });
-  }
-
-  /**
-   * Verify recording flow is complete (audio preview + job ID visible)
-   */
-  async verifyRecordingFlowComplete() {
-    await expect(this.audioPreview).toBeVisible();
-    await this.waitForJobCreation();
-  }
-
-  /**
-   * Verify score is displayed
-   */
-  async verifyScore() {
-    // Look for score-related text (Overall score, Accuracy, Fluency, etc.)
-    await expect(
-      this.page.locator('text=/overall score|accuracy|fluency|score:/i').first()
-    ).toBeVisible({ timeout: 70000 }); // Extra time for worker processing
-  }
-
-  /**
-   * Get error message if visible
-   */
-  async getErrorMessage(): Promise<string | null> {
-    const errorLocator = this.page.locator('.error, [role="alert"]').first();
-    if (await errorLocator.isVisible()) {
-      return await errorLocator.textContent();
+  async readScore(): Promise<string | null> {
+    const scoreLocator = this.page.locator('text=/\\b\\d{1,3}\\s*\\/\\s*100\\b/').first();
+    if (await scoreLocator.isVisible().catch(() => false)) {
+      return scoreLocator.textContent();
     }
     return null;
   }
 
   /**
-   * Verify buttons are in expected state
+   * Detect a status banner with the error class.
    */
-  async verifyButtonState(state: 'recording' | 'idle' | 'disabled') {
-    if (state === 'recording') {
-      await expect(this.stopRecordButton).toBeVisible();
-      await expect(this.startRecordButton).not.toBeVisible();
-    } else if (state === 'idle') {
-      await expect(this.startRecordButton).toBeVisible();
-      await expect(this.stopRecordButton).not.toBeVisible();
+  async getErrorMessage(): Promise<string | null> {
+    const errorLocator = this.page.locator('.status.error, [role="alert"]').first();
+    if (await errorLocator.isVisible().catch(() => false)) {
+      return errorLocator.textContent();
     }
-  }
-
-  /**
-   * Check if selects are disabled (during recording)
-   */
-  async verifySelectsDisabled() {
-    await expect(this.surahSelect).toBeDisabled();
-    await expect(this.ayahSelect).toBeDisabled();
-  }
-
-  /**
-   * Check if selects are enabled
-   */
-  async verifySelectsEnabled() {
-    await expect(this.surahSelect).toBeEnabled();
-    await expect(this.ayahSelect).toBeEnabled();
+    return null;
   }
 }
