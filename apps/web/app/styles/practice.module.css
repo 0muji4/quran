@@ -417,6 +417,12 @@
   background: var(--color-red-soft);
 }
 
+.recorderBarAnalysing {
+  background: var(--color-teal);
+  opacity: 0.85;
+  transition: height 80ms linear;
+}
+
 .micButton {
   position: relative;
   display: inline-flex;
@@ -495,6 +501,92 @@
   gap: var(--space-3);
   font-size: 13px;
   color: var(--color-ink-muted);
+}
+
+/* Analysing card body ------------------------------------------------- */
+.analysingCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.analysingWaveform {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.analysingChecklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 280px;
+  align-self: center;
+}
+
+.checklistItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 14px;
+  color: var(--color-ink-muted);
+  transition: color 200ms ease;
+}
+
+.checklistMarker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: transparent;
+  flex-shrink: 0;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.checklistItemDone {
+  color: var(--color-ink-strong);
+}
+
+.checklistItemDone .checklistMarker {
+  background: var(--color-teal);
+  border-color: var(--color-teal);
+  color: #fff;
+}
+
+.checklistItemActive {
+  color: var(--color-ink-strong);
+  font-weight: 600;
+}
+
+.checklistItemActive .checklistMarker {
+  background: var(--color-bg-paper, #fff);
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(45, 90, 79, 0.18);
+}
+
+.checklistItemPending {
+  color: var(--color-ink-muted);
+}
+
+.analysingFooter {
+  font-size: 13px;
+  color: var(--color-ink-muted);
+  margin: 0;
+  text-align: center;
 }
 
 .recorderCancel {
