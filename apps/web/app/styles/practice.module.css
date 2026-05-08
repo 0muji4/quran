@@ -530,6 +530,20 @@
   animation: pulseDot 1.2s ease-in-out infinite;
 }
 
+/* Could-not-process badge in the panel head while in scoring-error state */
+.errorBadge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-red);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+}
+
 /* Analysing card body ------------------------------------------------- */
 .analysingCard {
   width: 100%;
