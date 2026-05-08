@@ -58,7 +58,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 マージ後 1〜2 週間で着手すべき、ユーザーが直接価値を感じる改善。
 
-#### 2.1 スコア結果画面の独立化
+#### 2.1 スコア結果画面の独立化 — Done in PR #93 + followup batch
 
 **現状**: `RecorderPanel` の done 状態は `N/100` の大きな数字と `<details>` で開く `SegmentHighlights`（既存 UI コンポーネント）の 2 段構成にとどまる。`feedback.transcript` / `wer` / segment ハイライトといった採点根拠は片隅にしか出ない。
 
@@ -68,6 +68,19 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 **影響度 S / 工数 M**。
 
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| Result page core (Hero / metrics / Word-by-word / auto-redirect) | ✅ Done | #93 |
+| Listen back (BFF presigned `recordingUrl` + Web players) | ✅ Done | #106 |
+| Polling slow/stuck hint + Surah-completion celebration toast | ✅ Done | #107 |
+| Result page a11y polish (h1 / role=img / role=progressbar / focus mgmt) | ✅ Done | #126 |
+| `/practice` URL を path-based に移行 (`/practice/[surahId]/[ayahNumber]/result/[jobId]`) | ✅ Done | #127 |
+| Analysing UI (3-step checklist + shimmer waveform + Scoring badge) | ✅ Done | #129 / #130 |
+| Could-not-score error UI (replay + too-short guard + COULDN'T PROCESS badge) | ✅ Done | #131 / #132 |
+| Result detail micro additions (Listen back "Play both" / Action row "Save attempt") | ✅ Done | #133 / #134 |
+
 #### 2.2 モバイル / タブレット最適化
 
 **現状**: グリッドや 2 カラムパネルは `@media (max-width: 900px)` で 1 カラム化したが、実機検証は未実施。Continue カードのコンパスSVG・8 点星・コーナー装飾の縮小挙動、Arabic テキストの折り返し（特に Al-Baqarah のような長文 ayah）に未確認のリスクがある。
@@ -75,6 +88,95 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 **ゴール**: iOS Safari / Chrome（375 / 414 / 768 / 1024 幅）で実機確認を行い、必要箇所のレイアウトと余白を調整する。タップターゲットサイズ 44px の確保。
 
 **影響度 S / 工数 M**。
+
+##### 2.2 監査結果（コードベースから抽出した具体的問題）
+
+2026-05-09 時点の audit。修正待ちの 7 件 + tap target 8 種類 = 計 15 項目。
+
+**A. 必ず壊れる / overflow 懸念**
+
+| # | 場所 | 問題 |
+|---|------|------|
+| A-1 | `apps/web/app/styles/practice.module.css:123-129` `.ayahArabic` | `clamp(40px, 5.5vw, 64px)` は床 40px 固定だが、`word-break` / `overflow-wrap` 未設定。Al-Baqarah 2:255（49 単語 / 213 文字）が 375px viewport で水平 overflow を起こす可能性 |
+
+**B. WCAG 44px 未満の tap target**
+
+| # | 場所 | 現状サイズ |
+|---|------|------------|
+| B-1 | `practice.module.css:348-357` `.speedPill` (0.75× / 1.00× / 1.25×) | padding 6px 14px → 高さ ~24-26px |
+| B-2 | `practice.module.css:369-376` `.loopBtn` | text only, 高さ ~16-20px |
+| B-3 | `practice.module.css:752-767` `.btnGhost` | 8px 14px → ~30-34px |
+| B-4 | `practice.module.css:769-783` `.btnTeal` | 8px 14px → ~30-34px |
+| B-5 | `practice.module.css:701-718` `.recorderCancel` | 8px 16px → ~30-34px |
+| B-6 | `practice.module.css:815-839` `.navBtn` | 10px 18px → ~36-40px |
+| B-7 | `library.module.css:131-160` `.btnGold` / `.btnGhostDark` | 10px 18px → ~36-40px |
+| B-8 | `nav.module.css:59-84` `.tab` | 6px 2px → ~25-27px（mobile 切替後も同じ） |
+| B-9 | `history.module.css:56-73` `.statusPill` | 4px 10px → ~24-26px |
+
+**C. 視覚的に窮屈（broken ではないが mobile 体験を損なう）**
+
+| # | 場所 | 問題 |
+|---|------|------|
+| C-1 | `apps/web/app/library/ContinueCard.tsx:14-24` + `library.module.css:43-52` `.continueOrnament` | compass SVG が 200px 固定、375px ではカード幅の 61% を占める。media query 未設定 |
+| C-2 | `library.module.css:249-261` `.searchBox` | `min-width: 280px` で 375px 時に余白 47px しか残らない |
+| C-3 | `practice.module.css:973-980` `.sideStats` (Result hero) | `grid-template-columns: repeat(3, max-content)` で 900px 以下も 3-col 維持、フォント縮小なし |
+| C-4 | `practice.module.css:1158-1185` `.wordCompareTiles` / `.wordTile` | `min-width: 64px + padding 28px = 92px/個`。Al-Baqarah 49 単語で 13-14 行になる |
+
+##### 2.2 推奨 PR 分割（200 行/PR ターゲット）
+
+| PR | スコープ | 主な対象クラス | 推定行数 |
+|----|---------|----------------|----------|
+| **2.2-A** | tap targets を全部 ≥44px に統一 (B-1〜B-9) | `.speedPill` `.loopBtn` `.btnGhost` `.btnTeal` `.btnGold` `.btnGhostDark` `.navBtn` `.recorderCancel` `.tab` `.statusPill` | ~120 |
+| **2.2-B** | Arabic text overflow ガード + Word tile mobile 縮小 (A-1, C-4) | `.ayahArabic` `.wordCompareTiles` `.wordTile` | ~80 |
+| **2.2-C** | ContinueCard ornament + library mobile (C-1, C-2) | `.continueOrnament` `.searchBox` `.searchInput` `.filterPills` | ~80 |
+| **2.2-D** | Result hero stats モバイル breakpoint (C-3) | `.sideStats` `.sideStatLabel` `.sideStatValue` `.scoreDial` クラス周辺 | ~40 |
+| **2.2-E** | Playwright multi-viewport fixtures（375 / 414 / 768 / 1024）+ smoke specs | `playwright.config.ts` `e2e/tests/mobile-layout.spec.ts`（新規） | ~100 |
+
+**順序**: 2.2-A → B → C → D を独立して並行可、E は A〜D 完了後にリグレッション検出インフラとして追加。各 PR は別ブランチ + `gh api repos/.../pulls -X POST` で起票（GraphQL レート対策）。
+
+##### 2.2 各 PR の詳細実装ガイド
+
+**2.2-A (tap targets)**:
+- 各 class に `min-height: 44px` を追加し、padding は維持しつつ flex で中央寄せ
+- `.tab` (nav) は `padding-block: 12px` に増やして `min-height: 44px` 確保
+- `.speedPill` / `.loopBtn` は親 `.teacherControls` の wrap 挙動も確認
+- 既存の visual を壊さないため、padding を増やすのではなく `min-height` + `align-items: center` で対処
+- 単体テストはなし（CSS のみ）。手動確認は Playwright `viewport: { width: 375, height: 812 }` で各 button の `boundingBox().height >= 44`
+
+**2.2-B (Arabic overflow)**:
+- `.ayahArabic` に `overflow-wrap: break-word` / `word-break: break-word` 追加
+- `@media (max-width: 600px)` で `clamp(32px, 5.5vw, 64px)` に floor を下げる（40 → 32）
+- `.wordTile` に `@media (max-width: 600px)` で `min-width: 48px; padding: 8px 10px; font-size: 18px`
+- `.ayahCard` の `padding: var(--space-12) var(--space-8)` を mobile では `padding: var(--space-8) var(--space-5)` に
+- 検証: Al-Baqarah 2:255 を 375px DevTools で確認、horizontal scroll が出ないこと
+
+**2.2-C (ContinueCard ornament + library)**:
+- `.continueOrnament` を `clamp(120px, 40vw, 200px)` に変更、または `@media (max-width: 600px) { display: none }`
+- `.searchBox` の `min-width` を mobile で 200px に、または `min-width: 0` + flex 全幅
+- `.searchInput` font-size を 15 → 14px (mobile)
+- `.filterPills` の gap を mobile では `var(--space-2)` (8 → 4 px は small)
+
+**2.2-D (Result hero stats)**:
+- `.sideStats` に `@media (max-width: 700px) { grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }`
+- `.sideStatValue` を mobile で 18px、`.sideStatLabel` を 10px
+- 必要なら `.resultHero` の `padding: var(--space-6) var(--space-8)` を mobile で `var(--space-5) var(--space-5)` に
+
+**2.2-E (Playwright multi-viewport)**:
+- `e2e/playwright.config.ts` に `projects` を追加: `mobile-iphone` (Pixel 5/iPhone 12 等の preset)、`tablet-ipad`、`desktop-1024`
+- 新規 `e2e/tests/mobile-layout.spec.ts` で各 viewport ごとに:
+  - 主要画面（library / practice / result）が水平スクロールしないこと（`document.documentElement.scrollWidth <= window.innerWidth`）
+  - 主要 tap target の `boundingBox().height >= 44`
+  - Al-Baqarah `/practice/2/255` で ayah が overflow しないこと
+- CI 時間が伸びるため、PR チェックは chromium desktop のみ・nightly で multi-viewport 走査の運用に倒すのも検討
+
+##### 2.2 引き継ぎノート
+
+- audit は 2026-05-09 時点。**進める前に develop の最新を pull** して座標が動いていないか再確認すること
+- ユーザー指針:
+  - PR 規模 ~200 行 / 件、scaffolding と integration を分けるパターンが確立済み（PR #129/#130 / #131/#132 が参考）
+  - PR description / commit メッセージは英語、AI / Claude フッター不要
+  - GraphQL レートが切れたら `gh api repos/.../pulls -X POST` で REST 起票
+  - CI 失敗は e2e の URL / heading assertion 周辺が再発しやすい — `RecordPage.ts` ロケータと `error-handling.spec.ts` `navigation.spec.ts` を真っ先に確認
 
 #### 2.3 アクセシビリティ pass
 
@@ -241,3 +343,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | ---------- | -------------- | -------------------------------------------------------------------------- |
 | 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票）                                            |
 | 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記 |
+| 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート） |
