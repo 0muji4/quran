@@ -49,6 +49,15 @@ export const setupTestDB = async (): Promise<{ pool: Pool; cleanup: () => Promis
 
   const cleanup = async () => {
     await pool.end();
+    // Terminate any sessions still attached to the test database.
+    // Without this, DROP DATABASE intermittently fails with
+    // "database is being accessed by other users" under parallel test runs.
+    await adminPool.query(
+      `SELECT pg_terminate_backend(pid)
+         FROM pg_stat_activity
+        WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      [dbName]
+    );
     await adminPool.query(`DROP DATABASE IF EXISTS ${dbName}`);
     await adminPool.end();
   };

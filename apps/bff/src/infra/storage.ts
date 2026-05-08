@@ -15,6 +15,15 @@ const getPool = (): Pool | null => {
 
 export const getDatabasePool = (): Pool | null => getPool();
 
+// Closes the cached pool so the next getPool() call rebuilds it.
+// Used by integration tests to release connections before dropping the test DB.
+export const resetDatabasePool = async (): Promise<void> => {
+  if (!pool) return;
+  const current = pool;
+  pool = null;
+  await current.end();
+};
+
 export const getMinioClient = (): MinioClient | null => {
   if (minio) return minio;
   const endpoint = process.env.MINIO_ENDPOINT;
