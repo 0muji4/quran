@@ -1118,6 +1118,16 @@
   font-size: 14px;
   color: var(--color-ink-muted);
   margin: 0;
+  text-align: center;
+  max-width: 480px;
+}
+
+.resultPendingCancel {
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--color-teal);
+  text-decoration: underline;
+  font-weight: 600;
 }
 
 .resultError {
