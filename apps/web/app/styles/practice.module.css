@@ -1301,6 +1301,13 @@
   flex-wrap: wrap;
 }
 
+.saveAttemptBtn {
+  /* Holds a stable width so the "Saved to history" confirmation does not
+     reflow neighbouring buttons. */
+  min-width: 132px;
+  justify-content: center;
+}
+
 .resultPrimaryBtn {
   padding: 12px 22px;
   font-size: 14px;
