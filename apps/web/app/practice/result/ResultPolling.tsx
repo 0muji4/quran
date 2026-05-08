@@ -13,6 +13,7 @@ type Props = {
   surah: SurahSummary;
   ayah: AyahRecord;
   totalAyahs: number;
+  teacherAudioUrl?: string | null;
 };
 
 const POLL_INTERVAL_MS = 2000;
@@ -20,7 +21,7 @@ const POLL_INTERVAL_MS = 2000;
 // Client wrapper that keeps the page alive while a scoring job is QUEUED or
 // RUNNING. We never render the detailed UI with partial data: we only swap to
 // ResultDetail (or ResultError) once the job hits a terminal status.
-export function ResultPolling({ initialJob, surah, ayah, totalAyahs }: Props) {
+export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudioUrl }: Props) {
   const [job, setJob] = useState<ScoringResult>(initialJob);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +52,15 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs }: Props) {
   }
 
   if (job.status === 'COMPLETED') {
-    return <ResultDetail job={job} surah={surah} ayah={ayah} totalAyahs={totalAyahs} />;
+    return (
+      <ResultDetail
+        job={job}
+        surah={surah}
+        ayah={ayah}
+        totalAyahs={totalAyahs}
+        teacherAudioUrl={teacherAudioUrl}
+      />
+    );
   }
 
   if (job.status === 'FAILED') {

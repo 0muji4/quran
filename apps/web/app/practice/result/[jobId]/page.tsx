@@ -1,5 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
-import { fetchScoringJob, fetchSurahAyahs, fetchSurahs } from '../../../actions';
+import {
+  fetchReferenceAudioUrl,
+  fetchScoringJob,
+  fetchSurahAyahs,
+  fetchSurahs
+} from '../../../actions';
 import type { AyahRecord, SurahSummary } from '../../../lib/types';
 import { ResultDetail } from '../ResultDetail';
 import { ResultError } from '../ResultError';
@@ -47,8 +52,27 @@ export default async function PracticeResultPage({
   const ayah = ayahs.find((a) => a.ayahNumber === ayahNumberRaw);
   if (!surah || !ayah) notFound();
 
+  // Teacher reference audio is served by a separate BFF endpoint; fetch
+  // alongside the rest so the result page can render the Listen back tile
+  // server-side. Failures here are non-fatal — we hide the player gracefully.
+  let teacherAudioUrl: string | null = null;
+  try {
+    const ref = await fetchReferenceAudioUrl(Number(surah.id), ayah.ayahNumber);
+    teacherAudioUrl = ref.url;
+  } catch {
+    teacherAudioUrl = null;
+  }
+
   if (job.status === 'COMPLETED') {
-    return <ResultDetail job={job} surah={surah} ayah={ayah} totalAyahs={ayahs.length} />;
+    return (
+      <ResultDetail
+        job={job}
+        surah={surah}
+        ayah={ayah}
+        totalAyahs={ayahs.length}
+        teacherAudioUrl={teacherAudioUrl}
+      />
+    );
   }
 
   if (job.status === 'FAILED') {
@@ -61,5 +85,13 @@ export default async function PracticeResultPage({
     );
   }
 
-  return <ResultPolling initialJob={job} surah={surah} ayah={ayah} totalAyahs={ayahs.length} />;
+  return (
+    <ResultPolling
+      initialJob={job}
+      surah={surah}
+      ayah={ayah}
+      totalAyahs={ayahs.length}
+      teacherAudioUrl={teacherAudioUrl}
+    />
+  );
 }
