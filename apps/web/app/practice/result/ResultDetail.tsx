@@ -43,19 +43,25 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
           <Link href="/" className={styles.breadcrumbLink}>
             Surah library
           </Link>
-          <span className={styles.breadcrumbSep}>›</span>
+          <span className={styles.breadcrumbSep} aria-hidden="true">
+            ›
+          </span>
           <Link
             href={`/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`}
             className={styles.breadcrumbLink}
           >
             {surah.nameEn}
           </Link>
-          <span className={styles.breadcrumbSep}>›</span>
-          <span className={styles.breadcrumbCurrent}>Result · ayah {ayah.ayahNumber}</span>
+          <span className={styles.breadcrumbSep} aria-hidden="true">
+            ›
+          </span>
+          <span className={styles.breadcrumbCurrent} aria-current="page">
+            Result · ayah {ayah.ayahNumber}
+          </span>
         </nav>
       </div>
 
-      <section className={styles.resultHero}>
+      <section className={styles.resultHero} aria-label="Score summary">
         <div className={styles.resultHeroDial}>
           <ScoreDial score={score} />
         </div>
@@ -65,7 +71,7 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
         </div>
       </section>
 
-      <section className={styles.metricsRow}>
+      <section className={styles.metricsRow} aria-label="Detailed score breakdown">
         <MetricCard
           label="Accuracy"
           value={feedback?.accuracy}

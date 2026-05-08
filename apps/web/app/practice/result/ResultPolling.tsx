@@ -96,7 +96,7 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
   return (
     <section className={styles.resultPending} aria-live="polite" aria-busy="true">
       <div className={styles.resultPendingSpinner} aria-hidden="true" />
-      <h2 className={styles.resultPendingTitle}>Scoring your recitation…</h2>
+      <h1 className={styles.resultPendingTitle}>Scoring your recitation…</h1>
       <p className={styles.resultPendingSubtitle}>{subtitle}</p>
       {isStuck ? (
         <Link

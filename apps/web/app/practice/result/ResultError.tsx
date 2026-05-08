@@ -12,7 +12,7 @@ export function ResultError({ surah, ayah, message }: Props) {
   const tryAgainHref = `/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`;
   return (
     <section className={styles.resultError} role="alert">
-      <h2 className={styles.resultErrorTitle}>Something went wrong</h2>
+      <h1 className={styles.resultErrorTitle}>Something went wrong</h1>
       <p className={styles.resultErrorBody}>{message}</p>
       <Link href={tryAgainHref} className={`${styles.btnTeal} ${styles.resultPrimaryBtn}`}>
         Try again
