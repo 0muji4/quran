@@ -39,6 +39,13 @@ coverage.html
 *~
 .DS_Store
 
+# Per-developer tool state
+.claude/
+.node-version
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # OS
 Thumbs.db
 
