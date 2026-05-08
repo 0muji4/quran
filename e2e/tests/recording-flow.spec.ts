@@ -56,4 +56,65 @@ test.describe('Recording Flow', () => {
     await expect(recordPage.page).toHaveURL(/ayah=1/);
     await expect(recordPage.micButton).toBeVisible();
   });
+
+  test('should switch teacher playback rate via the speed pills', async ({ page, recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+
+    const oneX = page.getByRole('button', { name: /^1\.00×$/ });
+    const slowX = page.getByRole('button', { name: /^0\.75×$/ });
+    const fastX = page.getByRole('button', { name: /^1\.25×$/ });
+
+    await expect(oneX).toHaveAttribute('aria-pressed', 'true');
+
+    await slowX.click();
+    await expect(slowX).toHaveAttribute('aria-pressed', 'true');
+    await expect(oneX).toHaveAttribute('aria-pressed', 'false');
+
+    await fastX.click();
+    await expect(fastX).toHaveAttribute('aria-pressed', 'true');
+    await expect(slowX).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('should toggle the loop ayah control on the teacher panel', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+
+    const loopBtn = page.getByRole('button', { name: /loop ayah/i });
+    await expect(loopBtn).toHaveAttribute('aria-pressed', 'false');
+
+    await loopBtn.click();
+    await expect(loopBtn).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('should disable Previous on the first ayah and Next on the last ayah', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+    await expect(page.getByRole('link', { name: /previous ayah/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /next ayah/i })).toBeVisible();
+
+    await recordPage.goto(testSurahs.alFatihah.id, testSurahs.alFatihah.ayahCount);
+    await expect(page.getByRole('link', { name: /next ayah/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /previous ayah/i })).toBeVisible();
+  });
+
+  test('should persist last-practiced into localStorage when recording starts', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+    await recordPage.startRecording();
+    await recordPage.waitForRecordingState();
+
+    const stored = await page.evaluate(() =>
+      window.localStorage.getItem('tilawah:last-practiced')
+    );
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored as string);
+    expect(parsed.surahId).toBe(testSurahs.alFatihah.id);
+    expect(parsed.ayahNumber).toBe(1);
+  });
 });
