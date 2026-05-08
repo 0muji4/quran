@@ -7,6 +7,7 @@ import { useScoringJob } from '../hooks/useScoringJob';
 import { MicIcon, StopIcon } from '../components/icons/MediaIcons';
 import { AnalysingCard } from './AnalysingCard';
 import { RecorderBars } from './RecorderBars';
+import { ScoringErrorCard } from './ScoringErrorCard';
 import {
   getBestScore,
   recordAttempt,
@@ -41,16 +42,26 @@ const ERROR_COPY: Record<string, string> = {
 // "Cancel and try again" escape so the user is never left wondering.
 const STUCK_HINT_AT_MS = 30_000;
 
+// Recordings shorter than this are skipped client-side; the BFF would refuse
+// them anyway and this avoids a network round-trip plus surfaces a precise
+// reason ("Recording was 0.6 s — too short to score").
+const MIN_RECORDING_MS = 1_000;
+
 export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
   const router = useRouter();
   const [lastBest, setLastBest] = useState<{ score: number; achievedAt: string } | null>(null);
   const [scoringElapsedMs, setScoringElapsedMs] = useState(0);
+  const [tooShortReason, setTooShortReason] = useState<string | null>(null);
 
   // Captured at the moment of stop. useRecorder resets elapsedMs to 0 once
   // the recorder finalizes, so we snapshot before invoking stop.
   const lastDurationMsRef = useRef<number | null>(null);
+  // Retained so the user can replay their attempt from the error card. Cleared
+  // on a fresh start, on ayah navigation, and on the auto-redirect to the
+  // result page.
+  const lastBlobRef = useRef<Blob | null>(null);
   const navigatedJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -62,8 +73,10 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     job.reset();
     recorder.cancel();
     lastDurationMsRef.current = null;
+    lastBlobRef.current = null;
     navigatedJobIdRef.current = null;
     setScoringElapsedMs(0);
+    setTooShortReason(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surah.id, ayah.ayahNumber]);
 
@@ -114,6 +127,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
 
     if (completed && navigatedJobIdRef.current !== job.job.jobId) {
       navigatedJobIdRef.current = job.job.jobId;
+      lastBlobRef.current = null;
       router.push(`/practice/${surah.id}/${ayah.ayahNumber}/result/${job.job.jobId}`);
     }
   }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber, router]);
@@ -126,12 +140,21 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   const isPendingNavigation = stage === 'done' && job.job?.status === 'COMPLETED';
   const isAnalysing = stage === 'uploading' || stage === 'scoring' || isPendingNavigation;
   const isStuck = isAnalysing && scoringElapsedMs >= STUCK_HINT_AT_MS;
+  const recordingError = recorder.error ? ERROR_COPY[recorder.error] : null;
+  // Could-not-score branch: scoring API/poll surfaced an error, OR we caught
+  // a too-short recording client-side. Mic-permission failures
+  // (recordingError) stay in their own banner since the remediation is
+  // different (browser-level permission grant rather than re-recording).
+  const isScoringError = !recordingError && (stage === 'error' || tooShortReason !== null);
   // Only the live-recording state uses the dark panel chrome; the analysing
-  // state stays on the cream paper background per the redesigned mockup
-  // (docs/4. Practice _ analysing.png).
+  // and error states stay on the cream paper background per the redesigned
+  // mockups (docs/4. Practice _ analysing.png, 4b. Practice _ error _could
+  // not score_.png).
   const isDarkPanel = isRecording;
 
   const handleStart = useCallback(async () => {
+    setTooShortReason(null);
+    lastBlobRef.current = null;
     job.reset();
     navigatedJobIdRef.current = null;
     setLastPracticed({
@@ -156,9 +179,16 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   ]);
 
   const handleStop = useCallback(async () => {
-    lastDurationMsRef.current = recorder.elapsedMs;
+    const elapsedAtStop = recorder.elapsedMs;
+    lastDurationMsRef.current = elapsedAtStop;
     const blob = await recorder.stop();
     if (!blob) return;
+    lastBlobRef.current = blob;
+    if (elapsedAtStop < MIN_RECORDING_MS) {
+      const seconds = (elapsedAtStop / 1000).toFixed(1);
+      setTooShortReason(`Recording was ${seconds} s — too short to score`);
+      return;
+    }
     await job.submit({ blob, surahId: surah.id, ayahNumber: ayah.ayahNumber });
   }, [recorder, job, surah.id, ayah.ayahNumber]);
 
@@ -168,34 +198,57 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     job.reset();
     recorder.cancel();
     lastDurationMsRef.current = null;
+    lastBlobRef.current = null;
     navigatedJobIdRef.current = null;
     setScoringElapsedMs(0);
+    setTooShortReason(null);
   }, [job, recorder]);
 
+  const handleReplay = useCallback(() => {
+    const blob = lastBlobRef.current;
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    const release = () => URL.revokeObjectURL(url);
+    audio.addEventListener('ended', release);
+    audio.addEventListener('error', release);
+    void audio.play().catch(release);
+  }, []);
+
+  const handleRecordAgain = useCallback(() => {
+    void handleStart();
+  }, [handleStart]);
+
   const handleMicClick = isRecording ? handleStop : handleStart;
-  const recordingError = recorder.error ? ERROR_COPY[recorder.error] : null;
 
   const panelClass = isDarkPanel ? `${styles.panel} ${styles.panelDark}` : styles.panel;
-  const titleIconClass = isRecording
-    ? `${styles.panelIcon} ${styles.panelIconRed}`
-    : isAnalysing
-      ? `${styles.panelIcon} ${styles.panelIconTeal}`
-      : `${styles.panelIcon} ${styles.panelIconTan}`;
+  const titleIconClass =
+    isRecording || isScoringError
+      ? `${styles.panelIcon} ${styles.panelIconRed}`
+      : isAnalysing
+        ? `${styles.panelIcon} ${styles.panelIconTeal}`
+        : `${styles.panelIcon} ${styles.panelIconTan}`;
 
   const headerTitle = isRecording
     ? 'Recording…'
     : isAnalysing
       ? 'Analysing your recitation…'
-      : 'Now you recite';
+      : isScoringError
+        ? "We couldn't hear that clearly"
+        : 'Now you recite';
   const headerSubtitle = isRecording
     ? 'Speak clearly into your microphone'
     : isAnalysing
       ? isStuck
         ? 'Taking longer than usual'
         : 'Comparing against the teacher reference'
-      : stage === 'error'
-        ? 'Something went wrong'
+      : isScoringError
+        ? 'Your recording was too quiet or too short'
         : 'Press the button when ready';
+
+  const errorReasons: string[] = [];
+  if (tooShortReason) errorReasons.push(tooShortReason);
+  if (stage === 'error' && job.error) errorReasons.push(job.error);
 
   return (
     <div className={panelClass}>
@@ -221,6 +274,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
             Scoring
           </span>
         )}
+        {isScoringError && <span className={styles.errorBadge}>Couldn&apos;t process</span>}
       </div>
 
       <div className={styles.recorderInner}>
@@ -233,6 +287,13 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
               </button>
             ) : null}
           </>
+        ) : isScoringError ? (
+          <ScoringErrorCard
+            reasons={errorReasons}
+            canReplay={!!lastBlobRef.current}
+            onReplay={handleReplay}
+            onRecordAgain={handleRecordAgain}
+          />
         ) : (
           <>
             <RecorderBars live={isRecording} levels={recorder.levels} />
@@ -256,22 +317,15 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
               </button>
             </div>
             <p className={styles.recorderCaption}>
-              {isRecording
-                ? 'Tap to stop and submit for scoring'
-                : stage === 'error'
-                  ? 'Tap the mic to try again'
-                  : 'Tap the mic to begin'}
+              {isRecording ? 'Tap to stop and submit for scoring' : 'Tap the mic to begin'}
             </p>
           </>
         )}
       </div>
 
       {recordingError && <p className="status error">{recordingError}</p>}
-      {!recordingError && job.error && stage === 'error' && (
-        <p className="status error">{job.error}</p>
-      )}
 
-      {!isRecording && stage === 'idle' && lastBest && (
+      {!isRecording && !isScoringError && stage === 'idle' && lastBest && (
         <p className={styles.recorderFooter}>
           Last attempt: <span className={styles.lastScore}>{lastBest.score} / 100</span>
         </p>
