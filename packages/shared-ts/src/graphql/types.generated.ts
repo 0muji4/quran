@@ -117,6 +117,7 @@ export type ScoringResult = {
   evaluation?: Maybe<Scalars['JSONObject']>;
   feedback?: Maybe<PronunciationFeedback>;
   jobId: Scalars['ID'];
+  recordingUrl?: Maybe<Scalars['String']>;
   score?: Maybe<Scalars['Float']>;
   segments: Array<ScoreSegment>;
   status: ScoringStatus;
@@ -379,6 +380,7 @@ export type ScoringResultResolvers<
   evaluation?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   feedback?: Resolver<Maybe<ResolversTypes['PronunciationFeedback']>, ParentType, ContextType>;
   jobId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  recordingUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   score?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   segments?: Resolver<Array<ResolversTypes['ScoreSegment']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ScoringStatus'], ParentType, ContextType>;
