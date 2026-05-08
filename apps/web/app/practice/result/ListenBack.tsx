@@ -1,3 +1,6 @@
+'use client';
+
+import { useRef, type Ref } from 'react';
 import styles from '../../styles/practice.module.css';
 
 type Props = {
@@ -14,6 +17,29 @@ export function ListenBack({
   userRecordingUrl,
   teacherLabel = "Husary Mu'allim · slow reference"
 }: Props) {
+  const teacherRef = useRef<HTMLAudioElement>(null);
+  const userRef = useRef<HTMLAudioElement>(null);
+  const canPlayBoth = teacherUrl !== null && userRecordingUrl !== null;
+
+  const handlePlayBoth = () => {
+    const teacher = teacherRef.current;
+    const user = userRef.current;
+    if (!teacher || !user) return;
+    // Reset both players so a second click restarts cleanly.
+    user.pause();
+    user.currentTime = 0;
+    teacher.pause();
+    teacher.currentTime = 0;
+
+    const startUser = () => {
+      teacher.removeEventListener('ended', startUser);
+      user.currentTime = 0;
+      void user.play().catch(() => {});
+    };
+    teacher.addEventListener('ended', startUser);
+    void teacher.play().catch(() => teacher.removeEventListener('ended', startUser));
+  };
+
   if (!teacherUrl && !userRecordingUrl) return null;
 
   return (
@@ -27,14 +53,27 @@ export function ListenBack({
             Compare your recitation with the teacher&apos;s reference.
           </p>
         </div>
+        {canPlayBoth && (
+          <button type="button" className={styles.listenBackPlayBoth} onClick={handlePlayBoth}>
+            Play both
+            <span aria-hidden="true">▶▶</span>
+          </button>
+        )}
       </header>
 
       <div className={styles.listenBackGrid}>
         {teacherUrl ? (
-          <ListenBackTile kind="teacher" title="Teacher" subtitle={teacherLabel} src={teacherUrl} />
+          <ListenBackTile
+            audioRef={teacherRef}
+            kind="teacher"
+            title="Teacher"
+            subtitle={teacherLabel}
+            src={teacherUrl}
+          />
         ) : null}
         {userRecordingUrl ? (
           <ListenBackTile
+            audioRef={userRef}
             kind="user"
             title="Your recitation"
             subtitle="just now"
@@ -57,11 +96,13 @@ export function ListenBack({
 }
 
 function ListenBackTile({
+  audioRef,
   kind,
   title,
   subtitle,
   src
 }: {
+  audioRef: Ref<HTMLAudioElement>;
   kind: 'teacher' | 'user';
   title: string;
   subtitle: string;
@@ -77,7 +118,13 @@ function ListenBackTile({
         <span className={styles.listenBackTileTitle}>{title}</span>
         <span className={styles.listenBackTileSubtitle}>{subtitle}</span>
       </div>
-      <audio controls preload="metadata" src={src} className={styles.listenBackAudio}>
+      <audio
+        ref={audioRef}
+        controls
+        preload="metadata"
+        src={src}
+        className={styles.listenBackAudio}
+      >
         Your browser does not support the audio element.
       </audio>
     </div>
