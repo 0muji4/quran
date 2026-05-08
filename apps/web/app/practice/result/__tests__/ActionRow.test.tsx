@@ -8,7 +8,7 @@ describe('ActionRow', () => {
   it('points "Continue to ayah N+1" at the next ayah on a non-final ayah', () => {
     render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={2} totalAyahs={7} />);
     const cont = screen.getByRole('link', { name: /continue to ayah 3/i });
-    expect(cont).toHaveAttribute('href', '/practice?surah=1&ayah=3');
+    expect(cont).toHaveAttribute('href', '/practice/1/3');
   });
 
   it('shows "Finish surah" with a celebration query param on the final ayah', () => {
@@ -26,6 +26,6 @@ describe('ActionRow', () => {
   it('keeps a "Try this ayah again" link to the same surah/ayah', () => {
     render(<ActionRow surahId="1" surahName="Al-Fatihah" ayahNumber={3} totalAyahs={7} />);
     const tryAgain = screen.getByRole('link', { name: /try this ayah again/i });
-    expect(tryAgain).toHaveAttribute('href', '/practice?surah=1&ayah=3');
+    expect(tryAgain).toHaveAttribute('href', '/practice/1/3');
   });
 });

@@ -48,7 +48,7 @@ export function SuggestedCard({ surahs }: Props) {
           <span className={styles.dot} aria-hidden="true" />
           <span>{difficulty}</span>
         </span>
-        <Link className={styles.linkTeal} href={`/practice?surah=${suggestion.id}&ayah=1`}>
+        <Link className={styles.linkTeal} href={`/practice/${suggestion.id}/1`}>
           Begin <ArrowRightIcon size={14} />
         </Link>
       </div>

@@ -17,16 +17,16 @@ test.describe('Navigation', () => {
 
     await homePage.openSurah(testSurahs.alFatihah.nameEn);
 
-    await expect(page).toHaveURL(/\/practice\?.*surah=1.*ayah=1/);
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
     await expect(recordPage.nowYouReciteHeading).toBeVisible();
     await expect(recordPage.listenToTeacherHeading).toBeVisible();
     await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should load practice page directly via search params', async ({ page, recordPage }) => {
+  test('should load the practice page directly via path params', async ({ page, recordPage }) => {
     await recordPage.goto(testSurahs.alFatihah.id, 1);
 
-    await expect(page).toHaveURL(/\/practice\?.*surah=1.*ayah=1/);
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
     await expect(recordPage.nowYouReciteHeading).toBeVisible();
     await expect(recordPage.listenToTeacherHeading).toBeVisible();
     await expect(recordPage.micButton).toBeVisible();
@@ -37,7 +37,7 @@ test.describe('Navigation', () => {
     recordPage
   }) => {
     await recordPage.gotoLegacy();
-    await expect(page).toHaveURL(/\/practice/);
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
   });
 
   test('should display surah cards in the library', async ({ homePage }) => {
@@ -58,6 +58,6 @@ test.describe('Navigation', () => {
     await expect(recordPage.nextAyahLink).toBeVisible();
 
     await recordPage.nextAyahLink.click();
-    await expect(page).toHaveURL(/ayah=3/);
+    await expect(page).toHaveURL(/\/practice\/1\/3$/);
   });
 });

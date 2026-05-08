@@ -45,11 +45,7 @@ export function HistoryList() {
       {attempts.map((a) => {
         const completed = a.status === 'COMPLETED';
         return (
-          <Link
-            key={a.id}
-            href={`/practice?surah=${a.surahId}&ayah=${a.ayahNumber}`}
-            className={styles.row}
-          >
+          <Link key={a.id} href={`/practice/${a.surahId}/${a.ayahNumber}`} className={styles.row}>
             <span
               className={completed ? styles.score : `${styles.score} ${styles.scoreFailed}`}
               aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
