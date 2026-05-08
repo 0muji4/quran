@@ -1,52 +1,63 @@
 import { test, expect } from '../fixtures/page-fixtures';
+import { testSurahs } from '../fixtures/test-data';
 
 /**
  * Navigation E2E Tests
- * Tests basic routing and page navigation
+ * Tests basic routing and page navigation in the Tilawah redesign.
  */
 
 test.describe('Navigation', () => {
-  test('should navigate from home to record page', async ({ page, homePage, recordPage }) => {
-    // Navigate to home page
+  test('should navigate from home to practice page via a surah card', async ({
+    page,
+    homePage,
+    recordPage
+  }) => {
     await homePage.goto();
-
-    // Verify home page loaded
     await homePage.verifyLoaded();
 
-    // Click link to record page
-    await homePage.navigateToRecord();
+    await homePage.openSurah(testSurahs.alFatihah.nameEn);
 
-    // Verify URL changed to /record
-    await expect(page).toHaveURL('/record');
-
-    // Verify record page elements are visible
-    await expect(recordPage.surahSelect).toBeVisible();
-    await expect(recordPage.ayahSelect).toBeVisible();
-    await expect(recordPage.startRecordButton).toBeVisible();
+    await expect(page).toHaveURL(/\/practice\?.*surah=1.*ayah=1/);
+    await expect(recordPage.nowYouReciteHeading).toBeVisible();
+    await expect(recordPage.listenToTeacherHeading).toBeVisible();
+    await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should load record page directly', async ({ recordPage }) => {
-    // Navigate directly to record page
-    await recordPage.goto();
+  test('should load practice page directly via search params', async ({ page, recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
 
-    // Verify page elements are visible
-    await expect(recordPage.surahSelect).toBeVisible();
-    await expect(recordPage.ayahSelect).toBeVisible();
-    await expect(recordPage.startRecordButton).toBeVisible();
-    await expect(recordPage.resetButton).toBeVisible();
+    await expect(page).toHaveURL(/\/practice\?.*surah=1.*ayah=1/);
+    await expect(recordPage.nowYouReciteHeading).toBeVisible();
+    await expect(recordPage.listenToTeacherHeading).toBeVisible();
+    await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should display surah options in dropdown', async ({ recordPage }) => {
-    await recordPage.goto();
+  test('should redirect /record to /practice for backwards compatibility', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.gotoLegacy();
+    await expect(page).toHaveURL(/\/practice/);
+  });
 
-    // Verify surah dropdown has options
-    const surahOptions = await recordPage.surahSelect.locator('option').count();
-    expect(surahOptions).toBeGreaterThan(0);
+  test('should display surah cards in the library', async ({ homePage }) => {
+    await homePage.goto();
+    await homePage.verifyLoaded();
 
-    // Verify at least Al-Fatihah is present
-    const alFatihahOption = recordPage.surahSelect.locator('option', {
-      hasText: /Al-Fatihah|الفاتحة/i,
-    });
-    await expect(alFatihahOption).toBeAttached();
+    // Al-Fatihah is part of the seeded surahs.
+    await expect(homePage.surahCard(testSurahs.alFatihah.nameEn)).toBeVisible();
+  });
+
+  test('should support previous/next ayah navigation via the URL', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 2);
+
+    await expect(recordPage.previousAyahLink).toBeVisible();
+    await expect(recordPage.nextAyahLink).toBeVisible();
+
+    await recordPage.nextAyahLink.click();
+    await expect(page).toHaveURL(/ayah=3/);
   });
 });

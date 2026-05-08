@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { fetchSurahAyahs, fetchSurahs } from '../actions';
+import type { AyahRecord, SurahSummary } from '../lib/types';
 import { AyahDisplayCard } from './AyahDisplayCard';
 import { AyahProgressDots } from './AyahProgressDots';
 import { PracticeClient } from './PracticeClient';
@@ -21,7 +22,16 @@ export default async function PracticePage({
   const surahId = params.surah ?? '1';
   const requestedAyah = Number(params.ayah ?? '1');
 
-  const [surahs, ayahs] = await Promise.all([fetchSurahs(), fetchSurahAyahs(surahId)]);
+  // Tolerate transient BFF errors (e.g. 4xx for an unknown surah, or BFF
+  // not yet ready) by treating them like a missing surah and redirecting
+  // back to the library.
+  let surahs: SurahSummary[] = [];
+  let ayahs: AyahRecord[] = [];
+  try {
+    [surahs, ayahs] = await Promise.all([fetchSurahs(), fetchSurahAyahs(surahId)]);
+  } catch {
+    redirect('/');
+  }
   const surah = surahs.find((s) => s.id === surahId);
 
   if (!surah || ayahs.length === 0) {
