@@ -422,3 +422,80 @@
   padding: var(--space-10);
   color: var(--color-ink-muted);
 }
+
+/* ================================================================ */
+/* Surah-completion celebration toast                                */
+/* ================================================================ */
+
+.completionToast {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--color-teal);
+  color: #fff;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  max-width: 360px;
+  z-index: 100;
+  animation: completionToastIn 220ms ease-out;
+}
+
+@keyframes completionToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.completionToastIcon {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-tan, #c8a566);
+  margin-top: 2px;
+}
+
+.completionToastTitle {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  display: block;
+}
+
+.completionToastBody {
+  font-size: 13px;
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.completionToastClose {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.completionToastClose:hover {
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .completionToast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: var(--space-4);
+    max-width: none;
+  }
+}

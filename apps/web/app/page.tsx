@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { fetchSurahs } from './actions';
 import { LibraryClient } from './library/LibraryClient';
+import { CompletionToast } from './library/CompletionToast';
 import type { SurahSummary } from './lib/types';
 
 export default async function HomePage() {
@@ -13,5 +15,14 @@ export default async function HomePage() {
   } catch {
     surahs = [];
   }
-  return <LibraryClient surahs={surahs} />;
+  return (
+    <>
+      <LibraryClient surahs={surahs} />
+      {/* Suspense boundary required so useSearchParams in the toast doesn't
+          opt the whole page into client-side rendering. */}
+      <Suspense fallback={null}>
+        <CompletionToast />
+      </Suspense>
+    </>
+  );
 }
