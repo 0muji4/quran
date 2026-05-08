@@ -7,7 +7,8 @@ import {
   ensureBucketPolicy,
   recordUploadKey,
   findSessionIdForUploadKey,
-  deleteUserData
+  deleteUserData,
+  resetDatabasePool
 } from '../storage';
 import { setupTestDB, setupTestMinIO } from '../../__tests__/setup';
 
@@ -67,6 +68,9 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
   });
 
   afterAll(async () => {
+    // Close the storage singleton pool so dbCleanup can drop the test database
+    // without "being accessed by other users" / pg_terminate_backend races.
+    await resetDatabasePool();
     if (dbCleanup) await dbCleanup();
     if (minioCleanup) await minioCleanup();
   });

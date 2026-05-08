@@ -323,7 +323,7 @@ describe('Server Actions', () => {
         json: async () => {
           throw new Error('Invalid JSON');
         }
-      } as Response);
+      } as unknown as Response);
 
       await expect(fetchSurahs()).rejects.toThrow('Invalid JSON');
     });
