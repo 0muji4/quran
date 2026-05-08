@@ -35,11 +35,18 @@ const ERROR_COPY: Record<string, string> = {
   failed: 'Could not start the recorder. Please try again.'
 };
 
+// Soft thresholds for the scoring/uploading wait. The poll itself does not
+// stop — the worker may still finish — but we surface different copy and an
+// explicit escape so the user is never left wondering.
+const SLOW_HINT_AT_MS = 10_000;
+const STUCK_HINT_AT_MS = 30_000;
+
 export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
   const router = useRouter();
   const [lastBest, setLastBest] = useState<{ score: number; achievedAt: string } | null>(null);
+  const [scoringElapsedMs, setScoringElapsedMs] = useState(0);
 
   // Captured at the moment of stop. useRecorder resets elapsedMs to 0 once
   // the recorder finalizes, so we snapshot before invoking stop.
@@ -56,8 +63,27 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     recorder.cancel();
     lastDurationMsRef.current = null;
     navigatedJobIdRef.current = null;
+    setScoringElapsedMs(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surah.id, ayah.ayahNumber]);
+
+  // Track time spent in the upload/scoring window so we can surface a slow
+  // hint at 10s and an explicit cancel link at 30s. The ticker only runs
+  // while the panel is busy and resets each time the user re-enters that
+  // window.
+  useEffect(() => {
+    const isBusy = job.stage === 'uploading' || job.stage === 'scoring';
+    if (!isBusy) {
+      setScoringElapsedMs(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setScoringElapsedMs(0);
+    const id = setInterval(() => {
+      setScoringElapsedMs(Date.now() - startedAt);
+    }, 1_000);
+    return () => clearInterval(id);
+  }, [job.stage]);
 
   // Persist best score + attempt log when scoring completes, then auto-navigate
   // to the dedicated result route. We do not render an inline done UI any more;
@@ -136,6 +162,16 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     await job.submit({ blob, surahId: surah.id, ayahNumber: ayah.ayahNumber });
   }, [recorder, job, surah.id, ayah.ayahNumber]);
 
+  // Bail out of a long-running scoring job. The job may still finish on the
+  // worker, but the panel returns to idle so the user can record again.
+  const handleCancelScoring = useCallback(() => {
+    job.reset();
+    recorder.cancel();
+    lastDurationMsRef.current = null;
+    navigatedJobIdRef.current = null;
+    setScoringElapsedMs(0);
+  }, [job, recorder]);
+
   const handleMicClick = isRecording ? handleStop : handleStart;
   const recordingError = recorder.error ? ERROR_COPY[recorder.error] : null;
 
@@ -143,12 +179,22 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   const titleIconClass = isRecording
     ? `${styles.panelIcon} ${styles.panelIconRed}`
     : `${styles.panelIcon} ${styles.panelIconTan}`;
+  const isScoring = stage === 'scoring' || isPendingNavigation;
+  const isStuck = isScoring && scoringElapsedMs >= STUCK_HINT_AT_MS;
+  const isSlow = isScoring && !isStuck && scoringElapsedMs >= SLOW_HINT_AT_MS;
+  const scoringCaption = isStuck
+    ? 'Scoring is taking longer than usual. You can cancel and try again.'
+    : isSlow
+      ? 'Still working — almost there.'
+      : 'Scoring your recitation…';
   const headerSubtitle = isRecording
     ? 'Speak clearly into your microphone'
     : stage === 'uploading'
       ? 'Uploading your recording…'
-      : stage === 'scoring' || isPendingNavigation
-        ? 'Scoring in progress'
+      : isScoring
+        ? isStuck
+          ? 'Taking longer than usual'
+          : 'Scoring in progress'
         : stage === 'error'
           ? 'Something went wrong'
           : 'Press the button when ready';
@@ -210,12 +256,18 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
             ? 'Tap to stop and submit for scoring'
             : stage === 'uploading'
               ? 'Uploading…'
-              : stage === 'scoring' || isPendingNavigation
-                ? 'Scoring your recitation…'
+              : isScoring
+                ? scoringCaption
                 : stage === 'error'
                   ? 'Tap the mic to try again'
                   : 'Tap the mic to begin'}
         </p>
+
+        {isStuck ? (
+          <button type="button" className={styles.recorderCancel} onClick={handleCancelScoring}>
+            Cancel and try again
+          </button>
+        ) : null}
       </div>
 
       {recordingError && <p className="status error">{recordingError}</p>}

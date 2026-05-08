@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import type { AyahRecord, SurahSummary } from '../../lib/types';
 import { fetchScoringJob } from '../../actions';
@@ -17,6 +18,10 @@ type Props = {
 };
 
 const POLL_INTERVAL_MS = 2000;
+// Soft thresholds drive only what copy/CTA the user sees while we keep
+// polling. The poll itself does not stop — the worker may still finish.
+const SLOW_HINT_AT_MS = 10_000;
+const STUCK_HINT_AT_MS = 30_000;
 
 // Client wrapper that keeps the page alive while a scoring job is QUEUED or
 // RUNNING. We never render the detailed UI with partial data: we only swap to
@@ -24,6 +29,7 @@ const POLL_INTERVAL_MS = 2000;
 export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudioUrl }: Props) {
   const [job, setJob] = useState<ScoringResult>(initialJob);
   const [error, setError] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
 
   useEffect(() => {
     if (job.status === 'COMPLETED' || job.status === 'FAILED') return;
@@ -40,10 +46,16 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
       }
     };
 
+    const startedAt = Date.now();
+    const elapsedTimer = setInterval(() => {
+      if (cancelled) return;
+      setElapsedMs(Date.now() - startedAt);
+    }, 1_000);
     const id = setInterval(() => void tick(), POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
+      clearInterval(elapsedTimer);
     };
   }, [job.jobId, job.status]);
 
@@ -73,13 +85,27 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
     );
   }
 
+  const isStuck = elapsedMs >= STUCK_HINT_AT_MS;
+  const isSlow = !isStuck && elapsedMs >= SLOW_HINT_AT_MS;
+  const subtitle = isStuck
+    ? 'Scoring is taking longer than usual. You can wait — or cancel and try again.'
+    : isSlow
+      ? 'Still working — almost there.'
+      : 'Hang tight — your detailed feedback will appear shortly.';
+
   return (
     <section className={styles.resultPending} aria-live="polite" aria-busy="true">
       <div className={styles.resultPendingSpinner} aria-hidden="true" />
       <h2 className={styles.resultPendingTitle}>Scoring your recitation…</h2>
-      <p className={styles.resultPendingSubtitle}>
-        Hang tight — your detailed feedback will appear shortly.
-      </p>
+      <p className={styles.resultPendingSubtitle}>{subtitle}</p>
+      {isStuck ? (
+        <Link
+          href={`/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`}
+          className={styles.resultPendingCancel}
+        >
+          Cancel and try again
+        </Link>
+      ) : null}
     </section>
   );
 }
