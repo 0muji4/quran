@@ -32,14 +32,19 @@ PR #87 において、Web フロントエンド `apps/web/` を Tilawah ブラ�
 
 リデザイン本体に紛れ込ませず、独立して取り込めるが先送りすべきでない項目。
 
-#### 1.1 既知の事前負債の解消
+#### 1.1 既知の事前負債の解消 — Done in PR #90
 
-| 負債                                         | 場所                                         | 対応                                                                                                |
-| -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `Response` 型キャストの型エラー              | `apps/web/app/__tests__/actions.test.ts:321` | `as unknown as Response` への書き換え。`pnpm typecheck` の green 化。                               |
-| `DROP DATABASE` 中の Postgres セッション競合 | `apps/bff/src/__tests__/setup.ts:52`         | クリーンアップ前に `pg_terminate_backend` で残存接続を切断、または `force: true` 相当の処理を導入。 |
+| 負債                                         | 場所                                         | 対応                                                                                                | 状態                |
+| -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------- |
+| `Response` 型キャストの型エラー              | `apps/web/app/__tests__/actions.test.ts:321` | `as unknown as Response` への書き換え。`pnpm typecheck` の green 化。                               | ✅ Done in PR #90   |
+| `DROP DATABASE` 中の Postgres セッション競合 | `apps/bff/src/__tests__/setup.ts:52`         | クリーンアップ前に `pg_terminate_backend` で残存接続を切断、または `force: true` 相当の処理を導入。 | ✅ Done in PR #90   |
 
 これらは PR #87 では touch しなかった事前負債だが、ローカル `pnpm test` の green 復旧には影響度がある。
+
+PR #90 の作業中に追加で判明した事項として、`apps/bff/src/infra/storage.ts` のモジュール singleton pool が
+integration test 終了時に解放されず、`pg_terminate_backend` で切断された後に unhandled error を吐く
+副次問題があった。これは `resetDatabasePool()` を test-only seam として export し、
+`storage.integration.test.ts` の `afterAll` で呼ぶことで合わせて解消している（同 PR）。
 
 #### 1.2 マイクボタンのコピー整合確認
 
@@ -232,6 +237,7 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 
 ## 7. 改訂履歴
 
-| 日付       | 改訂者         | 内容                            |
-| ---------- | -------------- | ------------------------------- |
-| 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票） |
+| 日付       | 改訂者         | 内容                                                                       |
+| ---------- | -------------- | -------------------------------------------------------------------------- |
+| 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票）                                            |
+| 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記 |
