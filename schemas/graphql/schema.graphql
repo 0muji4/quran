@@ -54,6 +54,7 @@ enum ScoringStatus {
 type ScoringResult {
   jobId: ID!
   uploadKey: String!
+  recordingUrl: String
   status: ScoringStatus!
   score: Float
   verdict: String
