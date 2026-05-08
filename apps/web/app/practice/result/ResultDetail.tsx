@@ -7,6 +7,7 @@ import { VerdictBlock } from './VerdictBlock';
 import { SideStats } from './SideStats';
 import { MetricCard } from './MetricCard';
 import { WordByWord } from './WordByWord';
+import { ListenBack } from './ListenBack';
 import { ActionRow } from './ActionRow';
 import { verdictForScore } from './verdict';
 
@@ -16,6 +17,7 @@ type Props = {
   ayah: AyahRecord;
   totalAyahs: number;
   durationMs?: number | null;
+  teacherAudioUrl?: string | null;
 };
 
 const toScoreOutOf100 = (raw: number | null | undefined): number | null => {
@@ -23,10 +25,16 @@ const toScoreOutOf100 = (raw: number | null | undefined): number | null => {
   return Math.round(raw * 100);
 };
 
-export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs }: Props) {
+export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacherAudioUrl }: Props) {
   const score = toScoreOutOf100(job.score ?? job.feedback?.overall);
   const verdict = verdictForScore(score);
   const feedback = job.feedback;
+  // Prefer the BFF-supplied teacher URL when available (set by the result-page
+  // server component via fetchReferenceAudioUrl). Fall back to whatever the
+  // PronunciationFeedback carried, mainly for the freshly-created job path
+  // before getScoringJob's hand-rolled response zeroes it out.
+  const teacherUrl = teacherAudioUrl ?? feedback?.referenceAudioUrl ?? null;
+  const userRecordingUrl = job.recordingUrl ?? null;
 
   return (
     <>
@@ -76,6 +84,8 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs }: Props
       </section>
 
       <WordByWord wordAlignments={feedback?.wordAlignments ?? []} wer={feedback?.wer ?? null} />
+
+      <ListenBack teacherUrl={teacherUrl} userRecordingUrl={userRecordingUrl} />
 
       <ActionRow surahId={surah.id} ayahNumber={ayah.ayahNumber} totalAyahs={totalAyahs} />
     </>
