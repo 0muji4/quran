@@ -3,142 +3,118 @@ import { testSurahs } from '../fixtures/test-data';
 
 /**
  * Recording Flow E2E Tests
- * Tests the complete recording → upload → scoring workflow
- * Note: Uses REAL worker processing (30-60s per test)
+ * Tests the practice screen state transitions in the redesigned UI.
+ *
+ * Real ASR scoring (which requires non-empty audio and the worker pipeline)
+ * is intentionally skipped in CI; we exercise UI state changes only.
  */
 
 test.describe('Recording Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Grant microphone permission for MediaRecorder
+    // Grant microphone permission for MediaRecorder.
     await page.context().grantPermissions(['microphone']);
   });
 
-  // Skip this test in CI - requires real audio blob upload and backend processing
-  // Fake media devices generate empty audio that doesn't trigger upload/job creation
+  // Skipped in CI: requires real audio + worker.
   test.skip('should complete full recording and scoring workflow', async ({ recordPage }) => {
-    // Navigate to record page
-    await recordPage.goto();
-
-    // Select Al-Fatihah, Ayah 1
-    await recordPage.selectSurah(testSurahs.alFatihah.id);
-    await recordPage.selectAyah(1);
-
-    // Start recording
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
     await recordPage.startRecording();
-
-    // Verify recording state
-    await recordPage.waitForStatus(/recording/i);
-    await recordPage.verifyButtonState('recording');
-
-    // Record for 2 seconds
+    await recordPage.waitForRecordingState();
     await recordPage.page.waitForTimeout(2000);
-
-    // Stop recording
     await recordPage.stopRecording();
 
-    // Wait for audio preview to appear
-    await expect(recordPage.audioPreview).toBeVisible({ timeout: 5000 });
-
-    // Wait for upload and job creation
-    await recordPage.waitForStatus(/uploading|creating/i, 10000);
-    await recordPage.waitForJobCreation(15000);
-
-    // Wait for worker to process (real ASR - can take 30-60s)
-    await recordPage.waitForJobCompletion(70000);
-
-    // Verify score is displayed
-    await recordPage.verifyScore();
+    const score = await recordPage.readScore();
+    expect(score).toBeTruthy();
   });
 
-  test('should disable controls during recording', async ({ recordPage }) => {
-    await recordPage.goto();
+  test('should switch to recording state when the mic is tapped', async ({ recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+    await recordPage.verifyIdleState();
 
-    // Select surah and ayah
-    await recordPage.selectSurah(testSurahs.alFatihah.id);
-    await recordPage.selectAyah(1);
-
-    // Verify selects are enabled initially
-    await recordPage.verifySelectsEnabled();
-
-    // Start recording
     await recordPage.startRecording();
-
-    // Verify selects are disabled during recording
-    await recordPage.verifySelectsDisabled();
-
-    // Stop recording
-    await recordPage.stopRecording();
-
-    // Wait a moment for state update
-    await recordPage.page.waitForTimeout(500);
+    await recordPage.waitForRecordingState();
+    await expect(recordPage.recordingCaption).toBeVisible();
   });
 
-  test('should show audio preview after recording', async ({ recordPage }) => {
-    await recordPage.goto();
-
-    // Select and record
-    await recordPage.selectSurah(testSurahs.alFatihah.id);
-    await recordPage.selectAyah(2);
+  test('should leave the recording state when stop is tapped', async ({ recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
 
     await recordPage.startRecording();
-    await recordPage.page.waitForTimeout(1500);
+    await recordPage.waitForRecordingState();
+
+    await recordPage.page.waitForTimeout(800);
     await recordPage.stopRecording();
-
-    // Verify audio element appears
-    await expect(recordPage.audioPreview).toBeVisible({ timeout: 5000 });
-
-    // Verify audio has src attribute
-    const audioSrc = await recordPage.audioPreview.getAttribute('src');
-    expect(audioSrc).toBeTruthy();
-    expect(audioSrc).toContain('blob:'); // Should be blob URL
+    await recordPage.waitForRecordingEnded();
   });
 
-  test('should reset recording state', async ({ recordPage }) => {
-    await recordPage.goto();
+  test('should preserve the practice layout across ayah navigation', async ({ recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 2);
+    await expect(recordPage.nowYouReciteHeading).toBeVisible();
+    await expect(recordPage.listenToTeacherHeading).toBeVisible();
 
-    // Select and record
-    await recordPage.selectSurah(testSurahs.alFatihah.id);
-    await recordPage.selectAyah(1);
-
-    await recordPage.startRecording();
-    await recordPage.page.waitForTimeout(1000);
-    await recordPage.stopRecording();
-
-    // Wait for audio preview
-    await expect(recordPage.audioPreview).toBeVisible({ timeout: 5000 });
-
-    // Click reset
-    await recordPage.reset();
-
-    // Verify audio preview is gone
-    await expect(recordPage.audioPreview).not.toBeVisible();
-
-    // Verify can start recording again
-    await recordPage.startRecording();
-    await recordPage.waitForStatus(/recording/i);
-    await recordPage.stopRecording();
+    await recordPage.previousAyahLink.click();
+    await expect(recordPage.page).toHaveURL(/ayah=1/);
+    await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should handle multiple ayah selections', async ({ recordPage }) => {
-    await recordPage.goto();
+  test('should switch teacher playback rate via the speed pills', async ({ page, recordPage }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
 
-    // Select first surah
-    await recordPage.selectSurah(testSurahs.alFatihah.id);
+    const oneX = page.getByRole('button', { name: /^1\.00×$/ });
+    const slowX = page.getByRole('button', { name: /^0\.75×$/ });
+    const fastX = page.getByRole('button', { name: /^1\.25×$/ });
 
-    // Verify ayah options populated
-    const ayahOptions = await recordPage.ayahSelect.locator('option').count();
-    expect(ayahOptions).toBeGreaterThan(0);
+    await expect(oneX).toHaveAttribute('aria-pressed', 'true');
 
-    // Select different ayah
-    await recordPage.selectAyah(3);
+    await slowX.click();
+    await expect(slowX).toHaveAttribute('aria-pressed', 'true');
+    await expect(oneX).toHaveAttribute('aria-pressed', 'false');
 
-    // Start recording
+    await fastX.click();
+    await expect(fastX).toHaveAttribute('aria-pressed', 'true');
+    await expect(slowX).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('should toggle the loop ayah control on the teacher panel', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+
+    const loopBtn = page.getByRole('button', { name: /loop ayah/i });
+    await expect(loopBtn).toHaveAttribute('aria-pressed', 'false');
+
+    await loopBtn.click();
+    await expect(loopBtn).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('should disable Previous on the first ayah and Next on the last ayah', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
+    await expect(page.getByRole('link', { name: /previous ayah/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /next ayah/i })).toBeVisible();
+
+    await recordPage.goto(testSurahs.alFatihah.id, testSurahs.alFatihah.ayahCount);
+    await expect(page.getByRole('link', { name: /next ayah/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /previous ayah/i })).toBeVisible();
+  });
+
+  test('should persist last-practiced into localStorage when recording starts', async ({
+    page,
+    recordPage
+  }) => {
+    await recordPage.goto(testSurahs.alFatihah.id, 1);
     await recordPage.startRecording();
-    await recordPage.waitForStatus(/recording/i);
+    await recordPage.waitForRecordingState();
 
-    // Stop and verify
-    await recordPage.page.waitForTimeout(1000);
-    await recordPage.stopRecording();
-    await expect(recordPage.audioPreview).toBeVisible({ timeout: 5000 });
+    const stored = await page.evaluate(() =>
+      window.localStorage.getItem('tilawah:last-practiced')
+    );
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored as string);
+    expect(parsed.surahId).toBe(testSurahs.alFatihah.id);
+    expect(parsed.ayahNumber).toBe(1);
   });
 });
