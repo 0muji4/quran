@@ -54,10 +54,12 @@ export function WordByWord({ wordAlignments, wer }: Props) {
   }));
 
   return (
-    <section className={styles.wordCompareSection}>
+    <section className={styles.wordCompareSection} aria-labelledby="word-compare-heading">
       <header className={styles.wordCompareHead}>
         <div>
-          <h3 className={styles.wordCompareTitle}>Word-by-word comparison</h3>
+          <h2 id="word-compare-heading" className={styles.wordCompareTitle}>
+            Word-by-word comparison
+          </h2>
           <p className={styles.wordCompareSubtitle}>
             Word Error Rate (WER) <span className={styles.wordCompareWer}>{formatWer(wer)}</span>
           </p>
