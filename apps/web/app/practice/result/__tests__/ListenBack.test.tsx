@@ -1,8 +1,21 @@
-import { afterEach, describe, it, expect } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ListenBack } from '../ListenBack';
 
 afterEach(() => cleanup());
+
+// jsdom does not implement HTMLMediaElement.play / pause; stub them so the
+// "Play both" handler can drive the audio elements without throwing.
+beforeAll(() => {
+  Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+    configurable: true,
+    value: vi.fn(() => Promise.resolve())
+  });
+  Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+    configurable: true,
+    value: vi.fn()
+  });
+});
 
 describe('ListenBack', () => {
   it('renders both teacher and user players when both URLs are provided', () => {
@@ -42,5 +55,44 @@ describe('ListenBack', () => {
   it('renders nothing when both URLs are null', () => {
     const { container } = render(<ListenBack teacherUrl={null} userRecordingUrl={null} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  describe('Play both', () => {
+    it('shows the Play both button only when both URLs are present', () => {
+      render(<ListenBack teacherUrl="https://t" userRecordingUrl="https://u" />);
+      expect(screen.getByRole('button', { name: /play both/i })).toBeInTheDocument();
+    });
+
+    it('hides Play both when only teacher is available', () => {
+      render(<ListenBack teacherUrl="https://t" userRecordingUrl={null} />);
+      expect(screen.queryByRole('button', { name: /play both/i })).not.toBeInTheDocument();
+    });
+
+    it('hides Play both when only user is available', () => {
+      render(<ListenBack teacherUrl={null} userRecordingUrl="https://u" />);
+      expect(screen.queryByRole('button', { name: /play both/i })).not.toBeInTheDocument();
+    });
+
+    it('plays the teacher first, then the user when teacher fires "ended"', async () => {
+      const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play');
+      playSpy.mockClear();
+
+      const { container } = render(
+        <ListenBack teacherUrl="https://t" userRecordingUrl="https://u" />
+      );
+      const [teacher, user] = Array.from(container.querySelectorAll('audio')) as HTMLAudioElement[];
+
+      fireEvent.click(screen.getByRole('button', { name: /play both/i }));
+      // After the click the teacher audio should have been started.
+      expect(playSpy).toHaveBeenCalledTimes(1);
+      // Wait for the queued play() promise to flush before firing ended.
+      await Promise.resolve();
+
+      // Simulate the teacher playback completing.
+      teacher.dispatchEvent(new Event('ended'));
+      // The user audio is then played.
+      expect(playSpy).toHaveBeenCalledTimes(2);
+      expect(user.currentTime).toBe(0);
+    });
   });
 });
