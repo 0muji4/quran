@@ -37,7 +37,7 @@ test.describe('Navigation', () => {
     recordPage
   }) => {
     await recordPage.gotoLegacy();
-    await expect(page).toHaveURL(/\/practice/);
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
   });
 
   test('should display surah cards in the library', async ({ homePage }) => {
