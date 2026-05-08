@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import type { ScoreSegment } from '@quran-project/shared-ts';
-import { SegmentHighlights } from '@quran-project/ui';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRecorder } from '../hooks/useRecorder';
 import { useScoringJob } from '../hooks/useScoringJob';
 import { MicIcon, StopIcon } from '../components/icons/MediaIcons';
@@ -39,7 +38,13 @@ const ERROR_COPY: Record<string, string> = {
 export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
+  const router = useRouter();
   const [lastBest, setLastBest] = useState<{ score: number; achievedAt: string } | null>(null);
+
+  // Captured at the moment of stop. useRecorder resets elapsedMs to 0 once
+  // the recorder finalizes, so we snapshot before invoking stop.
+  const lastDurationMsRef = useRef<number | null>(null);
+  const navigatedJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setLastBest(getBestScore(surah.id, ayah.ayahNumber));
@@ -49,10 +54,14 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   useEffect(() => {
     job.reset();
     recorder.cancel();
+    lastDurationMsRef.current = null;
+    navigatedJobIdRef.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surah.id, ayah.ayahNumber]);
 
-  // Persist best score + attempt log when scoring completes.
+  // Persist best score + attempt log when scoring completes, then auto-navigate
+  // to the dedicated result route. We do not render an inline done UI any more;
+  // the result page is the single canonical place for detailed feedback.
   useEffect(() => {
     if (job.stage !== 'done' && job.stage !== 'error') return;
     if (!job.job) return;
@@ -62,7 +71,6 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
 
     if (completed && score !== null) {
       recordBestScore(surah.id, ayah.ayahNumber, score);
-      setLastBest({ score, achievedAt: new Date().toISOString() });
     }
 
     const attempt: Attempt = {
@@ -73,17 +81,33 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
       score,
       jobId: job.job.jobId,
       createdAt: new Date().toISOString(),
-      status: completed ? 'COMPLETED' : 'FAILED'
+      status: completed ? 'COMPLETED' : 'FAILED',
+      durationMs: lastDurationMsRef.current ?? undefined
     };
     recordAttempt(attempt);
-  }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber]);
+
+    if (completed && navigatedJobIdRef.current !== job.job.jobId) {
+      navigatedJobIdRef.current = job.job.jobId;
+      const params = new URLSearchParams({
+        surah: surah.id,
+        ayah: String(ayah.ayahNumber)
+      });
+      router.push(`/practice/result/${job.job.jobId}?${params.toString()}`);
+    }
+  }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber, router]);
 
   const stage = job.stage; // 'idle' | 'uploading' | 'scoring' | 'done' | 'error'
   const isRecording = recorder.isRecording;
-  const isDarkPanel = isRecording || stage === 'uploading' || stage === 'scoring';
+  // Treat the brief 'done' window as still-busy: we navigate to the result
+  // route in the same effect, so the mic card stays in scoring presentation
+  // until the redirect completes.
+  const isPendingNavigation = stage === 'done' && job.job?.status === 'COMPLETED';
+  const isDarkPanel =
+    isRecording || stage === 'uploading' || stage === 'scoring' || isPendingNavigation;
 
   const handleStart = useCallback(async () => {
     job.reset();
+    navigatedJobIdRef.current = null;
     setLastPracticed({
       surahId: surah.id,
       ayahNumber: ayah.ayahNumber,
@@ -106,6 +130,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   ]);
 
   const handleStop = useCallback(async () => {
+    lastDurationMsRef.current = recorder.elapsedMs;
     const blob = await recorder.stop();
     if (!blob) return;
     await job.submit({ blob, surahId: surah.id, ayahNumber: ayah.ayahNumber });
@@ -113,11 +138,6 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
 
   const handleMicClick = isRecording ? handleStop : handleStart;
   const recordingError = recorder.error ? ERROR_COPY[recorder.error] : null;
-
-  const score =
-    stage === 'done' && job.job?.status === 'COMPLETED' && typeof job.job.score === 'number'
-      ? Math.round(job.job.score * 100)
-      : null;
 
   const panelClass = isDarkPanel ? `${styles.panel} ${styles.panelDark}` : styles.panel;
   const titleIconClass = isRecording
@@ -127,18 +147,12 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     ? 'Speak clearly into your microphone'
     : stage === 'uploading'
       ? 'Uploading your recording…'
-      : stage === 'scoring'
+      : stage === 'scoring' || isPendingNavigation
         ? 'Scoring in progress'
-        : stage === 'done'
-          ? 'Great work — review your score'
-          : stage === 'error'
-            ? 'Something went wrong'
-            : 'Press the button when ready';
-  const headerTitle = isRecording
-    ? 'Recording…'
-    : stage === 'done'
-      ? 'Your score'
-      : 'Now you recite';
+        : stage === 'error'
+          ? 'Something went wrong'
+          : 'Press the button when ready';
+  const headerTitle = isRecording ? 'Recording…' : 'Now you recite';
 
   return (
     <div className={panelClass}>
@@ -165,60 +179,43 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
           <RecorderBars live={isRecording} levels={recorder.levels} />
         )}
 
-        {(stage === 'uploading' || stage === 'scoring') && (
+        {(stage === 'uploading' || stage === 'scoring' || isPendingNavigation) && (
           <div className={styles.spinner} aria-hidden="true" />
         )}
 
-        {stage !== 'done' ? (
-          <>
-            {(stage === 'idle' || stage === 'error' || isRecording) && (
-              <div style={{ position: 'relative', display: 'inline-flex' }}>
-                {isRecording && (
-                  <>
-                    <span className={styles.pulseRing} />
-                    <span className={styles.pulseRing} />
-                    <span className={styles.pulseRing} />
-                  </>
-                )}
-                <button
-                  type="button"
-                  className={
-                    isRecording ? `${styles.micButton} ${styles.micButtonStop}` : styles.micButton
-                  }
-                  onClick={handleMicClick}
-                  disabled={stage === 'uploading' || stage === 'scoring'}
-                  aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                >
-                  {isRecording ? <StopIcon size={22} /> : <MicIcon size={28} />}
-                </button>
-              </div>
+        {(stage === 'idle' || stage === 'error' || isRecording) && (
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            {isRecording && (
+              <>
+                <span className={styles.pulseRing} />
+                <span className={styles.pulseRing} />
+                <span className={styles.pulseRing} />
+              </>
             )}
-            <p className={styles.recorderCaption}>
-              {isRecording
-                ? 'Tap to stop and submit for scoring'
-                : stage === 'uploading'
-                  ? 'Uploading…'
-                  : stage === 'scoring'
-                    ? 'Scoring your recitation…'
-                    : stage === 'error'
-                      ? 'Tap the mic to try again'
-                      : 'Tap the mic to begin'}
-            </p>
-          </>
-        ) : (
-          <div className={styles.scoreDisplay}>
-            <span className={styles.scoreNumber}>
-              {score ?? '—'}{' '}
-              <span style={{ fontSize: 22, color: 'var(--color-ink-muted)' }}>/ 100</span>
-            </span>
-            <span className={styles.scoreLabel}>{job.job?.verdict ?? 'Recitation scored'}</span>
-            <div className={styles.scoreActions}>
-              <button type="button" className={styles.btnGhost} onClick={() => job.reset()}>
-                Try again
-              </button>
-            </div>
+            <button
+              type="button"
+              className={
+                isRecording ? `${styles.micButton} ${styles.micButtonStop}` : styles.micButton
+              }
+              onClick={handleMicClick}
+              disabled={stage === 'uploading' || stage === 'scoring' || isPendingNavigation}
+              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+            >
+              {isRecording ? <StopIcon size={22} /> : <MicIcon size={28} />}
+            </button>
           </div>
         )}
+        <p className={styles.recorderCaption}>
+          {isRecording
+            ? 'Tap to stop and submit for scoring'
+            : stage === 'uploading'
+              ? 'Uploading…'
+              : stage === 'scoring' || isPendingNavigation
+                ? 'Scoring your recitation…'
+                : stage === 'error'
+                  ? 'Tap the mic to try again'
+                  : 'Tap the mic to begin'}
+        </p>
       </div>
 
       {recordingError && <p className="status error">{recordingError}</p>}
@@ -229,21 +226,6 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
           Last attempt: <span className={styles.lastScore}>{lastBest.score} / 100</span>
         </p>
       )}
-
-      {stage === 'done' && job.segments.length > 0 && (
-        <details className={styles.details}>
-          <summary className={styles.detailsSummary}>View scoring details</summary>
-          <ScoreDetails segments={job.segments} />
-        </details>
-      )}
-    </div>
-  );
-}
-
-function ScoreDetails({ segments }: { segments: ScoreSegment[] }) {
-  return (
-    <div style={{ marginTop: 'var(--space-3)' }}>
-      <SegmentHighlights segments={segments} threshold={0.85} />
     </div>
   );
 }

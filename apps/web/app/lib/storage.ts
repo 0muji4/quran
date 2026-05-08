@@ -25,6 +25,7 @@ export type Attempt = {
   jobId: string;
   createdAt: string;
   status: 'COMPLETED' | 'FAILED';
+  durationMs?: number;
 };
 
 const HISTORY_LIMIT = 50;
@@ -97,4 +98,14 @@ export const recordAttempt = (attempt: Attempt): void => {
   const existing = getRecentAttempts(HISTORY_LIMIT);
   const next = [attempt, ...existing].slice(0, HISTORY_LIMIT);
   writeJson(KEY_HIST, { attempts: next });
+};
+
+export const getAttemptsForToday = (surahId: string, ayahNumber: number): Attempt[] => {
+  const todayKey = new Date().toDateString();
+  return getRecentAttempts(HISTORY_LIMIT).filter((a) => {
+    if (a.surahId !== surahId || a.ayahNumber !== ayahNumber) return false;
+    const at = new Date(a.createdAt);
+    if (Number.isNaN(at.getTime())) return false;
+    return at.toDateString() === todayKey;
+  });
 };
