@@ -40,7 +40,7 @@ export function ContinueCard({ surahs }: Props) {
           </p>
         </div>
         <div className={styles.continueActions}>
-          <Link className={styles.btnGold} href={`/practice?surah=${surahs[0]?.id ?? '1'}&ayah=1`}>
+          <Link className={styles.btnGold} href={`/practice/${surahs[0]?.id ?? '1'}/1`}>
             <ArrowRightIcon /> Start practice
           </Link>
         </div>
@@ -77,13 +77,10 @@ export function ContinueCard({ surahs }: Props) {
         </div>
       </div>
       <div className={styles.continueActions}>
-        <Link
-          className={styles.btnGold}
-          href={`/practice?surah=${last.surahId}&ayah=${last.ayahNumber}`}
-        >
+        <Link className={styles.btnGold} href={`/practice/${last.surahId}/${last.ayahNumber}`}>
           <ArrowRightIcon /> Resume ayah {last.ayahNumber}
         </Link>
-        <Link className={styles.btnGhostDark} href={`/practice?surah=${last.surahId}&ayah=1`}>
+        <Link className={styles.btnGhostDark} href={`/practice/${last.surahId}/1`}>
           Start over
         </Link>
       </div>

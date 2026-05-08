@@ -100,7 +100,7 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
       <p className={styles.resultPendingSubtitle}>{subtitle}</p>
       {isStuck ? (
         <Link
-          href={`/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`}
+          href={`/practice/${surah.id}/${ayah.ayahNumber}`}
           className={styles.resultPendingCancel}
         >
           Cancel and try again

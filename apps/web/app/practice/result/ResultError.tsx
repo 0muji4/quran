@@ -9,7 +9,7 @@ type Props = {
 };
 
 export function ResultError({ surah, ayah, message }: Props) {
-  const tryAgainHref = `/practice?surah=${surah.id}&ayah=${ayah.ayahNumber}`;
+  const tryAgainHref = `/practice/${surah.id}/${ayah.ayahNumber}`;
   return (
     <section className={styles.resultError} role="alert">
       <h1 className={styles.resultErrorTitle}>Something went wrong</h1>

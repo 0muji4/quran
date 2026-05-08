@@ -36,7 +36,7 @@ describe('Surah library', () => {
     render(<LibraryClient surahs={mockSurahs} />);
 
     const fatihahLink = screen.getByRole('link', { name: /Al-Fatihah/i });
-    expect(fatihahLink).toHaveAttribute('href', '/practice?surah=1&ayah=1');
+    expect(fatihahLink).toHaveAttribute('href', '/practice/1/1');
   });
 
   it('filters surahs by search query', async () => {
