@@ -114,11 +114,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
 
     if (completed && navigatedJobIdRef.current !== job.job.jobId) {
       navigatedJobIdRef.current = job.job.jobId;
-      const params = new URLSearchParams({
-        surah: surah.id,
-        ayah: String(ayah.ayahNumber)
-      });
-      router.push(`/practice/result/${job.job.jobId}?${params.toString()}`);
+      router.push(`/practice/${surah.id}/${ayah.ayahNumber}/result/${job.job.jobId}`);
     }
   }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber, router]);
 
