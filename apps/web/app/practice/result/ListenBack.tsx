@@ -20,9 +20,9 @@ export function ListenBack({
     <section className={styles.listenBackSection} aria-labelledby="listen-back-heading">
       <header className={styles.listenBackHead}>
         <div>
-          <h3 id="listen-back-heading" className={styles.listenBackTitle}>
+          <h2 id="listen-back-heading" className={styles.listenBackTitle}>
             Listen back
-          </h3>
+          </h2>
           <p className={styles.listenBackSubtitle}>
             Compare your recitation with the teacher&apos;s reference.
           </p>
