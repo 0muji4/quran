@@ -13,6 +13,7 @@ export class RecordPage extends BasePage {
   readonly stopButton: Locator;
   readonly nowYouReciteHeading: Locator;
   readonly recordingHeading: Locator;
+  readonly analysingHeading: Locator;
   readonly listenToTeacherHeading: Locator;
   readonly idleCaption: Locator;
   readonly recordingCaption: Locator;
@@ -28,6 +29,7 @@ export class RecordPage extends BasePage {
 
     this.nowYouReciteHeading = page.getByRole('heading', { name: /now you recite/i });
     this.recordingHeading = page.getByRole('heading', { name: /^recording/i });
+    this.analysingHeading = page.getByRole('heading', { name: /analysing your recitation/i });
     this.listenToTeacherHeading = page.getByRole('heading', { name: /listen to the teacher/i });
 
     this.idleCaption = page.getByText(/tap the mic to begin/i);
