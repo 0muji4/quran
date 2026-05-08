@@ -1236,6 +1236,24 @@
   margin: 0;
 }
 
+.listenBackPlayBoth {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--color-teal);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.listenBackPlayBoth:hover {
+  color: var(--color-teal-deep);
+}
+
 .listenBackGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
