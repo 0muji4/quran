@@ -87,7 +87,12 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
 
       <ListenBack teacherUrl={teacherUrl} userRecordingUrl={userRecordingUrl} />
 
-      <ActionRow surahId={surah.id} ayahNumber={ayah.ayahNumber} totalAyahs={totalAyahs} />
+      <ActionRow
+        surahId={surah.id}
+        surahName={surah.nameEn}
+        ayahNumber={ayah.ayahNumber}
+        totalAyahs={totalAyahs}
+      />
     </>
   );
 }
