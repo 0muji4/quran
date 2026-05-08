@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { WordAlignment } from '@quran-project/shared-ts';
 import { WordByWord } from '../WordByWord';
+
+afterEach(() => cleanup());
 
 const alignments: WordAlignment[] = [
   { op: 'equal', refWord: 'بِسْمِ', hypWord: 'بِسْمِ' },
@@ -37,9 +39,13 @@ describe('WordByWord', () => {
     expect(screen.getAllByText('…').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('renders empty-state copy when no alignments', () => {
+  it('renders a single combined empty-state copy when there are no alignments', () => {
     render(<WordByWord wordAlignments={[]} wer={null} />);
-    expect(screen.getByText(/No reference words available/)).toBeInTheDocument();
-    expect(screen.getByText(/No transcription available/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Word-level alignment is not available for this attempt yet/)
+    ).toBeInTheDocument();
+    // Section labels are not rendered in the empty branch.
+    expect(screen.queryByText('EXPECTED (TEACHER)')).not.toBeInTheDocument();
+    expect(screen.queryByText('WHAT WE HEARD')).not.toBeInTheDocument();
   });
 });
