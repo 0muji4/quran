@@ -32,6 +32,11 @@
     <!-- Library tab -->
     <string name="library_eyebrow">Choose a surah to recite</string>
     <string name="library_title">Surah library</string>
-    <string name="library_empty">No surahs available yet.</string>
+    <string name="library_empty">No surahs match.</string>
     <string name="library_retry">Try again</string>
+    <string name="library_search_placeholder">Search surahs</string>
+    <string name="library_filter_all">All</string>
+    <string name="library_filter_mecca">Mecca</string>
+    <string name="library_filter_medina">Medina</string>
+    <string name="library_filter_short">Short</string>
 </resources>
