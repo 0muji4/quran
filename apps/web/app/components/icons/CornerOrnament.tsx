@@ -25,7 +25,7 @@ export function CornerOrnament({ position, size = 28, className }: Props) {
     >
       <g
         fill="none"
-        stroke="var(--color-gold)"
+        stroke="var(--color-gold-surface)"
         strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"

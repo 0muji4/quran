@@ -7,10 +7,23 @@
   --color-bg-continue: #2b1f14;
   --color-bg-recording: #14181c;
 
-  /* Brand accents */
-  --color-gold: #b8893c;
-  --color-gold-soft: #d9b26a;
-  --color-gold-ink: #6e4f1e;
+  /* Brand accents
+   *
+   * The gold family is split by usage axis (see ADR 0003):
+   *   --color-gold-surface  → backgrounds (.btnGold bg, .progressFill,
+   *                          .waveBarPlayed) and decorative SVG
+   *                          strokes. Pair with dark text.
+   *   --color-gold-on-light → gold *text* on cream / paper surfaces
+   *                          (.eyebrow, .surahNumber, .panelIconTan).
+   *                          Clears WCAG AA on the cream page bg.
+   *   --color-gold-on-dark  → gold text on dark surfaces (Continue
+   *                          card / nav). Doubles as a lighter
+   *                          hover-state background for .btnGold.
+   * The single --color-gold token is intentionally removed so that
+   * future component authors must pick the right axis. */
+  --color-gold-surface: #b8893c;
+  --color-gold-on-light: #6e4f1e;
+  --color-gold-on-dark: #d9b26a;
   --color-teal: #2d5a4f;
   --color-teal-deep: #1f4036;
   --color-mint-bg: #d9efe3;
@@ -23,7 +36,9 @@
   /* Ink */
   --color-ink-strong: #1f1a14;
   --color-ink-default: #3a322a;
-  --color-ink-muted: #7b6e5c;
+  /* Darkened from #7b6e5c (~4.37:1 on cream) to clear WCAG AA 4.5:1
+   * on the page / paper surfaces. See ADR 0003. */
+  --color-ink-muted: #6b5d4a;
   --color-ink-on-dark: #efe4ce;
   /* Bumped from #b8a88c (~3.5:1 on #14181c) to clear WCAG AA 4.5:1 on
    * the recording / nav / continue dark surfaces. See Phase 2.3-D. */
@@ -158,7 +173,7 @@ button:disabled {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--color-gold);
+  color: var(--color-gold-on-light);
 }
 
 .muted {
