@@ -77,3 +77,9 @@
 "result.listenBack.you" = "You";
 "result.action.tryAgain" = "Try again";
 "result.action.continue" = "Continue to ayah %d";
+
+/* History tab */
+"history.eyebrow" = "Your practice";
+"history.title" = "History";
+"history.filter.all" = "All";
+"history.empty" = "No attempts yet — record one to start your history.";
