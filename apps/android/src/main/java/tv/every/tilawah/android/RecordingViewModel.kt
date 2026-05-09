@@ -8,27 +8,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonObject
-import tv.every.tilawah.android.network.ApiClient
-import tv.every.tilawah.android.network.awaitBody
+import tv.every.tilawah.android.app.AppError
+import tv.every.tilawah.android.backend.QuranBackend
+import tv.every.tilawah.android.backend.RetrofitQuranBackend
 import tv.every.tilawah.android.network.model.AyahRecord
-import tv.every.tilawah.android.network.model.CreateScoringJobRequest
 import tv.every.tilawah.android.network.model.ScoringResult
 import tv.every.tilawah.android.network.model.ScoringStatus
-import tv.every.tilawah.android.network.model.SignedUploadRequest
+import tv.every.tilawah.android.network.model.SignedUploadResponse
 import tv.every.tilawah.android.network.model.SurahSummary
 import tv.every.tilawah.android.util.describeUploadTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class RecordingViewModel(application: Application) : AndroidViewModel(application) {
-    private val api = ApiClient.service
+    private val backend: QuranBackend = RetrofitQuranBackend()
     private val recorder = AudioRecorder(application.applicationContext)
-    private val httpClient = OkHttpClient()
 
     var surahs by mutableStateOf<List<SurahSummary>>(emptyList())
         private set
@@ -113,16 +108,15 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     private fun loadSurahs() {
         viewModelScope.launch {
             try {
-                val response = api.fetchSurahs().awaitBody()
-                surahs = response.surahs
+                surahs = backend.surahs()
                 if (surahs.isNotEmpty()) {
                     val current = selectedSurahId
                     if (current == null || surahs.none { it.id == current }) {
                         selectSurah(surahs.first().id)
                     }
                 }
-            } catch (error: Throwable) {
-                errorMessage = error.message ?: "Failed to load surahs."
+            } catch (error: AppError) {
+                errorMessage = "[${error.telemetryCode}] failed to load surahs"
             }
         }
     }
@@ -130,8 +124,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     private fun loadAyahs(surahId: String) {
         viewModelScope.launch {
             try {
-                val response = api.fetchSurahAyahs(surahId).awaitBody()
-                ayahs = response.ayahs
+                ayahs = backend.ayahs(surahId)
                 if (ayahs.isNotEmpty()) {
                     val current = selectedAyahNumber
                     val fallback = ayahs.first().ayahNumber
@@ -145,8 +138,8 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
                     selectedAyahNumber = null
                     selectedAyah = null
                 }
-            } catch (error: Throwable) {
-                errorMessage = error.message ?: "Failed to load ayahs."
+            } catch (error: AppError) {
+                errorMessage = "[${error.telemetryCode}] failed to load ayahs"
             }
         }
     }
@@ -182,38 +175,34 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
             try {
                 val recording = recorder.stopRecording()
                 recordingFile = recording
-                val signedUpload = api.requestSignedUploadUrl(
-                    SignedUploadRequest(
-                        filename = recording.name,
-                        contentType = "audio/m4a"
-                    )
-                ).awaitBody()
+                val signedUpload = backend.requestSignedUploadUrl(
+                    filename = recording.name,
+                    contentType = "audio/m4a",
+                )
 
                 val uploadKey = signedUpload.uploadKey
                     ?: extractUploadKey(signedUpload.fields)
-                    ?: throw IllegalStateException("Upload key missing from signed URL response.")
+                    ?: throw AppError.BackendUnavailable("requestSignedUploadUrl")
                 val sessionId = signedUpload.sessionId
 
                 uploadDestination = describeUploadTarget(signedUpload)
                 statusMessage = "Uploading audio..."
-                uploadFile(signedUpload.url, recording)
+                backend.uploadAudio(recording, signedUpload.url, "audio/m4a")
 
                 statusText = "Scoring"
                 statusMessage = "Creating scoring job..."
-                val job = api.createScoringJob(
-                    CreateScoringJobRequest(
-                        sessionId = sessionId,
-                        uploadKey = uploadKey,
-                        surahId = selectedSurahId ?: "",
-                        ayahNumber = selectedAyahNumber ?: 1
-                    )
-                ).awaitBody()
+                val job = backend.createScoringJob(
+                    uploadKey = uploadKey,
+                    surahId = selectedSurahId ?: "",
+                    ayahNumber = selectedAyahNumber ?: 1,
+                    sessionId = sessionId,
+                )
                 scoringResult = job
                 statusMessage = statusLabel(job)
                 pollScoringJob(job.jobId)
-            } catch (error: Throwable) {
+            } catch (error: AppError) {
                 statusText = "Failed"
-                errorMessage = error.message ?: "Failed to upload and score recording."
+                errorMessage = "[${error.telemetryCode}] failed to upload and score recording"
             } finally {
                 isBusy = false
             }
@@ -224,9 +213,9 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         polling = true
         repeat(20) {
             val job = try {
-                api.fetchScoringJob(jobId).awaitBody()
-            } catch (error: Throwable) {
-                errorMessage = error.message ?: "Failed to fetch scoring job."
+                backend.fetchScoringJob(jobId)
+            } catch (error: AppError) {
+                errorMessage = "[${error.telemetryCode}] failed to fetch scoring job"
                 polling = false
                 return
             }
@@ -241,19 +230,6 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
             delay(2_000)
         }
         polling = false
-    }
-
-    private suspend fun uploadFile(url: String, recording: File) {
-        val request = Request.Builder()
-            .url(url)
-            .put(recording.asRequestBody("audio/m4a".toMediaType()))
-            .build()
-
-        httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IllegalStateException("Upload failed with status ${response.code}.")
-            }
-        }
     }
 
     private fun extractUploadKey(fields: JsonObject?): String? {
