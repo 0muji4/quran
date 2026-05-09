@@ -31,6 +31,8 @@ struct PracticeView: View {
             onChangeRate: { viewModel.cycleReferenceRate() }
           )
           .padding(.horizontal, Spacing.screenHorizontal)
+          activePanel
+            .padding(.horizontal, Spacing.screenHorizontal)
         } else if case .error(let error) = viewModel.state {
           Text(error.errorDescription ?? "")
             .font(Font.brand.body)
@@ -51,6 +53,25 @@ struct PracticeView: View {
         await viewModel.load()
         await viewModel.loadReference()
       }
+    }
+  }
+
+  @ViewBuilder
+  private var activePanel: some View {
+    switch viewModel.state {
+    case .idle, .recording, .uploading, .done:
+      RecordingPanel(
+        state: viewModel.state,
+        onTapRecord: { viewModel.toggleRecording() }
+      )
+    case .analysing(let step):
+      AnalysingPanel(step: step)
+    case .error(let error):
+      PracticeErrorPanel(
+        error: error,
+        onReplay: { viewModel.replayLastRecording() },
+        onRecordAgain: { viewModel.resetForRetry() }
+      )
     }
   }
 
