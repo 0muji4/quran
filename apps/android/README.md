@@ -1,53 +1,115 @@
 # Android
 
-Kotlin / Jetpack Compose recording app. Pulls Surahs and Ayahs through the BFF and uploads recorded audio for scoring. The application module is configured in `apps/android/build.gradle.kts`.
+Compose client for Tilawah. Talks to the BFF (`:4000`) over GraphQL through Apollo Kotlin, with a single REST call for teacher reference audio. Entry point is `apps/android/src/main/java/tv/every/tilawah/android/MainActivity.kt`.
 
 ## Prerequisites
 
-- Android Studio + Android SDK (compileSdk 34, Build Tools 34.x)
-- JDK 17
-- The Gradle Wrapper (`./gradlew`) — no host-level Gradle install required
-- `ANDROID_HOME` / `ANDROID_SDK_ROOT` set, with SDK licenses accepted
+- macOS / Linux with Android Studio Hedgehog or newer (or just the Android SDK + JDK 17)
+- JDK 17 (Android Studio bundles a JBR; export `JAVA_HOME=$(/usr/libexec/java_home -v 17)` on macOS if you use the system JDK)
+- Android SDK 34 + a Pixel 6 / API 34 emulator for manual verification
 
-## Build / Test / Lint
+## Layout
 
-Run from the repository root via the wrapper:
+```
+src/main/java/tv/every/tilawah/android/
+├── app/             AppRoot, AppConfig, AppError, Routing, HistoryDataStore
+├── designsystem/    BrandColors, BrandTypography, BrandSpacing, BrandTheme,
+│                    components/ (BrandCard, ChipFilter, PlaybackRow,
+│                                  PrimaryButton, BrandProgressBar, WaveformView,
+│                                  BrandCardStyle)
+├── audio/           Recorder + MediaRecorderRecorder, Player + MediaPlayerPlayer,
+│                    AudioFocusCoordinator
+├── backend/         QuranBackend (interface), ApolloQuranBackend,
+│                    ReferenceAudioClient, Dto
+├── storage/         HistoryStore (interface), DataStoreHistoryStore,
+│                    InMemoryHistoryStore, HistoryDtos
+├── telemetry/       Telemetry (interface) + constants, TraceTelemetry,
+│                    NoOpTelemetry
+└── features/
+    ├── library/     LibraryScreen, LibraryViewModel, ContinueCard, SurahRow,
+    │                LibraryFilter, LibraryUiState
+    ├── practice/    PracticeScreen, PracticeViewModel, PracticeState,
+    │                AyahCard, TeacherReferencePanel, RecordingPanel,
+    │                AnalysingPanel, PracticeErrorPanel
+    ├── result/      ResultDetailScreen, ResultDetailViewModel, ScoreHero,
+    │                MetricBars, WordComparisonGrid, ListenBackSection
+    └── history/     HistoryScreen, HistoryViewModel, AttemptRow, StatsGrid,
+                     HistoryFilter
 
-```bash
-./gradlew :apps:android:assembleDebug
-./gradlew :apps:android:testDebugUnitTest
-./gradlew :apps:android:lintDebug
+src/main/graphql/    *.graphql operations consumed by Apollo Kotlin codegen
+src/main/res/        values/, values-ar/, xml/network_security_config.xml
+
+src/test/java/tv/every/tilawah/android/
+├── backend/         MockBackend, MockBackendTest
+├── telemetry/       TelemetrySpy, TelemetrySpyTest
+├── storage/         HistoryStoreTest
+└── features/        library/{LibraryViewModelTests, LibraryFilterTests}
+                     practice/{PracticeViewModelTests, PracticeEndToEndTests}
+                     result/ResultDetailViewModelTests
+                     history/{HistoryViewModelTests, StatsTests}
 ```
 
-## Pointing at the BFF
+## Architecture decisions
 
-`BFF_BASE_URL` defaults to `http://localhost:4000`. Override it with a Gradle property or environment variable:
+The shape of the Android app mirrors iOS one-for-one. The architectural commitments live in:
+
+- [`docs/adr/0005`](../../docs/adr/0005-ios-app-architecture.md) — MVVM, TabView (NavigationBar on Android), typed Route enum, state machines
+- [`docs/adr/0006`](../../docs/adr/0006-ios-layer-boundaries-and-error-model.md) — protocol facades + unified `AppError`
+- [`docs/adr/0007`](../../docs/adr/0007-ios-local-first-history-persistence.md) — local-first `HistoryStore`
+- [`docs/adr/0008`](../../docs/adr/0008-ios-observability-via-telemetry-protocol.md) — `Telemetry` protocol backed by Logcat + `androidx.tracing.Trace`
+- [`docs/adr/0009`](../../docs/adr/0009-ios-internationalization-from-day-one.md) — i18n from day one (Arabic translation deferred per the 2026-05-09 update)
+
+## Build (Gradle)
 
 ```bash
-./gradlew :apps:android:assembleDebug -PBFF_BASE_URL=http://10.0.2.2:4000
-# or
-BFF_BASE_URL=http://10.0.2.2:4000 ./gradlew :apps:android:assembleDebug
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :apps:android:assembleDebug
 ```
 
-| Setup | Recommended URL |
-|---|---|
-| **Physical device over USB** | Run `adb reverse tcp:4000 tcp:4000` and keep the default `BFF_BASE_URL=http://localhost:4000` |
-| **Android Emulator** | `BFF_BASE_URL=http://10.0.2.2:4000` (the host loopback as seen from the emulator) |
-| **Another device on the LAN** | `BFF_BASE_URL=http://<host-LAN-IP>:4000` (the IP must also be allowed for cleartext) |
+Apollo Kotlin codegen runs automatically as part of `:apps:android:assembleDebug`. The generated sources land under `apps/android/build/generated/source/apollo/` and are not committed.
 
-`adb reverse` mappings are dropped on USB disconnect, device reboot, or `adb kill-server`, so re-run the command each time you reconnect.
+## Test
 
-## Cleartext (HTTP) policy
+```bash
+./gradlew :apps:android:lintDebug :apps:android:testDebugUnitTest :apps:android:assembleDebug
+```
 
-Cleartext HTTP is disabled by default starting from Android 9 (API 28). This app keeps a `network_security_config.xml` under `src/debug/res/xml/` that **enables cleartext only for `localhost`, `10.0.2.2`, and `127.0.0.1` in debug builds**. Release builds remain strict and reject cleartext entirely.
+Instrumented tests are intentionally not in the standard gate (no emulator dependency in CI). Manual emulator validation is the gate for UI changes.
 
-To allow a LAN IP in debug builds, add the host or IP to the `<domain-config>` block in `src/debug/res/xml/network_security_config.xml`.
+## Endpoints
 
-## Troubleshooting
+`AppConfig` is the single source of truth for the BFF URL:
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| `CLEARTEXT communication ... not permitted` | Release build, or a domain not in the allow list | Use a debug build targeting `localhost` / `10.0.2.2`, or extend the config |
-| `Failed to connect to localhost` | BFF not running, or `adb reverse` not set | `make dev-up` and `adb reverse tcp:4000 tcp:4000` |
-| HTTP 502 from the BFF | BFF is up but its upstream (Go backend) is down | Check `docker compose ps`, hit `/api/surahs` directly to isolate |
-| Empty Surah / Ayah list | Database is empty | `make db-migrate && make db-seed` |
+- `BFF_BASE_URL` gradle property / env var (Debug default `http://10.0.2.2:4000` — the Android emulator's alias for the host machine's `localhost`).
+- Physical-device development: pass `-PBFF_BASE_URL=http://<host-LAN-IP>:4000` to gradle, or set the env var.
+- `network_security_config.xml` permits cleartext only for `localhost` and `10.0.2.2`. Production traffic is HTTPS-only.
+
+## Telemetry
+
+Production wires `TraceTelemetry` (Logcat tag `tv.every.tilawah.android`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto / Studio Profiler). The cross-platform event taxonomy lives at [`docs/telemetry.md`](../../docs/telemetry.md).
+
+Inspecting events:
+
+```bash
+adb logcat | rg tv.every.tilawah.android
+```
+
+## Localization (i18n)
+
+`res/values/strings.xml` is the source of truth. `res/values-ar/strings.xml` ships as an English mirror — the Arabic translation pass is deferred per ADR 0009 (2026-05-09 update). When a native Arabic-speaking translator engages (or when web / analytics force the issue), update the values in place; the keys + manifest `android:supportsRtl="true"` are already in flight.
+
+## Verification (end-to-end)
+
+1. `docker compose up` (BFF + worker + Postgres + Redis + MinIO).
+2. Launch the Pixel 6 / API 34 emulator from Android Studio.
+3. `./gradlew :apps:android:installDebug`.
+4. **Library tab**: surahs load → search "Fatihah" → tap row.
+5. **Practice tab**: Teacher reference plays → record 5 s → upload → analysing checklist animates → DonePanel shows the score.
+6. **Result detail**: ScoreHero arc + verdict, Accuracy / Fluency / Completeness MetricBars, WordComparisonGrid colored by op, ListenBack rows for teacher + you.
+7. **Try again** returns to Practice for the same ayah; **Continue** advances to ayah+1.
+8. **History tab**: attempt appears at the top, StatsGrid updates (week / average / best / streak).
+9. Force-stop the app, relaunch, repeat step 8 — DataStore persists across process death.
+10. **Cross-platform JSON parity**: export DataStore prefs via `adb shell run-as tv.every.tilawah.android cat files/datastore/tilawah-history.preferences_pb` and confirm the `tilawah:*` keys + ISO 8601 dates + `COMPLETED|FAILED` status round-trip with the web `localStorage` and iOS `UserDefaults` shapes.
+11. **Telemetry parity**: `adb logcat | rg tv.every.tilawah.android` while exercising the funnel; assert event names match `docs/telemetry.md`.
+12. **Error path**: stop the BFF; assert `AppError.network` surfaces with localised user copy; retry recovers.
+13. **TalkBack on**: record button announces state, score dial reads "84 percent, mashallah", word tiles announce match / substituted / missing / extra.
+14. **ar locale** (Settings → System → Languages → add Arabic, move to top): RTL flips on the Arabic ayah text only; English-mirror copy in `values-ar` remains intelligible until a translator engages.
