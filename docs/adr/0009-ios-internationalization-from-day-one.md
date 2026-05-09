@@ -49,11 +49,26 @@ Negative:
 - **Hard-code English now, internationalize later.** Rejected for the reason described in Rationale: deferral is the high-cost path.
 - **Third-party i18n library (e.g. SwiftGen for type-safe keys).** Rejected for now: an extra dependency to gain compile-time safety on string keys is not yet worth it. SwiftGen can be layered on later without changing the View bodies.
 - **Translate ar in the same PRs as feature work.** Rejected: blocks features on translator availability. Decoupling lets feature PRs ship with English copy and Arabic land in batched translation PRs.
-- **Skip Arabic entirely until product validates demand.** Rejected: validating without ar runs the risk of validating the wrong product (the audience reading Arabic ayahs is the audience the app is built for).
+- **Skip Arabic entirely until product validates demand.** Rejected at the time as a risk of validating the wrong product, but see Update (2026-05-09) below — the value timing was reassessed.
+
+## Update (2026-05-09): defer the Arabic translation pass
+
+After the iOS rebuild landed, an initial AI-assisted Arabic translation pass was opened (PR #179) and then closed without merging. The reasoning recorded here so the trade-off is durable:
+
+- An unreviewed translation pass risks shipping awkward UI copy in a culturally sensitive context (Quranic recitation app). English fallback is a more honest signal than approximate Arabic.
+- Web is English-only and Android is unstarted. Localizing iOS alone creates cross-platform divergence that has to be unwound later.
+- The audience that learns Quran recitation is overwhelmingly non-Arabic-speaking (Indonesian, Pakistani, Turkish, Western diaspora) and operates phones in English.
+- The i18n infrastructure (LocalizedStringKey, en.lproj / ar.lproj bundles, NSLocalizedString-backed AppError copy) is preserved on `develop` so a future translation pass is a values-only change. Decision (1) of this ADR — i18n from day one — is reaffirmed; only the timing of the Arabic value pass moves.
 
 ## Reconsideration Triggers
 
-Re-open when **any** of:
+Re-open the **Arabic translation pass** when **any** of:
+
+1. A native Arabic-speaking translator or reviewer is engaged.
+2. Web and / or Android also localize to ar — coordinate cross-platform pass instead of doing iOS in isolation.
+3. Product analytics surface a meaningful share of users running iOS in `ar` locale.
+
+Re-open the **i18n architecture itself** (broader than ar copy) when **any** of:
 
 1. A third language is added (e.g. Indonesian, Urdu) → consider SwiftGen for compile-time key safety.
 2. Translators consistently report key-collision or context-loss problems → switch to a structured translation format (XLIFF round-trip from Xcode is already supported).
