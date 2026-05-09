@@ -76,4 +76,10 @@
     <string name="practice_done_title">Recitation scored</string>
     <string name="practice_done_view_result">View result</string>
     <string name="practice_done_record_again">Record again</string>
+
+    <!-- Result tab -->
+    <string name="result_back_a11y">Back to practice</string>
+    <string name="result_title">Result</string>
+    <string name="result_try_again">Try again</string>
+    <string name="result_continue">Continue to next ayah</string>
 </resources>
