@@ -24,3 +24,8 @@
 
 "error.storageUnavailable.title" = "Couldn't save locally";
 "error.storageUnavailable.recovery" = "Free up some space on your device and try again.";
+
+/* Library tab */
+"library.eyebrow" = "Your practice";
+"library.title" = "Choose a surah to recite";
+"library.retry" = "Retry";

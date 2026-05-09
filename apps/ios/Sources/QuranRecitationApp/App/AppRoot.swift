@@ -6,12 +6,20 @@ import SwiftUI
 /// `RecorderView` until PR 17 retires it; Library and History show a
 /// placeholder until PR 9 / PR 22 land. See ADR 0005.
 struct AppRoot: View {
+  private let backend: QuranBackend
   private let telemetry: Telemetry
+  private let historyStore: HistoryStore
   @StateObject private var legacyRecordingViewModel: RecordingViewModel
   @State private var selectedTab: AppTab = .library
 
-  init(backend: QuranBackend, telemetry: Telemetry) {
+  init(
+    backend: QuranBackend,
+    telemetry: Telemetry,
+    historyStore: HistoryStore = UserDefaultsHistoryStore()
+  ) {
+    self.backend = backend
     self.telemetry = telemetry
+    self.historyStore = historyStore
     self._legacyRecordingViewModel = StateObject(
       wrappedValue: RecordingViewModel(backend: backend, telemetry: telemetry)
     )
@@ -33,8 +41,10 @@ struct AppRoot: View {
 
   private var libraryTab: some View {
     NavigationStack {
-      ComingSoonView(title: "Library", systemImage: "books.vertical")
-        .navigationTitle("Library")
+      LibraryView(
+        viewModel: LibraryViewModel(backend: backend, telemetry: telemetry),
+        historyStore: historyStore
+      )
     }
     .tabItem { Label("Library", systemImage: "books.vertical") }
     .tag(AppTab.library)

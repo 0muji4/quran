@@ -25,4 +25,8 @@ protocol QuranBackend {
   /// `AppError.scoringTimeout` after the implementation's retry budget
   /// is exhausted.
   func pollScoringResult(jobId: String) async throws -> ScoringResultPayload
+
+  /// Fetch the surah list. `limit` and `offset` are optional; passing
+  /// `nil` lets the BFF apply its own defaults.
+  func surahs(limit: Int?, offset: Int?) async throws -> [SurahSummary]
 }
