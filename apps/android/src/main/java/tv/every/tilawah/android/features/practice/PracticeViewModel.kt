@@ -2,6 +2,7 @@ package tv.every.tilawah.android.features.practice
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,6 +10,7 @@ import kotlinx.coroutines.launch
 import tv.every.tilawah.android.app.AppError
 import tv.every.tilawah.android.audio.Player
 import tv.every.tilawah.android.audio.Recorder
+import tv.every.tilawah.android.audio.RecordingResult
 import tv.every.tilawah.android.backend.AyahDetail
 import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.storage.HistoryStore
@@ -41,6 +43,9 @@ class PracticeViewModel(
     val reference: StateFlow<TeacherReferenceState> = _reference.asStateFlow()
 
     private var referencePlayedOnce: Boolean = false
+    private var recorderObserverJob: Job? = null
+    var lastRecording: RecordingResult? = null
+        private set
 
     init {
         viewModelScope.launch { loadAyah() }
@@ -100,6 +105,57 @@ class PracticeViewModel(
 
     fun retryReference() {
         viewModelScope.launch { loadReference() }
+    }
+
+    fun startRecording() {
+        viewModelScope.launch {
+            try {
+                player.pause()
+                recorder.start()
+                _state.value = PracticeState.Recording(meters = emptyList(), durationMs = 0L)
+                telemetry.event(
+                    TelemetryEvent.PRACTICE_RECORDING_STARTED,
+                    mapOf(
+                        TelemetryAttribute.SURAH_ID to surahId,
+                        TelemetryAttribute.AYAH to ayahNumber.toString(),
+                    ),
+                )
+                observeRecorderState()
+            } catch (cause: AppError) {
+                telemetry.error(cause, mapOf("screen" to "practice", "section" to "recording"))
+                _state.value = PracticeState.Error(cause)
+            }
+        }
+    }
+
+    fun stopRecording() {
+        viewModelScope.launch {
+            recorderObserverJob?.cancel()
+            recorderObserverJob = null
+            try {
+                val result = recorder.stop()
+                lastRecording = result
+                telemetry.event(
+                    TelemetryEvent.PRACTICE_RECORDING_STOPPED,
+                    mapOf(TelemetryAttribute.DURATION_MS to result.durationMs.toString()),
+                )
+                _state.value = PracticeState.Idle
+            } catch (cause: AppError) {
+                telemetry.error(cause, mapOf("screen" to "practice", "section" to "recording"))
+                _state.value = PracticeState.Error(cause)
+            }
+        }
+    }
+
+    private fun observeRecorderState() {
+        recorderObserverJob?.cancel()
+        recorderObserverJob = viewModelScope.launch {
+            recorder.state.collect { rs ->
+                if (_state.value is PracticeState.Recording) {
+                    _state.value = PracticeState.Recording(rs.meters, rs.durationMs)
+                }
+            }
+        }
     }
 
     private fun refreshReferenceFromPlayer() {
