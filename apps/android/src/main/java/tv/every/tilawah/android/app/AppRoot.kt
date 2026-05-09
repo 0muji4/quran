@@ -45,6 +45,8 @@ import tv.every.tilawah.android.features.library.LibraryScreen
 import tv.every.tilawah.android.features.library.LibraryViewModel
 import tv.every.tilawah.android.features.practice.PracticeScreen
 import tv.every.tilawah.android.features.practice.PracticeViewModel
+import tv.every.tilawah.android.features.history.HistoryScreen
+import tv.every.tilawah.android.features.history.HistoryViewModel
 import tv.every.tilawah.android.features.result.ResultDetailScreen
 import tv.every.tilawah.android.features.result.ResultDetailViewModel
 import tv.every.tilawah.android.storage.DataStoreHistoryStore
@@ -164,7 +166,7 @@ fun AppRoot(
                         )
                     }
                 }
-                TopLevelTab.History -> HistoryTabPlaceholder()
+                TopLevelTab.History -> HistoryTabHost(historyStore = historyStore)
             }
         }
     }
@@ -306,25 +308,11 @@ private fun defaultHistoryStore(): HistoryStore {
 }
 
 @Composable
-private fun HistoryTabPlaceholder() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.sm),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "History — wired in PR 22",
-                style = BrandTheme.typography.sectionTitle,
-                color = BrandTheme.colors.textPrimary,
-            )
-            Text(
-                text = "design parity rebuild in progress",
-                style = BrandTheme.typography.caption,
-                color = BrandTheme.colors.textSecondary,
-            )
-        }
-    }
+private fun HistoryTabHost(historyStore: HistoryStore) {
+    val viewModel: HistoryViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { HistoryViewModel(historyStore) }
+        },
+    )
+    HistoryScreen(viewModel = viewModel)
 }
