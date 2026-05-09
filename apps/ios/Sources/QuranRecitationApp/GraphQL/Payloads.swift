@@ -39,12 +39,40 @@ public struct ScoreSegmentPayload {
   }
 }
 
+public struct WordAlignmentPayload: Hashable {
+  public let refWord: String?
+  public let hypWord: String?
+  public let op: String
+
+  public enum Operation: String {
+    case match, sub, ins, del
+
+    var fallback: Operation { .match }
+  }
+
+  public var operation: Operation {
+    Operation(rawValue: op) ?? .match
+  }
+}
+
+public struct PronunciationFeedbackPayload: Hashable {
+  public let accuracy: Double
+  public let fluency: Double
+  public let completeness: Double
+  public let overall: Double
+  public let referenceAudioUrl: String?
+  public let transcript: String?
+  public let wer: Double?
+  public let wordAlignments: [WordAlignmentPayload]
+}
+
 public struct ScoringResultPayload {
   public let jobId: String
   public let status: ScoringStatus
   public let score: Double?
   public let verdict: String?
   public let segments: [ScoreSegmentPayload]
+  public let feedback: PronunciationFeedbackPayload?
 
   init(from data: CreateScoringJobMutation.Data.CreateScoringJob) {
     jobId = data.jobId
@@ -52,6 +80,20 @@ public struct ScoringResultPayload {
     score = data.score
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }
+    feedback = data.feedback.map { fb in
+      PronunciationFeedbackPayload(
+        accuracy: fb.accuracy,
+        fluency: fb.fluency,
+        completeness: fb.completeness,
+        overall: fb.overall,
+        referenceAudioUrl: fb.referenceAudioUrl,
+        transcript: fb.transcript,
+        wer: fb.wer,
+        wordAlignments: fb.wordAlignments.map {
+          WordAlignmentPayload(refWord: $0.refWord, hypWord: $0.hypWord, op: $0.op)
+        }
+      )
+    }
   }
 
   init(from data: ScoringJobQuery.Data.ScoringJob) {
@@ -60,6 +102,20 @@ public struct ScoringResultPayload {
     score = data.score
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }
+    feedback = data.feedback.map { fb in
+      PronunciationFeedbackPayload(
+        accuracy: fb.accuracy,
+        fluency: fb.fluency,
+        completeness: fb.completeness,
+        overall: fb.overall,
+        referenceAudioUrl: fb.referenceAudioUrl,
+        transcript: fb.transcript,
+        wer: fb.wer,
+        wordAlignments: fb.wordAlignments.map {
+          WordAlignmentPayload(refWord: $0.refWord, hypWord: $0.hypWord, op: $0.op)
+        }
+      )
+    }
   }
 }
 
