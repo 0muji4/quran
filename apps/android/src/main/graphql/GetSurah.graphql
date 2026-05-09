@@ -1,0 +1,9 @@
+query GetSurah($id: ID!) {
+  surah(id: $id) {
+    id
+    nameAr
+    nameEn
+    revelationPlace
+    ayahCount
+  }
+}

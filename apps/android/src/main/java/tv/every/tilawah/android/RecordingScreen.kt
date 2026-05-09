@@ -40,12 +40,14 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import tv.every.tilawah.android.network.model.AyahRecord
-import tv.every.tilawah.android.network.model.ScoringResult
-import tv.every.tilawah.android.network.model.ScoringStatus
-import tv.every.tilawah.android.network.model.SurahSummary
-import tv.every.tilawah.android.util.summarizeSurah
+import tv.every.tilawah.android.backend.AyahDetail
+import tv.every.tilawah.android.backend.ScoringResultPayload
+import tv.every.tilawah.android.backend.ScoringStatus
+import tv.every.tilawah.android.backend.SurahSummary
 import java.io.File
+
+private fun summarizeSurah(surah: SurahSummary): String =
+    "${surah.nameEn} • ${surah.revelationPlace} • ${surah.ayahCount} ayahs"
 
 @Composable
 fun RecordingScreen(viewModel: RecordingViewModel = viewModel()) {
@@ -166,7 +168,7 @@ private fun StatusSection(viewModel: RecordingViewModel) {
 }
 
 @Composable
-private fun SelectedAyahCard(ayah: AyahRecord) {
+private fun SelectedAyahCard(ayah: AyahDetail) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -245,7 +247,7 @@ private fun RecordingPreview(file: File) {
 }
 
 @Composable
-private fun JobStatusSection(job: ScoringResult, polling: Boolean) {
+private fun JobStatusSection(job: ScoringResultPayload, polling: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "Job ${job.jobId}",
@@ -259,7 +261,7 @@ private fun JobStatusSection(job: ScoringResult, polling: Boolean) {
             Text(text = "Overall score: ${(score * 100).formatPercent()}")
         }
         job.feedback?.let { feedback ->
-            if (job.status == ScoringStatus.COMPLETED) {
+            if (job.status == ScoringStatus.Completed) {
                 Text(
                     text = "Pronunciation Assessment Results",
                     style = MaterialTheme.typography.titleSmall
@@ -289,7 +291,7 @@ private fun JobStatusSection(job: ScoringResult, polling: Boolean) {
 }
 
 @Composable
-private fun SegmentHighlights(job: ScoringResult) {
+private fun SegmentHighlights(job: ScoringResultPayload) {
     Divider()
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -390,7 +392,7 @@ private fun SurahMenuItemContent(surah: SurahSummary) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AyahSelector(
-    ayahs: List<AyahRecord>,
+    ayahs: List<AyahDetail>,
     selectedAyahNumber: Int?,
     onAyahSelected: (Int) -> Unit
 ) {
