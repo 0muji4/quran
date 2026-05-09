@@ -39,4 +39,9 @@
     <string name="library_filter_mecca">Mecca</string>
     <string name="library_filter_medina">Medina</string>
     <string name="library_filter_short">Short</string>
+
+    <!-- Continue card (Library tab) -->
+    <string name="continue_eyebrow">CONTINUE YOUR PRACTICE</string>
+    <string name="continue_title">%1$s, ayah %2$d</string>
+    <string name="continue_subtitle">%1$d ayahs in this surah</string>
 </resources>
