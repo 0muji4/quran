@@ -109,8 +109,8 @@ private fun Loaded(
         ScoreHero(score = state.result.score, verdict = state.result.verdict)
         state.result.feedback?.let { feedback ->
             MetricBars(feedback = feedback)
+            WordComparisonGrid(feedback = feedback)
         }
-        // PR 20 -> WordComparisonGrid(state.result.feedback)
         // PR 21 -> ListenBackSection(state.result.feedback?.referenceAudioUrl, ...)
         PrimaryButton(
             label = stringResource(R.string.result_try_again),

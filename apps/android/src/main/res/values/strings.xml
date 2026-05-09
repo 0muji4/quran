@@ -81,4 +81,6 @@
     <string name="result_metric_accuracy">Accuracy</string>
     <string name="result_metric_fluency">Fluency</string>
     <string name="result_metric_completeness">Completeness</string>
+    <string name="result_word_grid_title">Word comparison</string>
+    <string name="result_word_grid_wer">Word Error Rate %1$.1f%%</string>
 </resources>
