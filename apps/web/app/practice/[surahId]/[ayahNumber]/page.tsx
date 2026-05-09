@@ -42,6 +42,13 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
 
   return (
     <>
+      {/* Visually hidden page-level h1. Screen readers announce it on
+       * navigation; sighted users have the breadcrumb + ayah card. The
+       * only consumer of this is axe's `page-has-heading-one` rule and
+       * the heading-hierarchy contract; visible chrome stays unchanged. */}
+      <h1 className="sr-only">
+        Practice {surah.nameEn} ayah {currentAyah} of {totalAyahs}
+      </h1>
       <div className={styles.topRow}>
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/" className={styles.breadcrumbLink}>
