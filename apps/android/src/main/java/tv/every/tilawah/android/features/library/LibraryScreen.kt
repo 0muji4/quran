@@ -35,11 +35,13 @@ import tv.every.tilawah.android.designsystem.components.PrimaryButton
 fun LibraryScreen(
     viewModel: LibraryViewModel,
     onSurahOpened: (String) -> Unit,
+    onResume: (tv.every.tilawah.android.storage.LastPracticed) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
+    val lastPracticed by viewModel.lastPracticed.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
@@ -53,6 +55,16 @@ fun LibraryScreen(
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
         Header()
+        lastPracticed?.let { entry ->
+            ContinueCard(
+                entry = entry,
+                onResume = {
+                    viewModel.continueTapped(entry)
+                    onResume(entry)
+                },
+                modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
+            )
+        }
         SearchField(
             query = query,
             onQueryChanged = viewModel::setQuery,
