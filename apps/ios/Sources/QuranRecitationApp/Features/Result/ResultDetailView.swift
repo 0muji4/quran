@@ -63,6 +63,8 @@ struct ResultDetailView: View {
         detail: result.score.map { detailMessage(for: $0) }
       )
       .padding(.horizontal, Spacing.screenHorizontal)
+      MetricBars(feedback: result.feedback, fallbackScore: result.score)
+        .padding(.horizontal, Spacing.screenHorizontal)
     case .failed(let error):
       Text(error.errorDescription ?? "")
         .font(Font.brand.body)

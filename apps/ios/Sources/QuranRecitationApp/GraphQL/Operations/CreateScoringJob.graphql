@@ -8,5 +8,19 @@ mutation CreateScoringJob($input: CreateScoringJobInput!) {
       label
       score
     }
+    feedback {
+      accuracy
+      fluency
+      completeness
+      overall
+      referenceAudioUrl
+      transcript
+      wer
+      wordAlignments {
+        refWord
+        hypWord
+        op
+      }
+    }
   }
 }
