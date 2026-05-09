@@ -45,6 +45,8 @@ import tv.every.tilawah.android.features.library.LibraryScreen
 import tv.every.tilawah.android.features.library.LibraryViewModel
 import tv.every.tilawah.android.features.practice.PracticeScreen
 import tv.every.tilawah.android.features.practice.PracticeViewModel
+import tv.every.tilawah.android.features.result.ResultDetailScreen
+import tv.every.tilawah.android.features.result.ResultDetailViewModel
 import tv.every.tilawah.android.storage.DataStoreHistoryStore
 import tv.every.tilawah.android.storage.HistoryStore
 import tv.every.tilawah.android.storage.InMemoryHistoryStore
@@ -83,6 +85,8 @@ fun AppRoot(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
     var practiceTarget by remember { mutableStateOf(DefaultPractice) }
+    var resultJobId: String? by remember { mutableStateOf(null) }
+    var resultRecordingPath: String? by remember { mutableStateOf(null) }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == TopLevelTab.Library) {
@@ -127,14 +131,39 @@ fun AppRoot(
                         selectedTab = TopLevelTab.Practice
                     },
                 )
-                TopLevelTab.Practice -> PracticeTabHost(
-                    target = practiceTarget,
-                    backend = backend,
-                    telemetry = telemetry,
-                    historyStore = historyStore,
-                    onNavigateBack = { selectedTab = TopLevelTab.Library },
-                    onResultRequested = { /* PR 18 wires the Result screen */ },
-                )
+                TopLevelTab.Practice -> {
+                    val activeResult = resultJobId
+                    if (activeResult != null) {
+                        ResultTabHost(
+                            backend = backend,
+                            telemetry = telemetry,
+                            jobId = activeResult,
+                            recordingPath = resultRecordingPath,
+                            target = practiceTarget,
+                            onNavigateBack = { resultJobId = null },
+                            onTryAgain = { resultJobId = null },
+                            onContinue = {
+                                practiceTarget = practiceTarget.copy(
+                                    ayahNumber = practiceTarget.ayahNumber + 1,
+                                )
+                                resultJobId = null
+                                resultRecordingPath = null
+                            },
+                        )
+                    } else {
+                        PracticeTabHost(
+                            target = practiceTarget,
+                            backend = backend,
+                            telemetry = telemetry,
+                            historyStore = historyStore,
+                            onNavigateBack = { selectedTab = TopLevelTab.Library },
+                            onResultRequested = { jobId, recPath ->
+                                resultJobId = jobId
+                                resultRecordingPath = recPath
+                            },
+                        )
+                    }
+                }
                 TopLevelTab.History -> HistoryTabPlaceholder()
             }
         }
@@ -167,7 +196,7 @@ private fun PracticeTabHost(
     telemetry: Telemetry,
     historyStore: HistoryStore,
     onNavigateBack: () -> Unit,
-    onResultRequested: (jobId: String) -> Unit,
+    onResultRequested: (jobId: String, recordingPath: String?) -> Unit,
 ) {
     val context = LocalContext.current
     val focus = remember(context) {
@@ -210,9 +239,57 @@ private fun PracticeTabHost(
     PracticeScreen(
         viewModel = viewModel,
         onNavigateBack = onNavigateBack,
-        onResultRequested = onResultRequested,
+        onResultRequested = { jobId ->
+            onResultRequested(jobId, viewModel.lastRecording?.file?.absolutePath)
+        },
         onRequestPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
         hasMicPermission = hasMicPermission,
+    )
+}
+
+@Composable
+private fun ResultTabHost(
+    backend: QuranBackend,
+    telemetry: Telemetry,
+    jobId: String,
+    recordingPath: String?,
+    target: LastPracticed,
+    onNavigateBack: () -> Unit,
+    onTryAgain: () -> Unit,
+    onContinue: () -> Unit,
+) {
+    val context = LocalContext.current
+    val focus = remember(context) {
+        AudioFocusCoordinator(
+            context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager,
+        )
+    }
+    val teacherPlayer: Player = remember(focus) { MediaPlayerPlayer(focus) }
+    val youPlayer: Player = remember(focus) { MediaPlayerPlayer(focus) }
+
+    val viewModel: ResultDetailViewModel = viewModel(
+        key = "result-$jobId",
+        factory = viewModelFactory {
+            initializer {
+                ResultDetailViewModel(
+                    backend = backend,
+                    telemetry = telemetry,
+                    jobId = jobId,
+                    surahId = target.surahId,
+                    ayahNumber = target.ayahNumber,
+                    teacherPlayer = teacherPlayer,
+                    youPlayer = youPlayer,
+                    recordingPath = recordingPath,
+                )
+            }
+        },
+    )
+
+    ResultDetailScreen(
+        viewModel = viewModel,
+        onNavigateBack = onNavigateBack,
+        onTryAgain = onTryAgain,
+        onContinue = onContinue,
     )
 }
 
