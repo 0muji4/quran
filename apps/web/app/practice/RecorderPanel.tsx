@@ -271,7 +271,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
             <MicIcon size={18} />
           </span>
           <div>
-            <h3 className={styles.panelTitle}>{headerTitle}</h3>
+            <h2 className={styles.panelTitle}>{headerTitle}</h2>
             <p className={styles.panelSubtitle}>{headerSubtitle}</p>
           </div>
         </div>

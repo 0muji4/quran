@@ -15,14 +15,12 @@ import { expect, test } from '@playwright/test';
  * accepting the regression.
  */
 
-// /practice/[s]/[a] currently has no h1 (only RecorderPanel and
-// TeacherPanel h3s). Library and History both already provide an h1.
-// Promoting one of the practice headings to h1 — or adding a dedicated
-// page-level heading — is a heading-hierarchy decision that should be
-// made deliberately, not as a side effect of this baseline. Tracked
-// separately; remove this ID from the allow-list when the practice
-// route grows an h1.
-const KNOWN_VIOLATIONS = ['page-has-heading-one'] as const;
+// All previously allow-listed rules have been retired. Any new
+// violation surfaces as a hard CI failure with the rule ID and helpUrl.
+// If a future audit cycle catalogues a new pre-existing rule that
+// should land before being fixed, add it here with a comment naming
+// the PR that retires it.
+const KNOWN_VIOLATIONS: readonly string[] = [];
 
 const KNOWN = new Set<string>(KNOWN_VIOLATIONS);
 
