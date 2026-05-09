@@ -72,6 +72,18 @@ export default defineConfig({
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
             '--allow-file-access',
+            // Chromium gates `navigator.mediaDevices` (and other secure-
+            // context APIs) on HTTPS or `localhost`. When the page is
+            // served from `web:3000` (compose network, used inside the
+            // Playwright Docker image both for visual baseline
+            // regeneration and for CI), the bare hostname is treated as
+            // insecure and `mediaDevices` becomes undefined, causing
+            // recorder.start() in apps/web/app/hooks/useRecorder.ts to
+            // bail out with `error: 'unsupported'`. The next flag tells
+            // Chromium to treat that origin as secure so MediaRecorder
+            // and getUserMedia keep working in tests. Harmless when
+            // E2E_BASE_URL points at localhost.
+            '--unsafely-treat-insecure-origin-as-secure=http://web:3000',
           ],
         },
         permissions: ['microphone'],
@@ -88,6 +100,18 @@ export default defineConfig({
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
             '--allow-file-access',
+            // Chromium gates `navigator.mediaDevices` (and other secure-
+            // context APIs) on HTTPS or `localhost`. When the page is
+            // served from `web:3000` (compose network, used inside the
+            // Playwright Docker image both for visual baseline
+            // regeneration and for CI), the bare hostname is treated as
+            // insecure and `mediaDevices` becomes undefined, causing
+            // recorder.start() in apps/web/app/hooks/useRecorder.ts to
+            // bail out with `error: 'unsupported'`. The next flag tells
+            // Chromium to treat that origin as secure so MediaRecorder
+            // and getUserMedia keep working in tests. Harmless when
+            // E2E_BASE_URL points at localhost.
+            '--unsafely-treat-insecure-origin-as-secure=http://web:3000',
           ],
         },
         permissions: ['microphone'],
@@ -104,6 +128,18 @@ export default defineConfig({
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
             '--allow-file-access',
+            // Chromium gates `navigator.mediaDevices` (and other secure-
+            // context APIs) on HTTPS or `localhost`. When the page is
+            // served from `web:3000` (compose network, used inside the
+            // Playwright Docker image both for visual baseline
+            // regeneration and for CI), the bare hostname is treated as
+            // insecure and `mediaDevices` becomes undefined, causing
+            // recorder.start() in apps/web/app/hooks/useRecorder.ts to
+            // bail out with `error: 'unsupported'`. The next flag tells
+            // Chromium to treat that origin as secure so MediaRecorder
+            // and getUserMedia keep working in tests. Harmless when
+            // E2E_BASE_URL points at localhost.
+            '--unsafely-treat-insecure-origin-as-secure=http://web:3000',
           ],
         },
         permissions: ['microphone'],
@@ -120,6 +156,18 @@ export default defineConfig({
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
             '--allow-file-access',
+            // Chromium gates `navigator.mediaDevices` (and other secure-
+            // context APIs) on HTTPS or `localhost`. When the page is
+            // served from `web:3000` (compose network, used inside the
+            // Playwright Docker image both for visual baseline
+            // regeneration and for CI), the bare hostname is treated as
+            // insecure and `mediaDevices` becomes undefined, causing
+            // recorder.start() in apps/web/app/hooks/useRecorder.ts to
+            // bail out with `error: 'unsupported'`. The next flag tells
+            // Chromium to treat that origin as secure so MediaRecorder
+            // and getUserMedia keep working in tests. Harmless when
+            // E2E_BASE_URL points at localhost.
+            '--unsafely-treat-insecure-origin-as-secure=http://web:3000',
           ],
         },
         permissions: ['microphone'],
