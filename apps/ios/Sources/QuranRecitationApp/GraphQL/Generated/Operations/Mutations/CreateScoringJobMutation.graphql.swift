@@ -8,7 +8,7 @@ public extension QuranSchema {
     public static let operationName: String = "CreateScoringJob"
     public static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"mutation CreateScoringJob($input: CreateScoringJobInput!) { createScoringJob(input: $input) { __typename jobId status score verdict segments { __typename label score } } }"#
+        #"mutation CreateScoringJob($input: CreateScoringJobInput!) { createScoringJob(input: $input) { __typename jobId status score verdict segments { __typename label score } feedback { __typename accuracy fluency completeness overall referenceAudioUrl transcript wer wordAlignments { __typename refWord hypWord op } } } }"#
       ))
 
     public var input: CreateScoringJobInput
@@ -48,6 +48,7 @@ public extension QuranSchema {
           .field("score", Double?.self),
           .field("verdict", String?.self),
           .field("segments", [Segment].self),
+          .field("feedback", Feedback?.self),
         ] }
         public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CreateScoringJobMutation.Data.CreateScoringJob.self
@@ -58,6 +59,7 @@ public extension QuranSchema {
         public var score: Double? { __data["score"] }
         public var verdict: String? { __data["verdict"] }
         public var segments: [Segment] { __data["segments"] }
+        public var feedback: Feedback? { __data["feedback"] }
 
         /// CreateScoringJob.Segment
         ///
@@ -78,6 +80,62 @@ public extension QuranSchema {
 
           public var label: String { __data["label"] }
           public var score: Double { __data["score"] }
+        }
+
+        /// CreateScoringJob.Feedback
+        ///
+        /// Parent Type: `PronunciationFeedback`
+        public struct Feedback: QuranSchema.SelectionSet {
+          public let __data: DataDict
+          public init(_dataDict: DataDict) { __data = _dataDict }
+
+          public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.PronunciationFeedback }
+          public static var __selections: [ApolloAPI.Selection] { [
+            .field("__typename", String.self),
+            .field("accuracy", Double.self),
+            .field("fluency", Double.self),
+            .field("completeness", Double.self),
+            .field("overall", Double.self),
+            .field("referenceAudioUrl", String?.self),
+            .field("transcript", String?.self),
+            .field("wer", Double?.self),
+            .field("wordAlignments", [WordAlignment].self),
+          ] }
+          public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+            CreateScoringJobMutation.Data.CreateScoringJob.Feedback.self
+          ] }
+
+          public var accuracy: Double { __data["accuracy"] }
+          public var fluency: Double { __data["fluency"] }
+          public var completeness: Double { __data["completeness"] }
+          public var overall: Double { __data["overall"] }
+          public var referenceAudioUrl: String? { __data["referenceAudioUrl"] }
+          public var transcript: String? { __data["transcript"] }
+          public var wer: Double? { __data["wer"] }
+          public var wordAlignments: [WordAlignment] { __data["wordAlignments"] }
+
+          /// CreateScoringJob.Feedback.WordAlignment
+          ///
+          /// Parent Type: `WordAlignment`
+          public struct WordAlignment: QuranSchema.SelectionSet {
+            public let __data: DataDict
+            public init(_dataDict: DataDict) { __data = _dataDict }
+
+            public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.WordAlignment }
+            public static var __selections: [ApolloAPI.Selection] { [
+              .field("__typename", String.self),
+              .field("refWord", String?.self),
+              .field("hypWord", String?.self),
+              .field("op", String.self),
+            ] }
+            public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+              CreateScoringJobMutation.Data.CreateScoringJob.Feedback.WordAlignment.self
+            ] }
+
+            public var refWord: String? { __data["refWord"] }
+            public var hypWord: String? { __data["hypWord"] }
+            public var op: String { __data["op"] }
+          }
         }
       }
     }

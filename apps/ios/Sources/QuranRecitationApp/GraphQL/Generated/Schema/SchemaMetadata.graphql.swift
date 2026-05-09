@@ -30,11 +30,13 @@ public extension QuranSchema {
     private static let objectTypeMap: [String: ApolloAPI.Object] = [
       "Ayah": QuranSchema.Objects.Ayah,
       "Mutation": QuranSchema.Objects.Mutation,
+      "PronunciationFeedback": QuranSchema.Objects.PronunciationFeedback,
       "Query": QuranSchema.Objects.Query,
       "ScoreSegment": QuranSchema.Objects.ScoreSegment,
       "ScoringResult": QuranSchema.Objects.ScoringResult,
       "SignedUploadUrl": QuranSchema.Objects.SignedUploadUrl,
-      "Surah": QuranSchema.Objects.Surah
+      "Surah": QuranSchema.Objects.Surah,
+      "WordAlignment": QuranSchema.Objects.WordAlignment
     ]
 
     public static func objectType(forTypename typename: String) -> ApolloAPI.Object? {
