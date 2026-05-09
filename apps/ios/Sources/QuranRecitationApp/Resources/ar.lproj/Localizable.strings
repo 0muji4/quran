@@ -1,0 +1,26 @@
+/* AppError — Arabic translations land in a follow-up PR (see ADR 0009).
+   Until then, English copy is mirrored so the bundle and key paths exist. */
+
+"error.network.title" = "Connection problem";
+"error.network.recovery" = "Check your network and try again.";
+
+"error.backendUnavailable.title" = "Service temporarily unavailable";
+"error.backendUnavailable.recovery" = "Please try again in a moment.";
+
+"error.audioPermissionDenied.title" = "Microphone access is off";
+"error.audioPermissionDenied.recovery" = "Enable microphone access in Settings to record.";
+
+"error.audioRecordingFailed.title" = "Recording failed";
+"error.audioRecordingFailed.recovery" = "Try recording again. If the problem continues, restart the app.";
+
+"error.audioPlaybackFailed.title" = "Playback failed";
+"error.audioPlaybackFailed.recovery" = "Try playing the recording again.";
+
+"error.referenceUnavailable.title" = "Reference recitation not available";
+"error.referenceUnavailable.recovery" = "Reference audio is missing for this ayah. You can still record your attempt.";
+
+"error.scoringTimeout.title" = "Scoring is taking longer than usual";
+"error.scoringTimeout.recovery" = "Wait a moment and try again.";
+
+"error.storageUnavailable.title" = "Couldn't save locally";
+"error.storageUnavailable.recovery" = "Free up some space on your device and try again.";
