@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import tv.every.tilawah.android.app.AppError
+import tv.every.tilawah.android.audio.Player
 import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.backend.ScoringResultPayload
 import tv.every.tilawah.android.telemetry.Telemetry
@@ -15,9 +16,9 @@ import tv.every.tilawah.android.telemetry.TelemetryEvent
 
 /**
  * Result-detail state container. Mirrors
- * `apps/ios/.../Features/Result/ResultDetailViewModel.swift`. Loads
- * the scoring result on init; PRs 19–21 add the metric bars, word-
- * comparison grid, listen-back row, and CTA wiring.
+ * `apps/ios/.../Features/Result/ResultDetailViewModel.swift`. Holds
+ * the scoring payload and a pair of [Player]s for listen-back of the
+ * teacher reference + the user's own recording.
  */
 class ResultDetailViewModel(
     private val backend: QuranBackend,
@@ -26,6 +27,9 @@ class ResultDetailViewModel(
     private val surahId: String,
     private val ayahNumber: Int,
     initial: ScoringResultPayload? = null,
+    val teacherPlayer: Player? = null,
+    val youPlayer: Player? = null,
+    private val recordingPath: String? = null,
 ) : ViewModel() {
 
     sealed interface UiState {
@@ -38,6 +42,9 @@ class ResultDetailViewModel(
         if (initial != null) UiState.Loaded(initial) else UiState.Loading,
     )
     val state: StateFlow<UiState> = _state.asStateFlow()
+
+    private var teacherLoaded = false
+    private var youLoaded = false
 
     init {
         if (initial == null) {
@@ -53,6 +60,45 @@ class ResultDetailViewModel(
             telemetry.error(cause, mapOf("screen" to "result", "job_id" to jobId))
             _state.value = UiState.Failed(cause)
         }
+    }
+
+    fun playTeacher(referenceUrl: String) {
+        val player = teacherPlayer ?: return
+        viewModelScope.launch {
+            youPlayer?.pause()
+            if (!teacherLoaded) {
+                runCatching { player.load(referenceUrl) }.onFailure {
+                    if (it is AppError) telemetry.error(it, mapOf("section" to "teacher"))
+                    return@launch
+                }
+                teacherLoaded = true
+            }
+            player.play()
+        }
+    }
+
+    fun pauseTeacher() {
+        teacherPlayer?.pause()
+    }
+
+    fun playYou() {
+        val player = youPlayer ?: return
+        val source = recordingPath ?: return
+        viewModelScope.launch {
+            teacherPlayer?.pause()
+            if (!youLoaded) {
+                runCatching { player.load(source) }.onFailure {
+                    if (it is AppError) telemetry.error(it, mapOf("section" to "you"))
+                    return@launch
+                }
+                youLoaded = true
+            }
+            player.play()
+        }
+    }
+
+    fun pauseYou() {
+        youPlayer?.pause()
     }
 
     fun tryAgain() {
@@ -73,5 +119,11 @@ class ResultDetailViewModel(
                 TelemetryAttribute.NEXT_AYAH to (ayahNumber + 1).toString(),
             ),
         )
+    }
+
+    override fun onCleared() {
+        teacherPlayer?.release()
+        youPlayer?.release()
+        super.onCleared()
     }
 }
