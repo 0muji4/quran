@@ -126,6 +126,8 @@
   line-height: 1.6;
   color: var(--color-ink-strong);
   direction: rtl;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .ayahTransliteration {
@@ -139,6 +141,18 @@
   margin-top: var(--space-3);
   font-size: 14px;
   color: var(--color-ink-muted);
+}
+
+@media (max-width: 600px) {
+  .ayahCard {
+    padding: var(--space-8) var(--space-5);
+  }
+  .ayahArabic {
+    font-size: clamp(32px, 5.5vw, 64px);
+  }
+  .ayahLine {
+    gap: var(--space-3);
+  }
 }
 
 /* Two-panel layout ------------------------------------------------ */
@@ -1202,6 +1216,17 @@
   background: rgba(192, 65, 58, 0.08);
   color: #c0413a;
   border: 1px dashed #c0413a;
+}
+
+@media (max-width: 600px) {
+  .wordCompareTiles {
+    gap: var(--space-1);
+  }
+  .wordTile {
+    min-width: 48px;
+    padding: 8px 10px;
+    font-size: 18px;
+  }
 }
 
 .listenBackSection {
