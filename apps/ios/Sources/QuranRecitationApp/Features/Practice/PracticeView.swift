@@ -31,6 +31,11 @@ struct PracticeView: View {
             onChangeRate: { viewModel.cycleReferenceRate() }
           )
           .padding(.horizontal, Spacing.screenHorizontal)
+          RecordingPanel(
+            state: viewModel.state,
+            onTapRecord: { viewModel.toggleRecording() }
+          )
+          .padding(.horizontal, Spacing.screenHorizontal)
         } else if case .error(let error) = viewModel.state {
           Text(error.errorDescription ?? "")
             .font(Font.brand.body)
