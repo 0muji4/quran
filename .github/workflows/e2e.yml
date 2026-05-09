@@ -75,10 +75,38 @@ jobs:
       - name: Seed database with test data
         run: make db-seed
 
+      # Run Playwright inside the official Docker image so the chromium
+      # binary, system fonts, and fontconfig setup are byte-identical
+      # to the environment used to regenerate visual baselines locally
+      # (see e2e/tests/visual/README.md). Without this, sub-pixel font
+      # rendering on the GHA ubuntu-latest runner diverges from the
+      # baseline generation environment by ~1% of pixels and visual
+      # regression tests fail with no real change.
+      #
+      # `--network=host` shares the runner's network namespace with the
+      # container so `localhost:3000` inside the container reaches the
+      # compose web service published on the host. This matters because
+      # Chromium gates secure-context APIs (`navigator.mediaDevices`
+      # and friends) on HTTPS or the special `localhost` / `127.0.0.1`
+      # hostnames. Routing tests through `localhost` keeps recorder
+      # tests (recording-flow, keyboard-flow, the visual recording
+      # scene) working without resorting to the unstable
+      # `--unsafely-treat-insecure-origin-as-secure` chromium flag.
+      # Linux GHA runners support host networking; local macOS runs use
+      # `--network=docker_default` + `web:3000` per the visual README.
+      #
+      # CI=1 keeps playwright.config.ts from launching its own
+      # docker-compose webServer; the stack is already up.
       - name: Run E2E tests
-        run: pnpm exec playwright test --shard=${{ matrix.shard }}/${{ matrix.total }}
-        env:
-          E2E_BASE_URL: http://localhost:3000
+        run: |
+          docker run --rm \
+            --network=host \
+            -v "$PWD:/work" \
+            -w /work \
+            -e E2E_BASE_URL=http://localhost:3000 \
+            -e CI=1 \
+            mcr.microsoft.com/playwright:v1.57.0-jammy \
+            bash -lc "npx playwright test --shard=${{ matrix.shard }}/${{ matrix.total }}"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
