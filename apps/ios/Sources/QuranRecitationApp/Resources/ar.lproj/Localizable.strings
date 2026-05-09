@@ -72,3 +72,8 @@
 "result.words.a11y.sub" = "substituted";
 "result.words.a11y.ins" = "inserted";
 "result.words.a11y.del" = "missed";
+"result.listenBack.title" = "Listen back";
+"result.listenBack.teacher" = "Teacher";
+"result.listenBack.you" = "You";
+"result.action.tryAgain" = "Try again";
+"result.action.continue" = "Continue to ayah %d";
