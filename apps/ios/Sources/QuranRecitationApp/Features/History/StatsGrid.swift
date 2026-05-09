@@ -41,7 +41,7 @@ struct StatsGrid: View {
     eyebrow: LocalizedStringKey,
     big: String,
     small: LocalizedStringKey,
-    style: BrandCard<AnyView>.Style
+    style: BrandCardStyle
   ) -> some View {
     BrandCard(style: style) {
       VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -59,7 +59,7 @@ struct StatsGrid: View {
     }
   }
 
-  private func textOnStyle(_ style: BrandCard<AnyView>.Style, secondary: Bool) -> Color {
+  private func textOnStyle(_ style: BrandCardStyle, secondary: Bool) -> Color {
     switch style {
     case .standard:
       return secondary ? Color.brand.textSecondary : Color.brand.textPrimary
