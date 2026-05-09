@@ -1,6 +1,6 @@
 # ADR 0003: Split `--color-gold` into surface / on-light / on-dark tokens
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-09
 - Author: motoshi.suzuki
 

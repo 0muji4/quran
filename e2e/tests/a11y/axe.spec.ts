@@ -15,18 +15,6 @@ import { expect, test } from '@playwright/test';
  * accepting the regression.
  */
 
-// Phase 2.3-D fixed contrast on the dark surfaces (recording panel,
-// continue card, top nav) but axe still flags three on-cream pairs
-// that touch brand tokens used everywhere:
-//   - --color-gold (#b8893c) against the cream page bg → .eyebrow
-//     accent at 2.76:1
-//   - --color-ink-muted (#7b6e5c) against the cream page bg →
-//     muted body copy at 4.37:1, just under AA 4.5:1
-//   - white text on --color-gold → .btnGold CTAs at 3.14:1
-// Fixing these requires darkening brand tokens, which is a deliberate
-// design call that should not be smuggled into a docs follow-up.
-// Tracked as a separate brand-tokens PR.
-//
 // /practice/[s]/[a] currently has no h1 (only RecorderPanel and
 // TeacherPanel h3s). Library and History both already provide an h1.
 // Promoting one of the practice headings to h1 — or adding a dedicated
@@ -34,7 +22,7 @@ import { expect, test } from '@playwright/test';
 // made deliberately, not as a side effect of this baseline. Tracked
 // separately; remove this ID from the allow-list when the practice
 // route grows an h1.
-const KNOWN_VIOLATIONS = ['color-contrast', 'page-has-heading-one'] as const;
+const KNOWN_VIOLATIONS = ['page-has-heading-one'] as const;
 
 const KNOWN = new Set<string>(KNOWN_VIOLATIONS);
 
