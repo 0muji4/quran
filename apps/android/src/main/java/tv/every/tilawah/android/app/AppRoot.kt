@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -33,6 +34,9 @@ import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.designsystem.BrandTheme
 import tv.every.tilawah.android.features.library.LibraryScreen
 import tv.every.tilawah.android.features.library.LibraryViewModel
+import tv.every.tilawah.android.storage.DataStoreHistoryStore
+import tv.every.tilawah.android.storage.HistoryStore
+import tv.every.tilawah.android.storage.LastPracticed
 import tv.every.tilawah.android.telemetry.NoOpTelemetry
 import tv.every.tilawah.android.telemetry.Telemetry
 import tv.every.tilawah.android.telemetry.TelemetryEvent
@@ -57,8 +61,10 @@ enum class TopLevelTab(val title: String) {
 fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
     backend: QuranBackend = remember { ApolloQuranBackend() },
+    historyStore: HistoryStore? = defaultHistoryStore(),
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
+    var pendingPractice by remember { mutableStateOf<LastPracticed?>(null) }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == TopLevelTab.Library) {
@@ -94,8 +100,16 @@ fun AppRoot(
             color = BrandTheme.colors.surface,
         ) {
             when (selectedTab) {
-                TopLevelTab.Library -> LibraryTabHost(backend = backend, telemetry = telemetry)
-                TopLevelTab.Practice -> PracticeTabHost()
+                TopLevelTab.Library -> LibraryTabHost(
+                    backend = backend,
+                    telemetry = telemetry,
+                    historyStore = historyStore,
+                    onResume = { entry ->
+                        pendingPractice = entry
+                        selectedTab = TopLevelTab.Practice
+                    },
+                )
+                TopLevelTab.Practice -> PracticeTabHost(pendingPractice)
                 TopLevelTab.History -> HistoryTabPlaceholder()
             }
         }
@@ -103,22 +117,39 @@ fun AppRoot(
 }
 
 @Composable
-private fun LibraryTabHost(backend: QuranBackend, telemetry: Telemetry) {
+private fun LibraryTabHost(
+    backend: QuranBackend,
+    telemetry: Telemetry,
+    historyStore: HistoryStore?,
+    onResume: (LastPracticed) -> Unit,
+) {
     val viewModel: LibraryViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { LibraryViewModel(backend, telemetry) }
+            initializer { LibraryViewModel(backend, telemetry, historyStore) }
         },
     )
     LibraryScreen(
         viewModel = viewModel,
-        onSurahOpened = { /* navigation lands in PR 11+ */ },
+        onSurahOpened = { /* deep-link nav lands when PR 17 retires the MVP */ },
+        onResume = onResume,
     )
 }
 
 @Composable
-private fun PracticeTabHost() {
+@Suppress("UNUSED_PARAMETER")
+private fun PracticeTabHost(pending: LastPracticed?) {
     // Legacy MVP host until PR 17 retires it in favour of PracticeScreen.
+    // The pending entry is captured for the deep-link wiring that arrives
+    // alongside the new PracticeScreen; the MVP picker ignores it.
     RecordingScreen()
+}
+
+@Composable
+private fun defaultHistoryStore(): HistoryStore? {
+    val context = LocalContext.current
+    return remember(context) {
+        DataStoreHistoryStore(context.applicationContext.historyDataStore)
+    }
 }
 
 @Composable

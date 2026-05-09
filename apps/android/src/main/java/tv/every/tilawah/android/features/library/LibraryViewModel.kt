@@ -3,12 +3,16 @@ package tv.every.tilawah.android.features.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import tv.every.tilawah.android.app.AppError
 import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.backend.SurahSummary
+import tv.every.tilawah.android.storage.HistoryStore
+import tv.every.tilawah.android.storage.LastPracticed
 import tv.every.tilawah.android.telemetry.Telemetry
 import tv.every.tilawah.android.telemetry.TelemetryAttribute
 import tv.every.tilawah.android.telemetry.TelemetryEvent
@@ -18,12 +22,12 @@ import tv.every.tilawah.android.telemetry.TelemetryEvent
  * inside a `Telemetry.measure("library.fetch")` region so the dashboard
  * sees `library.fetch.succeeded` / `.failed` events with `duration_ms`.
  *
- * Mirrors `apps/ios/.../Features/Library/LibraryViewModel.swift`. The
- * Continue card behaviour lands in PR 11; navigation in PR 11.
+ * Mirrors `apps/ios/.../Features/Library/LibraryViewModel.swift`.
  */
 class LibraryViewModel(
     private val backend: QuranBackend,
     private val telemetry: Telemetry,
+    historyStore: HistoryStore? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LibraryUiState>(LibraryUiState.Idle)
@@ -34,6 +38,11 @@ class LibraryViewModel(
 
     private val _filter = MutableStateFlow(LibraryFilter.All)
     val filter: StateFlow<LibraryFilter> = _filter.asStateFlow()
+
+    val lastPracticed: StateFlow<LastPracticed?> = historyStore
+        ?.lastPracticed()
+        ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        ?: MutableStateFlow<LastPracticed?>(null).asStateFlow()
 
     fun load() {
         viewModelScope.launch { loadInternal() }
@@ -65,6 +74,16 @@ class LibraryViewModel(
         telemetry.event(
             TelemetryEvent.LIBRARY_SURAH_OPENED,
             mapOf(TelemetryAttribute.SURAH_ID to surah.id),
+        )
+    }
+
+    fun continueTapped(entry: LastPracticed) {
+        telemetry.event(
+            TelemetryEvent.LIBRARY_CONTINUE_TAPPED,
+            mapOf(
+                TelemetryAttribute.SURAH_ID to entry.surahId,
+                TelemetryAttribute.AYAH_NUMBER to entry.ayahNumber.toString(),
+            ),
         )
     }
 
