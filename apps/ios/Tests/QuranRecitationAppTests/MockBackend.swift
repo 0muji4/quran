@@ -46,6 +46,24 @@ final class MockBackend: QuranBackend {
     }
   }
 
+  // MARK: - Practice lookups (PR 12)
+
+  /// Closure-based lookup so tests can vary behaviour per id without
+  /// stuffing every fixture into a `Result`. Throws fall through to
+  /// the caller untouched.
+  var surahLookup: ((String) async throws -> SurahSummary?)?
+  var ayahLookup: ((String, Int) async throws -> AyahDetail?)?
+
+  func surah(id: String) async throws -> SurahSummary? {
+    if let surahLookup { return try await surahLookup(id) }
+    return nil
+  }
+
+  func ayah(surahId: String, ayahNumber: Int) async throws -> AyahDetail? {
+    if let ayahLookup { return try await ayahLookup(surahId, ayahNumber) }
+    return nil
+  }
+
   private static func unwrap<T>(_ result: Result<T, AppError>?, fallback: AppError) throws -> T {
     guard let result else { throw fallback }
     switch result {

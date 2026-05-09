@@ -113,12 +113,30 @@ public struct AyahDetail: Identifiable, Hashable {
   public let textEn: String?
   public let transliteration: String?
 
+  init(
+    id: String,
+    surahId: String,
+    ayahNumber: Int,
+    textAr: String,
+    textEn: String? = nil,
+    transliteration: String? = nil
+  ) {
+    self.id = id
+    self.surahId = surahId
+    self.ayahNumber = ayahNumber
+    self.textAr = textAr
+    self.textEn = textEn
+    self.transliteration = transliteration
+  }
+
   init(from data: GetAyahQuery.Data.Ayah) {
-    self.id = data.id
-    self.surahId = data.surahId
-    self.ayahNumber = data.ayahNumber
-    self.textAr = data.textAr
-    self.textEn = data.textEn
-    self.transliteration = data.transliteration
+    self.init(
+      id: data.id,
+      surahId: data.surahId,
+      ayahNumber: data.ayahNumber,
+      textAr: data.textAr,
+      textEn: data.textEn,
+      transliteration: data.transliteration
+    )
   }
 }
