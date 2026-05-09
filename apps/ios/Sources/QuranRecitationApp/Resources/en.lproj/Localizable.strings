@@ -62,3 +62,34 @@
 "result.detail.strong" = "Strong attempt — try once more to push past 90.";
 "result.detail.midway" = "Good progress — focus on slowing down for clarity.";
 "result.detail.beginner" = "Keep going — listen to the teacher reference and try again.";
+"result.metric.accuracy" = "Accuracy";
+"result.metric.fluency" = "Fluency";
+"result.metric.completeness" = "Completeness";
+"result.words.title" = "Word comparison";
+"result.words.empty" = "Word-level alignment isn't available yet for this attempt.";
+"result.words.a11y.match" = "matched";
+"result.words.a11y.sub" = "substituted";
+"result.words.a11y.ins" = "inserted";
+"result.words.a11y.del" = "missed";
+"result.listenBack.title" = "Listen back";
+"result.listenBack.teacher" = "Teacher";
+"result.listenBack.you" = "You";
+"result.action.tryAgain" = "Try again";
+"result.action.continue" = "Continue to ayah %d";
+
+/* History tab */
+"history.eyebrow" = "Your practice";
+"history.title" = "History";
+"history.filter.all" = "All";
+"history.empty" = "No attempts yet — record one to start your history.";
+"history.stats.thisWeek" = "This week";
+"history.stats.attempts" = "attempts";
+"history.stats.average" = "Average";
+"history.stats.outOf" = "of 100";
+"history.stats.best" = "Best";
+"history.stats.bestUnknown" = "—";
+"history.stats.streak" = "Streak";
+"history.stats.days" = "days";
+
+/* Accessibility */
+"library.surah.a11yHint" = "Opens Practice for this surah";
