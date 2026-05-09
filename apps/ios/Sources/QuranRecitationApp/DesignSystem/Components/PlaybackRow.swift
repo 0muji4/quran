@@ -35,6 +35,9 @@ struct PlaybackRow: View {
     .padding(.horizontal, Spacing.md)
     .background(Color.brand.surface.opacity(0.5))
     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    .accessibilityElement(children: .combine)
+    .accessibilityAddTraits(.isButton)
+    .accessibilityValue(Text(isPlaying ? "playing" : "paused"))
   }
 
   private func format(duration: TimeInterval) -> String {
