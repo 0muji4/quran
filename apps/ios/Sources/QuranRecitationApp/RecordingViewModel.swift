@@ -18,11 +18,15 @@ final class RecordingViewModel: ObservableObject {
   private let telemetry: Telemetry
 
   init(
-    recorder: AudioRecorder = AudioRecorder(),
+    recorder: AudioRecorder? = nil,
     backend: QuranBackend = ApolloBackend(),
     telemetry: Telemetry = NoOpTelemetry()
   ) {
-    self.recorder = recorder
+    // `recorder` is optional + lazily defaulted because `AudioRecorder()` is
+    // `@MainActor`-isolated and a parameter default expression runs in the
+    // caller's actor context, which may be non-isolated (e.g. inside a
+    // `@StateObject` initializer expression).
+    self.recorder = recorder ?? AudioRecorder()
     self.backend = backend
     self.telemetry = telemetry
   }
