@@ -66,3 +66,9 @@
 "result.metric.accuracy" = "Accuracy";
 "result.metric.fluency" = "Fluency";
 "result.metric.completeness" = "Completeness";
+"result.words.title" = "Word comparison";
+"result.words.empty" = "Word-level alignment isn't available yet for this attempt.";
+"result.words.a11y.match" = "matched";
+"result.words.a11y.sub" = "substituted";
+"result.words.a11y.ins" = "inserted";
+"result.words.a11y.del" = "missed";
