@@ -14,10 +14,12 @@ enum AppTab: String, Hashable {
 /// `NavigationPath` is typed against a stable shape.
 enum LibraryRoute: Hashable {}
 
-/// Practice tab destinations. PR 12 fills this with `.ayah(...)` and
-/// PR 15 with `.result(jobId:)` so navigation past the recording flow
-/// is programmatic.
-enum PracticeRoute: Hashable {}
+/// Practice tab destinations. `.result` is appended to the
+/// `NavigationPath` after a scoring job reaches a terminal status so
+/// the result detail screen can pop back into Practice cleanly.
+enum PracticeRoute: Hashable {
+  case result(jobId: String, surahId: String, ayahNumber: Int, score: Double?)
+}
 
 /// History tab destinations.
 enum HistoryRoute: Hashable {}
