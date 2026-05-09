@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import tv.every.tilawah.android.R
 import tv.every.tilawah.android.app.AppError
+import tv.every.tilawah.android.audio.PlayerState
 import tv.every.tilawah.android.designsystem.BrandTheme
 import tv.every.tilawah.android.designsystem.components.PrimaryButton
 
@@ -38,6 +39,12 @@ fun ResultDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val teacherState by (viewModel.teacherPlayer?.state
+        ?: kotlinx.coroutines.flow.MutableStateFlow(null as PlayerState?))
+        .collectAsStateWithLifecycle()
+    val youState by (viewModel.youPlayer?.state
+        ?: kotlinx.coroutines.flow.MutableStateFlow(null as PlayerState?))
+        .collectAsStateWithLifecycle()
     val spacing = BrandTheme.spacing
     val scroll = rememberScrollState()
 
@@ -53,6 +60,14 @@ fun ResultDetailScreen(
             ResultDetailViewModel.UiState.Loading -> Loading()
             is ResultDetailViewModel.UiState.Loaded -> Loaded(
                 state = current,
+                teacherPlayerState = teacherState as? PlayerState,
+                youPlayerState = youState as? PlayerState,
+                onPlayTeacher = {
+                    current.result.feedback?.referenceAudioUrl?.let(viewModel::playTeacher)
+                },
+                onPauseTeacher = viewModel::pauseTeacher,
+                onPlayYou = viewModel::playYou,
+                onPauseYou = viewModel::pauseYou,
                 onTryAgain = {
                     viewModel.tryAgain()
                     onTryAgain()
@@ -97,6 +112,12 @@ private fun Loading() {
 @Composable
 private fun Loaded(
     state: ResultDetailViewModel.UiState.Loaded,
+    teacherPlayerState: PlayerState?,
+    youPlayerState: PlayerState?,
+    onPlayTeacher: () -> Unit,
+    onPauseTeacher: () -> Unit,
+    onPlayYou: () -> Unit,
+    onPauseYou: () -> Unit,
     onTryAgain: () -> Unit,
     onContinue: () -> Unit,
 ) {
@@ -111,7 +132,15 @@ private fun Loaded(
             MetricBars(feedback = feedback)
             WordComparisonGrid(feedback = feedback)
         }
-        // PR 21 -> ListenBackSection(state.result.feedback?.referenceAudioUrl, ...)
+        val teacherUrl = state.result.feedback?.referenceAudioUrl
+        ListenBackSection(
+            teacher = teacherPlayerState?.takeIf { teacherUrl != null }?.let {
+                PlaybackEntry(state = it, onPlay = onPlayTeacher, onPause = onPauseTeacher)
+            },
+            you = youPlayerState?.let {
+                PlaybackEntry(state = it, onPlay = onPlayYou, onPause = onPauseYou)
+            },
+        )
         PrimaryButton(
             label = stringResource(R.string.result_try_again),
             onClick = onTryAgain,
