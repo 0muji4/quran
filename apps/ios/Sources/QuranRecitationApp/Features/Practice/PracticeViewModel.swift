@@ -271,6 +271,19 @@ final class PracticeViewModel: ObservableObject {
     }
   }
 
+  /// Reset back to idle so the user can retry. Drives the
+  /// "Record again" CTA on the error panel.
+  func resetForRetry() {
+    state = .idle
+  }
+
+  /// Re-trigger the last reference playback as the "Replay" CTA shortcut.
+  func replayLastRecording() {
+    if case .ready = teacherState {
+      toggleReferencePlayback()
+    }
+  }
+
   private func recordAttempt(
     jobId: String,
     score: Double?,
