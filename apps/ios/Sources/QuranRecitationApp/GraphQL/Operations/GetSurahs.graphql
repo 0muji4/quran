@@ -1,0 +1,9 @@
+query GetSurahs($limit: Int, $offset: Int) {
+  surahs(limit: $limit, offset: $offset) {
+    id
+    nameAr
+    nameEn
+    revelationPlace
+    ayahCount
+  }
+}
