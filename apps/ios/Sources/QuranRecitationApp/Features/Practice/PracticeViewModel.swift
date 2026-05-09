@@ -146,4 +146,79 @@ final class PracticeViewModel: ObservableObject {
       }
     }
   }
+
+  // MARK: - Recording (PR 14)
+
+  /// Tap handler for the circular record button. Toggles between idle
+  /// and recording. The actual stop → upload → score flow lands in PR 15.
+  func toggleRecording() {
+    switch state {
+    case .idle, .error, .done:
+      startRecording()
+    case .recording:
+      stopRecording()
+    case .uploading, .analysing:
+      // Ignore taps while a job is in flight; the View should also
+      // disable the button via PracticeRecordingState.isBusy.
+      return
+    }
+  }
+
+  private func startRecording() {
+    do {
+      try recorder.startRecording()
+      state = .recording(meters: [], duration: 0)
+      observeRecorder()
+      telemetry.event(
+        TelemetryEvent.practiceRecordingStarted,
+        attributes: ["surah_id": surahId, "ayah": String(currentAyahNumber)]
+      )
+    } catch let error as AppError {
+      telemetry.error(error, context: ["screen": "practice"])
+      state = .error(error)
+    } catch {
+      let appError = AppError.audioRecordingFailed(underlying: error)
+      telemetry.error(appError, context: ["screen": "practice"])
+      state = .error(appError)
+    }
+  }
+
+  private func stopRecording() {
+    do {
+      _ = try recorder.stopRecording()
+      // PR 15 will upload the file, kick off scoring, and route the
+      // state to `.uploading` / `.analysing` / `.done`. For now we
+      // return to idle so this PR can ship without the e2e plumbing.
+      state = .idle
+      telemetry.event(
+        TelemetryEvent.practiceRecordingStopped,
+        attributes: ["duration_ms": String(Int(recorder.duration * 1000))]
+      )
+    } catch let error as AppError {
+      telemetry.error(error, context: ["screen": "practice"])
+      state = .error(error)
+    } catch {
+      let appError = AppError.audioRecordingFailed(underlying: error)
+      telemetry.error(appError, context: ["screen": "practice"])
+      state = .error(appError)
+    }
+  }
+
+  private func observeRecorder() {
+    // Mirror AudioRecorder's @Published meters/duration into the
+    // PracticeRecordingState.recording associated values so the View
+    // binds against the state machine directly.
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      while case .recording = self.state {
+        if self.recorder.isRecording {
+          self.state = .recording(
+            meters: self.recorder.meters,
+            duration: self.recorder.duration
+          )
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+      }
+    }
+  }
 }

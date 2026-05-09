@@ -41,3 +41,9 @@
 /* Practice tab */
 "practice.teacher.label" = "Teacher reference";
 "practice.teacher.unavailable" = "Reference audio not available";
+"practice.record.idleTitle" = "Ready to record";
+"practice.record.idleSubtitle" = "Tap to start";
+"practice.record.recordingTitle" = "Recording…";
+"practice.record.recordingSubtitle" = "Speak clearly";
+"practice.record.startA11y" = "Start recording";
+"practice.record.stopA11y" = "Stop recording";
