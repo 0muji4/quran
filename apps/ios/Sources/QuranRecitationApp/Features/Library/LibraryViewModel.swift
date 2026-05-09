@@ -1,10 +1,10 @@
 import Foundation
 import SwiftUI
 
-/// State container for the Library tab. Responsible only for fetching
-/// the surah list and exposing a simple state enum that the View can
-/// switch on. Filtering / search / Continue-card logic land in PR 10
-/// and PR 11.
+/// State container for the Library tab. Holds the loaded surah list,
+/// the user's free-text search query, and the active difficulty filter,
+/// and exposes a `filteredSurahs` view derived from all three. The
+/// Continue-card behaviour lands in PR 11.
 @MainActor
 final class LibraryViewModel: ObservableObject {
   enum LoadState: Equatable {
@@ -23,10 +23,26 @@ final class LibraryViewModel: ObservableObject {
     }
   }
 
+  /// Difficulty / origin filter shown as the bottom row of chips.
+  /// `.all` is the default (no filter). The other cases group surahs by
+  /// revelation place + length so users can warm up on shorter Meccan
+  /// surahs before tackling longer Medinan ones.
+  enum Filter: Hashable {
+    case all
+    case mecca
+    case medina
+    case short
+  }
+
   @Published private(set) var state: LoadState = .idle
+  @Published var query: String = ""
+  @Published var filter: Filter = .all
 
   private let backend: QuranBackend
   private let telemetry: Telemetry
+
+  /// Surahs of "Al-Ikhlas" length or shorter. Used by `.short` filter.
+  private static let shortAyahCutoff = 20
 
   init(backend: QuranBackend, telemetry: Telemetry) {
     self.backend = backend
@@ -55,5 +71,32 @@ final class LibraryViewModel: ObservableObject {
       TelemetryEvent.librarySurahOpened,
       attributes: ["surah_id": surah.id]
     )
+  }
+
+  /// Surahs visible to the View after applying the search query and
+  /// chip filter. Returns an empty array unless the load state is
+  /// `.loaded`. Search matches both English and Arabic names case-
+  /// insensitively.
+  var filteredSurahs: [SurahSummary] {
+    guard case let .loaded(items) = state else { return [] }
+    return items
+      .filter(matchesFilter)
+      .filter(matchesQuery)
+  }
+
+  private func matchesFilter(_ surah: SurahSummary) -> Bool {
+    switch filter {
+    case .all:    return true
+    case .mecca:  return surah.revelationPlace.lowercased() == "mecca"
+    case .medina: return surah.revelationPlace.lowercased() == "medina"
+    case .short:  return surah.ayahCount <= Self.shortAyahCutoff
+    }
+  }
+
+  private func matchesQuery(_ surah: SurahSummary) -> Bool {
+    let trimmed = query.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else { return true }
+    return surah.nameEn.localizedCaseInsensitiveContains(trimmed)
+      || surah.nameAr.localizedCaseInsensitiveContains(trimmed)
   }
 }
