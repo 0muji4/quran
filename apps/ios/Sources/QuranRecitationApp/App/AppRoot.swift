@@ -74,8 +74,9 @@ struct AppRoot: View {
 
   private var historyTab: some View {
     NavigationStack {
-      ComingSoonView(title: "History", systemImage: "clock")
-        .navigationTitle("History")
+      HistoryView(
+        viewModel: HistoryViewModel(historyStore: historyStore, telemetry: telemetry)
+      )
     }
     .tabItem { Label("History", systemImage: "clock") }
     .tag(AppTab.history)
