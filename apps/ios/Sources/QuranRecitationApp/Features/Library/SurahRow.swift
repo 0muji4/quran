@@ -31,6 +31,17 @@ struct SurahRow: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(Color.brand.card)
     .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(accessibilityLabel)
+    .accessibilityHint(Text("library.surah.a11yHint", bundle: .module))
+    .accessibilityAddTraits(.isButton)
+  }
+
+  private var accessibilityLabel: Text {
+    if let bestScore {
+      return Text("Surah \(surah.nameEn), \(surah.revelationPlace), \(surah.ayahCount) ayahs, best score \(bestScore)")
+    }
+    return Text("Surah \(surah.nameEn), \(surah.revelationPlace), \(surah.ayahCount) ayahs")
   }
 
   private var indexBadge: some View {
