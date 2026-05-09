@@ -68,6 +68,28 @@ final class PracticeViewModelTests: XCTestCase {
     XCTAssertEqual(viewModel.teacherState, .unavailable)
   }
 
+  func test_processRecording_setsErrorOnUploadFailure() async {
+    let backend = MockBackend()
+    backend.signedUploadResult = .failure(.network(underlying: NSError(domain: "x", code: 0)))
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(backend: backend, telemetry: telemetry)
+
+    // Drive the upload pipeline directly via the protected entry; the
+    // public toggle requires a real recording session which the test
+    // recorder cannot stand in for.
+    await viewModel.testProcessRecording(
+      at: URL(fileURLWithPath: "/tmp/x.m4a"),
+      durationMs: 1000
+    )
+
+    if case .error(let error) = viewModel.state {
+      XCTAssertEqual(error.telemetryCode, "network")
+    } else {
+      XCTFail("expected .error, got \(viewModel.state)")
+    }
+    XCTAssertTrue(telemetry.eventNames().contains("practice.scoring.failed"))
+  }
+
   // MARK: - Helpers
 
   private func makeViewModel(
