@@ -65,6 +65,11 @@ struct ResultDetailView: View {
       .padding(.horizontal, Spacing.screenHorizontal)
       MetricBars(feedback: result.feedback, fallbackScore: result.score)
         .padding(.horizontal, Spacing.screenHorizontal)
+      WordComparisonGrid(
+        alignments: result.feedback?.wordAlignments ?? [],
+        werPercent: result.feedback?.wer.map { Int(($0 * 100).rounded()) }
+      )
+      .padding(.horizontal, Spacing.screenHorizontal)
     case .failed(let error):
       Text(error.errorDescription ?? "")
         .font(Font.brand.body)
