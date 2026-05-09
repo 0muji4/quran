@@ -12,12 +12,14 @@ const baseState: RecorderStatusState = {
 
 describe('recorderStatusMessage', () => {
   it('returns the idle prompt when nothing is happening', () => {
-    expect(recorderStatusMessage(baseState)).toBe('Ready to record. Tap the mic to begin.');
+    expect(recorderStatusMessage(baseState)).toBe(
+      'The recorder is ready. Press the microphone button to start recording.'
+    );
   });
 
   it('announces the recording state', () => {
     expect(recorderStatusMessage({ ...baseState, isRecording: true })).toBe(
-      'Recording. Tap the mic to stop and submit.'
+      'Recording in progress. Press the stop button to submit your recitation.'
     );
   });
 

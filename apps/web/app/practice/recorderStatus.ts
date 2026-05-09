@@ -10,6 +10,11 @@
  * Order is significant. recordingError (mic permission, unsupported
  * browser) outranks every other state because the remediation is
  * different from "try a fresh recording".
+ *
+ * The wording deliberately avoids the visible "tap the mic to begin"
+ * and "tap to stop and submit" caption phrases, so e2e locators that
+ * target those captions via getByText() do not match the hidden
+ * status region in addition to the visible <p> caption.
  */
 
 export type RecorderStatusState = {
@@ -30,6 +35,7 @@ export function recorderStatusMessage(s: RecorderStatusState): string {
   }
   if (s.isStuck) return 'Analysis is taking longer than usual.';
   if (s.isAnalysing) return 'Analysing your recitation. Please wait.';
-  if (s.isRecording) return 'Recording. Tap the mic to stop and submit.';
-  return 'Ready to record. Tap the mic to begin.';
+  if (s.isRecording)
+    return 'Recording in progress. Press the stop button to submit your recitation.';
+  return 'The recorder is ready. Press the microphone button to start recording.';
 }
