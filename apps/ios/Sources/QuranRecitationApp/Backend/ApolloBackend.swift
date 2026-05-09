@@ -81,6 +81,15 @@ final class ApolloBackend: QuranBackend {
     throw AppError.scoringTimeout
   }
 
+  func surahs(limit: Int? = nil, offset: Int? = nil) async throws -> [SurahSummary] {
+    let query = GetSurahsQuery(
+      limit: limit.map { .some($0) } ?? nil,
+      offset: offset.map { .some($0) } ?? nil
+    )
+    let result = try await fetch(query: query, operation: "surahs")
+    return result.surahs.map { SurahSummary(from: $0) }
+  }
+
   // MARK: - Apollo bridges
 
   private func perform<Mutation: GraphQLMutation>(
