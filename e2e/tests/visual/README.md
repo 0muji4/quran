@@ -29,32 +29,43 @@ Docker image, attached to the dev stack's compose network so it can
 reach the prod-ish `web` service rather than a `pnpm dev` host process.
 
 1. **Free port 3000 on the host.** If `pnpm dev` is running, stop it so
-   the compose `web` service can bind `:3000`.
+   the compose `web` service can bind `:3000`. The compose `web` service
+   builds the production Next.js image (`apps/web/Dockerfile`); CI also
+   runs against the production build. Generating baselines against
+   `pnpm dev` will not match CI byte-for-byte because dev-mode and
+   prod-mode font / asset loading differ at the sub-pixel level.
 
-2. **Bring up the dev stack web service.**
+2. **Build and start `web` from the current source.** The image cache
+   may be stale (the Tilawah redesign in PR #87 moved many surfaces),
+   so always pass `--build`:
    ```bash
-   docker compose -f ops/docker/compose.dev.yml up -d --wait web
+   docker compose -f ops/docker/compose.dev.yml up -d --wait --build web
    ```
 
-3. **Generate snapshots through Playwright Docker.** Use the same
-   Playwright version as the project (currently 1.57.0).
+3. **Generate snapshots through Playwright Docker** on the compose
+   network so it resolves `web:3000` directly. Use the same Playwright
+   version as the project (currently 1.57.0). `CI=1` skips the
+   compose-managed webServer block in `playwright.config.ts`:
    ```bash
    docker run --rm \
      --network=docker_default \
      -v "$(pwd):/work" \
      -w /work \
      -e E2E_BASE_URL=http://web:3000 \
+     -e CI=1 \
      mcr.microsoft.com/playwright:v1.57.0-jammy \
-     bash -lc "corepack enable && pnpm install --frozen-lockfile && pnpm exec playwright test e2e/tests/visual/ --update-snapshots"
+     bash -lc "npx playwright test e2e/tests/visual/ --update-snapshots --project=chromium-desktop"
    ```
+   The image already has `@playwright/test` baked in, so `pnpm install`
+   is not required.
 
-4. **Enable the suite.** Drop the `test.fixme()` line from
-   `visual.spec.ts`.
+4. **Enable the suite if it is currently fixme'd.** Drop the
+   describe-level `test.fixme()` line from `visual.spec.ts`.
 
-5. **Commit.** Add the new `*.png` files under
-   `e2e/tests/visual/visual.spec.ts-snapshots/` and the spec change in a
-   single PR. Keep that PR snapshot-only so reviewers can focus on the
-   image diff.
+5. **Commit.** Add the changed `*.png` files under
+   `e2e/tests/visual/visual.spec.ts-snapshots/` and the spec change in
+   a single PR. Keep that PR snapshot-only so reviewers can focus on
+   the image diff.
 
 If CI later reports unexpected pixel drift, the most likely root cause
 is that the baselines were regenerated outside Linux Chromium. Re-run
