@@ -2,17 +2,12 @@ import SwiftUI
 
 @main
 struct QuranRecitationApp: App {
-  @StateObject private var viewModel = RecordingViewModel(
-    backend: ApolloBackend(),
-    telemetry: OSLogTelemetry()
-  )
-
   var body: some Scene {
     WindowGroup {
-      NavigationView {
-        RecorderView(viewModel: viewModel)
-          .navigationTitle("Quran Recitation")
-      }
+      AppRoot(
+        backend: ApolloBackend(),
+        telemetry: OSLogTelemetry()
+      )
     }
   }
 }
