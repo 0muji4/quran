@@ -56,9 +56,9 @@ storage_unavailable
 
 Per platform:
 
-- iOS — OSLog subsystem `tv.every.tilawah.ios` (categories: `event`, `error`, `measure`)
+- iOS — OSLog subsystem `com.quran.ios` (categories: `event`, `error`, `measure`)
 - Web — events flushed via `apps/web/app/telemetry/`
-- Android — Logcat tag `tv.every.tilawah.android` (production wiring is `TraceTelemetry`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto and Studio Profiler timelines). Constants live in `apps/android/.../telemetry/Telemetry.kt`.
+- Android — Logcat tag `com.quran.android` (production wiring is `TraceTelemetry`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto and Studio Profiler timelines). Constants live in `apps/android/.../telemetry/Telemetry.kt`.
 
 ## Adding events
 
