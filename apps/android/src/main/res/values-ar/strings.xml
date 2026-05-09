@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  English source-of-truth strings. The values-ar/strings.xml mirror
-  ships with the same keys; native Arabic translations are deferred
-  per ADR 0009 (2026-05-09 update).
+  Arabic locale resource bundle.
 
-  Key prefix conventions follow the iOS `Localizable.strings` shape:
-    error_<case>_title / error_<case>_recovery — one pair per AppError
-    library_*, practice_*, result_*, history_* — feature-scoped UI
+  This file currently mirrors values/strings.xml verbatim. Native Arabic
+  translations are deferred per ADR 0009 (2026-05-09 update): an
+  unreviewed translation pass risks shipping awkward UI copy in a
+  culturally sensitive context (Quran recitation app), and English
+  fallback is a more honest signal until a native Arabic-speaking
+  translator engages, the web client also localises, or analytics
+  surface a meaningful share of users running the app in `ar` locale.
+
+  The bundle ships from PR 1 so the resolver finds the keys; only the
+  values change in a future translator-driven PR.
 -->
 <resources>
     <string name="app_name">Tilawah</string>
