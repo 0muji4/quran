@@ -38,3 +38,7 @@
 "library.continueEyebrow" = "Continue";
 "library.continueProgress" = "Ayah %d of %d • last practiced recently";
 "library.resumeAyah" = "Resume ayah %d";
+
+/* Practice tab */
+"practice.teacher.label" = "Teacher reference";
+"practice.teacher.unavailable" = "Reference audio not available";
