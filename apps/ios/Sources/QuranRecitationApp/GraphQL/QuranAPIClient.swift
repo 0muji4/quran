@@ -5,7 +5,7 @@ import Foundation
 final class QuranAPIClient {
   private let client: ApolloClient
 
-  init(endpoint: URL = URL(string: "http://localhost:4000/graphql")!) {
+  init(endpoint: URL = AppConfig.graphqlURL) {
     client = ApolloClient(url: endpoint)
   }
 

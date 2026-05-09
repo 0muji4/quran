@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "QuranRecitationApp",
+  defaultLocalization: "en",
   platforms: [.iOS(.v16)],
   products: [
     .executable(name: "QuranRecitationApp", targets: ["QuranRecitationApp"])
@@ -17,7 +18,10 @@ let package = Package(
         .product(name: "Apollo", package: "apollo-ios"),
         .product(name: "ApolloAPI", package: "apollo-ios")
       ],
-      path: "Sources/QuranRecitationApp"
+      path: "Sources/QuranRecitationApp",
+      resources: [
+        .process("Resources")
+      ]
     )
   ]
 )
