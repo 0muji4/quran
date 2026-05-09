@@ -199,7 +199,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
   - GraphQL レートが切れたら `gh api repos/.../pulls -X POST` で REST 起票
   - CI 失敗は e2e の URL / heading assertion 周辺が再発しやすい — `RecordPage.ts` ロケータと `error-handling.spec.ts` `navigation.spec.ts` を真っ先に確認
 
-#### 2.3 アクセシビリティ pass
+#### 2.3 アクセシビリティ pass — Done in PRs #142–#146
 
 **現状**: マイクボタンとコントロールに `aria-label` / `aria-pressed` を付与し、見出し階層も整備したが、状態遷移のスクリーンリーダー読み上げ・キーボード操作・フォーカスリング・コントラストの完全性は未検証。
 
@@ -211,6 +211,29 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 - WCAG AA のコントラスト比を Recorder dark panel と Practice cream 背景の両方で満たす
 
 **影響度 M（基盤）/ 工数 M**。`@axe-core/playwright` を e2e に組み込む形で検証を仕組み化したい。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| 2.3-A: `@axe-core/playwright` scaffold + allow-listed baseline (`/`、`/practice/1/1`、`/history` の 3 ルート、chromium-desktop 限定) | ✅ Done | #142 |
+| 2.3-B: RecorderPanel に `role="status" aria-live="polite"` の状態アナウンス（`recorderStatus.ts` 純関数 + 8 ユニットテスト） | ✅ Done | #143 |
+| 2.3-C: TopNav `role="tablist"` 削除 / HistoryList の `<ul>/<li>` 化 / SurahCard の集約 `aria-label` | ✅ Done | #144 |
+| 2.3-D: `--color-ink-on-dark-mut` を AA 適合に bump / `prefers-reduced-motion` で 4 アニメーション停止 / dark bg 上の focus outline tan に override | ✅ Done | #145 |
+| 2.3-E: skip-to-content link + `<main id="main-content" tabIndex={-1}>` + 3 つの keyboard-flow e2e | ✅ Done | #146 |
+
+実装上の差分メモ:
+
+- 監査では `TeacherPanel` の speed pills と `ContinueCard` の aria-label も対処対象として挙げていたが、実コード確認で前者の `role="group" + aria-pressed` は valid ARIA、後者は単一 Link カードでなく内部に複数 CTA を持つため aria-label を貼る対象がない、と判断して 2.3-C のスコープから除外（PR #144 description 参照）。
+- 2.3-A の axe baseline は最初の CI 実行で `page-has-heading-one` を flag した。`/practice/[s]/[a]` には h1 が無く（RecorderPanel と TeacherPanel が h3 のみ）、Library と History は既に h1 を持つ。`KNOWN_VIOLATIONS` に追加して baseline を緑に保ち、heading 階層決定は別途扱いとした（PR #142 fix commit 参照）。
+- 2.3-B の aria-live 文言は当初 visible caption と同じ「Tap the mic to begin」「tap to stop and submit」を使ったが、`RecordPage.idleCaption` / `recordingCaption` の `getByText` ロケータが strict mode で 2 要素一致して既存 `recording-flow.spec.ts` を壊した。意味を保ったまま重複しない言い回しに改めた（PR #143 fix commit 参照）。
+- mobile / tablet projects で a11y spec を走らせない（chromium-desktop 限定）のは、視覚回帰は 2.2-E の `mobile-layout.spec.ts` で押さえる役割分担。a11y は viewport 非依存の問題が中心のため重複を避けた。
+
+残課題（任意）:
+
+- `/practice/[s]/[a]` ルートに h1 を追加する（`page-has-heading-one` 解消）。`AutoFocusHeading` パターンを再利用する場合は heading 階層全体の見直しと既存 e2e ロケータ確認が必要。
+- on-cream の AA 不足 3 パターン（`.eyebrow` の gold `#b8893c` × cream で 2.76:1、`--color-ink-muted` `#7b6e5c` × cream で 4.37:1、`.btnGold` の白 × gold で 3.14:1）。いずれも brand トークン（`--color-gold` / `--color-ink-muted`）の darken が必要で視覚的な影響範囲が広いため、別 PR で明示的に進める前提で `color-contrast` を `KNOWN_VIOLATIONS` に残置。Phase 2.3-D は on-dark surfaces（`--color-ink-on-dark-mut`）のみ対処済み。
+- macOS VoiceOver / NVDA での実機読み上げ確認（2.3-B の aria-live、2.3-E の skip link は DevTools / Playwright で機能確認済み）。
 
 #### 2.4 Press-and-hold マイクジェスチャの再検討
 
@@ -366,3 +389,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記 |
 | 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート） |
 | 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記 |
+| 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記 |
