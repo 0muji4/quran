@@ -49,4 +49,11 @@
     <string name="practice_back_a11y">Back to library</string>
     <string name="practice_ayah_progress">Ayah %1$d of %2$d</string>
     <string name="practice_idle_hint">Tap the record button when you are ready.</string>
+    <string name="practice_reference_eyebrow">TEACHER REFERENCE</string>
+    <string name="practice_reference_loading">Loading reference recitation…</string>
+    <string name="practice_reference_play_a11y">Play teacher reference</string>
+    <string name="practice_reference_pause_a11y">Pause teacher reference</string>
+    <string name="practice_reference_unavailable">Reference unavailable</string>
+    <string name="practice_reference_unavailable_hint">You can still record on your own.</string>
+    <string name="practice_reference_retry">Retry</string>
 </resources>
