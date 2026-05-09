@@ -232,6 +232,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 残課題（任意）:
 
 - `/practice/[s]/[a]` ルートに h1 を追加する（`page-has-heading-one` 解消）。`AutoFocusHeading` パターンを再利用する場合は heading 階層全体の見直しと既存 e2e ロケータ確認が必要。
+- on-cream の AA 不足 3 パターン（`.eyebrow` の gold `#b8893c` × cream で 2.76:1、`--color-ink-muted` `#7b6e5c` × cream で 4.37:1、`.btnGold` の白 × gold で 3.14:1）。いずれも brand トークン（`--color-gold` / `--color-ink-muted`）の darken が必要で視覚的な影響範囲が広いため、別 PR で明示的に進める前提で `color-contrast` を `KNOWN_VIOLATIONS` に残置。Phase 2.3-D は on-dark surfaces（`--color-ink-on-dark-mut`）のみ対処済み。
 - macOS VoiceOver / NVDA での実機読み上げ確認（2.3-B の aria-live、2.3-E の skip link は DevTools / Playwright で機能確認済み）。
 
 #### 2.4 Press-and-hold マイクジェスチャの再検討
