@@ -24,8 +24,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import tv.every.tilawah.android.RecordingScreen
+import tv.every.tilawah.android.backend.ApolloQuranBackend
+import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.designsystem.BrandTheme
+import tv.every.tilawah.android.features.library.LibraryScreen
+import tv.every.tilawah.android.features.library.LibraryViewModel
 import tv.every.tilawah.android.telemetry.NoOpTelemetry
 import tv.every.tilawah.android.telemetry.Telemetry
 import tv.every.tilawah.android.telemetry.TelemetryEvent
@@ -47,7 +54,10 @@ enum class TopLevelTab(val title: String) {
 }
 
 @Composable
-fun AppRoot(telemetry: Telemetry = NoOpTelemetry) {
+fun AppRoot(
+    telemetry: Telemetry = NoOpTelemetry,
+    backend: QuranBackend = remember { ApolloQuranBackend() },
+) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
 
     LaunchedEffect(selectedTab) {
@@ -84,7 +94,7 @@ fun AppRoot(telemetry: Telemetry = NoOpTelemetry) {
             color = BrandTheme.colors.surface,
         ) {
             when (selectedTab) {
-                TopLevelTab.Library -> LibraryTabPlaceholder()
+                TopLevelTab.Library -> LibraryTabHost(backend = backend, telemetry = telemetry)
                 TopLevelTab.Practice -> PracticeTabHost()
                 TopLevelTab.History -> HistoryTabPlaceholder()
             }
@@ -93,8 +103,16 @@ fun AppRoot(telemetry: Telemetry = NoOpTelemetry) {
 }
 
 @Composable
-private fun LibraryTabPlaceholder() {
-    PlaceholderCenter(label = "Library — wired in PR 9")
+private fun LibraryTabHost(backend: QuranBackend, telemetry: Telemetry) {
+    val viewModel: LibraryViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { LibraryViewModel(backend, telemetry) }
+        },
+    )
+    LibraryScreen(
+        viewModel = viewModel,
+        onSurahOpened = { /* navigation lands in PR 11+ */ },
+    )
 }
 
 @Composable
