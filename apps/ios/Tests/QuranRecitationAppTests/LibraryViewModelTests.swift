@@ -57,7 +57,7 @@ final class LibraryViewModelTests: XCTestCase {
     XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["1", "112"], "Meccan filter")
 
     viewModel.filter = .medina
-    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["2"], "Medinan filter")
+    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["2", "3"], "Medinan filter")
 
     viewModel.filter = .short
     XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["1", "112"], "≤20 ayahs")
