@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -80,12 +82,16 @@ private fun WordTile(alignment: WordAlignment) {
     val spacing = BrandTheme.spacing
     val tileColor = colorForOp(alignment.op, colors)
     val text = alignment.refWord ?: alignment.hypWord ?: "—"
+    val opLabel = labelForOp(alignment.op)
 
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
             .background(tileColor)
-            .padding(horizontal = spacing.md, vertical = spacing.sm),
+            .padding(horizontal = spacing.md, vertical = spacing.sm)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$text ($opLabel)"
+            },
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
