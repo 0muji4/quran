@@ -46,6 +46,40 @@ final class LibraryViewModelTests: XCTestCase {
     XCTAssertEqual(openEvents.count, 1)
   }
 
+  func test_filteredSurahs_appliesQueryAndChip() async {
+    let backend = MockBackend(surahsResult: .success(Self.filteringFixtures))
+    let viewModel = LibraryViewModel(backend: backend, telemetry: NoOpTelemetry())
+    await viewModel.load()
+
+    XCTAssertEqual(viewModel.filteredSurahs.count, 4, "no filters → all surahs")
+
+    viewModel.filter = .mecca
+    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["1", "112"], "Meccan filter")
+
+    viewModel.filter = .medina
+    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["2"], "Medinan filter")
+
+    viewModel.filter = .short
+    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["1", "112"], "≤20 ayahs")
+
+    viewModel.filter = .all
+    viewModel.query = "fati"
+    XCTAssertEqual(viewModel.filteredSurahs.map(\.id), ["1"], "case-insensitive English match")
+
+    viewModel.query = "ال"
+    XCTAssertGreaterThan(viewModel.filteredSurahs.count, 0, "Arabic substring match")
+
+    viewModel.query = "no-such-surah"
+    XCTAssertTrue(viewModel.filteredSurahs.isEmpty, "no match → empty")
+  }
+
+  private static let filteringFixtures: [SurahSummary] = [
+    SurahSummary(id: "1", nameAr: "الفاتحة", nameEn: "Al-Fatihah", ayahCount: 7, revelationPlace: "Mecca"),
+    SurahSummary(id: "2", nameAr: "البقرة", nameEn: "Al-Baqarah", ayahCount: 286, revelationPlace: "Medina"),
+    SurahSummary(id: "112", nameAr: "الإخلاص", nameEn: "Al-Ikhlas", ayahCount: 4, revelationPlace: "Mecca"),
+    SurahSummary(id: "3", nameAr: "آل عمران", nameEn: "Aal-Imran", ayahCount: 200, revelationPlace: "Medina")
+  ]
+
   // MARK: - Fixtures
 
   private static let fixtures: [SurahSummary] = [
