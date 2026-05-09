@@ -41,38 +41,40 @@ export function HistoryList() {
   }
 
   return (
-    <div className={styles.list}>
+    <ul className={styles.list}>
       {attempts.map((a) => {
         const completed = a.status === 'COMPLETED';
         return (
-          <Link key={a.id} href={`/practice/${a.surahId}/${a.ayahNumber}`} className={styles.row}>
-            <span
-              className={completed ? styles.score : `${styles.score} ${styles.scoreFailed}`}
-              aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
-            >
-              {completed && a.score !== null ? a.score : '—'}
-            </span>
-            <div className={styles.info}>
-              <p className={styles.title}>
-                {a.surahNameEn} · ayah {a.ayahNumber}
-              </p>
-              <p className={styles.meta}>
-                {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
-              </p>
-            </div>
-            <span
-              className={
-                completed
-                  ? `${styles.statusPill} ${styles.statusPillCompleted}`
-                  : `${styles.statusPill} ${styles.statusPillFailed}`
-              }
-            >
-              {completed ? 'Completed' : 'Failed'}
-            </span>
-            <ArrowRightIcon size={14} />
-          </Link>
+          <li key={a.id} className={styles.listItem}>
+            <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={styles.row}>
+              <span
+                className={completed ? styles.score : `${styles.score} ${styles.scoreFailed}`}
+                aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
+              >
+                {completed && a.score !== null ? a.score : '—'}
+              </span>
+              <div className={styles.info}>
+                <p className={styles.title}>
+                  {a.surahNameEn} · ayah {a.ayahNumber}
+                </p>
+                <p className={styles.meta}>
+                  {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
+                </p>
+              </div>
+              <span
+                className={
+                  completed
+                    ? `${styles.statusPill} ${styles.statusPillCompleted}`
+                    : `${styles.statusPill} ${styles.statusPillFailed}`
+                }
+              >
+                {completed ? 'Completed' : 'Failed'}
+              </span>
+              <ArrowRightIcon size={14} />
+            </Link>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

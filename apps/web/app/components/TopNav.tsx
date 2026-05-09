@@ -40,7 +40,7 @@ export function TopNav({ userInitial = 'N' }: Props) {
         </span>
       </Link>
 
-      <div className={styles.tabs} role="tablist">
+      <div className={styles.tabs}>
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           return (
