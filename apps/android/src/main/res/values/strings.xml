@@ -77,4 +77,8 @@
     <string name="result_title">Result</string>
     <string name="result_try_again">Try again</string>
     <string name="result_continue">Continue to next ayah</string>
+    <string name="result_metrics_title">Metrics</string>
+    <string name="result_metric_accuracy">Accuracy</string>
+    <string name="result_metric_fluency">Fluency</string>
+    <string name="result_metric_completeness">Completeness</string>
 </resources>
