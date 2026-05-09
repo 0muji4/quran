@@ -41,7 +41,7 @@ export function TeacherPanel({ surahId, ayahNumber, pauseSignal }: Props) {
             <SpeakerIcon size={18} />
           </span>
           <div>
-            <h3 className={styles.panelTitle}>Listen to the teacher</h3>
+            <h2 className={styles.panelTitle}>Listen to the teacher</h2>
             <p className={styles.panelSubtitle}>Husary Mu&apos;allim · slow reference</p>
           </div>
         </div>
