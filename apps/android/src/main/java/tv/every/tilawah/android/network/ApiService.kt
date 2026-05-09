@@ -1,11 +1,11 @@
-package com.quranproject.android.network
+package tv.every.tilawah.android.network
 
-import com.quranproject.android.network.model.AyahsResponse
-import com.quranproject.android.network.model.CreateScoringJobRequest
-import com.quranproject.android.network.model.ScoringResult
-import com.quranproject.android.network.model.SignedUploadRequest
-import com.quranproject.android.network.model.SignedUploadResponse
-import com.quranproject.android.network.model.SurahsResponse
+import tv.every.tilawah.android.network.model.AyahsResponse
+import tv.every.tilawah.android.network.model.CreateScoringJobRequest
+import tv.every.tilawah.android.network.model.ScoringResult
+import tv.every.tilawah.android.network.model.SignedUploadRequest
+import tv.every.tilawah.android.network.model.SignedUploadResponse
+import tv.every.tilawah.android.network.model.SurahsResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -1,4 +1,4 @@
-package com.quranproject.android.ui.theme
+package tv.every.tilawah.android.ui.theme
 
 import android.app.Activity
 import android.os.Build

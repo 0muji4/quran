@@ -1,4 +1,4 @@
-package com.quranproject.android.network
+package tv.every.tilawah.android.network
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import retrofit2.Call

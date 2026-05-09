@@ -1,4 +1,4 @@
-package com.quranproject.android
+package tv.every.tilawah.android
 
 import android.content.Context
 import android.media.MediaRecorder
