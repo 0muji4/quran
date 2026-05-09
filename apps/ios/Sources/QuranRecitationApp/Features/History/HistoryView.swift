@@ -13,6 +13,7 @@ struct HistoryView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
         header
+        StatsGrid(stats: HistoryStats.compute(from: viewModel.attempts))
         chipFilter
         list
       }
