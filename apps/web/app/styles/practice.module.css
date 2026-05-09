@@ -346,6 +346,10 @@
 }
 
 .speedPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   background: var(--color-bg-paper);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
@@ -369,6 +373,9 @@
 .loopBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 8px;
   gap: 4px;
   color: var(--color-teal);
   font-size: 13px;
@@ -699,6 +706,10 @@
 }
 
 .recorderCancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   margin-top: var(--space-3);
   background: transparent;
   border: 1px solid var(--color-border);
@@ -752,6 +763,8 @@
 .btnGhost {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
   gap: var(--space-2);
   background: transparent;
   border: 1px solid var(--color-border);
@@ -769,6 +782,8 @@
 .btnTeal {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
   gap: var(--space-2);
   background: var(--color-teal);
   color: #fff;
@@ -815,6 +830,8 @@
 .navBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
   gap: var(--space-2);
   background: var(--color-bg-paper);
   color: var(--color-ink-default);
