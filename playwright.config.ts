@@ -56,12 +56,65 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
   },
 
-  // Test against Chromium only initially
+  // Project layout
+  // - chromium-desktop: existing 1280x720 desktop coverage; skips mobile-only specs
+  // - mobile-iphone / tablet-ipad / desktop-1024: viewport-only overrides for the
+  //   mobile-layout regression specs under e2e/tests/mobile/. Stays on the
+  //   chromium engine so CI's `playwright install chromium` is sufficient.
   projects: [
     {
-      name: 'chromium',
+      name: 'chromium-desktop',
+      testIgnore: /[\\/]mobile[\\/]/,
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream',
+            '--allow-file-access',
+          ],
+        },
+        permissions: ['microphone'],
+      },
+    },
+    {
+      name: 'mobile-iphone',
+      testMatch: /[\\/]mobile[\\/]/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        launchOptions: {
+          args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream',
+            '--allow-file-access',
+          ],
+        },
+        permissions: ['microphone'],
+      },
+    },
+    {
+      name: 'tablet-ipad',
+      testMatch: /[\\/]mobile[\\/]/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 768, height: 1024 },
+        launchOptions: {
+          args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream',
+            '--allow-file-access',
+          ],
+        },
+        permissions: ['microphone'],
+      },
+    },
+    {
+      name: 'desktop-1024',
+      testMatch: /[\\/]mobile[\\/]/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1024, height: 768 },
         launchOptions: {
           args: [
             '--use-fake-ui-for-media-stream',
