@@ -61,4 +61,10 @@
     <string name="practice_recording_stop_a11y">Stop recording</string>
     <string name="practice_recording_in_progress">Recording…</string>
     <string name="practice_recording_ready_hint">Tap the mic when you are ready.</string>
+    <string name="practice_analysing_title">Analysing your recitation</string>
+    <string name="practice_analysing_transcribing">Transcribing</string>
+    <string name="practice_analysing_comparing">Comparing</string>
+    <string name="practice_analysing_calculating">Calculating</string>
+    <string name="practice_error_replay">Replay</string>
+    <string name="practice_error_record_again">Record again</string>
 </resources>
