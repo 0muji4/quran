@@ -125,6 +125,8 @@
 .btnGold {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
   gap: var(--space-2);
   background: var(--color-gold);
   color: #fff;
@@ -142,6 +144,8 @@
 .btnGhostDark {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
   background: transparent;
   color: var(--color-ink-on-dark);
   padding: 10px 18px;
