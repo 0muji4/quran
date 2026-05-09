@@ -81,7 +81,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 | Could-not-score error UI (replay + too-short guard + COULDN'T PROCESS badge) | ✅ Done | #131 / #132 |
 | Result detail micro additions (Listen back "Play both" / Action row "Save attempt") | ✅ Done | #133 / #134 |
 
-#### 2.2 モバイル / タブレット最適化
+#### 2.2 モバイル / タブレット最適化 — Done in PRs #136–#140
 
 **現状**: グリッドや 2 カラムパネルは `@media (max-width: 900px)` で 1 カラム化したが、実機検証は未実施。Continue カードのコンパスSVG・8 点星・コーナー装飾の縮小挙動、Arabic テキストの折り返し（特に Al-Baqarah のような長文 ayah）に未確認のリスクがある。
 
@@ -133,6 +133,27 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 | **2.2-E** | Playwright multi-viewport fixtures（375 / 414 / 768 / 1024）+ smoke specs | `playwright.config.ts` `e2e/tests/mobile-layout.spec.ts`（新規） | ~100 |
 
 **順序**: 2.2-A → B → C → D を独立して並行可、E は A〜D 完了後にリグレッション検出インフラとして追加。各 PR は別ブランチ + `gh api repos/.../pulls -X POST` で起票（GraphQL レート対策）。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| 2.2-A: tap targets ≥44px (`.speedPill` / `.loopBtn` / `.btnGhost` / `.btnTeal` / `.btnGold` / `.btnGhostDark` / `.navBtn` / `.recorderCancel` / `.tab`) + 32px on display-only `.statusPill` | ✅ Done | #136 |
+| 2.2-B: Arabic overflow guard (`.ayahArabic` `overflow-wrap` / `word-break`) + word tile mobile shrink (`@media (max-width: 600px)`) | ✅ Done | #137 |
+| 2.2-C: ContinueCard ornament `clamp(120px, 40vw, 200px)` + library search / filter mobile tweaks | ✅ Done | #138 |
+| 2.2-D: Result hero stats 1fr 3-col + label / value / padding shrink at `@media (max-width: 700px)` | ✅ Done | #139 |
+| 2.2-E: Playwright multi-viewport projects (`mobile-iphone` / `tablet-ipad` / `desktop-1024`, chromium-only) + `e2e/tests/mobile/mobile-layout.spec.ts` smoke suite | ✅ Done | #140 |
+
+実装上の差分メモ:
+
+- 2.2-A の `.statusPill` は interactive ではない表示専用バッジのため、WCAG 2.5.5 の 44px 規定対象外。他要素との統一感のみ確保し 32px に留めた。
+- 2.2-E は `devices['iPhone 12']` の WebKit preset を採用せず、`devices['Desktop Chrome']` をベースに `viewport` のみ上書きする構成にした。CI の `playwright install --with-deps chromium`（`.github/workflows/e2e.yml:60`）だけで成立させるため。
+- mic ボタン（`.micButton`）は 76×76px と元から 44px 規定をクリアしていたため監査表に含めず、2.2-E の boundingBox 検査も regression 用ガード位置付け。
+
+残課題（任意）:
+
+- 実機（iOS Safari / Chrome 375 / 414 / 768 / 1024）での目視確認は別途。DevTools での確認は完了。
+- 2.2-E は CI shard あたりのテスト数が 25 → 34 に増える。CI 時間が問題化したら「PR は chromium-desktop のみ・nightly で全 viewport」運用への切替を検討。
 
 ##### 2.2 各 PR の詳細実装ガイド
 
@@ -344,3 +365,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票）                                            |
 | 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記 |
 | 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート） |
+| 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記 |
