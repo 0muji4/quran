@@ -1,28 +1,30 @@
 import SwiftUI
 
-/// Tab-based shell that subsequent PRs hang feature views off of. Each
-/// tab owns its own `NavigationStack` so drilling in one tab does not
-/// reset the others. The Practice tab still hosts the legacy
-/// `RecorderView` until PR 17 retires it; Library and History show a
-/// placeholder until PR 9 / PR 22 land. See ADR 0005.
+/// Tab-based shell with three tabs: Library, Practice, History. Each
+/// tab owns its own `NavigationStack` so drilling in one does not
+/// reset the others. History stays a placeholder until PR 22 lands.
+/// See ADR 0005.
 struct AppRoot: View {
   private let backend: QuranBackend
+  private let referenceClient: ReferenceAudioClient
   private let telemetry: Telemetry
   private let historyStore: HistoryStore
-  @StateObject private var legacyRecordingViewModel: RecordingViewModel
   @State private var selectedTab: AppTab = .library
+  @State private var practiceContext: PracticeContext
 
   init(
     backend: QuranBackend,
     telemetry: Telemetry,
-    historyStore: HistoryStore = UserDefaultsHistoryStore()
+    historyStore: HistoryStore = UserDefaultsHistoryStore(),
+    referenceClient: ReferenceAudioClient? = nil
   ) {
     self.backend = backend
     self.telemetry = telemetry
     self.historyStore = historyStore
-    self._legacyRecordingViewModel = StateObject(
-      wrappedValue: RecordingViewModel(backend: backend, telemetry: telemetry)
-    )
+    self.referenceClient = referenceClient ?? HTTPReferenceAudioClient()
+    // Default Practice opens at Al-Fatihah ayah 1. The Library Continue
+    // card overrides via `practiceContext` when the user resumes.
+    self._practiceContext = State(initialValue: PracticeContext(surahId: "1", ayahNumber: 1))
   }
 
   var body: some View {
@@ -44,9 +46,11 @@ struct AppRoot: View {
       LibraryView(
         viewModel: LibraryViewModel(backend: backend, telemetry: telemetry),
         historyStore: historyStore,
-        onResume: { _ in
-          // Cross-tab handoff. Per-ayah navigation lands in PR 15 once
-          // the Practice flow has a typed Route to push.
+        onResume: { entry in
+          practiceContext = PracticeContext(
+            surahId: entry.surahId,
+            ayahNumber: entry.ayahNumber
+          )
           selectedTab = .practice
         }
       )
@@ -56,21 +60,81 @@ struct AppRoot: View {
   }
 
   private var practiceTab: some View {
-    NavigationStack {
-      RecorderView(viewModel: legacyRecordingViewModel)
-        .navigationTitle("Practice")
-    }
+    PracticeNavigationStack(
+      practiceContext: $practiceContext,
+      backend: backend,
+      referenceClient: referenceClient,
+      historyStore: historyStore,
+      telemetry: telemetry,
+      onCloseToLibrary: { selectedTab = .library }
+    )
     .tabItem { Label("Practice", systemImage: "mic") }
     .tag(AppTab.practice)
   }
 
   private var historyTab: some View {
     NavigationStack {
-      ComingSoonView(title: "History", systemImage: "clock")
-        .navigationTitle("History")
+      HistoryView(
+        viewModel: HistoryViewModel(historyStore: historyStore, telemetry: telemetry)
+      )
     }
     .tabItem { Label("History", systemImage: "clock") }
     .tag(AppTab.history)
+  }
+}
+
+/// Lightweight value the Library Continue card writes into to redirect
+/// Practice. PR 21's "Continue to ayah N+1" action mutates the same
+/// state from the Result screen.
+private struct PracticeContext: Equatable {
+  var surahId: String
+  var ayahNumber: Int
+}
+
+/// Hosts the Practice `NavigationStack` and the typed `PracticeRoute`
+/// destinations (`.result(...)` here, future ones layer on). Extracted
+/// from `AppRoot` so the routing graph is readable in one place.
+private struct PracticeNavigationStack: View {
+  @Binding var practiceContext: PracticeContext
+  let backend: QuranBackend
+  let referenceClient: ReferenceAudioClient
+  let historyStore: HistoryStore
+  let telemetry: Telemetry
+  let onCloseToLibrary: () -> Void
+  @State private var path: [PracticeRoute] = []
+
+  var body: some View {
+    NavigationStack(path: $path) {
+      PracticeView(
+        viewModel: PracticeViewModel(
+          surahId: practiceContext.surahId,
+          ayahNumber: practiceContext.ayahNumber,
+          backend: backend,
+          referenceClient: referenceClient,
+          recorder: AudioRecorder(),
+          player: AudioPlayer(),
+          historyStore: historyStore,
+          telemetry: telemetry
+        ),
+        onClose: onCloseToLibrary
+      )
+      .id("\(practiceContext.surahId):\(practiceContext.ayahNumber)")
+      .navigationDestination(for: PracticeRoute.self) { route in
+        switch route {
+        case let .result(jobId, surahId, ayahNumber, _):
+          ResultDetailView(
+            viewModel: ResultDetailViewModel(
+              jobId: jobId,
+              surahId: surahId,
+              ayahNumber: ayahNumber,
+              backend: backend,
+              telemetry: telemetry
+            ),
+            onClose: { path.removeLast() }
+          )
+        }
+      }
+    }
   }
 }
 
