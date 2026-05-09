@@ -48,3 +48,11 @@
 "practice.record.recordingSubtitle" = "Speak clearly";
 "practice.record.startA11y" = "Start recording";
 "practice.record.stopA11y" = "Stop recording";
+"practice.analysing.title" = "Analysing…";
+"practice.analysing.subtitle" = "Comparing to teacher";
+"practice.analysing.step.transcribing" = "Transcribing audio";
+"practice.analysing.step.comparing" = "Comparing to reference";
+"practice.analysing.step.calculating" = "Calculating score";
+"practice.error.subtitle" = "Try again — move closer to the mic";
+"practice.error.replay" = "Replay";
+"practice.error.recordAgain" = "Record again";
