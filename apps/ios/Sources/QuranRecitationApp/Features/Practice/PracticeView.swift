@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Practice tab top half: back button, "Surah · ayah N" title with a
-/// menu, progress dots, and the AyahCard. Teacher reference panel,
-/// recording panel, and analysing/error states land in PR 13–16.
+/// Practice screen layout: back button, "Surah · ayah N" title with a
+/// menu, progress dots, AyahCard, and teacher reference panel.
+/// Recording panel and analysing/error states land in PR 14–16.
 struct PracticeView: View {
   @StateObject var viewModel: PracticeViewModel
   let onClose: () -> Void
@@ -24,6 +24,13 @@ struct PracticeView: View {
             textAr: ayah.textAr
           )
           .padding(.horizontal, Spacing.screenHorizontal)
+          TeacherReferencePanel(
+            reciterName: viewModel.reciterName,
+            state: viewModel.teacherState,
+            onTogglePlayback: { viewModel.toggleReferencePlayback() },
+            onChangeRate: { viewModel.cycleReferenceRate() }
+          )
+          .padding(.horizontal, Spacing.screenHorizontal)
         } else if case .error(let error) = viewModel.state {
           Text(error.errorDescription ?? "")
             .font(Font.brand.body)
@@ -42,6 +49,7 @@ struct PracticeView: View {
     .task {
       if viewModel.ayah == nil {
         await viewModel.load()
+        await viewModel.loadReference()
       }
     }
   }
