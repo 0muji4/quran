@@ -29,4 +29,10 @@ protocol QuranBackend {
   /// Fetch the surah list. `limit` and `offset` are optional; passing
   /// `nil` lets the BFF apply its own defaults.
   func surahs(limit: Int?, offset: Int?) async throws -> [SurahSummary]
+
+  /// Fetch a single surah by id (used by the Practice header).
+  func surah(id: String) async throws -> SurahSummary?
+
+  /// Fetch a single ayah of the given surah for the Practice screen.
+  func ayah(surahId: String, ayahNumber: Int) async throws -> AyahDetail?
 }
