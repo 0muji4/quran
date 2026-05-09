@@ -1,20 +1,34 @@
 import SwiftUI
 
 /// Library tab — vertical list of surahs with a search bar and
-/// difficulty chip filter. The Continue card lands in PR 11.
+/// difficulty chip filter, plus a Continue card when the user has a
+/// recent practice session.
 struct LibraryView: View {
   @StateObject var viewModel: LibraryViewModel
   let historyStore: HistoryStore
+  let onResume: ((LastPracticed) -> Void)?
 
-  init(viewModel: @autoclosure @escaping () -> LibraryViewModel, historyStore: HistoryStore) {
+  init(
+    viewModel: @autoclosure @escaping () -> LibraryViewModel,
+    historyStore: HistoryStore,
+    onResume: ((LastPracticed) -> Void)? = nil
+  ) {
     self._viewModel = StateObject(wrappedValue: viewModel())
     self.historyStore = historyStore
+    self.onResume = onResume
   }
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
         header
+        if let lastPracticed = historyStore.lastPracticed() {
+          ContinueCard(entry: lastPracticed) { entry in
+            viewModel.continueTapped(entry)
+            onResume?(entry)
+          }
+          .padding(.horizontal, Spacing.screenHorizontal)
+        }
         chipFilter
         content
       }

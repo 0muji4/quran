@@ -73,6 +73,16 @@ final class LibraryViewModel: ObservableObject {
     )
   }
 
+  func continueTapped(_ entry: LastPracticed) {
+    telemetry.event(
+      "library.continue.tapped",
+      attributes: [
+        "surah_id": entry.surahId,
+        "ayah_number": String(entry.ayahNumber)
+      ]
+    )
+  }
+
   /// Surahs visible to the View after applying the search query and
   /// chip filter. Returns an empty array unless the load state is
   /// `.loaded`. Search matches both English and Arabic names case-
