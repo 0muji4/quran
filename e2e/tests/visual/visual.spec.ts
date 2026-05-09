@@ -3,17 +3,30 @@ import { expect, test, type Page } from '@playwright/test';
 /**
  * Visual regression baseline.
  *
- * Phase 3.4-A scaffolds Playwright `toHaveScreenshot()` for the Tilawah
- * web app. This spec covers three deterministic scenes (library with a
- * populated Continue card, history with seeded attempts, and the
- * practice page in its idle state). Phase 3.4-B will add the harder
- * recording and result scenes.
+ * Phase 3.4-A scaffolded Playwright `toHaveScreenshot()` for the
+ * Tilawah web app. 3.4-B activates the suite by committing the
+ * Linux-generated baseline `.png` files for the three deterministic
+ * static-state scenes — library, history, and practice idle.
  *
- * The tests are deliberately fixme-guarded until the baseline `.png`
- * files have been generated on Linux Chromium (matching CI) and
- * committed under `visual.spec.ts-snapshots/`. See README.md in this
- * directory for the generation workflow. Once the baselines land, drop
- * the `test.fixme()` in the describe block and the suite enforces.
+ * The recording scene is sketched below but currently fixme'd: in the
+ * Playwright Docker image used to generate baselines locally,
+ * `MediaRecorder` reports as unsupported even with the chromium-desktop
+ * project's `--use-fake-device-for-media-stream` launch flag, so
+ * `recorder.start()` errors out before the panel reaches the
+ * "Recording" state. The CI image (Playwright via `--with-deps`) does
+ * not have this problem (existing `recording-flow.spec.ts` exercises
+ * the same path), so the scene can be enabled once we figure out the
+ * Docker-image gap. Tracked separately.
+ *
+ * The Done / Result scene is also deferred — Server Components fetch
+ * the scoring job on render, so a Playwright `page.route()` mock
+ * cannot reach them. A deterministic seeded `scoring_jobs` row in
+ * `db/seed.sql` is the cleanest fix.
+ *
+ * If a future change drifts the rendering, the test fails with a
+ * side-by-side image comparison under `playwright-report/`. Regenerate
+ * baselines on Linux Chromium per `README.md` if the change is
+ * intentional.
  */
 
 const VIEWPORT = { width: 1280, height: 720 };
@@ -76,13 +89,6 @@ const stableSnapshot = async (page: Page): Promise<void> => {
 test.use({ viewport: VIEWPORT });
 
 test.describe('visual regression — desktop 1280x720', () => {
-  test.fixme(
-    true,
-    'Baseline snapshots are not yet committed. Generate them on Linux ' +
-      'Chromium (see e2e/tests/visual/README.md) and commit the *.png ' +
-      'files under visual.spec.ts-snapshots/ to enable this suite.'
-  );
-
   test('library landing with seeded Continue card', async ({ page, context }) => {
     await context.addInitScript((seed) => {
       window.localStorage.setItem('tilawah:last-practiced', JSON.stringify(seed));
@@ -124,6 +130,41 @@ test.describe('visual regression — desktop 1280x720', () => {
     await expect(page).toHaveScreenshot('practice-idle.png', {
       fullPage: true,
       maxDiffPixels: 200
+    });
+  });
+
+  test('practice page during active recording', async ({ page }) => {
+    test.fixme(
+      true,
+      'MediaRecorder reports as unsupported inside the Playwright Docker ' +
+        'image used to regenerate baselines locally, so recorder.start() ' +
+        'errors out before the panel reaches the "Recording" state. ' +
+        'Investigation pending; tracked separately.'
+    );
+    await page.goto('/practice/1/1');
+    await page.getByRole('heading', { name: /now you recite/i }).waitFor();
+
+    // Trigger recording. CI launchOptions enable
+    // --use-fake-ui-for-media-stream + --use-fake-device-for-media-stream
+    // so the mic permission is auto-granted and a synthetic audio
+    // stream backs MediaRecorder.
+    await page.getByRole('button', { name: /start recording/i }).click();
+    await page.getByRole('heading', { name: /^recording/i }).waitFor();
+    await stableSnapshot(page);
+
+    // Two regions are inherently non-deterministic and must be masked:
+    //   - The mm:ss timer ticks once per second.
+    //   - The waveform bars are driven by live mic levels from the
+    //     fake stream and vary frame to frame.
+    // Class names are CSS-modules hashed (e.g. practice_recordingTimer__abc),
+    // so we match by `class*="..."` substring rather than exact equality.
+    await expect(page).toHaveScreenshot('practice-recording.png', {
+      fullPage: true,
+      maxDiffPixels: 300,
+      mask: [
+        page.locator('[class*="recordingTimer"]'),
+        page.locator('[class*="recorderBars"]')
+      ]
     });
   });
 });
