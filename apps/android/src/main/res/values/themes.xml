@@ -1,3 +1,6 @@
 <resources>
-    <style name="Theme.QuranProject" parent="Theme.Material3.DayNight.NoActionBar" />
+    <!-- Theme is intentionally minimal: BrandTheme (Compose) drives the
+         actual look + colors. This XML theme exists only because the
+         AndroidManifest references it for the Activity. -->
+    <style name="Theme.Tilawah" parent="Theme.Material3.DayNight.NoActionBar" />
 </resources>

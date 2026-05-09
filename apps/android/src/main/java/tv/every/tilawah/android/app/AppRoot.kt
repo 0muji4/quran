@@ -1,5 +1,9 @@
 package tv.every.tilawah.android.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,17 +29,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import tv.every.tilawah.android.RecordingScreen
+import tv.every.tilawah.android.audio.AudioFocusCoordinator
+import tv.every.tilawah.android.audio.MediaPlayerPlayer
+import tv.every.tilawah.android.audio.MediaRecorderRecorder
+import tv.every.tilawah.android.audio.Player
+import tv.every.tilawah.android.audio.Recorder
 import tv.every.tilawah.android.backend.ApolloQuranBackend
 import tv.every.tilawah.android.backend.QuranBackend
 import tv.every.tilawah.android.designsystem.BrandTheme
 import tv.every.tilawah.android.features.library.LibraryScreen
 import tv.every.tilawah.android.features.library.LibraryViewModel
+import tv.every.tilawah.android.features.practice.PracticeScreen
+import tv.every.tilawah.android.features.practice.PracticeViewModel
 import tv.every.tilawah.android.storage.DataStoreHistoryStore
 import tv.every.tilawah.android.storage.HistoryStore
+import tv.every.tilawah.android.storage.InMemoryHistoryStore
 import tv.every.tilawah.android.storage.LastPracticed
 import tv.every.tilawah.android.telemetry.NoOpTelemetry
 import tv.every.tilawah.android.telemetry.Telemetry
@@ -46,10 +58,6 @@ import tv.every.tilawah.android.telemetry.TelemetryEvent
  * and presents the three-tab Tilawah experience (Library / Practice /
  * History). Mirrors iOS's `AppRoot.swift` (`TabView` + per-tab
  * `NavigationStack`).
- *
- * Library + History tabs ship as placeholders here; PR 9 onward
- * replace them with the real screens. Practice continues to host the
- * legacy `RecordingScreen` until PR 17 swaps it for `PracticeScreen`.
  */
 enum class TopLevelTab(val title: String) {
     Library("Library"),
@@ -57,14 +65,24 @@ enum class TopLevelTab(val title: String) {
     History("History"),
 }
 
+/** Defaults to Al-Fatihah ayah 1 when nothing else has been selected. */
+private val DefaultPractice = LastPracticed(
+    surahId = "1",
+    ayahNumber = 1,
+    surahNameEn = "Al-Fatihah",
+    surahNameAr = "الفاتحة",
+    ayahCount = 7,
+    practicedAt = java.time.Instant.EPOCH,
+)
+
 @Composable
 fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
     backend: QuranBackend = remember { ApolloQuranBackend() },
-    historyStore: HistoryStore? = defaultHistoryStore(),
+    historyStore: HistoryStore = defaultHistoryStore(),
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
-    var pendingPractice by remember { mutableStateOf<LastPracticed?>(null) }
+    var practiceTarget by remember { mutableStateOf(DefaultPractice) }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == TopLevelTab.Library) {
@@ -105,11 +123,18 @@ fun AppRoot(
                     telemetry = telemetry,
                     historyStore = historyStore,
                     onResume = { entry ->
-                        pendingPractice = entry
+                        practiceTarget = entry
                         selectedTab = TopLevelTab.Practice
                     },
                 )
-                TopLevelTab.Practice -> PracticeTabHost(pendingPractice)
+                TopLevelTab.Practice -> PracticeTabHost(
+                    target = practiceTarget,
+                    backend = backend,
+                    telemetry = telemetry,
+                    historyStore = historyStore,
+                    onNavigateBack = { selectedTab = TopLevelTab.Library },
+                    onResultRequested = { /* PR 18 wires the Result screen */ },
+                )
                 TopLevelTab.History -> HistoryTabPlaceholder()
             }
         }
@@ -120,7 +145,7 @@ fun AppRoot(
 private fun LibraryTabHost(
     backend: QuranBackend,
     telemetry: Telemetry,
-    historyStore: HistoryStore?,
+    historyStore: HistoryStore,
     onResume: (LastPracticed) -> Unit,
 ) {
     val viewModel: LibraryViewModel = viewModel(
@@ -130,35 +155,81 @@ private fun LibraryTabHost(
     )
     LibraryScreen(
         viewModel = viewModel,
-        onSurahOpened = { /* deep-link nav lands when PR 17 retires the MVP */ },
+        onSurahOpened = { /* surah-detail navigation lands when Result/Practice graph stabilises */ },
         onResume = onResume,
     )
 }
 
 @Composable
-@Suppress("UNUSED_PARAMETER")
-private fun PracticeTabHost(pending: LastPracticed?) {
-    // Legacy MVP host until PR 17 retires it in favour of PracticeScreen.
-    // The pending entry is captured for the deep-link wiring that arrives
-    // alongside the new PracticeScreen; the MVP picker ignores it.
-    RecordingScreen()
+private fun PracticeTabHost(
+    target: LastPracticed,
+    backend: QuranBackend,
+    telemetry: Telemetry,
+    historyStore: HistoryStore,
+    onNavigateBack: () -> Unit,
+    onResultRequested: (jobId: String) -> Unit,
+) {
+    val context = LocalContext.current
+    val focus = remember(context) {
+        AudioFocusCoordinator(
+            context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager,
+        )
+    }
+    val recorder: Recorder = remember(context, focus) { MediaRecorderRecorder(context, focus) }
+    val player: Player = remember(focus) { MediaPlayerPlayer(focus) }
+
+    val viewModel: PracticeViewModel = viewModel(
+        key = "practice-${target.surahId}-${target.ayahNumber}",
+        factory = viewModelFactory {
+            initializer {
+                PracticeViewModel(
+                    backend = backend,
+                    recorder = recorder,
+                    player = player,
+                    historyStore = historyStore,
+                    telemetry = telemetry,
+                    surahId = target.surahId,
+                    ayahNumber = target.ayahNumber,
+                )
+            }
+        },
+    )
+
+    var hasMicPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO,
+            ) == PackageManager.PERMISSION_GRANTED,
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted -> hasMicPermission = granted }
+
+    PracticeScreen(
+        viewModel = viewModel,
+        onNavigateBack = onNavigateBack,
+        onResultRequested = onResultRequested,
+        onRequestPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        hasMicPermission = hasMicPermission,
+    )
 }
 
 @Composable
-private fun defaultHistoryStore(): HistoryStore? {
+private fun defaultHistoryStore(): HistoryStore {
     val context = LocalContext.current
     return remember(context) {
-        DataStoreHistoryStore(context.applicationContext.historyDataStore)
+        try {
+            DataStoreHistoryStore(context.applicationContext.historyDataStore)
+        } catch (_: Throwable) {
+            InMemoryHistoryStore()
+        }
     }
 }
 
 @Composable
 private fun HistoryTabPlaceholder() {
-    PlaceholderCenter(label = "History — wired in PR 22")
-}
-
-@Composable
-private fun PlaceholderCenter(label: String) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -168,7 +239,7 @@ private fun PlaceholderCenter(label: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = label,
+                text = "History — wired in PR 22",
                 style = BrandTheme.typography.sectionTitle,
                 color = BrandTheme.colors.textPrimary,
             )

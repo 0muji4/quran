@@ -67,4 +67,8 @@
     <string name="practice_analysing_calculating">Calculating</string>
     <string name="practice_error_replay">Replay</string>
     <string name="practice_error_record_again">Record again</string>
+    <string name="practice_default_title">Practice</string>
+    <string name="practice_done_title">Recitation scored</string>
+    <string name="practice_done_view_result">View result</string>
+    <string name="practice_done_record_again">Record again</string>
 </resources>

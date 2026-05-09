@@ -153,6 +153,16 @@ class PracticeViewModel(
         }
     }
 
+    fun resetIdle() {
+        recorder.cancel()
+        _state.value = PracticeState.Idle
+    }
+
+    /** Convenience used by PracticeScreen's Replay action. */
+    fun viewModelScopeLaunchUploadAndScore(recording: RecordingResult) {
+        viewModelScope.launch { uploadAndScore(recording) }
+    }
+
     fun stopRecording() {
         viewModelScope.launch {
             recorderObserverJob?.cancel()
