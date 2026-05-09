@@ -85,12 +85,12 @@ Instrumented tests are intentionally not in the standard gate (no emulator depen
 
 ## Telemetry
 
-Production wires `TraceTelemetry` (Logcat tag `com.quran.android`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto / Studio Profiler). The cross-platform event taxonomy lives at [`docs/telemetry.md`](../../docs/telemetry.md).
+Production wires `TraceTelemetry` (Logcat tag `com.tilawah.android`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto / Studio Profiler). The cross-platform event taxonomy lives at [`docs/telemetry.md`](../../docs/telemetry.md).
 
 Inspecting events:
 
 ```bash
-adb logcat | rg com.quran.android
+adb logcat | rg com.tilawah.android
 ```
 
 ## Localization (i18n)
@@ -108,8 +108,8 @@ adb logcat | rg com.quran.android
 7. **Try again** returns to Practice for the same ayah; **Continue** advances to ayah+1.
 8. **History tab**: attempt appears at the top, StatsGrid updates (week / average / best / streak).
 9. Force-stop the app, relaunch, repeat step 8 — DataStore persists across process death.
-10. **Cross-platform JSON parity**: export DataStore prefs via `adb shell run-as com.quran.android cat files/datastore/tilawah-history.preferences_pb` and confirm the `tilawah:*` keys + ISO 8601 dates + `COMPLETED|FAILED` status round-trip with the web `localStorage` and iOS `UserDefaults` shapes.
-11. **Telemetry parity**: `adb logcat | rg com.quran.android` while exercising the funnel; assert event names match `docs/telemetry.md`.
+10. **Cross-platform JSON parity**: export DataStore prefs via `adb shell run-as com.tilawah.android cat files/datastore/tilawah-history.preferences_pb` and confirm the `tilawah:*` keys + ISO 8601 dates + `COMPLETED|FAILED` status round-trip with the web `localStorage` and iOS `UserDefaults` shapes.
+11. **Telemetry parity**: `adb logcat | rg com.tilawah.android` while exercising the funnel; assert event names match `docs/telemetry.md`.
 12. **Error path**: stop the BFF; assert `AppError.network` surfaces with localised user copy; retry recovers.
 13. **TalkBack on**: record button announces state, score dial reads "84 percent, mashallah", word tiles announce match / substituted / missing / extra.
 14. **ar locale** (Settings → System → Languages → add Arabic, move to top): RTL flips on the Arabic ayah text only; English-mirror copy in `values-ar` remains intelligible until a translator engages.

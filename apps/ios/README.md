@@ -99,5 +99,5 @@ layer with `xcconfig` is added (see ADR 0005's notes).
 ## Telemetry
 
 Production builds wire `OSLogTelemetry` (subsystem
-`com.quran.ios`). The cross-platform event taxonomy lives at
+`com.tilawah.ios`). The cross-platform event taxonomy lives at
 [`docs/telemetry.md`](../../docs/telemetry.md).
