@@ -1,4 +1,4 @@
-package com.quranproject.android
+package tv.every.tilawah.android
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -40,11 +40,11 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.quranproject.android.network.model.AyahRecord
-import com.quranproject.android.network.model.ScoringResult
-import com.quranproject.android.network.model.ScoringStatus
-import com.quranproject.android.network.model.SurahSummary
-import com.quranproject.android.util.summarizeSurah
+import tv.every.tilawah.android.network.model.AyahRecord
+import tv.every.tilawah.android.network.model.ScoringResult
+import tv.every.tilawah.android.network.model.ScoringStatus
+import tv.every.tilawah.android.network.model.SurahSummary
+import tv.every.tilawah.android.util.summarizeSurah
 import java.io.File
 
 @Composable

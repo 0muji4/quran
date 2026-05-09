@@ -5,19 +5,22 @@ plugins {
 }
 
 android {
-    namespace = "com.quranproject.android"
+    namespace = "tv.every.tilawah.android"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.quranproject.android"
-        minSdk = 24
+        applicationId = "tv.every.tilawah.android"
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        // 10.0.2.2 is the Android emulator's alias for the host machine's
+        // localhost; physical devices override via the BFF_BASE_URL gradle
+        // property or env var.
         val bffBaseUrl =
             (project.findProperty("BFF_BASE_URL") as String?)
                 ?: System.getenv("BFF_BASE_URL")
-                ?: "http://localhost:4000"
+                ?: "http://10.0.2.2:4000"
         buildConfigField("String", "BFF_BASE_URL", "\"$bffBaseUrl\"")
     }
 

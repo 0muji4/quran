@@ -1,4 +1,4 @@
-package com.quranproject.android.network.model
+package tv.every.tilawah.android.network.model
 
 import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
