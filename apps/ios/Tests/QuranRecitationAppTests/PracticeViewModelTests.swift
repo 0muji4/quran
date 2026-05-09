@@ -57,22 +57,52 @@ final class PracticeViewModelTests: XCTestCase {
     XCTAssertFalse(telemetry.records.isEmpty)
   }
 
+  func test_loadReference_setsUnavailableOnError() async {
+    let referenceClient = MockReferenceAudioClient(
+      result: .failure(.referenceUnavailable(surahId: "1", ayah: 1))
+    )
+    let viewModel = makeViewModel(referenceClient: referenceClient)
+
+    await viewModel.loadReference()
+
+    XCTAssertEqual(viewModel.teacherState, .unavailable)
+  }
+
   // MARK: - Helpers
 
   private func makeViewModel(
     surahId: String = "1",
     ayahNumber: Int = 1,
     backend: MockBackend = MockBackend(),
+    referenceClient: ReferenceAudioClient = MockReferenceAudioClient(result: .success(
+      ReferenceAudio(url: URL(string: "https://example.invalid/ref.mp3")!, expiresAt: nil)
+    )),
     telemetry: Telemetry = NoOpTelemetry()
   ) -> PracticeViewModel {
     PracticeViewModel(
       surahId: surahId,
       ayahNumber: ayahNumber,
       backend: backend,
+      referenceClient: referenceClient,
       recorder: AudioRecorder(),
       player: AudioPlayer(),
       historyStore: InMemoryHistoryStore(),
       telemetry: telemetry
     )
+  }
+}
+
+final class MockReferenceAudioClient: ReferenceAudioClient {
+  var result: Result<ReferenceAudio, AppError>
+
+  init(result: Result<ReferenceAudio, AppError>) {
+    self.result = result
+  }
+
+  func referenceAudio(surahId: String, ayahNumber: Int) async throws -> ReferenceAudio {
+    switch result {
+    case .success(let value): return value
+    case .failure(let error): throw error
+    }
   }
 }
