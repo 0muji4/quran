@@ -17,6 +17,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:visual": "playwright test e2e/tests/visual/",
+    "test:e2e:visual:update": "playwright test e2e/tests/visual/ --update-snapshots",
     "build": "pnpm -r --if-present build",
     "gen:quran-seed": "tsx scripts/generate-quran-seed.ts"
   },
