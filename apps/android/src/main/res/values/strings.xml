@@ -91,4 +91,8 @@
     <string name="history_eyebrow">RECENT ATTEMPTS</string>
     <string name="history_title">Your history</string>
     <string name="history_empty">No attempts yet. Record an ayah to see it here.</string>
+    <string name="history_stats_week">This week</string>
+    <string name="history_stats_average">Average</string>
+    <string name="history_stats_best">Best</string>
+    <string name="history_stats_streak">Streak</string>
 </resources>
