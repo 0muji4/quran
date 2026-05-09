@@ -1,0 +1,26 @@
+mutation CreateScoringJob($input: CreateScoringJobInput!) {
+  createScoringJob(input: $input) {
+    jobId
+    status
+    score
+    verdict
+    segments {
+      label
+      score
+    }
+    feedback {
+      accuracy
+      fluency
+      completeness
+      overall
+      referenceAudioUrl
+      transcript
+      wer
+      wordAlignments {
+        refWord
+        hypWord
+        op
+      }
+    }
+  }
+}

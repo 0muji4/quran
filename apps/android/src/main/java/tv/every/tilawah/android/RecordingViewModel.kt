@@ -7,33 +7,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.JsonObject
 import tv.every.tilawah.android.app.AppError
+import tv.every.tilawah.android.backend.ApolloQuranBackend
+import tv.every.tilawah.android.backend.AyahDetail
 import tv.every.tilawah.android.backend.QuranBackend
-import tv.every.tilawah.android.backend.RetrofitQuranBackend
-import tv.every.tilawah.android.network.model.AyahRecord
-import tv.every.tilawah.android.network.model.ScoringResult
-import tv.every.tilawah.android.network.model.ScoringStatus
-import tv.every.tilawah.android.network.model.SignedUploadResponse
-import tv.every.tilawah.android.network.model.SurahSummary
-import tv.every.tilawah.android.util.describeUploadTarget
+import tv.every.tilawah.android.backend.ScoringResultPayload
+import tv.every.tilawah.android.backend.ScoringStatus
+import tv.every.tilawah.android.backend.SignedUploadPayload
+import tv.every.tilawah.android.backend.SurahSummary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
 class RecordingViewModel(application: Application) : AndroidViewModel(application) {
-    private val backend: QuranBackend = RetrofitQuranBackend()
+    private val backend: QuranBackend = ApolloQuranBackend()
     private val recorder = AudioRecorder(application.applicationContext)
 
     var surahs by mutableStateOf<List<SurahSummary>>(emptyList())
         private set
-    var ayahs by mutableStateOf<List<AyahRecord>>(emptyList())
+    var ayahs by mutableStateOf<List<AyahDetail>>(emptyList())
         private set
     var selectedSurahId by mutableStateOf<String?>(null)
         private set
     var selectedAyahNumber by mutableStateOf<Int?>(null)
         private set
-    var selectedAyah by mutableStateOf<AyahRecord?>(null)
+    var selectedAyah by mutableStateOf<AyahDetail?>(null)
         private set
     var isRecording by mutableStateOf(false)
         private set
@@ -47,7 +45,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         private set
     var uploadDestination by mutableStateOf<String?>(null)
         private set
-    var scoringResult by mutableStateOf<ScoringResult?>(null)
+    var scoringResult by mutableStateOf<ScoringResultPayload?>(null)
         private set
     var polling by mutableStateOf(false)
         private set
@@ -180,11 +178,6 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
                     contentType = "audio/m4a",
                 )
 
-                val uploadKey = signedUpload.uploadKey
-                    ?: extractUploadKey(signedUpload.fields)
-                    ?: throw AppError.BackendUnavailable("requestSignedUploadUrl")
-                val sessionId = signedUpload.sessionId
-
                 uploadDestination = describeUploadTarget(signedUpload)
                 statusMessage = "Uploading audio..."
                 backend.uploadAudio(recording, signedUpload.url, "audio/m4a")
@@ -192,10 +185,10 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
                 statusText = "Scoring"
                 statusMessage = "Creating scoring job..."
                 val job = backend.createScoringJob(
-                    uploadKey = uploadKey,
+                    uploadKey = signedUpload.uploadKey,
                     surahId = selectedSurahId ?: "",
                     ayahNumber = selectedAyahNumber ?: 1,
-                    sessionId = sessionId,
+                    sessionId = null,
                 )
                 scoringResult = job
                 statusMessage = statusLabel(job)
@@ -221,8 +214,8 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
             }
             scoringResult = job
             statusMessage = statusLabel(job)
-            if (job.status == ScoringStatus.COMPLETED || job.status == ScoringStatus.FAILED) {
-                statusText = if (job.status == ScoringStatus.COMPLETED) "Completed" else "Failed"
+            if (job.status == ScoringStatus.Completed || job.status == ScoringStatus.Failed) {
+                statusText = if (job.status == ScoringStatus.Completed) "Completed" else "Failed"
                 polling = false
                 return
             }
@@ -232,17 +225,14 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         polling = false
     }
 
-    private fun extractUploadKey(fields: JsonObject?): String? {
-        return fields?.get("key")?.asString
-    }
+    private fun describeUploadTarget(upload: SignedUploadPayload): String =
+        "PUT ${upload.url} (expires ${upload.expiresAt})"
 
-    private fun statusLabel(job: ScoringResult): String {
-        return when (job.status) {
-            ScoringStatus.COMPLETED -> job.verdict ?: "Scoring complete"
-            ScoringStatus.FAILED -> job.verdict ?: "Scoring failed"
-            ScoringStatus.RUNNING -> "Scoring in progress..."
-            ScoringStatus.QUEUED -> "Job queued for scoring..."
-        }
+    private fun statusLabel(job: ScoringResultPayload): String = when (job.status) {
+        ScoringStatus.Completed -> job.verdict ?: "Scoring complete"
+        ScoringStatus.Failed -> job.verdict ?: "Scoring failed"
+        ScoringStatus.Running -> "Scoring in progress..."
+        ScoringStatus.Queued -> "Job queued for scoring..."
     }
 
     private fun clearJobState() {
