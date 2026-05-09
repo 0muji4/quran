@@ -61,4 +61,9 @@
     <string name="practice_reference_unavailable">Reference unavailable</string>
     <string name="practice_reference_unavailable_hint">You can still record on your own.</string>
     <string name="practice_reference_retry">Retry</string>
+    <string name="practice_recording_eyebrow">RECORD YOUR RECITATION</string>
+    <string name="practice_recording_start_a11y">Start recording</string>
+    <string name="practice_recording_stop_a11y">Stop recording</string>
+    <string name="practice_recording_in_progress">Recording…</string>
+    <string name="practice_recording_ready_hint">Tap the mic when you are ready.</string>
 </resources>
