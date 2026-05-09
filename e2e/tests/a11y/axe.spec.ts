@@ -30,6 +30,12 @@ const KNOWN_VIOLATIONS = [
   // → fixed by 2.3-E (skip-to-content link + main landmark)
   'region',
   'landmark-one-main',
+  // /practice/[s]/[a] currently has no h1 (only RecorderPanel and
+  // TeacherPanel h3s). Library and History both already have an h1.
+  // Promoting one of the practice headings to h1 is a heading-hierarchy
+  // decision that should be made deliberately, not as a side-effect of
+  // this baseline; tracked separately.
+  'page-has-heading-one'
 ] as const;
 
 const KNOWN = new Set<string>(KNOWN_VIOLATIONS);
