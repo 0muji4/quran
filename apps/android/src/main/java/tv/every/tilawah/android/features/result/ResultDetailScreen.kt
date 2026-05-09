@@ -107,7 +107,9 @@ private fun Loaded(
         modifier = Modifier.fillMaxWidth(),
     ) {
         ScoreHero(score = state.result.score, verdict = state.result.verdict)
-        // PR 19 -> MetricBars(state.result.feedback)
+        state.result.feedback?.let { feedback ->
+            MetricBars(feedback = feedback)
+        }
         // PR 20 -> WordComparisonGrid(state.result.feedback)
         // PR 21 -> ListenBackSection(state.result.feedback?.referenceAudioUrl, ...)
         PrimaryButton(
