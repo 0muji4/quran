@@ -44,4 +44,9 @@
     <string name="continue_eyebrow">CONTINUE YOUR PRACTICE</string>
     <string name="continue_title">%1$s, ayah %2$d</string>
     <string name="continue_subtitle">%1$d ayahs in this surah</string>
+
+    <!-- Practice tab -->
+    <string name="practice_back_a11y">Back to library</string>
+    <string name="practice_ayah_progress">Ayah %1$d of %2$d</string>
+    <string name="practice_idle_hint">Tap the record button when you are ready.</string>
 </resources>
