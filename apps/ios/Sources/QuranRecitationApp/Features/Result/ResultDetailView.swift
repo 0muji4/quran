@@ -70,12 +70,58 @@ struct ResultDetailView: View {
         werPercent: result.feedback?.wer.map { Int(($0 * 100).rounded()) }
       )
       .padding(.horizontal, Spacing.screenHorizontal)
+      ListenBackSection(
+        teacherDuration: result.feedback?.referenceAudioUrl != nil ? 0 : nil,
+        youDuration: nil,
+        teacherIsPlaying: false,
+        youIsPlaying: false,
+        onToggleTeacher: {},
+        onToggleYou: {}
+      )
+      .padding(.horizontal, Spacing.screenHorizontal)
+      actionButtons
+        .padding(.horizontal, Spacing.screenHorizontal)
+        .padding(.top, Spacing.md)
     case .failed(let error):
       Text(error.errorDescription ?? "")
         .font(Font.brand.body)
         .foregroundColor(Color.brand.textSecondary)
         .padding(.horizontal, Spacing.screenHorizontal)
     }
+  }
+
+  private var actionButtons: some View {
+    HStack(spacing: Spacing.md) {
+      Button {
+        viewModel.tryAgainTapped()
+        onClose()
+      } label: {
+        Text("result.action.tryAgain", bundle: .module)
+          .font(Font.brand.body.weight(.semibold))
+          .foregroundColor(Color.brand.textPrimary)
+          .padding(.vertical, Spacing.sm)
+          .padding(.horizontal, Spacing.lg)
+          .background(Color.brand.card)
+          .overlay(Capsule().strokeBorder(Color.brand.textSecondary.opacity(0.3)))
+          .clipShape(Capsule())
+      }
+      .buttonStyle(.plain)
+      Button {
+        viewModel.continueTapped()
+        onClose()
+      } label: {
+        HStack {
+          Text(continueLabel)
+          Image(systemName: "arrow.right")
+        }
+      }
+      .buttonStyle(.brandPrimary)
+      .frame(minWidth: 180)
+    }
+  }
+
+  private var continueLabel: LocalizedStringKey {
+    "result.action.continue \(viewModel.ayahNumber + 1)"
   }
 
   private func detailMessage(for score: Double) -> String {
