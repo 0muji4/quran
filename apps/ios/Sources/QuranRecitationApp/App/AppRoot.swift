@@ -43,7 +43,12 @@ struct AppRoot: View {
     NavigationStack {
       LibraryView(
         viewModel: LibraryViewModel(backend: backend, telemetry: telemetry),
-        historyStore: historyStore
+        historyStore: historyStore,
+        onResume: { _ in
+          // Cross-tab handoff. Per-ayah navigation lands in PR 15 once
+          // the Practice flow has a typed Route to push.
+          selectedTab = .practice
+        }
       )
     }
     .tabItem { Label("Library", systemImage: "books.vertical") }

@@ -35,3 +35,6 @@
 "library.filter.mecca" = "Mecca";
 "library.filter.medina" = "Medina";
 "library.filter.short" = "Short";
+"library.continueEyebrow" = "Continue";
+"library.continueProgress" = "Ayah %d of %d • last practiced recently";
+"library.resumeAyah" = "Resume ayah %d";
