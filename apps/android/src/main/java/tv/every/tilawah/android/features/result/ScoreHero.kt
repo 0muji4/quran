@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -38,8 +40,14 @@ fun ScoreHero(
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
 
+    val percentText = score?.let { "%.0f%%".format(it * 100) } ?: "—"
+    val a11y = if (score != null) {
+        "Recitation score $percentText" + (verdict?.let { ", $it" } ?: "")
+    } else {
+        "Recitation score not available"
+    }
     Column(
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = a11y },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.md),
     ) {
@@ -49,7 +57,7 @@ fun ScoreHero(
         ) {
             ScoreArc(score = score, baseColor = colors.tile, scoreColor = scoreColor(score, colors))
             Text(
-                text = score?.let { "%.0f%%".format(it * 100) } ?: "—",
+                text = percentText,
                 style = typography.scoreDisplay,
                 color = colors.textPrimary,
             )
