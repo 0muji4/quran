@@ -44,8 +44,8 @@
   position: absolute;
   top: var(--space-5);
   right: var(--space-5);
-  width: 200px;
-  height: 200px;
+  width: clamp(120px, 40vw, 200px);
+  height: clamp(120px, 40vw, 200px);
   opacity: 0.15;
   pointer-events: none;
   color: var(--color-gold-soft);
@@ -497,5 +497,15 @@
     right: var(--space-4);
     bottom: var(--space-4);
     max-width: none;
+  }
+  .searchBox {
+    min-width: 0;
+    flex: 1 1 200px;
+  }
+  .searchInput {
+    font-size: 14px;
+  }
+  .filterPills {
+    gap: var(--space-1);
   }
 }
