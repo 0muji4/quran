@@ -69,7 +69,11 @@ jobs:
       - name: Run iOS tests (if present)
         run: |
           if [ -d Tests ]; then
-            xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" test
+            # `xcodebuild test` requires a concrete simulator destination — the
+            # `generic/platform=iOS Simulator` slug only works for `build`.
+            xcodebuild -scheme QuranRecitationApp \
+              -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
+              test
           else
             echo "No iOS tests directory; skipping tests."
           fi
