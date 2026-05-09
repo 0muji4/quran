@@ -30,6 +30,7 @@ fun HistoryScreen(
     modifier: Modifier = Modifier,
 ) {
     val attempts by viewModel.filteredAttempts.collectAsStateWithLifecycle()
+    val allAttempts by viewModel.attempts.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val options by viewModel.filterOptions.collectAsStateWithLifecycle()
 
@@ -41,6 +42,9 @@ fun HistoryScreen(
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
         Header()
+        Box(modifier = Modifier.padding(horizontal = spacing.screenHorizontal)) {
+            StatsGrid(attempts = allAttempts)
+        }
         ChipFilter(
             items = options.map { it.toFilterChip() },
             selection = filter,
