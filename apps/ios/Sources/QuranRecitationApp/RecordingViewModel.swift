@@ -13,8 +13,19 @@ final class RecordingViewModel: ObservableObject {
   @Published var errorMessage = ""
   @Published var uploadDestinationDescription: String?
 
-  private let recorder = AudioRecorder()
-  private let apiClient = QuranAPIClient()
+  private let recorder: AudioRecorder
+  private let backend: QuranBackend
+  private let telemetry: Telemetry
+
+  init(
+    recorder: AudioRecorder = AudioRecorder(),
+    backend: QuranBackend = ApolloBackend(),
+    telemetry: Telemetry = NoOpTelemetry()
+  ) {
+    self.recorder = recorder
+    self.backend = backend
+    self.telemetry = telemetry
+  }
 
   var statusColor: Color {
     switch statusText {
@@ -56,24 +67,27 @@ final class RecordingViewModel: ObservableObject {
 
     do {
       let recording = try recorder.stopRecording()
-      let signedUpload = try await apiClient.getSignedUploadUrl(
+      let signedUpload = try await backend.requestSignedUploadUrl(
         filename: recording.lastPathComponent,
         contentType: "audio/m4a"
       )
-      let destinationDescription = "PUT \(signedUpload.url) (expires \(signedUpload.expiresAt))"
-      uploadDestinationDescription = destinationDescription
-      print("Upload destination: \(destinationDescription)")
-      try await apiClient.uploadAudio(fileURL: recording, to: signedUpload.url)
+      uploadDestinationDescription = "PUT \(signedUpload.url) (expires \(signedUpload.expiresAt))"
+      try await backend.uploadAudio(fileURL: recording, to: signedUpload.url)
 
       statusText = "Scoring"
-      let job = try await apiClient.createScoringJob(
+      let job = try await backend.createScoringJob(
         uploadKey: signedUpload.uploadKey,
-        surahId: surahId
+        surahId: surahId,
+        ayahNumber: nil
       )
 
-      let finalResult = try await apiClient.pollScoringResult(jobId: job.jobId)
+      let finalResult = try await backend.pollScoringResult(jobId: job.jobId)
       scoringResult = ScoringResultViewData(result: finalResult)
       statusText = finalResult.status == .completed ? "Completed" : "Failed"
+    } catch let error as AppError {
+      statusText = "Failed"
+      telemetry.error(error, context: ["screen": "legacy_recorder"])
+      presentError(error)
     } catch {
       statusText = "Failed"
       presentError(error)

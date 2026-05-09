@@ -2,7 +2,10 @@ import SwiftUI
 
 @main
 struct QuranRecitationApp: App {
-  @StateObject private var viewModel = RecordingViewModel()
+  @StateObject private var viewModel = RecordingViewModel(
+    backend: ApolloBackend(),
+    telemetry: OSLogTelemetry()
+  )
 
   var body: some Scene {
     WindowGroup {
