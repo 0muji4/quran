@@ -1,4 +1,4 @@
-package com.quranproject.android
+package tv.every.tilawah.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,7 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.quranproject.android.ui.theme.QuranProjectTheme
+import tv.every.tilawah.android.ui.theme.QuranProjectTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

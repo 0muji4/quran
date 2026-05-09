@@ -1,4 +1,4 @@
-package com.quranproject.android.network
+package tv.every.tilawah.android.network
 
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit

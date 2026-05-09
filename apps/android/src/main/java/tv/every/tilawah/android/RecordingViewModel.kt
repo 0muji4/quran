@@ -1,4 +1,4 @@
-package com.quranproject.android
+package tv.every.tilawah.android
 
 import android.app.Application
 import androidx.compose.runtime.getValue
@@ -8,15 +8,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonObject
-import com.quranproject.android.network.ApiClient
-import com.quranproject.android.network.awaitBody
-import com.quranproject.android.network.model.AyahRecord
-import com.quranproject.android.network.model.CreateScoringJobRequest
-import com.quranproject.android.network.model.ScoringResult
-import com.quranproject.android.network.model.ScoringStatus
-import com.quranproject.android.network.model.SignedUploadRequest
-import com.quranproject.android.network.model.SurahSummary
-import com.quranproject.android.util.describeUploadTarget
+import tv.every.tilawah.android.network.ApiClient
+import tv.every.tilawah.android.network.awaitBody
+import tv.every.tilawah.android.network.model.AyahRecord
+import tv.every.tilawah.android.network.model.CreateScoringJobRequest
+import tv.every.tilawah.android.network.model.ScoringResult
+import tv.every.tilawah.android.network.model.ScoringStatus
+import tv.every.tilawah.android.network.model.SignedUploadRequest
+import tv.every.tilawah.android.network.model.SurahSummary
+import tv.every.tilawah.android.util.describeUploadTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType

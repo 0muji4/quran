@@ -1,6 +1,6 @@
-package com.quranproject.android.network
+package tv.every.tilawah.android.network
 
-import com.quranproject.android.BuildConfig
+import tv.every.tilawah.android.BuildConfig
 
 object ApiConfig {
     val baseUrl: String by lazy {
