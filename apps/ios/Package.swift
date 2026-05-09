@@ -22,6 +22,11 @@ let package = Package(
       resources: [
         .process("Resources")
       ]
+    ),
+    .testTarget(
+      name: "QuranRecitationAppTests",
+      dependencies: ["QuranRecitationApp"],
+      path: "Tests/QuranRecitationAppTests"
     )
   ]
 )
