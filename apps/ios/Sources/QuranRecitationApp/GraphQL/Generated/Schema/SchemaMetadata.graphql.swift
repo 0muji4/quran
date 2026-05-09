@@ -28,11 +28,13 @@ public extension QuranSchema {
     public static let configuration: any ApolloAPI.SchemaConfiguration.Type = SchemaConfiguration.self
 
     private static let objectTypeMap: [String: ApolloAPI.Object] = [
+      "Ayah": QuranSchema.Objects.Ayah,
       "Mutation": QuranSchema.Objects.Mutation,
       "Query": QuranSchema.Objects.Query,
       "ScoreSegment": QuranSchema.Objects.ScoreSegment,
       "ScoringResult": QuranSchema.Objects.ScoringResult,
-      "SignedUploadUrl": QuranSchema.Objects.SignedUploadUrl
+      "SignedUploadUrl": QuranSchema.Objects.SignedUploadUrl,
+      "Surah": QuranSchema.Objects.Surah
     ]
 
     public static func objectType(forTypename typename: String) -> ApolloAPI.Object? {
