@@ -8,6 +8,7 @@ import { MicIcon, StopIcon } from '../components/icons/MediaIcons';
 import { AnalysingCard } from './AnalysingCard';
 import { RecorderBars } from './RecorderBars';
 import { ScoringErrorCard } from './ScoringErrorCard';
+import { recorderStatusMessage } from './recorderStatus';
 import {
   getBestScore,
   recordAttempt,
@@ -250,8 +251,20 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   if (tooShortReason) errorReasons.push(tooShortReason);
   if (stage === 'error' && job.error) errorReasons.push(job.error);
 
+  const liveStatus = recorderStatusMessage({
+    recordingError,
+    isScoringError,
+    errorReasons,
+    isStuck,
+    isAnalysing,
+    isRecording
+  });
+
   return (
     <div className={panelClass}>
+      <div role="status" aria-live="polite" className="sr-only">
+        {liveStatus}
+      </div>
       <div className={styles.panelHead}>
         <div className={styles.panelTitleRow}>
           <span className={titleIconClass}>
