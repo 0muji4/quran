@@ -112,6 +112,14 @@ test.describe('visual regression — desktop 1280x720', () => {
       );
     }, SEEDED_ATTEMPTS);
 
+    // History rows render a relative-time fragment ("Just now", "5h
+    // ago", "2d ago", ...) computed from `Date.now()` against each
+    // seeded createdAt. Without freezing the clock the rendered text
+    // depends on when the test runs, which silently drifts the
+    // baseline. Pin the clock to a moment a few hours after the
+    // latest seeded attempt so the rendered offsets are stable.
+    await page.clock.setFixedTime(new Date('2026-05-08T15:00:00.000Z'));
+
     await page.goto('/history');
     await page.getByRole('heading', { name: /recent attempts/i }).waitFor();
     await stableSnapshot(page);
