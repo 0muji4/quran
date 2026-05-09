@@ -33,4 +33,10 @@
     <string name="error_scoring_timeout_recovery">The scoring service is busy. Try again in a moment.</string>
     <string name="error_storage_unavailable_title">Storage unavailable</string>
     <string name="error_storage_unavailable_recovery">Your practice history could not be saved. Free up space and try again.</string>
+
+    <!-- Library tab -->
+    <string name="library_eyebrow">Choose a surah to recite</string>
+    <string name="library_title">Surah library</string>
+    <string name="library_empty">No surahs available yet.</string>
+    <string name="library_retry">Try again</string>
 </resources>
