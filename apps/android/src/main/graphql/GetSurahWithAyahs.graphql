@@ -1,0 +1,13 @@
+query GetSurahWithAyahs($id: ID!) {
+  surah(id: $id) {
+    id
+    ayahs {
+      id
+      surahId
+      ayahNumber
+      textAr
+      textEn
+      transliteration
+    }
+  }
+}
