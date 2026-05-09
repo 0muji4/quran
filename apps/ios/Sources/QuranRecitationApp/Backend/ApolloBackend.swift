@@ -90,6 +90,18 @@ final class ApolloBackend: QuranBackend {
     return result.surahs.map { SurahSummary(from: $0) }
   }
 
+  func surah(id: String) async throws -> SurahSummary? {
+    let query = GetSurahQuery(id: id)
+    let result = try await fetch(query: query, operation: "surah")
+    return result.surah.map { SurahSummary(from: $0) }
+  }
+
+  func ayah(surahId: String, ayahNumber: Int) async throws -> AyahDetail? {
+    let query = GetAyahQuery(surahId: surahId, ayahNumber: ayahNumber)
+    let result = try await fetch(query: query, operation: "ayah")
+    return result.ayah.map { AyahDetail(from: $0) }
+  }
+
   // MARK: - Apollo bridges
 
   private func perform<Mutation: GraphQLMutation>(
