@@ -60,22 +60,14 @@ struct AppRoot: View {
   }
 
   private var practiceTab: some View {
-    NavigationStack {
-      PracticeView(
-        viewModel: PracticeViewModel(
-          surahId: practiceContext.surahId,
-          ayahNumber: practiceContext.ayahNumber,
-          backend: backend,
-          referenceClient: referenceClient,
-          recorder: AudioRecorder(),
-          player: AudioPlayer(),
-          historyStore: historyStore,
-          telemetry: telemetry
-        ),
-        onClose: { selectedTab = .library }
-      )
-      .id("\(practiceContext.surahId):\(practiceContext.ayahNumber)")
-    }
+    PracticeNavigationStack(
+      practiceContext: $practiceContext,
+      backend: backend,
+      referenceClient: referenceClient,
+      historyStore: historyStore,
+      telemetry: telemetry,
+      onCloseToLibrary: { selectedTab = .library }
+    )
     .tabItem { Label("Practice", systemImage: "mic") }
     .tag(AppTab.practice)
   }
@@ -91,11 +83,58 @@ struct AppRoot: View {
 }
 
 /// Lightweight value the Library Continue card writes into to redirect
-/// Practice. PR 21's "Continue to ayah N+1" action will mutate the same
+/// Practice. PR 21's "Continue to ayah N+1" action mutates the same
 /// state from the Result screen.
 private struct PracticeContext: Equatable {
   var surahId: String
   var ayahNumber: Int
+}
+
+/// Hosts the Practice `NavigationStack` and the typed `PracticeRoute`
+/// destinations (`.result(...)` here, future ones layer on). Extracted
+/// from `AppRoot` so the routing graph is readable in one place.
+private struct PracticeNavigationStack: View {
+  @Binding var practiceContext: PracticeContext
+  let backend: QuranBackend
+  let referenceClient: ReferenceAudioClient
+  let historyStore: HistoryStore
+  let telemetry: Telemetry
+  let onCloseToLibrary: () -> Void
+  @State private var path: [PracticeRoute] = []
+
+  var body: some View {
+    NavigationStack(path: $path) {
+      PracticeView(
+        viewModel: PracticeViewModel(
+          surahId: practiceContext.surahId,
+          ayahNumber: practiceContext.ayahNumber,
+          backend: backend,
+          referenceClient: referenceClient,
+          recorder: AudioRecorder(),
+          player: AudioPlayer(),
+          historyStore: historyStore,
+          telemetry: telemetry
+        ),
+        onClose: onCloseToLibrary
+      )
+      .id("\(practiceContext.surahId):\(practiceContext.ayahNumber)")
+      .navigationDestination(for: PracticeRoute.self) { route in
+        switch route {
+        case let .result(jobId, surahId, ayahNumber, _):
+          ResultDetailView(
+            viewModel: ResultDetailViewModel(
+              jobId: jobId,
+              surahId: surahId,
+              ayahNumber: ayahNumber,
+              backend: backend,
+              telemetry: telemetry
+            ),
+            onClose: { path.removeLast() }
+          )
+        }
+      }
+    }
+  }
 }
 
 private struct ComingSoonView: View {
