@@ -90,3 +90,6 @@
 "history.stats.bestUnknown" = "—";
 "history.stats.streak" = "Streak";
 "history.stats.days" = "days";
+
+/* Accessibility */
+"library.surah.a11yHint" = "Opens Practice for this surah";
