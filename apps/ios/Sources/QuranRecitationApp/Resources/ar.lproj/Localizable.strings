@@ -83,3 +83,11 @@
 "history.title" = "History";
 "history.filter.all" = "All";
 "history.empty" = "No attempts yet — record one to start your history.";
+"history.stats.thisWeek" = "This week";
+"history.stats.attempts" = "attempts";
+"history.stats.average" = "Average";
+"history.stats.outOf" = "of 100";
+"history.stats.best" = "Best";
+"history.stats.bestUnknown" = "—";
+"history.stats.streak" = "Streak";
+"history.stats.days" = "days";
