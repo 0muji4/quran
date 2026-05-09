@@ -25,7 +25,9 @@
   --color-ink-default: #3a322a;
   --color-ink-muted: #7b6e5c;
   --color-ink-on-dark: #efe4ce;
-  --color-ink-on-dark-mut: #b8a88c;
+  /* Bumped from #b8a88c (~3.5:1 on #14181c) to clear WCAG AA 4.5:1 on
+   * the recording / nav / continue dark surfaces. See Phase 2.3-D. */
+  --color-ink-on-dark-mut: #d4c4a4;
 
   /* Lines */
   --color-border: #e5dcc9;
