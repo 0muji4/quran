@@ -1,0 +1,26 @@
+query GetScoringJob($jobId: ID!) {
+  scoringJob(jobId: $jobId) {
+    jobId
+    status
+    score
+    verdict
+    segments {
+      label
+      score
+    }
+    feedback {
+      accuracy
+      fluency
+      completeness
+      overall
+      referenceAudioUrl
+      transcript
+      wer
+      wordAlignments {
+        refWord
+        hypWord
+        op
+      }
+    }
+  }
+}

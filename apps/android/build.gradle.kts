@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.apollographql.apollo")
     kotlin("plugin.serialization") version "2.0.21"
 }
 
@@ -50,6 +51,21 @@ android {
     }
 }
 
+apollo {
+    service("quran") {
+        // Schema sourced from the cross-platform contract; iOS uses the
+        // same file via apollo-ios-cli (see apps/ios/Makefile).
+        schemaFiles.from(rootProject.file("schemas/graphql/schema.graphql"))
+        srcDir("src/main/graphql")
+        packageName.set("tv.every.tilawah.android.graphql")
+        // The schema declares scalar JSONObject + DateTime; map them to
+        // safe Kotlin types instead of letting codegen guess.
+        mapScalarToKotlinAny("JSONObject")
+        mapScalarToKotlinString("DateTime")
+        generateOptionalOperationVariables.set(false)
+    }
+}
+
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.core:core-ktx:1.13.1")
@@ -65,8 +81,7 @@ dependencies {
     implementation("androidx.tracing:tracing-ktx:1.2.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.apollographql.apollo:apollo-runtime:4.0.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 

@@ -1,0 +1,6 @@
+mutation GetSignedUploadUrl($input: SignedUploadInput!) {
+  getSignedUploadUrl(input: $input) {
+    url
+    expiresAt
+  }
+}
