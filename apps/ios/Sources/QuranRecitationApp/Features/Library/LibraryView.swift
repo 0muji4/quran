@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Library tab — vertical list of surahs. Search bar, difficulty chips,
-/// and the Continue card are deliberately out of scope for this PR
-/// (PR 10 / PR 11). The page-level header layout matches
-/// `docs/design/iOS _ Surah library.png`.
+/// Library tab — vertical list of surahs with a search bar and
+/// difficulty chip filter. The Continue card lands in PR 11.
 struct LibraryView: View {
   @StateObject var viewModel: LibraryViewModel
   let historyStore: HistoryStore
@@ -17,12 +15,17 @@ struct LibraryView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
         header
+        chipFilter
         content
       }
-      .padding(.horizontal, Spacing.screenHorizontal)
       .padding(.vertical, Spacing.lg)
     }
     .background(Color.brand.surface.ignoresSafeArea())
+    .searchable(
+      text: $viewModel.query,
+      placement: .navigationBarDrawer(displayMode: .always),
+      prompt: Text("library.searchPlaceholder", bundle: .module)
+    )
     .task {
       if case .idle = viewModel.state {
         await viewModel.load()
@@ -32,14 +35,27 @@ struct LibraryView: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: Spacing.xs) {
-      Text("library.eyebrow")
+      Text("library.eyebrow", bundle: .module)
         .font(Font.brand.eyebrow)
         .foregroundColor(Color.brand.accent)
         .textCase(.uppercase)
-      Text("library.title")
+      Text("library.title", bundle: .module)
         .font(Font.brand.pageTitle)
         .foregroundColor(Color.brand.textPrimary)
     }
+    .padding(.horizontal, Spacing.screenHorizontal)
+  }
+
+  private var chipFilter: some View {
+    ChipFilter<LibraryViewModel.Filter>(
+      items: [
+        .init(.all, "library.filter.all"),
+        .init(.mecca, "library.filter.mecca"),
+        .init(.medina, "library.filter.medina"),
+        .init(.short, "library.filter.short")
+      ],
+      selection: $viewModel.filter
+    )
   }
 
   @ViewBuilder
@@ -49,22 +65,40 @@ struct LibraryView: View {
       ProgressView()
         .frame(maxWidth: .infinity)
         .padding(.top, Spacing.xxl)
-    case .loaded(let surahs):
-      LazyVStack(spacing: Spacing.sm) {
-        ForEach(Array(surahs.enumerated()), id: \.element.id) { index, surah in
-          SurahRow(
-            index: index + 1,
-            surah: surah,
-            bestScore: historyStore.bestScore(forSurah: surah.id).map { Int($0) }
-          )
-          .onTapGesture { viewModel.surahOpened(surah) }
+    case .loaded:
+      let visible = viewModel.filteredSurahs
+      if visible.isEmpty {
+        emptyState
+      } else {
+        LazyVStack(spacing: Spacing.sm) {
+          ForEach(Array(visible.enumerated()), id: \.element.id) { index, surah in
+            SurahRow(
+              index: index + 1,
+              surah: surah,
+              bestScore: historyStore.bestScore(forSurah: surah.id).map { Int($0) }
+            )
+            .onTapGesture { viewModel.surahOpened(surah) }
+          }
         }
+        .padding(.horizontal, Spacing.screenHorizontal)
       }
     case .failed(let error):
       ErrorState(error: error) {
         Task { await viewModel.load() }
       }
     }
+  }
+
+  private var emptyState: some View {
+    VStack(spacing: Spacing.sm) {
+      Image(systemName: "magnifyingglass")
+        .foregroundColor(Color.brand.textSecondary)
+      Text("library.empty", bundle: .module)
+        .font(Font.brand.body)
+        .foregroundColor(Color.brand.textSecondary)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.top, Spacing.xxl)
   }
 }
 
@@ -86,10 +120,15 @@ private struct ErrorState: View {
           .multilineTextAlignment(.center)
       }
       if error.isRetriable {
-        Button("library.retry", action: retry)
-          .buttonStyle(.brandPrimary)
+        Button {
+          retry()
+        } label: {
+          Text("library.retry", bundle: .module)
+        }
+        .buttonStyle(.brandPrimary)
       }
     }
     .padding(.top, Spacing.xxl)
+    .padding(.horizontal, Spacing.screenHorizontal)
   }
 }

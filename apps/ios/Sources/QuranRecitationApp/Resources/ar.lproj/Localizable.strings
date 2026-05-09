@@ -29,3 +29,9 @@
 "library.eyebrow" = "Your practice";
 "library.title" = "Choose a surah to recite";
 "library.retry" = "Retry";
+"library.searchPlaceholder" = "Search by surah name…";
+"library.empty" = "No surahs match your filters";
+"library.filter.all" = "All";
+"library.filter.mecca" = "Mecca";
+"library.filter.medina" = "Medina";
+"library.filter.short" = "Short";
