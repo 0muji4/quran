@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -21,54 +23,87 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import tv.every.tilawah.android.R
 import tv.every.tilawah.android.designsystem.BrandTheme
+import tv.every.tilawah.android.designsystem.components.PrimaryButton
 
 /**
- * Practice tab — top half scaffold (back button + progress dots +
- * AyahCard). Recording / Teacher reference / Analysing / Result
- * panels arrive in PRs 13–16. Mirrors
- * `apps/ios/.../Features/Practice/PracticeView.swift`.
+ * Practice tab — composes header, AyahCard, TeacherReferencePanel,
+ * and the state-driven panel (Recording / Analysing / Error / Done)
+ * mirroring `apps/ios/.../Features/Practice/PracticeView.swift`.
+ *
+ * `onResultRequested` is invoked when the score is in; PR 18 wires
+ * the Result detail screen behind it.
  */
 @Composable
 fun PracticeScreen(
     viewModel: PracticeViewModel,
-    surahNameEn: String,
-    surahAyahCount: Int,
     onNavigateBack: () -> Unit,
+    onResultRequested: (jobId: String) -> Unit,
+    onRequestPermission: () -> Unit,
+    hasMicPermission: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val ayah by viewModel.ayah.collectAsStateWithLifecycle()
+    val surah by viewModel.surah.collectAsStateWithLifecycle()
+    val reference by viewModel.reference.collectAsStateWithLifecycle()
+    val playerState by viewModel.player.state.collectAsStateWithLifecycle()
     val spacing = BrandTheme.spacing
+    val scroll = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(scroll)
             .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
         Header(
-            surahNameEn = surahNameEn,
+            surahNameEn = surah?.nameEn.orEmpty(),
             currentAyah = ayah?.ayahNumber,
-            ayahCount = surahAyahCount,
+            ayahCount = surah?.ayahCount ?: 0,
             onNavigateBack = onNavigateBack,
         )
-        ProgressDots(currentAyah = ayah?.ayahNumber, ayahCount = surahAyahCount)
+        ProgressDots(currentAyah = ayah?.ayahNumber, ayahCount = surah?.ayahCount ?: 0)
         ayah?.let { AyahCard(it) }
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = when (state) {
-                    PracticeState.Idle -> stringResource(R.string.practice_idle_hint)
-                    else -> ""
+
+        TeacherReferencePanel(
+            state = when (val r = reference) {
+                is TeacherReferenceState.Ready -> TeacherReferenceState.Ready(playerState)
+                else -> r
+            },
+            onPlay = viewModel::playReference,
+            onPause = viewModel::pauseReference,
+            onSetRate = viewModel::setReferenceRate,
+            onRetry = viewModel::retryReference,
+        )
+
+        when (val current = state) {
+            PracticeState.Idle, is PracticeState.Recording -> RecordingPanel(
+                state = current,
+                onStart = {
+                    if (hasMicPermission) viewModel.startRecording() else onRequestPermission()
                 },
-                style = BrandTheme.typography.caption,
-                color = BrandTheme.colors.textSecondary,
+                onStop = viewModel::stopRecording,
+            )
+            PracticeState.Uploading -> AnalysingPanel(step = AnalysingStep.Transcribing)
+            is PracticeState.Analysing -> AnalysingPanel(step = current.step)
+            is PracticeState.Done -> DonePanel(
+                score = current.score,
+                onViewResult = { onResultRequested(current.jobId) },
+                onRecordAgain = viewModel::resetIdle,
+            )
+            is PracticeState.Error -> PracticeErrorPanel(
+                error = current.error,
+                onReplay = {
+                    viewModel.lastRecording?.let(viewModel::viewModelScopeLaunchUploadAndScore)
+                        ?: viewModel.resetIdle()
+                },
+                onRecordAgain = viewModel::resetIdle,
             )
         }
     }
@@ -94,19 +129,21 @@ private fun Header(
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = surahNameEn,
+                text = surahNameEn.ifEmpty { stringResource(R.string.practice_default_title) },
                 style = BrandTheme.typography.sectionTitle,
                 color = BrandTheme.colors.textPrimary,
             )
-            Text(
-                text = stringResource(
-                    R.string.practice_ayah_progress,
-                    currentAyah ?: 1,
-                    ayahCount,
-                ),
-                style = BrandTheme.typography.caption,
-                color = BrandTheme.colors.textSecondary,
-            )
+            if (ayahCount > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.practice_ayah_progress,
+                        currentAyah ?: 1,
+                        ayahCount,
+                    ),
+                    style = BrandTheme.typography.caption,
+                    color = BrandTheme.colors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -129,6 +166,43 @@ private fun ProgressDots(currentAyah: Int?, ayahCount: Int) {
                     ),
             )
         }
+    }
+}
+
+@Composable
+private fun DonePanel(
+    score: Double?,
+    onViewResult: () -> Unit,
+    onRecordAgain: () -> Unit,
+) {
+    val colors = BrandTheme.colors
+    val typography = BrandTheme.typography
+    val spacing = BrandTheme.spacing
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.md),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.practice_done_title),
+            style = typography.sectionTitle.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.textPrimary,
+        )
+        score?.let { s ->
+            Text(
+                text = "%.0f%%".format(s * 100),
+                style = typography.scoreDisplay,
+                color = colors.success,
+            )
+        }
+        PrimaryButton(
+            label = stringResource(R.string.practice_done_view_result),
+            onClick = onViewResult,
+        )
+        PrimaryButton(
+            label = stringResource(R.string.practice_done_record_again),
+            onClick = onRecordAgain,
+        )
     }
 }
 
