@@ -48,7 +48,7 @@
   height: clamp(120px, 40vw, 200px);
   opacity: 0.15;
   pointer-events: none;
-  color: var(--color-gold-soft);
+  color: var(--color-gold-on-dark);
 }
 
 .continueBadge {
@@ -56,7 +56,7 @@
   align-items: center;
   gap: 6px;
   background: rgba(184, 137, 60, 0.18);
-  color: var(--color-gold-soft);
+  color: var(--color-gold-on-dark);
   border: 1px solid rgba(184, 137, 60, 0.4);
   padding: 4px 12px;
   border-radius: var(--radius-pill);
@@ -110,7 +110,7 @@
 
 .progressFill {
   height: 100%;
-  background: var(--color-gold);
+  background: var(--color-gold-surface);
   border-radius: var(--radius-pill);
   transition: width 0.3s ease;
 }
@@ -128,8 +128,12 @@
   justify-content: center;
   min-height: 44px;
   gap: var(--space-2);
-  background: var(--color-gold);
-  color: #fff;
+  background: var(--color-gold-surface);
+  /* Dark ink on gold passes WCAG AA at the current 14px / 600 weight
+   * (ratio ~6.4:1). White-on-gold sat at 3.14:1 and would only have
+   * passed if the text qualified as WCAG large (≥18.66px bold), which
+   * the brand button does not. See ADR 0003. */
+  color: var(--color-ink-strong);
   padding: 10px 18px;
   border-radius: var(--radius-pill);
   font-weight: 600;
@@ -138,7 +142,7 @@
 }
 
 .btnGold:hover {
-  background: var(--color-gold-soft);
+  background: var(--color-gold-on-dark);
 }
 
 .btnGhostDark {
@@ -360,7 +364,7 @@
   height: 44px;
   border-radius: var(--radius-pill);
   background: var(--color-tan-soft);
-  color: var(--color-gold-ink);
+  color: var(--color-gold-on-light);
   font-weight: 600;
   flex-shrink: 0;
   font-family: var(--font-serif);

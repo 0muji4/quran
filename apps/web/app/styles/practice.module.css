@@ -218,7 +218,7 @@
 
 .panelIconTan {
   background: var(--color-tan-soft);
-  color: var(--color-gold-ink);
+  color: var(--color-gold-on-light);
 }
 
 .panelIconRed {
@@ -335,7 +335,7 @@
 }
 
 .waveBarPlayed {
-  background: var(--color-gold);
+  background: var(--color-gold-surface);
 }
 
 .waveTime {
