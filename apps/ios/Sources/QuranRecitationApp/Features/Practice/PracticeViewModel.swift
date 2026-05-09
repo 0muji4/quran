@@ -184,16 +184,14 @@ final class PracticeViewModel: ObservableObject {
   }
 
   private func stopRecording() {
+    let durationMs = Int(recorder.duration * 1000)
     do {
-      _ = try recorder.stopRecording()
-      // PR 15 will upload the file, kick off scoring, and route the
-      // state to `.uploading` / `.analysing` / `.done`. For now we
-      // return to idle so this PR can ship without the e2e plumbing.
-      state = .idle
+      let recordingURL = try recorder.stopRecording()
       telemetry.event(
         TelemetryEvent.practiceRecordingStopped,
-        attributes: ["duration_ms": String(Int(recorder.duration * 1000))]
+        attributes: ["duration_ms": String(durationMs)]
       )
+      Task { await processRecording(at: recordingURL, durationMs: durationMs) }
     } catch let error as AppError {
       telemetry.error(error, context: ["screen": "practice"])
       state = .error(error)
@@ -202,6 +200,111 @@ final class PracticeViewModel: ObservableObject {
       telemetry.error(appError, context: ["screen": "practice"])
       state = .error(appError)
     }
+  }
+
+  /// Stop → upload → create job → poll. State transitions to `.uploading`,
+  /// then `.analysing(step:)`, then `.done` (or `.error`). On success the
+  /// final result is appended to `route` for the View to consume, and
+  /// the attempt is persisted via `HistoryStore`.
+  @Published var route: [PracticeRoute] = []
+
+  /// Test-only entry point so unit tests can exercise the upload →
+  /// score → telemetry pipeline without holding a real recording.
+  /// Production code goes through `toggleRecording()`.
+  func testProcessRecording(at fileURL: URL, durationMs: Int) async {
+    await processRecording(at: fileURL, durationMs: durationMs)
+  }
+
+  private func processRecording(at fileURL: URL, durationMs: Int) async {
+    state = .uploading
+    do {
+      let signedUpload = try await telemetry.measure(TelemetryEvent.practiceUploadCompleted) {
+        try await backend.requestSignedUploadUrl(
+          filename: fileURL.lastPathComponent,
+          contentType: "audio/m4a"
+        )
+      }
+      try await backend.uploadAudio(fileURL: fileURL, to: signedUpload.url)
+
+      state = .analysing(step: .transcribing)
+      let job = try await backend.createScoringJob(
+        uploadKey: signedUpload.uploadKey,
+        surahId: surahId,
+        ayahNumber: currentAyahNumber
+      )
+      state = .analysing(step: .comparing)
+
+      let result = try await telemetry.measure(TelemetryEvent.practiceScoringCompleted) {
+        try await backend.pollScoringResult(jobId: job.jobId)
+      }
+      state = .analysing(step: .calculating)
+
+      let appError: AppError? = result.status == .failed
+        ? .backendUnavailable(operation: "scoring")
+        : nil
+      if let appError {
+        telemetry.error(appError, context: ["screen": "practice"])
+        state = .error(appError)
+        return
+      }
+
+      recordAttempt(jobId: job.jobId, score: result.score, durationMs: durationMs, status: .completed)
+      state = .done(score: result.score, jobId: job.jobId)
+      route.append(.result(
+        jobId: job.jobId,
+        surahId: surahId,
+        ayahNumber: currentAyahNumber,
+        score: result.score
+      ))
+    } catch let error as AppError {
+      telemetry.error(error, context: ["screen": "practice"])
+      recordAttempt(jobId: "", score: nil, durationMs: durationMs, status: .failed)
+      state = .error(error)
+      telemetry.event(
+        TelemetryEvent.practiceScoringFailed,
+        attributes: ["error_code": error.telemetryCode]
+      )
+    } catch {
+      let appError = AppError.network(underlying: error)
+      telemetry.error(appError, context: ["screen": "practice"])
+      state = .error(appError)
+    }
+  }
+
+  private func recordAttempt(
+    jobId: String,
+    score: Double?,
+    durationMs: Int,
+    status: AttemptStatus
+  ) {
+    let now = Date()
+    historyStore.recordAttempt(Attempt(
+      id: UUID().uuidString,
+      surahId: surahId,
+      surahNameEn: surah?.nameEn ?? surahId,
+      ayahNumber: currentAyahNumber,
+      score: score,
+      jobId: jobId,
+      createdAt: now,
+      status: status,
+      durationMs: durationMs
+    ))
+    if status == .completed, let score {
+      historyStore.recordBestScore(
+        surahId: surahId,
+        ayahNumber: currentAyahNumber,
+        score: score,
+        achievedAt: now
+      )
+    }
+    historyStore.setLastPracticed(LastPracticed(
+      surahId: surahId,
+      ayahNumber: currentAyahNumber,
+      surahNameEn: surah?.nameEn ?? surahId,
+      surahNameAr: surah?.nameAr ?? "",
+      ayahCount: surah?.ayahCount ?? 0,
+      practicedAt: now
+    ))
   }
 
   private func observeRecorder() {
