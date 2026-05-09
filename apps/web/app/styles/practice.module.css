@@ -1470,3 +1470,26 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Phase 2.3-D: a11y polish ------------------------------------------ */
+
+/* The default :focus-visible outline (var(--color-teal)) is too dark to
+ * see on the recording panel's near-black background. Switch to the
+ * cream tan accent so the keyboard ring stays high-contrast there. */
+.panelDark :focus-visible {
+  outline-color: var(--color-tan);
+}
+
+/* Honor prefers-reduced-motion for every infinite / large-motion
+ * animation defined in this file. The dot, ring, and spinner remain
+ * visible (they still convey state via colour/border) — they just
+ * stop animating. */
+@media (prefers-reduced-motion: reduce) {
+  .recordingTimerDot,
+  .scoringBadgeDot,
+  .pulseRing,
+  .spinner,
+  .resultPendingSpinner {
+    animation: none;
+  }
+}
