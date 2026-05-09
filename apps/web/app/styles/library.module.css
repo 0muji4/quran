@@ -513,3 +513,11 @@
     gap: var(--space-1);
   }
 }
+
+/* Phase 2.3-D: respect prefers-reduced-motion on the celebratory
+ * surah-completion toast slide-in. */
+@media (prefers-reduced-motion: reduce) {
+  .completionToast {
+    animation: none;
+  }
+}

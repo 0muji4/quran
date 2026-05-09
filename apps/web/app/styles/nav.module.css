@@ -124,3 +124,9 @@
     grid-area: profile;
   }
 }
+
+/* Phase 2.3-D: switch the keyboard focus ring to the cream tan accent
+ * inside the dark top nav so it stays visible against #1f1a14. */
+.nav :focus-visible {
+  outline-color: var(--color-tan);
+}
