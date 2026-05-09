@@ -1,96 +1,97 @@
-/* AppError — Arabic translations land in a follow-up PR (see ADR 0009).
-   Until then, English copy is mirrored so the bundle and key paths exist. */
+/* Arabic localization — initial pass. Native-speaker review required
+   before any production release that ships ar as a default locale. */
 
-"error.network.title" = "Connection problem";
-"error.network.recovery" = "Check your network and try again.";
+/* AppError */
+"error.network.title" = "مشكلة في الاتصال";
+"error.network.recovery" = "تحقّق من شبكتك ثم حاول مرة أخرى.";
 
-"error.backendUnavailable.title" = "Service temporarily unavailable";
-"error.backendUnavailable.recovery" = "Please try again in a moment.";
+"error.backendUnavailable.title" = "الخدمة غير متاحة مؤقتًا";
+"error.backendUnavailable.recovery" = "يرجى المحاولة بعد قليل.";
 
-"error.audioPermissionDenied.title" = "Microphone access is off";
-"error.audioPermissionDenied.recovery" = "Enable microphone access in Settings to record.";
+"error.audioPermissionDenied.title" = "الوصول إلى الميكروفون متوقّف";
+"error.audioPermissionDenied.recovery" = "فعّل الوصول إلى الميكروفون من الإعدادات للتسجيل.";
 
-"error.audioRecordingFailed.title" = "Recording failed";
-"error.audioRecordingFailed.recovery" = "Try recording again. If the problem continues, restart the app.";
+"error.audioRecordingFailed.title" = "تعذّر التسجيل";
+"error.audioRecordingFailed.recovery" = "حاول التسجيل مرة أخرى، وإذا استمرت المشكلة فأعد تشغيل التطبيق.";
 
-"error.audioPlaybackFailed.title" = "Playback failed";
-"error.audioPlaybackFailed.recovery" = "Try playing the recording again.";
+"error.audioPlaybackFailed.title" = "تعذّر التشغيل";
+"error.audioPlaybackFailed.recovery" = "حاول تشغيل التسجيل مرة أخرى.";
 
-"error.referenceUnavailable.title" = "Reference recitation not available";
-"error.referenceUnavailable.recovery" = "Reference audio is missing for this ayah. You can still record your attempt.";
+"error.referenceUnavailable.title" = "تلاوة المرجع غير متوفّرة";
+"error.referenceUnavailable.recovery" = "الصوت المرجعي غير متوفّر لهذه الآية، ويمكنك تسجيل محاولتك.";
 
-"error.scoringTimeout.title" = "Scoring is taking longer than usual";
-"error.scoringTimeout.recovery" = "Wait a moment and try again.";
+"error.scoringTimeout.title" = "التقييم يستغرق وقتًا أطول من المعتاد";
+"error.scoringTimeout.recovery" = "انتظر لحظة ثم حاول مرة أخرى.";
 
-"error.storageUnavailable.title" = "Couldn't save locally";
-"error.storageUnavailable.recovery" = "Free up some space on your device and try again.";
+"error.storageUnavailable.title" = "تعذّر الحفظ محليًا";
+"error.storageUnavailable.recovery" = "حرّر بعض المساحة على جهازك ثم حاول مرة أخرى.";
 
 /* Library tab */
-"library.eyebrow" = "Your practice";
-"library.title" = "Choose a surah to recite";
-"library.retry" = "Retry";
-"library.searchPlaceholder" = "Search by surah name…";
-"library.empty" = "No surahs match your filters";
-"library.filter.all" = "All";
-"library.filter.mecca" = "Mecca";
-"library.filter.medina" = "Medina";
-"library.filter.short" = "Short";
-"library.continueEyebrow" = "Continue";
-"library.continueProgress" = "Ayah %d of %d • last practiced recently";
-"library.resumeAyah" = "Resume ayah %d";
+"library.eyebrow" = "تدريبك";
+"library.title" = "اختر سورة لتلاوتها";
+"library.retry" = "إعادة المحاولة";
+"library.searchPlaceholder" = "ابحث باسم السورة…";
+"library.empty" = "لا توجد سور تطابق التصفية";
+"library.filter.all" = "الكل";
+"library.filter.mecca" = "مكية";
+"library.filter.medina" = "مدنية";
+"library.filter.short" = "قصيرة";
+"library.continueEyebrow" = "متابعة";
+"library.continueProgress" = "الآية %d من %d • تدريب أخير حديث";
+"library.resumeAyah" = "استئناف الآية %d";
 
 /* Practice tab */
-"practice.teacher.label" = "Teacher reference";
-"practice.teacher.unavailable" = "Reference audio not available";
-"practice.record.idleTitle" = "Ready to record";
-"practice.record.idleSubtitle" = "Tap to start";
-"practice.record.recordingTitle" = "Recording…";
-"practice.record.recordingSubtitle" = "Speak clearly";
-"practice.record.startA11y" = "Start recording";
-"practice.record.stopA11y" = "Stop recording";
-"practice.analysing.title" = "Analysing…";
-"practice.analysing.subtitle" = "Comparing to teacher";
-"practice.analysing.step.transcribing" = "Transcribing audio";
-"practice.analysing.step.comparing" = "Comparing to reference";
-"practice.analysing.step.calculating" = "Calculating score";
-"practice.error.subtitle" = "Try again — move closer to the mic";
-"practice.error.replay" = "Replay";
-"practice.error.recordAgain" = "Record again";
+"practice.teacher.label" = "مرجع المعلّم";
+"practice.teacher.unavailable" = "الصوت المرجعي غير متوفّر";
+"practice.record.idleTitle" = "جاهز للتسجيل";
+"practice.record.idleSubtitle" = "اضغط للبدء";
+"practice.record.recordingTitle" = "جاري التسجيل…";
+"practice.record.recordingSubtitle" = "تكلّم بوضوح";
+"practice.record.startA11y" = "بدء التسجيل";
+"practice.record.stopA11y" = "إيقاف التسجيل";
+"practice.analysing.title" = "جاري التحليل…";
+"practice.analysing.subtitle" = "مقارنة بالمعلّم";
+"practice.analysing.step.transcribing" = "نسخ الصوت";
+"practice.analysing.step.comparing" = "المقارنة بالمرجع";
+"practice.analysing.step.calculating" = "حساب الدرجة";
+"practice.error.subtitle" = "حاول مجددًا — اقترب من الميكروفون";
+"practice.error.replay" = "إعادة التشغيل";
+"practice.error.recordAgain" = "إعادة التسجيل";
 
 /* Result detail */
-"result.title" = "Result";
-"result.detail.excellent" = "Excellent recitation — your tajweed is on point.";
-"result.detail.strong" = "Strong attempt — try once more to push past 90.";
-"result.detail.midway" = "Good progress — focus on slowing down for clarity.";
-"result.detail.beginner" = "Keep going — listen to the teacher reference and try again.";
-"result.metric.accuracy" = "Accuracy";
-"result.metric.fluency" = "Fluency";
-"result.metric.completeness" = "Completeness";
-"result.words.title" = "Word comparison";
-"result.words.empty" = "Word-level alignment isn't available yet for this attempt.";
-"result.words.a11y.match" = "matched";
-"result.words.a11y.sub" = "substituted";
-"result.words.a11y.ins" = "inserted";
-"result.words.a11y.del" = "missed";
-"result.listenBack.title" = "Listen back";
-"result.listenBack.teacher" = "Teacher";
-"result.listenBack.you" = "You";
-"result.action.tryAgain" = "Try again";
-"result.action.continue" = "Continue to ayah %d";
+"result.title" = "النتيجة";
+"result.detail.excellent" = "تلاوة ممتازة — تجويدك متقن.";
+"result.detail.strong" = "محاولة جيدة — حاول مرة أخرى لتتجاوز ٩٠.";
+"result.detail.midway" = "تقدّم جيد — ركّز على التمهّل لتحقيق الوضوح.";
+"result.detail.beginner" = "واصل التدريب — استمع لمرجع المعلّم ثم حاول مجددًا.";
+"result.metric.accuracy" = "الدقّة";
+"result.metric.fluency" = "الطلاقة";
+"result.metric.completeness" = "الإكمال";
+"result.words.title" = "مقارنة الكلمات";
+"result.words.empty" = "محاذاة الكلمات لهذه المحاولة غير متوفّرة بعد.";
+"result.words.a11y.match" = "مطابقة";
+"result.words.a11y.sub" = "بدل";
+"result.words.a11y.ins" = "زيادة";
+"result.words.a11y.del" = "محذوفة";
+"result.listenBack.title" = "إعادة الاستماع";
+"result.listenBack.teacher" = "المعلّم";
+"result.listenBack.you" = "أنت";
+"result.action.tryAgain" = "إعادة المحاولة";
+"result.action.continue" = "المتابعة إلى الآية %d";
 
 /* History tab */
-"history.eyebrow" = "Your practice";
-"history.title" = "History";
-"history.filter.all" = "All";
-"history.empty" = "No attempts yet — record one to start your history.";
-"history.stats.thisWeek" = "This week";
-"history.stats.attempts" = "attempts";
-"history.stats.average" = "Average";
-"history.stats.outOf" = "of 100";
-"history.stats.best" = "Best";
+"history.eyebrow" = "تدريبك";
+"history.title" = "السجل";
+"history.filter.all" = "الكل";
+"history.empty" = "لا توجد محاولات بعد — سجّل محاولة لتبدأ سجلّك.";
+"history.stats.thisWeek" = "هذا الأسبوع";
+"history.stats.attempts" = "محاولة";
+"history.stats.average" = "المتوسط";
+"history.stats.outOf" = "من 100";
+"history.stats.best" = "الأفضل";
 "history.stats.bestUnknown" = "—";
-"history.stats.streak" = "Streak";
-"history.stats.days" = "days";
+"history.stats.streak" = "متتابع";
+"history.stats.days" = "يوم";
 
 /* Accessibility */
-"library.surah.a11yHint" = "Opens Practice for this surah";
+"library.surah.a11yHint" = "يفتح وضع التدريب لهذه السورة";
