@@ -19,12 +19,22 @@ vi.mock('../../actions', () => ({
   signUpAction: (...args: unknown[]) => signUpActionMock(...args)
 }));
 
+const clearLocalCacheMock = vi.fn();
+const refreshAllFromBffMock = vi.fn(async () => {});
+
+vi.mock('../../lib/storage', () => ({
+  clearLocalCache: () => clearLocalCacheMock(),
+  refreshAllFromBff: () => refreshAllFromBffMock()
+}));
+
 describe('AuthForm', () => {
   beforeEach(() => {
     replace.mockReset();
     refresh.mockReset();
     signInActionMock.mockReset();
     signUpActionMock.mockReset();
+    clearLocalCacheMock.mockReset();
+    refreshAllFromBffMock.mockClear();
   });
 
   it('signs in with the entered credentials and routes home on success', async () => {
@@ -43,6 +53,8 @@ describe('AuthForm', () => {
     );
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
     expect(refresh).toHaveBeenCalled();
+    expect(clearLocalCacheMock).toHaveBeenCalled();
+    expect(refreshAllFromBffMock).toHaveBeenCalled();
   });
 
   it('shows the BFF error when sign-in fails and stays on the form', async () => {
