@@ -1,24 +1,4 @@
--- Phase 3.1 BFF persistence (ADR 0011).
---
--- Three tables that move per-user practice state out of the browser's
--- localStorage and into Postgres so it follows the user across devices:
---
---   - last_practiced   : single most-recent surah/ayah per user (Continue
---                        card hydration). PK on user_id; PUT upserts.
---   - best_scores      : best score per (user, surah, ayah). PK is the
---                        composite so PUT /me/best-scores/:key upserts.
---   - practice_attempts: append-only log of completed / failed scoring
---                        runs. Row shape mirrors the Web Attempt type so
---                        the History view can read directly without
---                        joining `surahs` for `surah_name_en`. This is
---                        intentionally separate from the existing
---                        `attempts` table, which belongs to the backend
---                        ASR pipeline (transcript / evaluation JSONB /
---                        partitioned by created_at) and serves a
---                        different lifecycle.
---
--- All three CASCADE on user delete so a future "delete my account" flow
--- removes practice state in one shot.
+-- Per-user practice state served from the BFF.
 
 CREATE TABLE IF NOT EXISTS last_practiced (
     user_id        UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
