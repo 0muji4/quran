@@ -13,9 +13,9 @@ import {
 } from './storage';
 
 // All handlers gate on requireAuth. Under MOCK_SESSION=true (dev / CI)
-// the session resolves to id 'mock-user', which is also seeded in the
-// users table for integration tests; under real auth (ADR 0010) the
-// session id is the authenticated user UUID.
+// the session resolves to MOCK_SESSION_USER_ID, which is seeded in the
+// users table by db/seed.sql so writes satisfy the FK constraint.
+// Under real auth the session id is the authenticated user UUID.
 
 export const meRouter = Router();
 
