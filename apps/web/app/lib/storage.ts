@@ -110,6 +110,16 @@ export const refreshAllFromBff = async (): Promise<void> => {
   await Promise.allSettled([refreshLastPracticed(), refreshBestScores(), refreshRecentAttempts()]);
 };
 
+// Wipe every cache key. Called on sign-in / sign-up / sign-out so the
+// previous identity's last-practiced and best-scores never bleed into
+// the next session.
+export const clearLocalCache = (): void => {
+  removeKey(KEY_LAST);
+  removeKey(KEY_BEST);
+  removeKey(KEY_HIST);
+  lastRefreshedAt.clear();
+};
+
 export const getLastPracticed = (): LastPracticed | null => {
   void refreshLastPracticed();
   return readJson<LastPracticed>(KEY_LAST);

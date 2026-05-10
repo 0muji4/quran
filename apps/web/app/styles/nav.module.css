@@ -89,6 +89,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
+  gap: var(--space-3);
 }
 
 .avatar {
@@ -102,6 +103,31 @@
   color: var(--color-ink-strong);
   font-weight: 600;
   font-size: 14px;
+}
+
+.profileAction {
+  font: inherit;
+  font-size: 13px;
+  color: var(--color-ink-on-dark);
+  background: transparent;
+  border: 1px solid rgba(232, 217, 184, 0.4);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s ease;
+}
+
+.profileAction:hover {
+  background: rgba(232, 217, 184, 0.08);
+}
+
+.profileAction:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 @media (max-width: 720px) {

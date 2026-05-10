@@ -4,6 +4,7 @@ import { FormEvent, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInAction, signUpAction } from '../actions';
+import { clearLocalCache, refreshAllFromBff } from '../lib/storage';
 import styles from '../styles/auth.module.css';
 
 type Mode = 'signin' | 'signup';
@@ -54,6 +55,10 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         } else {
           await signInAction({ email, password });
         }
+        // Drop the prior identity's cached last-practiced / best-scores
+        // before pulling the new user's view from the BFF.
+        clearLocalCache();
+        await refreshAllFromBff();
         router.replace(redirectTo);
         router.refresh();
       } catch (err) {
