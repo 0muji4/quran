@@ -9,7 +9,7 @@ import {
   renderGraphiQL,
   shouldRenderGraphiQL
 } from 'graphql-helix';
-import { authMiddleware, buildContext, type AuthedRequest } from '../auth';
+import { authMiddleware, authRouter, buildContext, type AuthedRequest } from '../auth';
 import { resolvers } from '../graphql';
 import { meRouter } from '../me';
 import { rscRouter, restRouter } from '../rest';
@@ -46,6 +46,7 @@ export const createApp = () => {
     res.json({ status: 'ok' });
   });
 
+  app.use(authRouter);
   app.use(restRouter);
   app.use(meRouter);
   app.all('/graphql', async (req: AuthedRequest, res) => {
