@@ -249,7 +249,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 ユーザーがデバイスを跨いだり実運用に入る段階で必須となる、データ層・認証層の変更。
 
-#### 3.1 履歴・ベストスコア・Continue の BFF 永続化
+#### 3.1 履歴・ベストスコア・Continue の BFF 永続化 — Done in PRs #210–#215, #221
 
 **現状**: `LastPracticed` / `BestScores` / `AttemptsLog` は localStorage `tilawah:*` 名前空間に閉じている。ブラウザを変える、シークレットウィンドウで開く、ストレージをクリアするだけで全て消失する。
 
@@ -270,7 +270,17 @@ POST /me/attempts             (body: Attempt)
 
 **影響度 S（プロダクト化に必須）/ 工数 L**。
 
-#### 3.2 認証導線と実ユーザーアバター
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| 3.1-A: `last_practiced` / `best_scores` / `practice_attempts` migration (ADR 0011) | ✅ Done | #210 |
+| 3.1-B: BFF `/me/*` GET/PUT/POST routes + storage adapter | ✅ Done | #211 / #212 |
+| 3.1-C: `MOCK_SESSION` を seeded UUID 化（FK 整合） | ✅ Done | #214 |
+| 3.1-D: Web `storage.ts` を BFF cache-first に切替 + Server Actions 配線 | ✅ Done | #215 |
+| 3.1-E: 匿名 localStorage の初回 sign-up 時 BFF へのオートインポート | ✅ Done | #221 |
+
+#### 3.2 認証導線と実ユーザーアバター — Done in PRs #209, #216–#220
 
 **現状**: TopNav 右肩のアバターは `"N"` をハードコードした表示用要素。BFF は `MOCK_SESSION=true` で動作している。
 
@@ -279,6 +289,17 @@ POST /me/attempts             (body: Attempt)
 **依存**: BFF 側の認証実装。3.1 を BFF 永続化と合わせて行うのが効率的。
 
 **影響度 S / 工数 L**。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| 3.2-A: ADR 0010 (Email + Password)・ADR 0011 (BFF persistence + localStorage cache) | ✅ Done | #209 |
+| 3.2-B-DB: `users.password_hash` カラム追加 | ✅ Done | #216 |
+| 3.2-B-BFF: `POST /auth/signup` / `POST /auth/login`（bcrypt + JWT、timing-attack 耐性） | ✅ Done | #217 |
+| 3.2-C: Web Server Actions（signUp / signIn / signOut）+ HttpOnly cookies + `bffFetch` Bearer 転送 | ✅ Done | #218 |
+| 3.2-C-2: `/sign-in` `/sign-up` ページと `AuthForm`（`useTransition` で状態管理） | ✅ Done | #219 |
+| 3.2-D: TopNav の session 表示（avatar / Sign in / Sign out）+ `clearLocalCache` | ✅ Done | #220 |
 
 #### 3.3 Difficulty / Suggested の真ロジック化
 
