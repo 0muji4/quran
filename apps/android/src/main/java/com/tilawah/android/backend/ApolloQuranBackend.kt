@@ -5,12 +5,14 @@ import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.exception.ApolloHttpException
 import com.apollographql.apollo.exception.ApolloNetworkException
+import com.tilawah.android.app.AppConfig
+import com.tilawah.android.app.AppError
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import com.tilawah.android.app.AppConfig
-import com.tilawah.android.app.AppError
 import com.tilawah.android.graphql.CreateScoringJobMutation
 import com.tilawah.android.graphql.GetAyahQuery
 import com.tilawah.android.graphql.GetScoringJobQuery
@@ -112,9 +114,12 @@ class ApolloQuranBackend(
                 .url(signedUrl)
                 .put(file.asRequestBody(contentType.toMediaType()))
                 .build()
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IllegalStateException("upload failed status=${response.code}")
+            // Raw OkHttp execute() blocks; Apollo's own execute() dispatches internally.
+            withContext(Dispatchers.IO) {
+                httpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw IllegalStateException("upload failed status=${response.code}")
+                    }
                 }
             }
         }
@@ -154,18 +159,15 @@ class ApolloQuranBackend(
     } catch (cause: AppError) {
         throw cause
     } catch (cause: ApolloHttpException) {
-        if (cause.statusCode == 503) {
-            throw AppError.BackendUnavailable(operation)
-        }
-        throw AppError.BackendUnavailable(operation)
+        throw AppError.BackendUnavailable(operation, cause)
     } catch (cause: ApolloNetworkException) {
         throw AppError.Network(cause.cause ?: IOException(operation))
     } catch (cause: ApolloException) {
-        throw AppError.BackendUnavailable(operation)
+        throw AppError.BackendUnavailable(operation, cause)
     } catch (cause: IOException) {
         throw AppError.Network(cause)
     } catch (cause: Throwable) {
-        throw AppError.BackendUnavailable(operation)
+        throw AppError.BackendUnavailable(operation, cause)
     }
 
     private fun <D : com.apollographql.apollo.api.Operation.Data>
