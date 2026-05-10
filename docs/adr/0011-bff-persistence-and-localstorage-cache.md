@@ -26,7 +26,7 @@ Audit findings (full detail in the planning conversation):
 
 ### Tables
 
-Add two new tables; reuse the existing `attempts` table:
+Three new tables. The existing `attempts` table is intentionally NOT reused — see "Why a new `practice_attempts` instead of reusing `attempts`" below.
 
 ```sql
 CREATE TABLE last_practiced (
@@ -48,9 +48,25 @@ CREATE TABLE best_scores (
   achieved_at TIMESTAMPTZ NOT NULL,
   PRIMARY KEY (user_id, surah_id, ayah_number)
 );
+
+CREATE TABLE practice_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  surah_id TEXT NOT NULL,
+  surah_name_en TEXT NOT NULL,
+  ayah_number SMALLINT NOT NULL,
+  score SMALLINT CHECK (score IS NULL OR (score BETWEEN 0 AND 100)),
+  job_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('COMPLETED', 'FAILED')),
+  duration_ms INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_practice_attempts_user_created_at
+  ON practice_attempts (user_id, created_at DESC);
 ```
 
-`attempts` is reused as-is. Existing columns (`id UUID`, `user_id UUID`, `surah_id`, `ayah_number`, `score`, `job_id`, `created_at`, `status`) cover the `Attempt` shape. The BFF write path inserts directly; no schema change.
+**Why a new `practice_attempts` instead of reusing `attempts`:** the existing `attempts` table belongs to the backend ASR pipeline and stores `transcript`, `evaluation JSONB`, `ayah_id` (FK to `ayahs.id`), and is RANGE-partitioned by `created_at`. The Web's per-attempt history shape is different — denormalised `surah_name_en` for offline display, `job_id` text reference, `status`, `duration_ms`. Stashing those into the existing `attempts.evaluation` JSONB would couple two unrelated lifecycles (the backend writes from the worker, the BFF would write from the Web client) and force every Web history read to JSONB-unwrap and JOIN `surahs`. A second purpose-built table is the cleaner separation.
 
 ### Endpoints
 
