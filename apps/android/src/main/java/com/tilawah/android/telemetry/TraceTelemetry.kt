@@ -39,8 +39,12 @@ class TraceTelemetry(
                 buildMap {
                     put(TelemetryAttribute.DURATION_MS, (clock() - startedAt).toString())
                     if (cause is AppError) put(TelemetryAttribute.ERROR_CODE, cause.telemetryCode)
+                    if (cause is AppError.BackendUnavailable) {
+                        put("operation", cause.operation)
+                    }
                 },
             )
+            Log.w(tag, "$name.failed cause", cause)
             throw cause
         } finally {
             Trace.endSection()
@@ -52,7 +56,12 @@ class TraceTelemetry(
             put(TelemetryAttribute.ERROR_CODE, error.telemetryCode)
             putAll(context)
         }
-        Log.w(tag, "error " + formatEvent(error.telemetryCode, attrs))
+        val cause = error.cause
+        if (cause != null) {
+            Log.w(tag, "error " + formatEvent(error.telemetryCode, attrs), cause)
+        } else {
+            Log.w(tag, "error " + formatEvent(error.telemetryCode, attrs))
+        }
     }
 
     private fun formatEvent(name: String, attributes: Map<String, String>): String {
