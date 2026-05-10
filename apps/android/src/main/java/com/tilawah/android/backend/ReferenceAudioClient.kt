@@ -1,10 +1,12 @@
 package com.tilawah.android.backend
 
+import com.tilawah.android.app.AppConfig
+import com.tilawah.android.app.AppError
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
-import com.tilawah.android.app.AppConfig
-import com.tilawah.android.app.AppError
 import java.io.IOException
 
 /**
@@ -17,10 +19,11 @@ class ReferenceAudioClient(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val baseUrl: String = AppConfig.restBaseUrl,
 ) {
-    suspend fun fetch(surahId: String, ayah: Int): ReferenceAudio {
+    // Raw OkHttp execute() blocks; suspend boundary is on Main when called from a ViewModel coroutine.
+    suspend fun fetch(surahId: String, ayah: Int): ReferenceAudio = withContext(Dispatchers.IO) {
         val url = "$baseUrl" + "reference-audio?surah=$surahId&ayah=$ayah"
         val request = Request.Builder().url(url).get().build()
-        return try {
+        try {
             httpClient.newCall(request).execute().use { response ->
                 when (response.code) {
                     503 -> throw AppError.ReferenceUnavailable(surahId, ayah)
@@ -33,7 +36,7 @@ class ReferenceAudioClient(
                             expiresAt = json.getString("expiresAt"),
                         )
                     }
-                    else -> throw AppError.BackendUnavailable("reference-audio")
+                    else -> throw AppError.BackendUnavailable("reference-audio:http_${response.code}")
                 }
             }
         } catch (cause: AppError) {
@@ -41,7 +44,7 @@ class ReferenceAudioClient(
         } catch (cause: IOException) {
             throw AppError.Network(cause)
         } catch (cause: Throwable) {
-            throw AppError.BackendUnavailable("reference-audio")
+            throw AppError.BackendUnavailable("reference-audio", cause)
         }
     }
 }
