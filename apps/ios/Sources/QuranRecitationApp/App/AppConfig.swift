@@ -22,7 +22,7 @@ enum AppConfig {
   )
 
   /// OSLog subsystem used by `OSLogTelemetry` (introduced in PR 3).
-  static let telemetrySubsystem: String = "tv.every.tilawah.ios"
+  static let telemetrySubsystem: String = "com.tilawah.ios"
 
   // MARK: - Helpers
 

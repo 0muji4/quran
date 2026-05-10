@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "tv.every.tilawah.android"
+    namespace = "com.tilawah.android"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "tv.every.tilawah.android"
+        applicationId = "com.tilawah.android"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -57,7 +57,7 @@ apollo {
         // same file via apollo-ios-cli (see apps/ios/Makefile).
         schemaFiles.from(rootProject.file("schemas/graphql/schema.graphql"))
         srcDir("src/main/graphql")
-        packageName.set("tv.every.tilawah.android.graphql")
+        packageName.set("com.tilawah.android.graphql")
         // The schema declares scalar JSONObject + DateTime; map them to
         // safe Kotlin types instead of letting codegen guess.
         mapScalarToKotlinAny("JSONObject")
