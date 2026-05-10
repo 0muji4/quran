@@ -5,6 +5,7 @@ import {
   getBestScores,
   getLastPracticed,
   getRecentAttempts,
+  migrateAnonymousCacheToBff,
   recordAttempt,
   recordBestScore,
   setLastPracticed,
@@ -186,6 +187,55 @@ describe('storage', () => {
       expect(window.localStorage.getItem('tilawah:last-practiced')).toBeNull();
       expect(window.localStorage.getItem('tilawah:best-scores')).toBeNull();
       expect(window.localStorage.getItem('tilawah:recent-attempts')).toBeNull();
+    });
+  });
+
+  describe('migrateAnonymousCacheToBff', () => {
+    it('replays last-practiced, best scores, and attempts (oldest first) to the BFF', async () => {
+      setLastPracticed({
+        surahId: '1',
+        ayahNumber: 3,
+        surahNameEn: 'Al-Fatihah',
+        surahNameAr: 'الفاتحة',
+        ayahCount: 7,
+        practicedAt: '2026-05-09T10:00:00.000Z'
+      });
+      recordBestScore('1', 1, 70);
+      recordBestScore('2', 5, 90);
+      recordAttempt(baseAttempt({ id: 'newer', createdAt: '2026-05-09T12:00:00.000Z' }));
+      recordAttempt(baseAttempt({ id: 'older', createdAt: '2026-05-08T12:00:00.000Z' }));
+      vi.clearAllMocks();
+
+      await migrateAnonymousCacheToBff();
+
+      expect(putLastPracticedToBff).toHaveBeenCalledTimes(1);
+      expect(putBestScoreToBff).toHaveBeenCalledTimes(2);
+      expect(postAttemptToBff).toHaveBeenCalledTimes(2);
+      const replayed = vi
+        .mocked(postAttemptToBff)
+        .mock.calls.map((call) => (call[0] as Attempt).id);
+      expect(replayed).toEqual(['older', 'newer']);
+    });
+
+    it('is a no-op when localStorage is empty', async () => {
+      await migrateAnonymousCacheToBff();
+      expect(putLastPracticedToBff).not.toHaveBeenCalled();
+      expect(putBestScoreToBff).not.toHaveBeenCalled();
+      expect(postAttemptToBff).not.toHaveBeenCalled();
+    });
+
+    it('swallows BFF rejections so sign-up still completes', async () => {
+      setLastPracticed({
+        surahId: '1',
+        ayahNumber: 1,
+        surahNameEn: 'Al-Fatihah',
+        surahNameAr: 'الفاتحة',
+        ayahCount: 7,
+        practicedAt: '2026-05-09T10:00:00.000Z'
+      });
+      vi.mocked(putLastPracticedToBff).mockRejectedValueOnce(new Error('boom'));
+
+      await expect(migrateAnonymousCacheToBff()).resolves.toBeUndefined();
     });
   });
 });
