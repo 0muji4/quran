@@ -1,0 +1,115 @@
+.shell {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10) var(--space-6);
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-bg-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-8) var(--space-6);
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold-on-light);
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-ink-strong);
+  margin: 0 0 var(--space-2);
+}
+
+.lede {
+  margin: 0 0 var(--space-6);
+  color: var(--color-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-default);
+}
+
+.input {
+  font: inherit;
+  font-size: 15px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-paper);
+  color: var(--color-ink-strong);
+  min-height: 44px;
+}
+
+.input:focus-visible {
+  outline-color: var(--color-teal);
+}
+
+.error {
+  background: rgba(192, 57, 43, 0.08);
+  color: var(--color-red);
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 13px;
+}
+
+.submit {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-ink-strong);
+  color: var(--color-tan-soft);
+  border: none;
+  border-radius: var(--radius-pill);
+  min-height: 48px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.submit:hover {
+  opacity: 0.92;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.aside {
+  margin-top: var(--space-6);
+  font-size: 13px;
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.aside a {
+  color: var(--color-teal-deep);
+  text-decoration: underline;
+}
