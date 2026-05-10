@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { authMiddleware } from '../../auth';
+import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
 import { meRouter } from '../routes';
 import {
   getBestScores,
@@ -64,7 +64,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(row);
-      expect(getLastPracticed).toHaveBeenCalledWith('mock-user');
+      expect(getLastPracticed).toHaveBeenCalledWith(MOCK_SESSION_USER_ID);
     });
 
     it('returns null when storage has no row', async () => {
@@ -139,7 +139,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ attempts });
-      expect(getRecentAttempts).toHaveBeenCalledWith('mock-user', 50);
+      expect(getRecentAttempts).toHaveBeenCalledWith(MOCK_SESSION_USER_ID, 50);
     });
 
     it('honors a custom limit query param', async () => {
@@ -148,7 +148,7 @@ describe('GET /me/* read endpoints', () => {
       const res = await request(app).get('/me/attempts?limit=10');
 
       expect(res.status).toBe(200);
-      expect(getRecentAttempts).toHaveBeenCalledWith('mock-user', 10);
+      expect(getRecentAttempts).toHaveBeenCalledWith(MOCK_SESSION_USER_ID, 10);
     });
 
     it('rejects a non-numeric limit with 400', async () => {
@@ -183,7 +183,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(validBody);
-      expect(upsertLastPracticed).toHaveBeenCalledWith('mock-user', validBody);
+      expect(upsertLastPracticed).toHaveBeenCalledWith(MOCK_SESSION_USER_ID, validBody);
     });
 
     it('rejects a missing field with 400', async () => {
@@ -222,7 +222,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(body);
-      expect(upsertBestScore).toHaveBeenCalledWith('mock-user', '2', 255, body);
+      expect(upsertBestScore).toHaveBeenCalledWith(MOCK_SESSION_USER_ID, '2', 255, body);
     });
 
     it('rejects a key without the colon separator', async () => {
@@ -263,7 +263,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual({ id: 'a1', ...body });
-      expect(recordPracticeAttempt).toHaveBeenCalledWith('mock-user', body);
+      expect(recordPracticeAttempt).toHaveBeenCalledWith(MOCK_SESSION_USER_ID, body);
     });
 
     it('accepts a null score (failed attempt)', async () => {
@@ -295,7 +295,7 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(201);
       expect(recordPracticeAttempt).toHaveBeenCalledWith(
-        'mock-user',
+        MOCK_SESSION_USER_ID,
         expect.objectContaining({ durationMs: null })
       );
     });
