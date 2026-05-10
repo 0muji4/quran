@@ -3,7 +3,7 @@ import request from 'supertest';
 import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { restRouter } from '../rest';
-import { authMiddleware } from '../../auth';
+import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
 import { expectZodPathError } from '../../__tests__/zodAssertions';
 
 // Mock dependencies
@@ -74,7 +74,7 @@ describe('REST API Integration', () => {
       expect(createSignedUploadUrl).toHaveBeenCalledWith({
         filename: 'test.opus',
         contentType: 'audio/opus',
-        userId: 'mock-user'
+        userId: MOCK_SESSION_USER_ID
       });
     });
 
@@ -152,7 +152,7 @@ describe('REST API Integration', () => {
         uploadKey: 'uploads/test.opus',
         surahId: '1',
         ayahNumber: 1,
-        userId: 'mock-user'
+        userId: MOCK_SESSION_USER_ID
       });
     });
 
@@ -179,7 +179,7 @@ describe('REST API Integration', () => {
         uploadKey: 'uploads/test.opus',
         surahId: '1',
         ayahNumber: 1,
-        userId: 'mock-user'
+        userId: MOCK_SESSION_USER_ID
       });
     });
 
@@ -408,7 +408,7 @@ describe('REST API Integration', () => {
       });
       expect(deleteUserData).toHaveBeenCalledWith({
         sessionId: 'session-123',
-        userId: 'mock-user'
+        userId: MOCK_SESSION_USER_ID
       });
     });
 
