@@ -1,6 +1,7 @@
 'use server';
 
 import type { AyahRecord, SurahSummary } from './lib/types';
+import type { Attempt, BestScoreEntry, BestScores, LastPracticed } from './lib/storage-types';
 import type { ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
 import 'server-only';
 import { fetchWithTracing } from './telemetry/helpers';
@@ -282,6 +283,177 @@ export const fetchSurahAyahs = async (surahId: string): Promise<AyahRecord[]> =>
           error: (error as Error).message,
           surahId
         });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+// /me persistence endpoints (ADR 0011). Each Server Action wraps the
+// BFF call in the same span / log shape as the surrounding actions so
+// the OTel pipeline keeps a uniform view.
+
+export const fetchLastPracticedFromBff = async (): Promise<LastPracticed | null> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchLastPracticedFromBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchLastPracticedFromBff');
+        const response = await fetchWithTracing(`${BFF_BASE_URL}/me/last-practiced`, withNoStore);
+        const payload = await parseJson<LastPracticed | null>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('fetchLastPracticedFromBff failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const putLastPracticedToBff = async (entry: LastPracticed): Promise<LastPracticed> => {
+  return tracer.startActiveSpan(
+    'ServerAction: putLastPracticedToBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'putLastPracticedToBff');
+        const response = await fetchWithTracing(`${BFF_BASE_URL}/me/last-practiced`, {
+          method: 'PUT',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(entry)
+        });
+        const payload = await parseJson<LastPracticed>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('putLastPracticedToBff failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const fetchBestScoresFromBff = async (): Promise<BestScores> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchBestScoresFromBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchBestScoresFromBff');
+        const response = await fetchWithTracing(`${BFF_BASE_URL}/me/best-scores`, withNoStore);
+        const payload = await parseJson<BestScores>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('fetchBestScoresFromBff failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const putBestScoreToBff = async (
+  surahId: string,
+  ayahNumber: number,
+  entry: BestScoreEntry
+): Promise<BestScoreEntry> => {
+  return tracer.startActiveSpan(
+    'ServerAction: putBestScoreToBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'putBestScoreToBff');
+        span.setAttribute('action.surahId', surahId);
+        span.setAttribute('action.ayahNumber', ayahNumber);
+        const key = `${surahId}:${ayahNumber}`;
+        const response = await fetchWithTracing(
+          `${BFF_BASE_URL}/me/best-scores/${encodeURIComponent(key)}`,
+          {
+            method: 'PUT',
+            cache: 'no-store',
+            headers: jsonHeaders,
+            body: JSON.stringify(entry)
+          }
+        );
+        const payload = await parseJson<BestScoreEntry>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('putBestScoreToBff failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const fetchAttemptsFromBff = async (limit = 50): Promise<Attempt[]> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchAttemptsFromBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchAttemptsFromBff');
+        span.setAttribute('action.limit', limit);
+        const response = await fetchWithTracing(
+          `${BFF_BASE_URL}/me/attempts?limit=${limit}`,
+          withNoStore
+        );
+        const payload = await parseJson<{ attempts: Attempt[] }>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.attempts;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('fetchAttemptsFromBff failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const postAttemptToBff = async (attempt: Attempt): Promise<Attempt> => {
+  return tracer.startActiveSpan(
+    'ServerAction: postAttemptToBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'postAttemptToBff');
+        const response = await fetchWithTracing(`${BFF_BASE_URL}/me/attempts`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(attempt)
+        });
+        const payload = await parseJson<Attempt>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('postAttemptToBff failed', { error: (error as Error).message });
         throw error;
       } finally {
         span.end();
