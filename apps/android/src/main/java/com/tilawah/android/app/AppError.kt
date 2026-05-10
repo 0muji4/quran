@@ -18,8 +18,8 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
     data class Network(override val cause: Throwable) :
         AppError(message = "network", cause = cause)
 
-    data class BackendUnavailable(val operation: String) :
-        AppError(message = "backend unavailable: $operation")
+    data class BackendUnavailable(val operation: String, override val cause: Throwable? = null) :
+        AppError(message = "backend unavailable: $operation", cause = cause)
 
     data object AudioPermissionDenied : AppError(message = "audio permission denied")
 
