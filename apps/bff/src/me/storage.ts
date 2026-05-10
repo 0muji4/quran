@@ -77,6 +77,105 @@ export const getBestScores = async (userId: string): Promise<BestScoresMap> => {
   return out;
 };
 
+export type LastPracticedInput = Omit<LastPracticedRow, never>;
+
+export type PracticeAttemptInput = Omit<PracticeAttemptRow, 'id' | 'createdAt'> & {
+  // The Web is the source of truth for the createdAt; honour it on
+  // INSERT so client-side and BFF-side timestamps don't disagree on
+  // the History view's ordering.
+  createdAt: string;
+};
+
+export const upsertLastPracticed = async (
+  userId: string,
+  input: LastPracticedInput
+): Promise<LastPracticedRow> => {
+  const pool = getDatabasePool();
+  if (!pool) throw new Error('database not configured');
+  await pool.query(
+    `
+    INSERT INTO last_practiced (
+      user_id, surah_id, ayah_number,
+      surah_name_en, surah_name_ar, ayah_count,
+      practiced_at, updated_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    ON CONFLICT (user_id) DO UPDATE SET
+      surah_id      = EXCLUDED.surah_id,
+      ayah_number   = EXCLUDED.ayah_number,
+      surah_name_en = EXCLUDED.surah_name_en,
+      surah_name_ar = EXCLUDED.surah_name_ar,
+      ayah_count    = EXCLUDED.ayah_count,
+      practiced_at  = EXCLUDED.practiced_at,
+      updated_at    = NOW()
+    `,
+    [
+      userId,
+      input.surahId,
+      input.ayahNumber,
+      input.surahNameEn,
+      input.surahNameAr,
+      input.ayahCount,
+      input.practicedAt
+    ]
+  );
+  return input;
+};
+
+export const upsertBestScore = async (
+  userId: string,
+  surahId: string,
+  ayahNumber: number,
+  entry: BestScoreEntry
+): Promise<BestScoreEntry> => {
+  const pool = getDatabasePool();
+  if (!pool) throw new Error('database not configured');
+  await pool.query(
+    `
+    INSERT INTO best_scores (user_id, surah_id, ayah_number, score, achieved_at)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (user_id, surah_id, ayah_number) DO UPDATE SET
+      score       = EXCLUDED.score,
+      achieved_at = EXCLUDED.achieved_at
+    `,
+    [userId, surahId, ayahNumber, entry.score, entry.achievedAt]
+  );
+  return entry;
+};
+
+export const recordPracticeAttempt = async (
+  userId: string,
+  input: PracticeAttemptInput
+): Promise<PracticeAttemptRow> => {
+  const pool = getDatabasePool();
+  if (!pool) throw new Error('database not configured');
+  const result = await pool.query(
+    `
+    INSERT INTO practice_attempts (
+      user_id, surah_id, surah_name_en, ayah_number,
+      score, job_id, status, duration_ms, created_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING id
+    `,
+    [
+      userId,
+      input.surahId,
+      input.surahNameEn,
+      input.ayahNumber,
+      input.score,
+      input.jobId,
+      input.status,
+      input.durationMs,
+      input.createdAt
+    ]
+  );
+  return {
+    id: result.rows[0].id,
+    ...input
+  };
+};
+
 export const getRecentAttempts = async (
   userId: string,
   limit: number
