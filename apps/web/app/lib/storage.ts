@@ -120,6 +120,35 @@ export const clearLocalCache = (): void => {
   lastRefreshedAt.clear();
 };
 
+// One-shot migration on first sign-up: push every cache entry an
+// anonymous user accumulated to the BFF so their progress survives
+// the auth transition. Best-effort — a 401 / 5xx is swallowed so
+// sign-up still completes for the user.
+export const migrateAnonymousCacheToBff = async (): Promise<void> => {
+  if (!isBrowser()) return;
+
+  const last = readJson<LastPracticed>(KEY_LAST);
+  const scores = readJson<BestScores>(KEY_BEST) ?? {};
+  const attempts = readJson<{ attempts: Attempt[] }>(KEY_HIST)?.attempts ?? [];
+
+  const tasks: Promise<unknown>[] = [];
+  if (last) tasks.push(putLastPracticedToBff(last));
+
+  for (const [key, entry] of Object.entries(scores)) {
+    const [surahId, ayahRaw] = key.split(':');
+    const ayahNumber = Number(ayahRaw);
+    if (!surahId || !Number.isInteger(ayahNumber) || ayahNumber < 1) continue;
+    tasks.push(putBestScoreToBff(surahId, ayahNumber, entry));
+  }
+
+  // Replay attempts oldest-first so the BFF's "most recent" ordering
+  // matches the chronology the user saw locally.
+  const ordered = [...attempts].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  for (const attempt of ordered) tasks.push(postAttemptToBff(attempt));
+
+  await Promise.allSettled(tasks);
+};
+
 export const getLastPracticed = (): LastPracticed | null => {
   void refreshLastPracticed();
   return readJson<LastPracticed>(KEY_LAST);
