@@ -21,7 +21,7 @@ protocol Telemetry {
   func error(_ error: AppError, context: [String: String])
 }
 
-struct OSLogTelemetry: Telemetry { /* Logger(subsystem: "tv.every.tilawah.ios"), os_signpost */ }
+struct OSLogTelemetry: Telemetry { /* Logger(subsystem: "com.tilawah.ios"), os_signpost */ }
 struct NoOpTelemetry: Telemetry  { /* used by tests and Previews */ }
 ```
 
