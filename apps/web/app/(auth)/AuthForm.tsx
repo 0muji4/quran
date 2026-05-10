@@ -4,7 +4,7 @@ import { FormEvent, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInAction, signUpAction } from '../actions';
-import { clearLocalCache, refreshAllFromBff } from '../lib/storage';
+import { clearLocalCache, migrateAnonymousCacheToBff, refreshAllFromBff } from '../lib/storage';
 import styles from '../styles/auth.module.css';
 
 type Mode = 'signin' | 'signup';
@@ -52,6 +52,9 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
             password,
             displayName: displayName ? displayName : undefined
           });
+          // First-time auth: push the anonymous browsing history up so
+          // the user's prior practice is linked to the new account.
+          await migrateAnonymousCacheToBff();
         } else {
           await signInAction({ email, password });
         }
