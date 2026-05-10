@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { signOutAction } from '../actions';
+import { clearLocalCache } from '../lib/storage';
 import { BookIcon } from './icons/BookIcon';
 import styles from '../styles/nav.module.css';
 
@@ -21,12 +25,28 @@ const TABS: Tab[] = [
   { href: '/history', label: 'History', match: (p) => p.startsWith('/history') }
 ];
 
-type Props = {
-  userInitial?: string;
+type SessionView = {
+  initial: string;
+  label: string;
 };
 
-export function TopNav({ userInitial = 'N' }: Props) {
+type Props = {
+  session: SessionView | null;
+};
+
+export function TopNav({ session }: Props) {
   const pathname = usePathname() ?? '/';
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const onSignOut = (): void => {
+    startTransition(async () => {
+      await signOutAction();
+      clearLocalCache();
+      router.replace('/');
+      router.refresh();
+    });
+  };
 
   return (
     <nav className={styles.nav} aria-label="Primary">
@@ -57,9 +77,25 @@ export function TopNav({ userInitial = 'N' }: Props) {
       </div>
 
       <div className={styles.profile}>
-        <span className={styles.avatar} aria-label={`Signed in as ${userInitial}`}>
-          {userInitial}
-        </span>
+        {session ? (
+          <>
+            <span className={styles.avatar} aria-label={`Signed in as ${session.label}`}>
+              {session.initial}
+            </span>
+            <button
+              type="button"
+              className={styles.profileAction}
+              onClick={onSignOut}
+              disabled={pending}
+            >
+              {pending ? 'Signing out…' : 'Sign out'}
+            </button>
+          </>
+        ) : (
+          <Link href="/sign-in" className={styles.profileAction}>
+            Sign in
+          </Link>
+        )}
       </div>
     </nav>
   );

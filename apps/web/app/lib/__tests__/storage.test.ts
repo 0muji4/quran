@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
+  clearLocalCache,
   getBestScore,
   getBestScores,
   getLastPracticed,
@@ -163,6 +164,28 @@ describe('storage', () => {
       getRecentAttempts();
       await flushPromises();
       expect(fetchAttemptsFromBff).toHaveBeenCalled();
+    });
+  });
+
+  describe('clearLocalCache', () => {
+    it('drops the previous identity from localStorage and forces the next read to refresh', async () => {
+      setLastPracticed({
+        surahId: '1',
+        ayahNumber: 3,
+        surahNameEn: 'Al-Fatihah',
+        surahNameAr: 'الفاتحة',
+        ayahCount: 7,
+        practicedAt: '2026-05-09T10:00:00.000Z'
+      });
+      recordBestScore('1', 1, 80);
+      recordAttempt(baseAttempt({ id: 'pre-signout' }));
+      expect(getLastPracticed()).not.toBeNull();
+
+      clearLocalCache();
+
+      expect(window.localStorage.getItem('tilawah:last-practiced')).toBeNull();
+      expect(window.localStorage.getItem('tilawah:best-scores')).toBeNull();
+      expect(window.localStorage.getItem('tilawah:recent-attempts')).toBeNull();
     });
   });
 });
