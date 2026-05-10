@@ -11,6 +11,7 @@ import {
 } from 'graphql-helix';
 import { authMiddleware, buildContext, type AuthedRequest } from '../auth';
 import { resolvers } from '../graphql';
+import { meRouter } from '../me';
 import { rscRouter, restRouter } from '../rest';
 import { otelMiddleware } from '../telemetry';
 
@@ -46,6 +47,7 @@ export const createApp = () => {
   });
 
   app.use(restRouter);
+  app.use(meRouter);
   app.all('/graphql', async (req: AuthedRequest, res) => {
     const request = {
       body: req.body,
