@@ -1,34 +1,29 @@
 'use client';
 
+import {
+  fetchAttemptsFromBff,
+  fetchBestScoresFromBff,
+  fetchLastPracticedFromBff,
+  postAttemptToBff,
+  putBestScoreToBff,
+  putLastPracticedToBff
+} from '../actions';
+import type { Attempt, BestScoreEntry, BestScores, LastPracticed } from './storage-types';
+
+export type { Attempt, BestScoreEntry, BestScores, LastPracticed };
+
 const KEY_LAST = 'tilawah:last-practiced';
 const KEY_BEST = 'tilawah:best-scores';
 const KEY_HIST = 'tilawah:recent-attempts';
 
-export type LastPracticed = {
-  surahId: string;
-  ayahNumber: number;
-  surahNameEn: string;
-  surahNameAr: string;
-  ayahCount: number;
-  practicedAt: string;
-};
-
-export type BestScoreEntry = { score: number; achievedAt: string };
-export type BestScores = Record<string, BestScoreEntry>;
-
-export type Attempt = {
-  id: string;
-  surahId: string;
-  surahNameEn: string;
-  ayahNumber: number;
-  score: number | null;
-  jobId: string;
-  createdAt: string;
-  status: 'COMPLETED' | 'FAILED';
-  durationMs?: number;
-};
-
 const HISTORY_LIMIT = 50;
+
+// Throttle background refreshes per storage key. The BFF is the source
+// of truth, but a render-time getter that fires a fetch on every call
+// would saturate the network. 30 s is enough to pick up cross-device
+// updates within a session without flooding.
+const REFRESH_INTERVAL_MS = 30_000;
+const lastRefreshedAt = new Map<string, number>();
 
 const isBrowser = (): boolean =>
   typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -53,11 +48,85 @@ const writeJson = (key: string, value: unknown): void => {
   }
 };
 
-export const getLastPracticed = (): LastPracticed | null => readJson<LastPracticed>(KEY_LAST);
+const removeKey = (key: string): void => {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+};
 
-export const setLastPracticed = (entry: LastPracticed): void => writeJson(KEY_LAST, entry);
+const shouldRefresh = (key: string): boolean => {
+  const last = lastRefreshedAt.get(key) ?? 0;
+  return Date.now() - last >= REFRESH_INTERVAL_MS;
+};
 
-export const getBestScores = (): BestScores => readJson<BestScores>(KEY_BEST) ?? {};
+const markRefreshed = (key: string): void => {
+  lastRefreshedAt.set(key, Date.now());
+};
+
+// Fire-and-forget refresh. Errors are swallowed because the cache is
+// the user-facing fallback; the next call will re-attempt anyway.
+const refreshLastPracticed = async (): Promise<void> => {
+  if (!shouldRefresh(KEY_LAST)) return;
+  markRefreshed(KEY_LAST);
+  try {
+    const value = await fetchLastPracticedFromBff();
+    if (value) writeJson(KEY_LAST, value);
+    else removeKey(KEY_LAST);
+  } catch {
+    /* ignore; cache stays as the fallback */
+  }
+};
+
+const refreshBestScores = async (): Promise<void> => {
+  if (!shouldRefresh(KEY_BEST)) return;
+  markRefreshed(KEY_BEST);
+  try {
+    const value = await fetchBestScoresFromBff();
+    writeJson(KEY_BEST, value);
+  } catch {
+    /* ignore */
+  }
+};
+
+const refreshRecentAttempts = async (): Promise<void> => {
+  if (!shouldRefresh(KEY_HIST)) return;
+  markRefreshed(KEY_HIST);
+  try {
+    const attempts = await fetchAttemptsFromBff(HISTORY_LIMIT);
+    writeJson(KEY_HIST, { attempts });
+  } catch {
+    /* ignore */
+  }
+};
+
+// Eager pull of all three keys, used by AppShell on mount and again on
+// sign-in transitions. Bypasses the throttle so the first paint after
+// authenticating sees fresh data.
+export const refreshAllFromBff = async (): Promise<void> => {
+  lastRefreshedAt.clear();
+  await Promise.allSettled([refreshLastPracticed(), refreshBestScores(), refreshRecentAttempts()]);
+};
+
+export const getLastPracticed = (): LastPracticed | null => {
+  void refreshLastPracticed();
+  return readJson<LastPracticed>(KEY_LAST);
+};
+
+export const setLastPracticed = (entry: LastPracticed): void => {
+  writeJson(KEY_LAST, entry);
+  markRefreshed(KEY_LAST);
+  void putLastPracticedToBff(entry).catch(() => {
+    /* ignore; the next refresh will reconcile */
+  });
+};
+
+export const getBestScores = (): BestScores => {
+  void refreshBestScores();
+  return readJson<BestScores>(KEY_BEST) ?? {};
+};
 
 const bestScoreKey = (surahId: string, ayahNumber: number): string => `${surahId}:${ayahNumber}`;
 
@@ -79,25 +148,35 @@ export const getBestScoreForSurah = (surahId: string): number | null => {
 };
 
 export const recordBestScore = (surahId: string, ayahNumber: number, score: number): void => {
-  const all = getBestScores();
+  const all = readJson<BestScores>(KEY_BEST) ?? {};
   const key = bestScoreKey(surahId, ayahNumber);
   const existing = all[key];
-  if (!existing || score > existing.score) {
-    all[key] = { score, achievedAt: new Date().toISOString() };
-    writeJson(KEY_BEST, all);
-  }
+  if (existing && existing.score >= score) return;
+
+  const entry: BestScoreEntry = { score, achievedAt: new Date().toISOString() };
+  all[key] = entry;
+  writeJson(KEY_BEST, all);
+  markRefreshed(KEY_BEST);
+  void putBestScoreToBff(surahId, ayahNumber, entry).catch(() => {
+    /* ignore */
+  });
 };
 
 export const getRecentAttempts = (limit = HISTORY_LIMIT): Attempt[] => {
+  void refreshRecentAttempts();
   const log = readJson<{ attempts: Attempt[] }>(KEY_HIST);
   if (!log?.attempts) return [];
   return log.attempts.slice(0, limit);
 };
 
 export const recordAttempt = (attempt: Attempt): void => {
-  const existing = getRecentAttempts(HISTORY_LIMIT);
+  const existing = readJson<{ attempts: Attempt[] }>(KEY_HIST)?.attempts ?? [];
   const next = [attempt, ...existing].slice(0, HISTORY_LIMIT);
   writeJson(KEY_HIST, { attempts: next });
+  markRefreshed(KEY_HIST);
+  void postAttemptToBff(attempt).catch(() => {
+    /* ignore */
+  });
 };
 
 export const getAttemptsForToday = (surahId: string, ayahNumber: number): Attempt[] => {
