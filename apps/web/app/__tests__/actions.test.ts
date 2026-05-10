@@ -16,7 +16,8 @@ import {
   mockAyahs
 } from '../../test/fixtures/testData';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../lib/auth-cookies';
-import { __resetCookies, cookies } from 'next/headers';
+import { cookies } from 'next/headers';
+import { __resetCookies } from '../../test/mocks/next-headers';
 
 // Mock global fetch
 global.fetch = vi.fn();
