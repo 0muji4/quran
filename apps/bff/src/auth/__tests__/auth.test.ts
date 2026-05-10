@@ -7,6 +7,7 @@ import {
   authenticateRequest,
   requireAuth,
   authMiddleware,
+  MOCK_SESSION_USER_ID,
   buildContext,
   type AuthedRequest
 } from '../auth';
@@ -269,7 +270,7 @@ describe('authenticateRequest', () => {
     const result = authenticateRequest(req);
 
     expect(result).toEqual({
-      id: 'mock-user',
+      id: MOCK_SESSION_USER_ID,
       email: 'mock-user@example.com',
       displayName: 'Mock User'
     });

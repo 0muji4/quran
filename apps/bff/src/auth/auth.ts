@@ -8,8 +8,13 @@ export type AuthedRequest = Request & {
   signal?: AbortSignal;
 };
 
+// Fixed UUID for the dev / CI mock user. The matching row is seeded in
+// db/seed.sql so writes through the /me endpoints satisfy the FK on
+// users.id without needing real auth.
+export const MOCK_SESSION_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 const buildMockSession = (): UserSession => ({
-  id: 'mock-user',
+  id: MOCK_SESSION_USER_ID,
   email: 'mock-user@example.com',
   displayName: 'Mock User'
 });
