@@ -3,12 +3,22 @@ import request from 'supertest';
 import express, { type Express } from 'express';
 import { authMiddleware } from '../../auth';
 import { meRouter } from '../routes';
-import { getBestScores, getLastPracticed, getRecentAttempts } from '../storage';
+import {
+  getBestScores,
+  getLastPracticed,
+  getRecentAttempts,
+  recordPracticeAttempt,
+  upsertBestScore,
+  upsertLastPracticed
+} from '../storage';
 
 vi.mock('../storage', () => ({
   getLastPracticed: vi.fn(),
   getBestScores: vi.fn(),
-  getRecentAttempts: vi.fn()
+  getRecentAttempts: vi.fn(),
+  upsertLastPracticed: vi.fn(),
+  upsertBestScore: vi.fn(),
+  recordPracticeAttempt: vi.fn()
 }));
 
 vi.mock('../../telemetry', () => ({
@@ -153,6 +163,149 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(400);
       expect(getRecentAttempts).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PUT /me/last-practiced', () => {
+    const validBody = {
+      surahId: '1',
+      ayahNumber: 3,
+      surahNameEn: 'Al-Fatihah',
+      surahNameAr: 'الفاتحة',
+      ayahCount: 7,
+      practicedAt: '2026-05-09T10:00:00.000Z'
+    };
+
+    it('upserts and echoes the body on success', async () => {
+      vi.mocked(upsertLastPracticed).mockResolvedValue(validBody);
+
+      const res = await request(app).put('/me/last-practiced').send(validBody);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(validBody);
+      expect(upsertLastPracticed).toHaveBeenCalledWith('mock-user', validBody);
+    });
+
+    it('rejects a missing field with 400', async () => {
+      const res = await request(app)
+        .put('/me/last-practiced')
+        .send({ ...validBody, surahId: undefined });
+
+      expect(res.status).toBe(400);
+      expect(upsertLastPracticed).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-ISO practicedAt with 400', async () => {
+      const res = await request(app)
+        .put('/me/last-practiced')
+        .send({ ...validBody, practicedAt: 'yesterday' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 502 when storage throws', async () => {
+      vi.mocked(upsertLastPracticed).mockRejectedValue(new Error('boom'));
+
+      const res = await request(app).put('/me/last-practiced').send(validBody);
+
+      expect(res.status).toBe(502);
+    });
+  });
+
+  describe('PUT /me/best-scores/:key', () => {
+    const body = { score: 92, achievedAt: '2026-05-09T10:00:00.000Z' };
+
+    it('upserts on a valid key', async () => {
+      vi.mocked(upsertBestScore).mockResolvedValue(body);
+
+      const res = await request(app).put('/me/best-scores/2:255').send(body);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(body);
+      expect(upsertBestScore).toHaveBeenCalledWith('mock-user', '2', 255, body);
+    });
+
+    it('rejects a key without the colon separator', async () => {
+      const res = await request(app).put('/me/best-scores/2255').send(body);
+
+      expect(res.status).toBe(400);
+      expect(upsertBestScore).not.toHaveBeenCalled();
+    });
+
+    it('rejects a score above 100 with 400', async () => {
+      const res = await request(app)
+        .put('/me/best-scores/1:1')
+        .send({ ...body, score: 101 });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /me/attempts', () => {
+    const body = {
+      surahId: '1',
+      surahNameEn: 'Al-Fatihah',
+      ayahNumber: 1,
+      score: 92,
+      jobId: 'job-1',
+      status: 'COMPLETED' as const,
+      durationMs: 4200,
+      createdAt: '2026-05-09T10:00:00.000Z'
+    };
+
+    it('records and returns 201 with the inserted row including id', async () => {
+      vi.mocked(recordPracticeAttempt).mockResolvedValue({
+        id: 'a1',
+        ...body
+      });
+
+      const res = await request(app).post('/me/attempts').send(body);
+
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual({ id: 'a1', ...body });
+      expect(recordPracticeAttempt).toHaveBeenCalledWith('mock-user', body);
+    });
+
+    it('accepts a null score (failed attempt)', async () => {
+      vi.mocked(recordPracticeAttempt).mockResolvedValue({
+        id: 'a2',
+        ...body,
+        score: null,
+        status: 'FAILED'
+      });
+
+      const res = await request(app)
+        .post('/me/attempts')
+        .send({ ...body, score: null, status: 'FAILED' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.score).toBeNull();
+    });
+
+    it('coerces an absent durationMs to null', async () => {
+      vi.mocked(recordPracticeAttempt).mockResolvedValue({
+        id: 'a3',
+        ...body,
+        durationMs: null
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { durationMs: _omit, ...rest } = body;
+      const res = await request(app).post('/me/attempts').send(rest);
+
+      expect(res.status).toBe(201);
+      expect(recordPracticeAttempt).toHaveBeenCalledWith(
+        'mock-user',
+        expect.objectContaining({ durationMs: null })
+      );
+    });
+
+    it('rejects an unknown status with 400', async () => {
+      const res = await request(app)
+        .post('/me/attempts')
+        .send({ ...body, status: 'WIP' });
+
+      expect(res.status).toBe(400);
     });
   });
 });
