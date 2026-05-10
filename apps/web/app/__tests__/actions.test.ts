@@ -4,7 +4,10 @@ import {
   createScoringJobFromUpload,
   fetchScoringJob,
   fetchSurahs,
-  fetchSurahAyahs
+  fetchSurahAyahs,
+  signInAction,
+  signOutAction,
+  signUpAction
 } from '../actions';
 import {
   mockSignedUploadUrl,
@@ -12,6 +15,8 @@ import {
   mockSurahs,
   mockAyahs
 } from '../../test/fixtures/testData';
+import { ACCESS_COOKIE, REFRESH_COOKIE } from '../lib/auth-cookies';
+import { __resetCookies, cookies } from 'next/headers';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -326,6 +331,103 @@ describe('Server Actions', () => {
       } as unknown as Response);
 
       await expect(fetchSurahs()).rejects.toThrow('Invalid JSON');
+    });
+  });
+
+  describe('Auth actions', () => {
+    beforeEach(() => {
+      __resetCookies();
+    });
+
+    const mockAuthSuccess = {
+      accessToken: 'access-token-abc',
+      refreshToken: 'refresh-token-xyz',
+      user: { id: 'user-1', email: 'a@b.co', displayName: 'A' }
+    };
+
+    it('signUpAction posts credentials and persists session cookies', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => mockAuthSuccess
+      } as Response);
+
+      const user = await signUpAction({
+        email: 'a@b.co',
+        password: 'hunter2hunter2',
+        displayName: 'A'
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/signup'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ email: 'a@b.co', password: 'hunter2hunter2', displayName: 'A' })
+        })
+      );
+      expect(user).toEqual(mockAuthSuccess.user);
+      const store = await cookies();
+      expect(store.get(ACCESS_COOKIE)?.value).toBe('access-token-abc');
+      expect(store.get(REFRESH_COOKIE)?.value).toBe('refresh-token-xyz');
+    });
+
+    it('signInAction persists cookies on success', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => mockAuthSuccess
+      } as Response);
+
+      const user = await signInAction({ email: 'a@b.co', password: 'pw' });
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/login'),
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(user.id).toBe('user-1');
+      const store = await cookies();
+      expect(store.get(ACCESS_COOKIE)?.value).toBe('access-token-abc');
+    });
+
+    it('signInAction surfaces BFF errors and leaves cookies untouched', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: 'invalid email or password' })
+      } as Response);
+
+      await expect(signInAction({ email: 'a@b.co', password: 'wrong' })).rejects.toThrow(
+        'invalid email or password'
+      );
+      const store = await cookies();
+      expect(store.get(ACCESS_COOKIE)).toBeUndefined();
+    });
+
+    it('signOutAction clears the auth cookies', async () => {
+      const store = await cookies();
+      store.set(ACCESS_COOKIE, 'old-access');
+      store.set(REFRESH_COOKIE, 'old-refresh');
+
+      await signOutAction();
+
+      expect(store.get(ACCESS_COOKIE)).toBeUndefined();
+      expect(store.get(REFRESH_COOKIE)).toBeUndefined();
+    });
+
+    it('forwards the access cookie as Authorization Bearer on subsequent BFF calls', async () => {
+      const store = await cookies();
+      store.set(ACCESS_COOKIE, 'live-token');
+
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ surahs: mockSurahs })
+      } as Response);
+
+      await fetchSurahs();
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/rsc/surahs'),
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer live-token' })
+        })
+      );
     });
   });
 });
