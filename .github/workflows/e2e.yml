@@ -1,10 +1,10 @@
 name: E2E Tests
 
+# Called from ci.yml when the JS or DB stack changed. Direct push and
+# pull_request triggers are intentionally absent so this workflow only
+# runs through the orchestrator. See ADR 0014.
 on:
-  push:
-    branches: ['**']
-  pull_request:
-    branches: [develop, main]
+  workflow_call:
 
 jobs:
   e2e:
