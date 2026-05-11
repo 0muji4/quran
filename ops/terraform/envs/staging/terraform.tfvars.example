@@ -1,0 +1,18 @@
+# Copy to terraform.tfvars and fill in real values.
+
+project_id        = "quran-staging"
+region            = "asia-northeast1"
+github_repository = "0muji4/quran-project"
+
+# Self-link of the VPC the Cloud SQL instance + Memorystore attach to.
+# Outside the scope of this skeleton — the user creates the VPC + PSA range
+# manually (or in a follow-up Terraform module).
+vpc_network_self_link  = "projects/quran-staging/global/networks/default"
+vpc_authorized_network = "projects/quran-staging/global/networks/default"
+
+container_images = {
+  backend = "asia-northeast1-docker.pkg.dev/quran-staging/quran-staging/backend:placeholder"
+  bff     = "asia-northeast1-docker.pkg.dev/quran-staging/quran-staging/bff:placeholder"
+  web     = "asia-northeast1-docker.pkg.dev/quran-staging/quran-staging/web:placeholder"
+  worker  = "asia-northeast1-docker.pkg.dev/quran-staging/quran-staging/worker:placeholder"
+}
