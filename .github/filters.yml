@@ -1,0 +1,80 @@
+# .github/filters.yml
+#
+# Path filters consumed by dorny/paths-filter@v3 in .github/workflows/ci.yml.
+# Each top-level key is a "stack". A downstream job runs only when its
+# stack's filter matched the diff.
+#
+# The `&shared` YAML anchor is expanded (via `*shared`) into every
+# non-mobile stack so cross-cutting changes — workflows, root config,
+# lockfiles, the prettier/node toolchain — re-trigger every relevant
+# stack by construction. Mobile stacks deliberately do NOT inherit
+# `shared` because macOS runners are expensive; instead they list the
+# narrow set of files that genuinely affect their builds (workflows,
+# the schemas they codegen against, the gradle build files, etc.).
+#
+# When you add a new cross-cutting file at the repo root, add it to
+# *shared* deliberately. The nightly full-CI cron (nightly-ci.yml)
+# catches omissions within 24h, but the goal is to avoid them in the
+# first place. See ADR 0014 §"Why a nightly full-CI is mandatory".
+
+shared: &shared
+  - '.github/workflows/**'
+  - '.github/filters.yml'
+  - 'Makefile'
+  - 'pnpm-lock.yaml'
+  - 'pnpm-workspace.yaml'
+  - 'package.json'
+  - '.node-version'
+  - '.prettierignore'
+  - '.prettierrc*'
+
+js:
+  - *shared
+  - 'apps/web/**'
+  - 'apps/bff/**'
+  - 'packages/ui/**'
+  - 'packages/shared-ts/**'
+  - 'packages/eslint-config/**'
+  - 'packages/ts-config/**'
+  - 'schemas/**'
+  - 'scripts/generate-quran-seed.ts'
+
+go:
+  - *shared
+  - 'apps/backend/**'
+  - 'apps/worker/go/**'
+  - 'packages/go-pkg/**'
+  - 'go.work'
+  - 'go.work.sum'
+  - 'scripts/check-go-coverage.sh'
+
+python:
+  - *shared
+  - 'apps/worker/python/**'
+
+db:
+  - *shared
+  - 'db/**'
+  - 'scripts/migrate-lint.sh'
+
+terraform:
+  - *shared
+  - 'ops/terraform/**'
+
+ios:
+  - '.github/workflows/**'
+  - '.github/filters.yml'
+  - 'apps/ios/**'
+  - 'schemas/**'
+  - 'Makefile'
+
+android:
+  - '.github/workflows/**'
+  - '.github/filters.yml'
+  - 'apps/android/**'
+  - 'build.gradle.kts'
+  - 'settings.gradle.kts'
+  - 'gradle.properties'
+  - 'gradle/**'
+  - 'gradlew'
+  - 'gradlew.bat'
