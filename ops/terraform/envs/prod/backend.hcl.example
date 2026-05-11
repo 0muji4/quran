@@ -1,0 +1,5 @@
+# Copy to backend.hcl and pass via `terraform init -backend-config=backend.hcl`.
+# The bucket value should match STATE_BUCKET from bootstrap.sh.
+
+bucket = "quran-prod-tf-state"
+prefix = "prod"
