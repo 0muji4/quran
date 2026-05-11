@@ -59,15 +59,5 @@ jobs:
       - name: Run Go tests
         run: go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
 
-      - name: Install sql-migrate
-        run: |
-          go install github.com/rubenv/sql-migrate/...@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
-
-      - name: sql-migrate dry-run
-        run: |
-          if [ -f dbconfig.yml ]; then
-            sql-migrate up -config=dbconfig.yml -env=development -dryrun;
-          else
-            echo "dbconfig.yml not found; skipping sql-migrate dry-run";
-          fi
+      - name: Lint migration filenames
+        run: scripts/migrate-lint.sh db/migrations

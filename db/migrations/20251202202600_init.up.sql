@@ -40,7 +40,12 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Partitioned attempts table for scalable scoring storage.
+-- Attempts table for scoring storage.
+-- Partitioning was originally intended (PARTITION BY RANGE (created_at)) but
+-- never worked: PRIMARY KEY (id) does not include the partition column, which
+-- Postgres rejects. The old psql-based migrator silently continued past the
+-- error, so no environment ever had this table. Partitioning is deferred to a
+-- future ADR (track when individual tables approach ~10 GB).
 CREATE TABLE IF NOT EXISTS attempts (
     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id      UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -50,10 +55,7 @@ CREATE TABLE IF NOT EXISTS attempts (
     evaluation   JSONB        DEFAULT '{}'::jsonb,
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     CONSTRAINT attempts_per_user_surah UNIQUE (user_id, surah_id, ayah_id, created_at)
-) PARTITION BY RANGE (created_at);
-
-CREATE TABLE IF NOT EXISTS attempts_default PARTITION OF attempts
-    FOR VALUES FROM ('2000-01-01') TO ('2100-01-01');
+);
 
 -- Segment scores reference attempts and can carry flexible metrics.
 CREATE TABLE IF NOT EXISTS segment_scores (
