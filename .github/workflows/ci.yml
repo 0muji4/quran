@@ -59,5 +59,20 @@ jobs:
       - name: Run Go tests
         run: go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
 
+      - name: Setup Python (worker)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/worker/python/requirements-dev.txt
+
+      - name: Run Python worker tests
+        env:
+          DISABLE_TELEMETRY: "true"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/worker/python/requirements-dev.txt
+          python -m pytest apps/worker/python/tests/
+
       - name: Lint migration filenames
         run: scripts/migrate-lint.sh db/migrations

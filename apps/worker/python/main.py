@@ -4,10 +4,12 @@ import logging
 import os
 import re
 import tempfile
+import threading
 import time
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 import psycopg
 import redis
@@ -177,6 +179,8 @@ class WorkerConfig:
     whisper_compute_type: str = "float16"
     alignment_prefix: str = "alignments/"
     queue_auth_token: Optional[str] = None
+    asr_backend: str = "faster-whisper-local"
+    healthz_port: int = 8080
 
     @classmethod
     def from_env(cls) -> "WorkerConfig":
@@ -195,7 +199,122 @@ class WorkerConfig:
             whisper_compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"),
             alignment_prefix=os.getenv("ALIGNMENT_PREFIX", "alignments/"),
             queue_auth_token=os.getenv("QUEUE_AUTH_TOKEN"),
+            asr_backend=os.getenv("ASR_BACKEND", "faster-whisper-local"),
+            healthz_port=int(os.getenv("PORT", "8080")),
         )
+
+
+@dataclass
+class TranscriptionResult:
+    transcript: str
+    words: List[Dict[str, Any]]
+
+
+class Transcriber(Protocol):
+    """Pluggable ASR backend contract. See ADR 0013."""
+
+    name: str
+
+    def transcribe(self, audio_path: str, expected_text_ar: str) -> TranscriptionResult: ...
+
+
+class FasterWhisperLocalTranscriber:
+    """In-process Whisper inference via faster-whisper. Default backend."""
+
+    name = "faster-whisper-local"
+
+    def __init__(self, cfg: WorkerConfig):
+        self.cfg = cfg
+        self.model = WhisperModel(
+            cfg.whisper_model_size,
+            device=cfg.whisper_device,
+            compute_type=cfg.whisper_compute_type,
+        )
+
+    def transcribe(self, audio_path: str, expected_text_ar: str) -> TranscriptionResult:
+        with tracer.start_as_current_span(
+            "transcribe_audio",
+            attributes={
+                "whisper.model": self.cfg.whisper_model_size,
+                "whisper.device": self.cfg.whisper_device,
+                "asr.backend": self.name,
+                "audio.language": "ar",
+            },
+        ) as span:
+            prompt_tokens = expected_text_ar.split() if expected_text_ar else []
+            initial_prompt = None
+            if prompt_tokens:
+                initial_prompt = " ".join(prompt_tokens[:MAX_PROMPT_WORDS]).strip() or None
+            segments, _ = self.model.transcribe(
+                audio_path,
+                language="ar",
+                beam_size=5,
+                word_timestamps=True,
+                initial_prompt=initial_prompt,
+            )
+
+            words: List[Dict[str, Any]] = []
+            texts: List[str] = []
+            for segment in segments:
+                texts.append(segment.text.strip())
+                for word in segment.words or []:
+                    words.append(
+                        {
+                            "word": word.word,
+                            "start": word.start,
+                            "end": word.end,
+                            "probability": word.probability,
+                        }
+                    )
+            transcript = " ".join(texts).strip()
+            span.set_attribute("transcript.word_count", len(words))
+            span.set_status(Status(StatusCode.OK))
+            return TranscriptionResult(transcript=transcript, words=words)
+
+
+def build_transcriber(cfg: WorkerConfig) -> Transcriber:
+    """Resolve the configured ASR backend.
+
+    Adding a new backend (faster-whisper-gpu, HF Inference Endpoint,
+    Inferentia2, external API) means a new class with the Transcriber
+    protocol and a new branch here. See ADR 0013.
+    """
+    backend = cfg.asr_backend
+    if backend == "faster-whisper-local":
+        return FasterWhisperLocalTranscriber(cfg)
+    raise ValueError(f"unknown ASR_BACKEND: {backend!r}")
+
+
+class HealthzHandler(BaseHTTPRequestHandler):
+    """Minimal liveness endpoint. Required by Cloud Run; see ADR 0010."""
+
+    asr_backend: str = "unknown"
+
+    def do_GET(self) -> None:  # noqa: N802 — http.server callback name
+        if self.path != "/healthz":
+            self.send_response(404)
+            self.end_headers()
+            return
+        body = json.dumps({"status": "ok", "asr_backend": self.asr_backend}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 — base-class signature
+        # Suppress BaseHTTPRequestHandler's stderr access log; route to our logger
+        # at DEBUG so production noise stays low while traces still capture it.
+        logger.debug("healthz %s %s", self.command, self.path)
+
+
+def start_healthz_server(port: int, asr_backend: str) -> HTTPServer:
+    HealthzHandler.asr_backend = asr_backend
+    server = HTTPServer(("0.0.0.0", port), HealthzHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True, name="healthz-server")
+    thread.start()
+    logger.info("healthz listening on :%d (asr_backend=%s)", port, asr_backend)
+    return server
 
 
 def normalize_arabic(text: str) -> str:
@@ -475,15 +594,11 @@ class ResultWriter:
 
 
 class AsrWorker:
-    def __init__(self, cfg: WorkerConfig):
+    def __init__(self, cfg: WorkerConfig, transcriber: Optional[Transcriber] = None):
         self.cfg = cfg
         self.redis = redis.from_url(cfg.redis_url)
         self.writer = ResultWriter(cfg)
-        self.model = WhisperModel(
-            cfg.whisper_model_size,
-            device=cfg.whisper_device,
-            compute_type=cfg.whisper_compute_type,
-        )
+        self.transcriber: Transcriber = transcriber if transcriber is not None else build_transcriber(cfg)
 
     def _download_audio(self, audio_key: str) -> str:
         with tracer.start_as_current_span(
@@ -508,43 +623,8 @@ class AsrWorker:
                 raise
 
     def _transcribe(self, audio_path: str, expected_text_ar: str) -> Tuple[str, List[Dict[str, Any]]]:
-        with tracer.start_as_current_span(
-            "transcribe_audio",
-            attributes={
-                "whisper.model": self.cfg.whisper_model_size,
-                "whisper.device": self.cfg.whisper_device,
-                "audio.language": "ar",
-            },
-        ) as span:
-            prompt_tokens = expected_text_ar.split() if expected_text_ar else []
-            initial_prompt = None
-            if prompt_tokens:
-                initial_prompt = " ".join(prompt_tokens[:MAX_PROMPT_WORDS]).strip() or None
-            segments, _ = self.model.transcribe(
-                audio_path,
-                language="ar",
-                beam_size=5,
-                word_timestamps=True,
-                initial_prompt=initial_prompt,
-            )
-
-            words: List[Dict[str, Any]] = []
-            texts: List[str] = []
-            for segment in segments:
-                texts.append(segment.text.strip())
-                for word in segment.words or []:
-                    words.append(
-                        {
-                            "word": word.word,
-                            "start": word.start,
-                            "end": word.end,
-                            "probability": word.probability,
-                        }
-                    )
-            transcript = " ".join(texts).strip()
-            span.set_attribute("transcript.word_count", len(words))
-            span.set_status(Status(StatusCode.OK))
-            return transcript, words
+        result = self.transcriber.transcribe(audio_path, expected_text_ar)
+        return result.transcript, result.words
 
     def process_job(self, job: Dict[str, Any]) -> None:
         required_keys = {"session_id", "audio_key", "ayah_id", "expected_text_ar"}
@@ -696,7 +776,9 @@ class AsrWorker:
 
 def main() -> None:
     cfg = WorkerConfig.from_env()
-    worker = AsrWorker(cfg)
+    transcriber = build_transcriber(cfg)
+    start_healthz_server(cfg.healthz_port, transcriber.name)
+    worker = AsrWorker(cfg, transcriber=transcriber)
     worker.run_forever()
 
 
