@@ -68,3 +68,11 @@ captures/
 .externalNativeBuild/
 *.iml
 !gradle/wrapper/gradle-wrapper.jar
+# Terraform local state and provider plugins
+ops/terraform/**/.terraform/
+ops/terraform/**/.terraform.lock.hcl
+ops/terraform/**/*.tfstate
+ops/terraform/**/*.tfstate.*
+ops/terraform/**/terraform.tfvars
+ops/terraform/**/backend.hcl
+ops/terraform/**/.terraform.tfstate.lock.info
