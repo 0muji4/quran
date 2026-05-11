@@ -1,16 +1,23 @@
-import os
 import json
+import os
+import socket
+import urllib.request
 from unittest.mock import MagicMock, patch, ANY
 
 import pytest
 from main import (
     AsrWorker,
-    WorkerConfig,
+    FasterWhisperLocalTranscriber,
+    HealthzHandler,
     ResultWriter,
-    normalize_arabic,
-    compute_wer,
+    TranscriptionResult,
+    WorkerConfig,
     align_words,
+    build_transcriber,
     compute_pronunciation_score,
+    compute_wer,
+    normalize_arabic,
+    start_healthz_server,
 )
 
 # --- Test Helper Functions ---
@@ -86,10 +93,16 @@ class TestAsrWorker:
         # Setup
         worker = AsrWorker(worker_config)
         mock_minio_client = mock_writer.return_value.minio
-        
+
         audio_key = "path/to/audio.opus"
         temp_file_path = os.path.join(tmp_path, "audio.opus")
-        
+
+        # fget_object writes to disk in production; emulate that so the
+        # post-download `os.path.getsize` succeeds.
+        def fake_fget(bucket, key, dest_path):  # noqa: ARG001
+            open(dest_path, "wb").close()
+        mock_minio_client.fget_object.side_effect = fake_fget
+
         # Action
         with patch("tempfile.mkstemp", return_value=(None, temp_file_path)):
              downloaded_path = worker._download_audio(audio_key)
@@ -141,12 +154,16 @@ class TestAsrWorker:
     @patch("main.redis")
     @patch("main.WhisperModel")
     def test_process_job_end_to_end(
-        self, mock_whisper, mock_redis, mock_writer, mock_transcribe, mock_download, worker_config
+        self, mock_whisper, mock_redis, mock_writer, mock_transcribe, mock_download, worker_config, tmp_path
     ):
         # Setup
         worker = AsrWorker(worker_config)
-        
-        mock_download.return_value = "/tmp/fake_audio.opus"
+
+        # process_job calls os.path.getsize on the downloaded file to record
+        # an upload-size metric. Use a real (empty) temp file so that succeeds.
+        fake_audio_path = os.path.join(tmp_path, "fake_audio.opus")
+        open(fake_audio_path, "wb").close()
+        mock_download.return_value = fake_audio_path
         mock_transcribe.return_value = ("transcript text", [{"word": "transcript", "start": 0, "end": 1, "probability": 0.9}])
         
         mock_writer_instance = mock_writer.return_value
@@ -165,7 +182,7 @@ class TestAsrWorker:
 
         # Assert
         mock_download.assert_called_once_with(job["audio_key"])
-        mock_transcribe.assert_called_once_with("/tmp/fake_audio.opus", job["expected_text_ar"])
+        mock_transcribe.assert_called_once_with(fake_audio_path, job["expected_text_ar"])
         
         mock_writer_instance.save_alignment.assert_called_once()
         mock_writer_instance.upsert_result.assert_called_once()
@@ -251,3 +268,89 @@ class TestResultWriter:
         mock_cursor.execute.assert_called_once()
         assert "UPDATE scoring_jobs" in mock_cursor.execute.call_args[0][0]
         assert mock_cursor.execute.call_args[0][1]["score"] == 0.95
+
+
+# --- Test ASR backend abstraction (ADR 0013) ---
+
+class TestTranscriberFactory:
+
+    @patch("main.WhisperModel")
+    def test_default_backend_is_faster_whisper_local(self, mock_whisper, worker_config):
+        transcriber = build_transcriber(worker_config)
+        assert isinstance(transcriber, FasterWhisperLocalTranscriber)
+        assert transcriber.name == "faster-whisper-local"
+
+    @patch("main.WhisperModel")
+    def test_explicit_faster_whisper_local(self, mock_whisper, worker_config):
+        worker_config.asr_backend = "faster-whisper-local"
+        transcriber = build_transcriber(worker_config)
+        assert isinstance(transcriber, FasterWhisperLocalTranscriber)
+
+    def test_unknown_backend_raises(self, worker_config):
+        worker_config.asr_backend = "no-such-backend"
+        with pytest.raises(ValueError, match="no-such-backend"):
+            build_transcriber(worker_config)
+
+    @patch("main.WhisperModel")
+    def test_transcribe_returns_transcription_result(self, mock_whisper, worker_config):
+        # Mock Whisper to return one segment with one word
+        mock_word = MagicMock(word="hello", start=0.0, end=0.5, probability=0.9)
+        mock_segment = MagicMock(text="hello", words=[mock_word])
+        mock_whisper.return_value.transcribe.return_value = ([mock_segment], MagicMock())
+
+        transcriber = FasterWhisperLocalTranscriber(worker_config)
+        result = transcriber.transcribe("/tmp/audio.opus", "")
+
+        assert isinstance(result, TranscriptionResult)
+        assert result.transcript == "hello"
+        assert len(result.words) == 1
+        assert result.words[0]["word"] == "hello"
+
+
+# --- Test /healthz endpoint (ADR 0010, ADR 0013) ---
+
+def _free_port() -> int:
+    """Return an OS-assigned free TCP port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+class TestHealthz:
+
+    def test_healthz_returns_200_and_backend_name(self):
+        port = _free_port()
+        server = start_healthz_server(port, "faster-whisper-local")
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as resp:
+                assert resp.status == 200
+                body = json.loads(resp.read().decode("utf-8"))
+                assert body == {"status": "ok", "asr_backend": "faster-whisper-local"}
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_unknown_path_returns_404(self):
+        port = _free_port()
+        server = start_healthz_server(port, "faster-whisper-local")
+        try:
+            with pytest.raises(urllib.error.HTTPError) as err:
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/nope", timeout=2)
+            assert err.value.code == 404
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_healthz_reports_configured_backend(self):
+        # Reset class attribute to avoid cross-test contamination via HealthzHandler
+        # (it carries asr_backend on the class itself).
+        port = _free_port()
+        server = start_healthz_server(port, "future-gpu-backend")
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                assert body["asr_backend"] == "future-gpu-backend"
+        finally:
+            HealthzHandler.asr_backend = "unknown"  # restore default
+            server.shutdown()
+            server.server_close()
