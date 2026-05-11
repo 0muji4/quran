@@ -1,0 +1,19 @@
+name: Nightly Full CI
+
+# Safety net for the path-filter pattern: runs the entire CI graph
+# unconditionally so any silent under-execution caused by a missing
+# entry in .github/filters.yml surfaces within 24h. See ADR 0014
+# §"Why a nightly full-CI is mandatory rather than optional".
+#
+# Cron fires from the default branch (currently `develop`). Once
+# `main` exists, this workflow should grow a branch matrix.
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 03:00 JST daily, outside Asia working hours
+  workflow_dispatch:
+
+jobs:
+  full:
+    uses: ./.github/workflows/ci.yml
+    with:
+      force_all: true

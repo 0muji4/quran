@@ -1,13 +1,71 @@
 name: CI
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_call:
+    inputs:
+      force_all:
+        description: 'Skip path filtering and run every stack (used by nightly-ci.yml).'
+        type: boolean
+        default: false
 
 jobs:
-  build:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      js: ${{ steps.resolve.outputs.js }}
+      go: ${{ steps.resolve.outputs.go }}
+      python: ${{ steps.resolve.outputs.python }}
+      db: ${{ steps.resolve.outputs.db }}
+      terraform: ${{ steps.resolve.outputs.terraform }}
+      ios: ${{ steps.resolve.outputs.ios }}
+      android: ${{ steps.resolve.outputs.android }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run path filter
+        id: filter
+        if: ${{ inputs.force_all != true }}
+        uses: dorny/paths-filter@v3
+        with:
+          filters: .github/filters.yml
+
+      - name: Resolve stack flags
+        id: resolve
+        env:
+          FORCE_ALL: ${{ inputs.force_all == true }}
+          F_JS: ${{ steps.filter.outputs.js }}
+          F_GO: ${{ steps.filter.outputs.go }}
+          F_PYTHON: ${{ steps.filter.outputs.python }}
+          F_DB: ${{ steps.filter.outputs.db }}
+          F_TERRAFORM: ${{ steps.filter.outputs.terraform }}
+          F_IOS: ${{ steps.filter.outputs.ios }}
+          F_ANDROID: ${{ steps.filter.outputs.android }}
+        run: |
+          set -euo pipefail
+          emit() {
+            local stack="$1" raw="$2"
+            if [[ "$FORCE_ALL" == "true" ]]; then
+              echo "${stack}=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${stack}=${raw:-false}" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          emit js        "$F_JS"
+          emit go        "$F_GO"
+          emit python    "$F_PYTHON"
+          emit db        "$F_DB"
+          emit terraform "$F_TERRAFORM"
+          emit ios       "$F_IOS"
+          emit android   "$F_ANDROID"
+
+  js-quality:
+    needs: changes
+    if: needs.changes.outputs.js == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -39,6 +97,14 @@ jobs:
       - name: Run build
         run: pnpm build
 
+  go-quality:
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         env:
@@ -59,6 +125,14 @@ jobs:
       - name: Run Go tests
         run: go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
 
+  python-tests:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Python (worker)
         uses: actions/setup-python@v5
         with:
@@ -74,8 +148,24 @@ jobs:
           pip install -r apps/worker/python/requirements-dev.txt
           python -m pytest apps/worker/python/tests/
 
+  db-lint:
+    needs: changes
+    if: needs.changes.outputs.db == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Lint migration filenames
         run: scripts/migrate-lint.sh db/migrations
+
+  terraform-validate:
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -100,3 +190,64 @@ jobs:
 
       - name: Bootstrap script syntax check
         run: bash -n ops/terraform/bootstrap.sh
+
+  tests:
+    needs: changes
+    if: needs.changes.outputs.js == 'true' || needs.changes.outputs.go == 'true'
+    uses: ./.github/workflows/test.yml
+    with:
+      js: ${{ needs.changes.outputs.js }}
+      go: ${{ needs.changes.outputs.go }}
+
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.js == 'true' || needs.changes.outputs.db == 'true'
+    uses: ./.github/workflows/e2e.yml
+
+  mobile-android:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    uses: ./.github/workflows/mobile-ci.yml
+    with:
+      target: android
+
+  mobile-ios:
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    uses: ./.github/workflows/mobile-ci.yml
+    with:
+      target: ios
+
+  ci-summary:
+    # The single stable required check. Branch protection on develop/main
+    # should require ONLY this job. It aggregates every upstream job's
+    # `needs.*.result` and fails on `failure` or `cancelled`; `skipped`
+    # (the natural outcome of a stack the PR did not touch) counts as
+    # success so partial-stack PRs remain mergeable. See ADR 0014.
+    needs:
+      - changes
+      - js-quality
+      - go-quality
+      - python-tests
+      - db-lint
+      - terraform-validate
+      - tests
+      - e2e
+      - mobile-android
+      - mobile-ios
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate upstream results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS_JSON"
+          failed=$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$NEEDS_JSON")
+          if [ -n "$failed" ]; then
+            echo "::error::Failed or cancelled upstream jobs:"
+            echo "$failed"
+            exit 1
+          fi
+          echo "All upstream jobs are success or skipped."
