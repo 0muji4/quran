@@ -215,6 +215,24 @@ services:
     ports:
       - "3000:3000"
 
+  # One-shot migration runner. Invoked via `make db-migrate` and friends,
+  # not started by `docker compose up`. The `tools` profile keeps it
+  # out of the default dev stack.
+  migrate:
+    image: migrate/migrate:v4.17.1
+    profiles: ["tools"]
+    volumes:
+      - ../../db/migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      [
+        "migrate",
+        "-path=/migrations",
+        "-database=postgres://app:app@postgres:5432/app?sslmode=disable",
+      ]
+
 volumes:
   postgres_data:
   minio_data:
