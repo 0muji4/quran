@@ -1,4 +1,4 @@
-.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage sql-migrate-dry-run db-migrate db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
+.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -91,21 +91,20 @@ ci-test: go-test-coverage-check ## Run CI tests with coverage
 	@pnpm run test:coverage
 	@pnpm run test:e2e
 
-sql-migrate-dry-run:
-	if [ -f dbconfig.yml ]; then \
-		sql-migrate up -config=dbconfig.yml -env=development -dryrun; \
-	else \
-		echo "dbconfig.yml not found; skipping sql-migrate dry-run"; \
-	fi
+migrate-lint: ## Validate migration filenames and up/down pairs
+	@scripts/migrate-lint.sh db/migrations
 
-db-migrate:
+db-migrate: ## Apply pending database migrations via golang-migrate
 	@echo "Running database migrations..."
-	@for file in db/migrations/*.sql; do \
-		echo "Applying $$file..."; \
-		docker exec -i $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
-			psql -U app -d app < "$$file"; \
-	done
+	@docker compose -f ops/docker/compose.dev.yml run --rm migrate up
 	@echo "All migrations applied successfully!"
+
+db-migrate-down: ## Roll back the most recent migration (LOCAL DEV ONLY; see ADR 0012)
+	@echo "Rolling back ONE migration..."
+	@docker compose -f ops/docker/compose.dev.yml run --rm migrate down 1
+
+db-migrate-version: ## Show the currently applied migration version
+	@docker compose -f ops/docker/compose.dev.yml run --rm migrate version
 
 db-seed:
 	@echo "Seeding database with initial data..."
