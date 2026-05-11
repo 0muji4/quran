@@ -1,6 +1,6 @@
 # ADR 0001: Skip Kubernetes for Now
 
-- Status: Accepted
+- Status: Superseded by [ADR 0010](./0010-gcp-cloud-run-deployment.md) on 2026-05-11
 - Date: 2026-05-08
 - Author: motoshi.suzuki
 
