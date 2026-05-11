@@ -76,3 +76,27 @@ jobs:
 
       - name: Lint migration filenames
         run: scripts/migrate-lint.sh db/migrations
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+          terraform_wrapper: false
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive ops/terraform/
+
+      - name: Terraform validate (staging)
+        working-directory: ops/terraform/envs/staging
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Terraform validate (prod)
+        working-directory: ops/terraform/envs/prod
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Bootstrap script syntax check
+        run: bash -n ops/terraform/bootstrap.sh
