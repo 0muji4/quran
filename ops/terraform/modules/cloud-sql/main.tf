@@ -13,7 +13,7 @@ resource "google_sql_database_instance" "this" {
 
   settings {
     tier              = var.tier
-    availability_type = "ZONAL"
+    availability_type = var.availability_type
     disk_size         = var.disk_size_gb
     disk_autoresize   = true
 

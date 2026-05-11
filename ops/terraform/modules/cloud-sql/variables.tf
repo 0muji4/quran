@@ -25,6 +25,21 @@ variable "tier" {
   default     = "db-custom-1-3840"
 }
 
+variable "availability_type" {
+  description = <<-EOT
+    "ZONAL" (single zone) or "REGIONAL" (multi-zone synchronous HA replica).
+    ZONAL is the default for MVP. Flip to REGIONAL when the
+    "Postgres requires HA" reconsideration trigger in ADR 0001 fires.
+    REGIONAL roughly doubles instance cost.
+  EOT
+  type        = string
+  default     = "ZONAL"
+  validation {
+    condition     = contains(["ZONAL", "REGIONAL"], var.availability_type)
+    error_message = "availability_type must be ZONAL or REGIONAL."
+  }
+}
+
 variable "disk_size_gb" {
   description = "Initial disk size in GiB. Autoresize is enabled."
   type        = number
