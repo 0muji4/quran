@@ -1,13 +1,24 @@
 name: Tests
 
+# Called from ci.yml after dorny/paths-filter resolves which stacks
+# changed. Direct push/pull_request triggers are intentionally absent
+# so this workflow only runs through the orchestrator (avoids double
+# execution and lets ci-summary aggregate the result). See ADR 0014.
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  workflow_call:
+    inputs:
+      js:
+        description: "Run JS test jobs ('true' / 'false')."
+        type: string
+        default: 'false'
+      go:
+        description: "Run Go test jobs ('true' / 'false')."
+        type: string
+        default: 'false'
 
 jobs:
   backend-tests:
+    if: inputs.go == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -86,6 +97,7 @@ jobs:
           retention-days: 30
 
   bff-tests:
+    if: inputs.js == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -143,6 +155,7 @@ jobs:
           retention-days: 30
 
   web-tests:
+    if: inputs.js == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -173,6 +186,7 @@ jobs:
           retention-days: 30
 
   ui-tests:
+    if: inputs.js == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
