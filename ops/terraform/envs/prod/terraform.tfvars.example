@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in real values.
+
+project_id        = "quran-prod"
+region            = "asia-northeast1"
+github_repository = "0muji4/quran-project"
+
+vpc_network_self_link  = "projects/quran-prod/global/networks/default"
+vpc_authorized_network = "projects/quran-prod/global/networks/default"
+
+container_images = {
+  backend = "asia-northeast1-docker.pkg.dev/quran-prod/quran-prod/backend:placeholder"
+  bff     = "asia-northeast1-docker.pkg.dev/quran-prod/quran-prod/bff:placeholder"
+  web     = "asia-northeast1-docker.pkg.dev/quran-prod/quran-prod/web:placeholder"
+  worker  = "asia-northeast1-docker.pkg.dev/quran-prod/quran-prod/worker:placeholder"
+}
