@@ -18,10 +18,12 @@ import { expect, test, type Page } from '@playwright/test';
  * the same path), so the scene can be enabled once we figure out the
  * Docker-image gap. Tracked separately.
  *
- * The Done / Result scene is also deferred — Server Components fetch
- * the scoring job on render, so a Playwright `page.route()` mock
- * cannot reach them. A deterministic seeded `scoring_jobs` row in
- * `db/seed.sql` is the cleanest fix.
+ * The Done / Result scene used to be deferred for the same reason —
+ * Server Components fetch the scoring job on render, so a Playwright
+ * `page.route()` mock cannot reach them. Phase 3.4-B-result added the
+ * deterministic `scoring_jobs` + `asr_results` rows in `db/seed.sql`
+ * (`session_id = 'visual-baseline-fatihah-1'`) so the page renders the
+ * same COMPLETED layout on every CI run. The scene is now active below.
  *
  * If a future change drifts the rendering, the test fails with a
  * side-by-side image comparison under `playwright-report/`. Regenerate
@@ -136,6 +138,25 @@ test.describe('visual regression — desktop 1280x720', () => {
     await stableSnapshot(page);
 
     await expect(page).toHaveScreenshot('practice-idle.png', {
+      fullPage: true,
+      maxDiffPixels: 200
+    });
+  });
+
+  test('practice page result view (seeded COMPLETED job)', async ({ page }) => {
+    // The seeded job lives at db/seed.sql; see the file header
+    // comment for the rationale. Route is the canonical path-based
+    // result URL added in PR #127.
+    await page.goto('/practice/1/1/result/visual-baseline-fatihah-1');
+
+    // ResultDetail renders an AutoFocusHeading h1 with the verdict
+    // headline (`verdictForScore(score).headline`). Seeded score 0.86
+    // maps to "Great progress" — pin to that so the snapshot waits for
+    // server-rendered HTML + h1 focus side-effect to settle.
+    await page.getByRole('heading', { level: 1, name: /great progress/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('practice-result.png', {
       fullPage: true,
       maxDiffPixels: 200
     });
