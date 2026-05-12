@@ -1,26 +1,71 @@
 import type { SurahSummary } from './types';
 import type { LastPracticed } from './storage';
 
+// User-facing label. The BFF speaks lowercase `'easy' | 'medium' | 'hard'`;
+// classify.ts is the seam where we convert to the display form so the UI
+// can stay untouched.
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
-// Placeholder heuristic: real difficulty data is not in the BFF yet.
-export const difficultyOf = (surah: SurahSummary): Difficulty => {
-  if (surah.ayahCount <= 10) return 'Easy';
-  if (surah.ayahCount <= 30) return 'Medium';
-  return 'Hard';
+// BFF wire types — mirror apps/bff/src/me/suggestions.ts. Kept here
+// rather than imported from a shared package so the Web layer stays
+// decoupled from the BFF build graph; the shape is small enough that
+// duplicating it is cheaper than threading another workspace dep.
+export type BffDifficulty = 'easy' | 'medium' | 'hard';
+export type BffSuggestionReason = 'short_unpracticed' | 'short_low_score' | 'fallback';
+export type BffSuggestionResponse = {
+  suggested: { surahId: string; reason: BffSuggestionReason };
+  difficulties: Record<string, BffDifficulty>;
 };
 
 const SUGGESTED_FALLBACK_ID = '112'; // Al-Ikhlas
 
 const isMeccan = (s: SurahSummary): boolean => /mecc/i.test(s.revelationPlace);
 
-// Deterministic suggestion: pick a short Meccan surah the user is not currently
-// continuing. Falls back to Al-Ikhlas. No daily randomization to keep paint stable.
+// Placeholder bucketing on ayah_count for surahs the BFF has no data on
+// (unauthenticated users, or surahs the user has not scored yet).
+const heuristicDifficulty = (surah: SurahSummary): Difficulty => {
+  if (surah.ayahCount <= 10) return 'Easy';
+  if (surah.ayahCount <= 30) return 'Medium';
+  return 'Hard';
+};
+
+const capitalize = (label: BffDifficulty): Difficulty =>
+  (label.charAt(0).toUpperCase() + label.slice(1)) as Difficulty;
+
+// Per-surah difficulty resolver. Prefer the BFF's per-user signal when
+// the user has scored this surah; otherwise fall back to the ayah-count
+// placeholder so the UI is never blank.
+export const difficultyOf = (
+  surah: SurahSummary,
+  difficulties?: Record<string, BffDifficulty>
+): Difficulty => {
+  const bff = difficulties?.[surah.id];
+  if (bff) return capitalize(bff);
+  return heuristicDifficulty(surah);
+};
+
+// Suggestion resolver.
+//
+// 1. Prefer the BFF's suggestion when present and resolvable to a surah
+//    in `surahs` — the server already knows the user's recent history.
+// 2. Otherwise fall back to the deterministic Meccan-short heuristic
+//    (filtered by what the user is currently continuing) so guests and
+//    BFF-failure modes still see something useful.
+// 3. As a last resort return Al-Ikhlas or the first surah, matching
+//    the pre-3.3 contract that this function never returns null when
+//    the list is non-empty.
 export const pickSuggestion = (
   surahs: SurahSummary[],
-  lastPracticed: LastPracticed | null
+  lastPracticed: LastPracticed | null,
+  suggestedSurahId?: string
 ): SurahSummary | null => {
   if (surahs.length === 0) return null;
+
+  if (suggestedSurahId) {
+    const bffPick = surahs.find((s) => s.id === suggestedSurahId);
+    if (bffPick) return bffPick;
+  }
+
   const continuingId = lastPracticed?.surahId;
   const candidates = surahs.filter(
     (s) => s.id !== continuingId && isMeccan(s) && s.ayahCount <= 10

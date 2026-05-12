@@ -2,6 +2,7 @@
 
 import type { AyahRecord, SurahSummary } from './lib/types';
 import type { Attempt, BestScoreEntry, BestScores, LastPracticed } from './lib/storage-types';
+import type { BffSuggestionResponse } from './lib/classify';
 import type { ScoringResult, SignedUploadUrl } from '@quran-project/shared-ts';
 import 'server-only';
 import { bffFetch } from './lib/bff-fetch';
@@ -419,6 +420,38 @@ export const fetchAttemptsFromBff = async (limit = 50): Promise<Attempt[]> => {
         span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
         logger.error('fetchAttemptsFromBff failed', { error: (error as Error).message });
         throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+// ADR 0015: personalised "what to practice next" + difficulty hints.
+// Returns null for guests (BFF responds 401) and when the request
+// throws, so the caller falls back to the placeholder heuristic in
+// classify.ts without crashing the page.
+export const fetchSuggestionFromBff = async (): Promise<BffSuggestionResponse | null> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchSuggestionFromBff',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchSuggestionFromBff');
+        const response = await bffFetch(`${BFF_BASE_URL}/me/suggestions`, withNoStore);
+        if (response.status === 401) {
+          // Anonymous browsing path. Not an error — just no signal.
+          span.setStatus({ code: SpanStatusCode.OK });
+          return null;
+        }
+        const payload = await parseJson<BffSuggestionResponse>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('fetchSuggestionFromBff failed', { error: (error as Error).message });
+        return null;
       } finally {
         span.end();
       }
