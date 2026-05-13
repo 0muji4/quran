@@ -144,6 +144,15 @@ services:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       JWT_SECRET: local-jwt-secret
       REFRESH_TOKEN_SECRET: local-refresh-secret
+      # MOCK_SESSION only takes effect when NODE_ENV != production
+      # (apps/bff/src/auth/auth.ts). The BFF Dockerfile pins
+      # NODE_ENV=production for the runtime image, so override it back
+      # to development here — compose.dev.yml is the dev / CI stack and
+      # never deploys to real production (Cloud Run uses its own env).
+      # Without this override, /scoring-jobs/:id and /me/* would 401
+      # against the seeded mock user and the visual result-scene
+      # baseline (db/seed.sql) cannot be rendered.
+      NODE_ENV: development
       MOCK_SESSION: "true"
       MINIO_ENDPOINT: minio:9000
       MINIO_EXTERNAL_ENDPOINT: localhost:9000
