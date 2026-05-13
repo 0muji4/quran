@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-08
+- **Last Updated**: 2026-05-12
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -231,8 +231,8 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 残課題（任意）:
 
-- `/practice/[s]/[a]` ルートに h1 を追加する（`page-has-heading-one` 解消）。`AutoFocusHeading` パターンを再利用する場合は heading 階層全体の見直しと既存 e2e ロケータ確認が必要。a11y allow-list の運用は ADR 0002 を参照。
-- on-cream の AA 不足 3 パターン（`.eyebrow` の gold `#b8893c` × cream で 2.76:1、`--color-ink-muted` `#7b6e5c` × cream で 4.37:1、`.btnGold` の白 × gold で 3.14:1）。トークン分割と darken の方針は ADR 0003 で合意済み。3.4 の視覚回帰（ADR 0004）が gating 条件。
+- ~~`/practice/[s]/[a]` ルートに h1 を追加する~~ ✅ 解消済み。`apps/web/app/practice/[surahId]/[ayahNumber]/page.tsx:49` に `<h1 className="sr-only">` を追加。axe baseline からも `page-has-heading-one` の allow-list entry を削除（`e2e/tests/a11y/axe.spec.ts:23` `KNOWN_VIOLATIONS = []`）。ADR 0002 の "shrinking allow-list" 方針通り。
+- on-cream の AA 不足 3 パターン: 1 件解消（`--color-ink-muted` を `#7b6e5c` → `#6b5d4a` に darken、`apps/web/app/globals.css:41`）、残り 2 件（`.eyebrow` の gold `#b8893c` × cream / `.btnGold` の白 × gold）。トークン分割と darken の方針は ADR 0003 で合意済み。3.4 の視覚回帰（ADR 0004）が gating 条件のため未着手。
 - macOS VoiceOver / NVDA での実機読み上げ確認（2.3-B の aria-live、2.3-E の skip link は DevTools / Playwright で機能確認済み）。
 
 #### 2.4 Press-and-hold マイクジェスチャの再検討
@@ -301,7 +301,7 @@ POST /me/attempts             (body: Attempt)
 | 3.2-C-2: `/sign-in` `/sign-up` ページと `AuthForm`（`useTransition` で状態管理） | ✅ Done | #219 |
 | 3.2-D: TopNav の session 表示（avatar / Sign in / Sign out）+ `clearLocalCache` | ✅ Done | #220 |
 
-#### 3.3 Difficulty / Suggested の真ロジック化
+#### 3.3 Difficulty / Suggested の真ロジック化 — Done in PRs #235, #236
 
 **現状**: `difficultyOf(surah)` は `ayahCount <= 10 → Easy` の placeholder。`pickSuggestion` は決定論的に Al-Ikhlas（id=112）にフォールバックする。
 
@@ -310,6 +310,20 @@ POST /me/attempts             (body: Attempt)
 **依存**: 3.1（履歴の BFF 永続化）。
 
 **影響度 M / 工数 M**。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| 3.3-A: BFF `GET /me/suggestions`（`composeSuggestion` pure selector + Mecca-short 候補 SQL + 11 unit tests）+ ADR 0015 | ✅ Done | #235 |
+| 3.3-B: Web `fetchSuggestionFromBff()` Server Action + `classify.ts` thin adapter（BFF レスポンス使用 → `ayahCount` heuristic にフォールバック）+ Library Server Component 配線 + e2e smoke | ✅ Done | #236 |
+
+実装上のメモ:
+
+- ADR 0015 で閾値（`>=85` easy / `>=60` medium / 7 日 recent-window）と `FALLBACK_SURAH_ID = '112'` を明文化。Phase 4.4 telemetry が入ったら再校正する前提。
+- BFF レスポンスの `difficulties` は **sparse map**（`best_scores` 行のある surah のみ）。クライアントは entry の無い surah については `ayahCount` heuristic に fallback するため、114 surah 分を返す必要はない。
+- ゲスト（未認証）は 401 を Server Action 内で吸収して `null` を返す。`SuggestedCard` は既存の placeholder で描画継続。
+- `reason` フィールド（`short_unpracticed` / `short_low_score` / `fallback`）は UI 非表示。Phase 4.4 で Suggested クリックを branch に attribute する telemetry hook 候補。
 
 #### 3.4 Visual regression の導入
 
@@ -411,3 +425,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート） |
 | 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記 |
 | 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記 |
+| 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映 |
