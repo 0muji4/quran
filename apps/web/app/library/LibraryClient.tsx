@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { SurahSummary } from '../lib/types';
+import type { BffSuggestionResponse } from '../lib/classify';
 import { countByRevelation, filterSurahs, type RevelationFilter } from '../lib/surahFilters';
 import { SearchIcon } from '../components/icons/ArrowRightIcon';
 import { ContinueCard } from './ContinueCard';
@@ -11,6 +12,9 @@ import styles from '../styles/library.module.css';
 
 type Props = {
   surahs: SurahSummary[];
+  // Personalised payload from the BFF (ADR 0015). `null` for guests and
+  // BFF-failure modes; SuggestedCard falls back to the local heuristic.
+  suggestion?: BffSuggestionResponse | null;
 };
 
 const FILTERS: { value: RevelationFilter; label: (count: number) => string }[] = [
@@ -20,7 +24,7 @@ const FILTERS: { value: RevelationFilter; label: (count: number) => string }[] =
   { value: 'short', label: () => 'Short' }
 ];
 
-export function LibraryClient({ surahs }: Props) {
+export function LibraryClient({ surahs, suggestion = null }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<RevelationFilter>('all');
 
@@ -42,7 +46,7 @@ export function LibraryClient({ surahs }: Props) {
 
       <section className={styles.heroCards}>
         <ContinueCard surahs={surahs} />
-        <SuggestedCard surahs={surahs} />
+        <SuggestedCard surahs={surahs} suggestion={suggestion} />
       </section>
 
       <section className={styles.searchRow}>
