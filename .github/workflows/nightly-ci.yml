@@ -5,6 +5,9 @@ name: Nightly Full CI
 # entry in .github/filters.yml surfaces within 24h. See ADR 0014
 # §"Why a nightly full-CI is mandatory rather than optional".
 #
+# Also runs the cross-browser e2e matrix (firefox + webkit) that
+# PR-time CI deliberately skips for speed. See ADR 0017.
+#
 # Cron fires from the default branch (currently `develop`). Once
 # `main` exists, this workflow should grow a branch matrix.
 on:
@@ -17,3 +20,63 @@ jobs:
     uses: ./.github/workflows/ci.yml
     with:
       force_all: true
+
+  cross-browser-e2e:
+    name: Cross-browser e2e (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start Docker Compose services
+        run: docker compose -f ops/docker/compose.dev.yml up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 180 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
+
+      - name: Run database migrations
+        run: make db-migrate
+
+      - name: Seed database with test data
+        run: make db-seed
+
+      - name: Run Playwright (${{ matrix.browser }})
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          CI: '1'
+          E2E_CROSS_BROWSER: 'true'
+        run: pnpm exec playwright test --project=${{ matrix.browser }}-desktop
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-cross-browser-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Shutdown Docker Compose
+        if: always()
+        run: docker compose -f ops/docker/compose.dev.yml down -v
