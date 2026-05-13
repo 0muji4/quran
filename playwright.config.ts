@@ -57,10 +57,16 @@ export default defineConfig({
   },
 
   // Project layout
-  // - chromium-desktop: existing 1280x720 desktop coverage; skips mobile-only specs
+  // - chromium-desktop: 1280x720 desktop coverage; skips mobile-only specs
   // - mobile-iphone / tablet-ipad / desktop-1024: viewport-only overrides for the
   //   mobile-layout regression specs under e2e/tests/mobile/. Stays on the
   //   chromium engine so CI's `playwright install chromium` is sufficient.
+  // - firefox-desktop / webkit-desktop: opt-in via E2E_CROSS_BROWSER=true
+  //   (nightly only). Runs the static-UI subset only — explicitly excludes
+  //   the Linux-Chromium-only visual baselines (ADR 0004), the a11y baseline
+  //   (chromium-locked per PR #142), the mobile viewport projects, and the
+  //   MediaRecorder-driven recording-flow spec whose fake-mic flags are
+  //   chromium-specific. See ADR 0017.
   projects: [
     {
       name: 'chromium-desktop',
@@ -125,6 +131,20 @@ export default defineConfig({
         permissions: ['microphone'],
       },
     },
+    ...(process.env.E2E_CROSS_BROWSER === 'true'
+      ? [
+          {
+            name: 'firefox-desktop',
+            testIgnore: /[\\/](mobile|visual|a11y)[\\/]|recording-flow\.spec\.ts$/,
+            use: { ...devices['Desktop Firefox'] },
+          },
+          {
+            name: 'webkit-desktop',
+            testIgnore: /[\\/](mobile|visual|a11y)[\\/]|recording-flow\.spec\.ts$/,
+            use: { ...devices['Desktop Safari'] },
+          },
+        ]
+      : []),
   ],
 
   // Start Docker Compose stack if not already running
