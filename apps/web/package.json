@@ -21,6 +21,7 @@
     "@opentelemetry/resources": "^1.27.0",
     "@opentelemetry/sdk-metrics": "^1.27.0",
     "@opentelemetry/sdk-node": "^0.51.1",
+    "@opentelemetry/sdk-trace-web": "^1.27.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@quran-project/shared-ts": "workspace:*",
     "@quran-project/ui": "workspace:*",
