@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRecorder } from '../hooks/useRecorder';
+import { trackUiEvent } from '../telemetry/use-ui-event';
 import { useScoringJob } from '../hooks/useScoringJob';
 import { MicIcon, StopIcon } from '../components/icons/MediaIcons';
 import { AnalysingCard } from './AnalysingCard';
@@ -167,6 +168,10 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
       practicedAt: new Date().toISOString()
     });
     onRecordingStart?.();
+    trackUiEvent('web.ui.recording_started', {
+      surahId: surah.id,
+      ayahNumber: ayah.ayahNumber
+    });
     await recorder.start();
   }, [
     job,
@@ -185,6 +190,12 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     const blob = await recorder.stop();
     if (!blob) return;
     lastBlobRef.current = blob;
+    trackUiEvent('web.ui.recording_stopped', {
+      surahId: surah.id,
+      ayahNumber: ayah.ayahNumber,
+      durationMs: Math.round(elapsedAtStop),
+      tooShort: elapsedAtStop < MIN_RECORDING_MS
+    });
     if (elapsedAtStop < MIN_RECORDING_MS) {
       const seconds = (elapsedAtStop / 1000).toFixed(1);
       setTooShortReason(`Recording was ${seconds} s — too short to score`);
@@ -196,6 +207,10 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
   // Bail out of a long-running scoring job. The job may still finish on the
   // worker, but the panel returns to idle so the user can record again.
   const handleCancelScoring = useCallback(() => {
+    trackUiEvent('web.ui.recording_cancelled', {
+      surahId: surah.id,
+      ayahNumber: ayah.ayahNumber
+    });
     job.reset();
     recorder.cancel();
     lastDurationMsRef.current = null;
@@ -203,7 +218,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     navigatedJobIdRef.current = null;
     setScoringElapsedMs(0);
     setTooShortReason(null);
-  }, [job, recorder]);
+  }, [job, recorder, surah.id, ayah.ayahNumber]);
 
   const handleReplay = useCallback(() => {
     const blob = lastBlobRef.current;

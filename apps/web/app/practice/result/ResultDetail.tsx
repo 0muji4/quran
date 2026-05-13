@@ -9,6 +9,7 @@ import { MetricCard } from './MetricCard';
 import { WordByWord } from './WordByWord';
 import { ListenBack } from './ListenBack';
 import { ActionRow } from './ActionRow';
+import { ResultViewedTracker } from './ResultViewedTracker';
 import { verdictForScore } from './verdict';
 
 type Props = {
@@ -38,6 +39,7 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
 
   return (
     <>
+      <ResultViewedTracker surahId={surah.id} ayahNumber={ayah.ayahNumber} score={score} />
       <div className={styles.topRow}>
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/" className={styles.breadcrumbLink}>
