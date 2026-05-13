@@ -8,6 +8,7 @@ import { getLastPracticed } from '../lib/storage';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import { difficultyOf, pickSuggestion } from '../lib/classify';
 import { ArrowRightIcon, PlusIcon } from '../components/icons/ArrowRightIcon';
+import { trackUiEvent } from '../telemetry/use-ui-event';
 import styles from '../styles/library.module.css';
 
 type Props = {
@@ -55,7 +56,19 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
           <span className={styles.dot} aria-hidden="true" />
           <span>{difficulty}</span>
         </span>
-        <Link className={styles.linkTeal} href={`/practice/${picked.id}/1`}>
+        <Link
+          className={styles.linkTeal}
+          href={`/practice/${picked.id}/1`}
+          onClick={() =>
+            trackUiEvent('web.ui.suggested_clicked', {
+              surahId: picked.id,
+              ayahCount: picked.ayahCount,
+              // ADR 0015 `reason` field — `placeholder` covers the
+              // guest / BFF-fallback path where suggestion is null.
+              reason: suggestion?.suggested.reason ?? 'placeholder'
+            })
+          }
+        >
           Begin <ArrowRightIcon size={14} />
         </Link>
       </div>
