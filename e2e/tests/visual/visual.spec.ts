@@ -8,15 +8,16 @@ import { expect, test, type Page } from '@playwright/test';
  * Linux-generated baseline `.png` files for the three deterministic
  * static-state scenes — library, history, and practice idle.
  *
- * The recording scene is sketched below but currently fixme'd: in the
- * Playwright Docker image used to generate baselines locally,
- * `MediaRecorder` reports as unsupported even with the chromium-desktop
- * project's `--use-fake-device-for-media-stream` launch flag, so
- * `recorder.start()` errors out before the panel reaches the
- * "Recording" state. The CI image (Playwright via `--with-deps`) does
- * not have this problem (existing `recording-flow.spec.ts` exercises
- * the same path), so the scene can be enabled once we figure out the
- * Docker-image gap. Tracked separately.
+ * The recording scene used to be `test.fixme`'d: when generating
+ * baselines through the Playwright Docker image with
+ * `--network=docker_default` + `E2E_BASE_URL=http://web:3000`,
+ * Chromium gates `navigator.mediaDevices` on secure contexts and
+ * `web:3000` is not in the localhost / 127.0.0.1 / HTTPS allow-list,
+ * so `MediaRecorder` reports unsupported and `recorder.start()`
+ * errors out before the panel reaches Recording. The fix is to run
+ * the Docker image with `--network=host` + `E2E_BASE_URL=http://localhost:3000`,
+ * matching what CI already does in `.github/workflows/e2e.yml`. See
+ * `README.md` § "Generating baselines" for the updated command.
  *
  * The Done / Result scene is also deferred — Server Components fetch
  * the scoring job on render, so a Playwright `page.route()` mock
@@ -142,13 +143,6 @@ test.describe('visual regression — desktop 1280x720', () => {
   });
 
   test('practice page during active recording', async ({ page }) => {
-    test.fixme(
-      true,
-      'MediaRecorder reports as unsupported inside the Playwright Docker ' +
-        'image used to regenerate baselines locally, so recorder.start() ' +
-        'errors out before the panel reaches the "Recording" state. ' +
-        'Investigation pending; tracked separately.'
-    );
     await page.goto('/practice/1/1');
     await page.getByRole('heading', { name: /now you recite/i }).waitFor();
 
