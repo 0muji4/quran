@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useTeacherAudio, type PlaybackRate } from '../hooks/useTeacherAudio';
 import { LoopIcon, PauseIcon, PlayIcon, SpeakerIcon } from '../components/icons/MediaIcons';
 import { Waveform } from './Waveform';
+import { trackUiEvent } from '../telemetry/use-ui-event';
 import styles from '../styles/practice.module.css';
 
 const RATES: PlaybackRate[] = [0.75, 1, 1.25];
@@ -82,7 +83,14 @@ export function TeacherPanel({ surahId, ayahNumber, pauseSignal }: Props) {
                 className={
                   active ? `${styles.speedPill} ${styles.speedPillActive}` : styles.speedPill
                 }
-                onClick={() => audio.setRate(r)}
+                onClick={() => {
+                  audio.setRate(r);
+                  trackUiEvent('web.ui.speed_changed', {
+                    surahId,
+                    ayahNumber,
+                    rate: r
+                  });
+                }}
                 aria-pressed={active}
               >
                 {r.toFixed(2)}×
@@ -93,7 +101,14 @@ export function TeacherPanel({ surahId, ayahNumber, pauseSignal }: Props) {
         <button
           type="button"
           className={audio.loop ? `${styles.loopBtn} ${styles.loopBtnActive}` : styles.loopBtn}
-          onClick={audio.toggleLoop}
+          onClick={() => {
+            audio.toggleLoop();
+            trackUiEvent('web.ui.loop_toggled', {
+              surahId,
+              ayahNumber,
+              loop: !audio.loop
+            });
+          }}
           aria-pressed={audio.loop}
         >
           Loop ayah <LoopIcon />
