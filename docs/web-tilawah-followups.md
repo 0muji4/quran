@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-12
+- **Last Updated**: 2026-05-13
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -325,13 +325,28 @@ POST /me/attempts             (body: Attempt)
 - ゲスト（未認証）は 401 を Server Action 内で吸収して `null` を返す。`SuggestedCard` は既存の placeholder で描画継続。
 - `reason` フィールド（`short_unpracticed` / `short_low_score` / `fallback`）は UI 非表示。Phase 4.4 で Suggested クリックを branch に attribute する telemetry hook 候補。
 
-#### 3.4 Visual regression の導入
+#### 3.4 Visual regression の導入 — Done in PRs #148, #149, #238, #239
 
 **現状**: 装飾要素（コーナー・8 点星・コンパス SVG・グラデーション）が多く、CSS 変更でデグレを生むリスクが高い。回帰検出は人手レビューに依存している。
 
 **ゴール**: Playwright の `toHaveScreenshot()` または Chromatic を導入し、Surah library / Practice ready / Recording / Done / History の 5 シーンをスナップショット化する。`addInitScript` で localStorage を seed して再現可能なシーンを作る。
 
-**影響度 M / 工数 M**。Playwright `toHaveScreenshot()` 採用と Linux Chromium ベースライン運用の合意は ADR 0004。PR #148 で scaffold、PR #149 で 3 シーン active（library / history / practice idle）。recording シーンは Playwright Docker image の chromium で `MediaRecorder` が unsupported 判定される問題で fixme 中、result シーンは Server Components の job fetch を mock する手段が無いため `db/seed.sql` 拡張待ち。
+**影響度 M / 工数 M**。Playwright `toHaveScreenshot()` 採用と Linux Chromium ベースライン運用の合意は ADR 0004。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| Scaffold (`visual.spec.ts` + Docker baseline 運用) | ✅ Done | #148 |
+| 3 active scene (library / history / practice idle) | ✅ Done | #149 |
+| Result scene (`scoring_jobs` + `asr_results` seed + audio mask + `NODE_ENV=development` で `MOCK_SESSION` 実効化) | ✅ Done | #238 |
+| Recording scene (Docker `--network=host` への切替で `MediaRecorder` 解禁、`test.fixme` 撤去) | ✅ Done | #239 |
+
+実装上のメモ:
+
+- 旧 spec コメントの `MediaRecorder is unsupported in the Playwright Docker image` は誤診断だった。真因は `--network=docker_default` + `http://web:3000` が Chromium の secure-context allow-list 外で `navigator.mediaDevices` が `undefined` になることで、`--network=host` + `http://localhost:3000`（CI と同じ構成）で解決。README にもこの修正を反映済み。
+- Result scene baseline は CI で ~770-1306 px の drift が出たため `mask: [page.locator('audio')]` + `maxDiffPixels: 2000` を採用。Native `<audio controls>` chrome の subpixel 差を吸収。
+- `ops/docker/compose.dev.yml` の bff service に `NODE_ENV: development` を追加。BFF Dockerfile が production 固定なので dev/CI compose では `MOCK_SESSION` が gate を抜けず `/scoring-jobs/:id` が 401 を返していた問題を解消。
 
 ### Phase 4: 長期 / 横断
 
@@ -345,13 +360,27 @@ POST /me/attempts             (body: Attempt)
 
 **影響度 S / 工数 L**。
 
-#### 4.2 Cross-browser e2e
+#### 4.2 Cross-browser e2e — Done in PR #243
 
 **現状**: `playwright.config.ts` は chromium のみ。
 
 **ゴール**: Firefox / WebKit を CI matrix に追加し、`grantPermissions(['microphone'])` の挙動差異と Arabic フォントレンダリング差異を検出する。
 
 **影響度 M / 工数 S**。CI 時間が約 3 倍になるため、PR ベースは chromium のみ・nightly で全 3 ブラウザという運用にすると現実的。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| `playwright.config.ts` の `firefox-desktop` / `webkit-desktop` プロジェクト追加（`E2E_CROSS_BROWSER=true` で gate） | ✅ Done | #243 |
+| `.github/workflows/nightly-ci.yml` に `cross-browser-e2e` matrix job 追加（firefox + webkit、独立 artefact） | ✅ Done | #243 |
+| ADR 0017（PR-time vs nightly scope、testIgnore 戦略、failure policy） | ✅ Done | #243 |
+
+実装上のメモ:
+
+- Static-UI subset のみ cross-browser 対象。視覚回帰（ADR 0004 で Linux Chromium 専用）/ a11y（chromium 固定、PR #142）/ mobile viewport / `recording-flow.spec.ts`（chromium 固有 fake-stream フラグ依存）は `testIgnore` で除外。
+- PR-time CI は env unset のため新プロジェクト不可視・既存挙動維持。`E2E_CROSS_BROWSER=true pnpm test:e2e --project=firefox-desktop` でローカル debugging 可。
+- ローカル run には `pnpm exec playwright install --with-deps firefox webkit` が必要。
 
 #### 4.3 パフォーマンス最適化
 
@@ -365,13 +394,27 @@ POST /me/attempts             (body: Attempt)
 
 **影響度 M / 工数 M**。
 
-#### 4.4 クライアント側テレメトリ
+#### 4.4 クライアント側テレメトリ — Done in PRs #241, #242
 
 **現状**: Server Action は OpenTelemetry の span を持つが、UI イベント（recording_started / completed_attempt / loop_toggled / suggested_clicked 等）は未計測。
 
 **ゴール**: 既存の `app/telemetry/*` を拡張し、ブラウザから OTel collector に SPAN を送る薄いラッパを `useRecorder` / `useTeacherAudio` / `RecorderPanel` 内のキー操作に挿入する。プロダクト計測（KR2 の検証サイクル加速の根拠）として活用する。
 
 **影響度 M / 工数 S**。
+
+**完了状況**:
+
+| サブスコープ | 状態 | PR |
+| ------------ | ---- | -- |
+| Browser OTel scaffold (`web-tracer.ts` `WebTracerProvider` + `BatchSpanProcessor` + `OTLPTraceExporter`、`NEXT_PUBLIC_OTEL_ENDPOINT` で gate)、`trackUiEvent(name, attrs)` 閉じた `web.ui.*` event union、`WebTelemetryInit` `'use client'` mounted from `layout.tsx`、ADR 0016 | ✅ Done | #241 |
+| Instrumentation call sites: `RecorderPanel` (recording_started / stopped / cancelled、durationMs + tooShort)、`SuggestedCard` (suggested_clicked、`reason` 属性に ADR 0015 を載せる)、`TeacherPanel` (speed_changed / loop_toggled)、`ResultDetail` (`ResultViewedTracker` 経由で result_viewed) | ✅ Done | #242 |
+
+実装上のメモ:
+
+- 命名規約 `web.ui.*` で server-side `ServerAction: …` span と分離。
+- PII rules を ADR 0016 に明記（enum-like / numeric / boolean のみ。email・transcript text・displayName は禁止）。
+- `NEXT_PUBLIC_OTEL_ENDPOINT` 未設定時は no-op。dev / preview / CI で常に silent、production 環境で collector endpoint が provision されてから flip。
+- `ResultViewedTracker` は Server Component が直接 `trackUiEvent` を呼べない制約への対処。`'use client'` で `useEffect` 一発、`return null;` の薄いコンポーネント。
 
 ## 4. 依存関係
 
@@ -427,3 +470,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記 |
 | 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映 |
 | 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。 |
+| 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記 |
