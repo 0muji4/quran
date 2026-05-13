@@ -11,6 +11,7 @@ import {
   upsertBestScore,
   upsertLastPracticed
 } from './storage';
+import { getSuggestion } from './suggestions';
 
 // All handlers gate on requireAuth. Under MOCK_SESSION=true (dev / CI)
 // the session resolves to MOCK_SESSION_USER_ID, which is seeded in the
@@ -108,6 +109,18 @@ meRouter.get('/me/attempts', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('GET /me/attempts failed', { user_id: session.id, error });
     res.status(502).json({ error: 'Failed to fetch attempts' });
+  }
+});
+
+meRouter.get('/me/suggestions', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  try {
+    const payload = await getSuggestion(session.id);
+    res.json(payload);
+  } catch (error) {
+    logger.error('GET /me/suggestions failed', { user_id: session.id, error });
+    res.status(502).json({ error: 'Failed to compute suggestion' });
   }
 });
 
