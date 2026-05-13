@@ -3,6 +3,7 @@ import {
   requestSignedUploadUrl,
   createScoringJobFromUpload,
   fetchScoringJob,
+  fetchSuggestionFromBff,
   fetchSurahs,
   fetchSurahAyahs,
   signInAction,
@@ -242,6 +243,48 @@ describe('Server Actions', () => {
       } as Response);
 
       await expect(fetchSurahs()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('fetchSuggestionFromBff', () => {
+    it('returns the payload on a successful response', async () => {
+      const payload = {
+        suggested: { surahId: '103', reason: 'short_unpracticed' as const },
+        difficulties: { '1': 'easy' as const, '2': 'hard' as const }
+      };
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => payload
+      } as Response);
+
+      const result = await fetchSuggestionFromBff();
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/me/suggestions'),
+        expect.objectContaining({ cache: 'no-store' })
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('returns null when the BFF responds 401 (guest mode)', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'unauthenticated' })
+      } as Response);
+
+      const result = await fetchSuggestionFromBff();
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when fetch throws (network or BFF down)', async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error('network'));
+
+      const result = await fetchSuggestionFromBff();
+
+      expect(result).toBeNull();
     });
   });
 
