@@ -232,7 +232,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 残課題（任意）:
 
 - ~~`/practice/[s]/[a]` ルートに h1 を追加する~~ ✅ 解消済み。`apps/web/app/practice/[surahId]/[ayahNumber]/page.tsx:49` に `<h1 className="sr-only">` を追加。axe baseline からも `page-has-heading-one` の allow-list entry を削除（`e2e/tests/a11y/axe.spec.ts:23` `KNOWN_VIOLATIONS = []`）。ADR 0002 の "shrinking allow-list" 方針通り。
-- on-cream の AA 不足 3 パターン: 1 件解消（`--color-ink-muted` を `#7b6e5c` → `#6b5d4a` に darken、`apps/web/app/globals.css:41`）、残り 2 件（`.eyebrow` の gold `#b8893c` × cream / `.btnGold` の白 × gold）。トークン分割と darken の方針は ADR 0003 で合意済み。3.4 の視覚回帰（ADR 0004）が gating 条件のため未着手。
+- ~~on-cream の AA 不足 3 パターン~~ ✅ 解消済み。ADR 0003 の split-token 移行は commit `a83baff` で全パターン消化（`.eyebrow` → `var(--color-gold-on-light)`、`.btnGold` の color: `#fff` → `var(--color-ink-strong)`、`--color-ink-muted` darken）。`grep "color: #fff"` で残るのは teal / ink-strong 背景上のみ。axe `color-contrast` 違反ゼロ、`KNOWN_VIOLATIONS = []` を維持（`e2e/tests/a11y/axe.spec.ts:23`）。ADR 0004 の視覚回帰 baseline は既存 3 シーン（library / history / practice-idle）が gold-button を覆っているため、別途 baseline 撮影は不要。
 - macOS VoiceOver / NVDA での実機読み上げ確認（2.3-B の aria-live、2.3-E の skip link は DevTools / Playwright で機能確認済み）。
 
 #### 2.4 Press-and-hold マイクジェスチャの再検討
@@ -426,3 +426,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記 |
 | 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記 |
 | 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映 |
+| 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。 |
