@@ -42,22 +42,31 @@ reach the prod-ish `web` service rather than a `pnpm dev` host process.
    docker compose -f ops/docker/compose.dev.yml up -d --wait --build web
    ```
 
-3. **Generate snapshots through Playwright Docker** on the compose
-   network so it resolves `web:3000` directly. Use the same Playwright
-   version as the project (currently 1.57.0). `CI=1` skips the
-   compose-managed webServer block in `playwright.config.ts`:
+3. **Generate snapshots through Playwright Docker** with **host
+   networking** so Chromium sees the web service on `localhost:3000`.
+   Use the same Playwright version as the project (currently 1.57.0).
+   `CI=1` skips the compose-managed webServer block in
+   `playwright.config.ts`:
    ```bash
    docker run --rm \
-     --network=docker_default \
+     --network=host \
      -v "$(pwd):/work" \
      -w /work \
-     -e E2E_BASE_URL=http://web:3000 \
+     -e E2E_BASE_URL=http://localhost:3000 \
      -e CI=1 \
      mcr.microsoft.com/playwright:v1.57.0-jammy \
      bash -lc "npx playwright test e2e/tests/visual/ --update-snapshots --project=chromium-desktop"
    ```
    The image already has `@playwright/test` baked in, so `pnpm install`
    is not required.
+
+   **Why host networking** — Chromium gates `navigator.mediaDevices`
+   (the API behind `MediaRecorder` used by the practice-recording
+   scene) on secure contexts; `localhost` / `127.0.0.1` / HTTPS pass,
+   `web:3000` does not. Without `--network=host`, the recording scene
+   fails before it reaches the "Recording" state. CI uses the same
+   `--network=host` + `localhost:3000` combination in
+   `.github/workflows/e2e.yml`.
 
 4. **Enable the suite if it is currently fixme'd.** Drop the
    describe-level `test.fixme()` line from `visual.spec.ts`.
