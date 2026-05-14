@@ -1,39 +1,36 @@
 'use client';
 
-import { FormEvent, useState, useTransition } from 'react';
+import { FormEvent, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInAction, signUpAction } from '../actions';
 import { clearLocalCache, migrateAnonymousCacheToBff, refreshAllFromBff } from '../lib/storage';
+import { AUTH_COPY, type AuthMode } from './copy';
+import { Divider } from './Divider';
+import { LevelSelector } from './LevelSelector';
+import { OAuthButtons } from './OAuthButtons';
+import { PasswordField } from './PasswordField';
+import { RememberMeRow } from './RememberMeRow';
 import styles from '../styles/auth.module.css';
 
-type Mode = 'signin' | 'signup';
-
 type Props = {
-  mode: Mode;
+  mode: AuthMode;
   redirectTo?: string;
 };
 
-const COPY: Record<Mode, { eyebrow: string; title: string; lede: string; submit: string }> = {
-  signin: {
-    eyebrow: 'Welcome back',
-    title: 'Sign in',
-    lede: 'Pick up where you left off and keep your best scores in sync across devices.',
-    submit: 'Sign in'
-  },
-  signup: {
-    eyebrow: 'Create your account',
-    title: 'Sign up',
-    lede: 'Save your attempts, track your best scores, and continue practising on any device.',
-    submit: 'Create account'
-  }
-};
-
+// The interactive island of the auth screen. AuthScreen renders the
+// eyebrow / title / lede around this; here we own the form fields, the
+// sign-up terms gate, and the existing BFF auth flow (server action →
+// cache migration → redirect). The BFF payload is unchanged: level and
+// remember-me are UI-only this pass and are never read here.
 export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const copy = COPY[mode];
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
+  const termsRef = useRef<HTMLInputElement>(null);
+  const copy = AUTH_COPY[mode];
 
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -43,6 +40,15 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
     const email = String(data.get('email') ?? '').trim();
     const password = String(data.get('password') ?? '');
     const displayName = String(data.get('displayName') ?? '').trim();
+
+    // Sign-up terms gate: block submission and move focus to the checkbox
+    // so the requirement is announced rather than silently failing.
+    if (mode === 'signup' && !agreedToTerms) {
+      setTermsError('Please accept the Terms of Service and Privacy Policy to continue.');
+      termsRef.current?.focus();
+      return;
+    }
+    setTermsError(null);
 
     startTransition(async () => {
       try {
@@ -71,86 +77,125 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
   };
 
   return (
-    <div className={styles.shell}>
-      <section className={styles.card} aria-labelledby="auth-title">
-        <p className={styles.eyebrow}>{copy.eyebrow}</p>
-        <h1 id="auth-title" className={styles.title}>
-          {copy.title}
-        </h1>
-        <p className={styles.lede}>{copy.lede}</p>
+    <>
+      <form className={styles.form} onSubmit={onSubmit} noValidate>
+        {error && (
+          <div className={styles.error} role="alert" aria-live="polite">
+            {error}
+          </div>
+        )}
 
-        <form className={styles.form} onSubmit={onSubmit} noValidate>
-          {error && (
-            <div className={styles.error} role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
+        {mode === 'signup' && (
+          <>
+            <OAuthButtons variant="full" />
+            <Divider label="Or with email" />
+          </>
+        )}
 
+        {mode === 'signup' && (
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="auth-email">
-              Email
+            <label className={styles.label} htmlFor="auth-display-name">
+              Your name
             </label>
             <input
-              id="auth-email"
+              id="auth-display-name"
               className={styles.input}
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
+              type="text"
+              name="displayName"
+              autoComplete="name"
+              maxLength={64}
               disabled={pending}
             />
           </div>
+        )}
 
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="auth-email">
+            Email
+          </label>
+          <input
+            id="auth-email"
+            className={styles.input}
+            type="email"
+            name="email"
+            autoComplete="email"
+            required
+            disabled={pending}
+          />
+        </div>
+
+        <PasswordField
+          id="auth-password"
+          name="password"
+          label="Password"
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          minLength={mode === 'signup' ? 8 : undefined}
+          disabled={pending}
+          helperText={
+            mode === 'signup' ? 'Use 8+ characters with a mix of letters and numbers.' : undefined
+          }
+        />
+
+        {mode === 'signin' && <RememberMeRow disabled={pending} />}
+
+        {mode === 'signup' && <LevelSelector disabled={pending} />}
+
+        {mode === 'signup' && (
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="auth-password">
-              Password
-            </label>
-            <input
-              id="auth-password"
-              className={styles.input}
-              type="password"
-              name="password"
-              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-              minLength={mode === 'signup' ? 8 : undefined}
-              required
-              disabled={pending}
-            />
-          </div>
-
-          {mode === 'signup' && (
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="auth-display-name">
-                Display name (optional)
-              </label>
+            <div className={styles.termsRow}>
               <input
-                id="auth-display-name"
-                className={styles.input}
-                type="text"
-                name="displayName"
-                autoComplete="name"
-                maxLength={64}
+                ref={termsRef}
+                id="auth-terms"
+                type="checkbox"
+                className={styles.termsCheckbox}
+                checked={agreedToTerms}
+                onChange={(event) => {
+                  setAgreedToTerms(event.target.checked);
+                  if (event.target.checked) {
+                    setTermsError(null);
+                  }
+                }}
                 disabled={pending}
+                aria-invalid={termsError ? true : undefined}
+                aria-describedby={termsError ? 'auth-terms-error' : undefined}
               />
+              <label className={styles.termsLabel} htmlFor="auth-terms">
+                I agree to the <a href="/terms">Terms of Service</a> and{' '}
+                <a href="/privacy">Privacy Policy</a>.
+              </label>
             </div>
-          )}
+            {termsError && (
+              <p id="auth-terms-error" className={styles.termsError} role="alert">
+                {termsError}
+              </p>
+            )}
+          </div>
+        )}
 
-          <button className={styles.submit} type="submit" disabled={pending}>
-            {pending ? 'Submitting…' : copy.submit}
-          </button>
-        </form>
+        <button className={styles.submit} type="submit" disabled={pending}>
+          <span aria-hidden="true">→</span>
+          {pending ? copy.submitPending : copy.submit}
+        </button>
 
-        <p className={styles.aside}>
-          {mode === 'signin' ? (
-            <>
-              New to Tilawah? <Link href="/sign-up">Create an account</Link>
-            </>
-          ) : (
-            <>
-              Already have an account? <Link href="/sign-in">Sign in</Link>
-            </>
-          )}
-        </p>
-      </section>
-    </div>
+        {mode === 'signin' && (
+          <>
+            <Divider label="Or" />
+            <OAuthButtons variant="compact" />
+          </>
+        )}
+      </form>
+
+      <p className={styles.footer}>
+        {mode === 'signin' ? (
+          <>
+            New to Tilawah? <Link href="/sign-up">Create an account</Link>
+          </>
+        ) : (
+          <>
+            Already have an account? <Link href="/sign-in">Sign in</Link>
+          </>
+        )}
+      </p>
+    </>
   );
 }
