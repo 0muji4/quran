@@ -1,8 +1,12 @@
 name: CI
 
 on:
+  # PRs trigger CI regardless of base branch so stacked PRs targeting
+  # a feature branch still get the path-filtered checks. Path filtering
+  # (the `changes` job + per-stack `if:` guards) keeps run cost bounded
+  # to the stacks the diff actually touches; ci-summary treats skipped
+  # stacks as success (see ADR 0014).
   pull_request:
-    branches: [main, develop]
   push:
     branches: [main, develop]
   workflow_call:
