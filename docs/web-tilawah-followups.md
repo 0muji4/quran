@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-14
+- **Last Updated**: 2026-05-14 (post 4.3-C in flight)
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -398,9 +398,9 @@ POST /me/attempts             (body: Attempt)
 
 | サブ PR | スコープ | 主な対象 | 推定行数 |
 |----|---------|----------|----------|
-| **4.3-A** | bundle analyzer 導入 + baseline 計測 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
-| **4.3-B** | `PracticeClient` の server/client 境界分割 | `PracticeClient.tsx` `AyahDisplayCard.tsx` `SegmentHighlights.tsx` | ~200 |
-| **4.3-C** | Web Vitals → OTel / Lighthouse CI baseline | `web-tracer.ts` 拡張 or `.github/workflows/nightly-ci.yml` | ~150 |
+| **4.3-A** | bundle analyzer 導入 + baseline 計測 — ✅ Done in #245 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
+| **4.3-B** | `PracticeClient` の server/client 境界分割 — ✅ Done in #246 | `PracticeClient.tsx` (削除) `recordingEvents.ts` | ~80 |
+| **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done (PR 進行中) | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx` | ~180 |
 | **4.3-D** | Amiri unicode-range で Quran glyph subset 化 | `layout.tsx` の `next/font/google` → `next/font/local` 切替 | ~60 |
 
 ##### 4.3 baseline（2026-05-13、PR 進行中 / Phase 4.3-A）
@@ -432,6 +432,17 @@ POST /me/attempts             (body: Attempt)
 → **4.3-D の Amiri Quran-subset 化が単独で最大の font 削減レバー**。Quran 朗誦 corpus は ~700 glyph、Amiri full は ~3,500 glyph。
 
 → **4.3-B の `/practice` JS 分割が単独で最大の JS 削減レバー**。shared 102 kB の 54 kB / 45 kB チャンクは framework + OTel browser tracer と推定。analyzer HTML で confirm 予定。
+
+##### 4.3-C で確定した実装メモ（ADR 0019）
+
+- RUM 路線。`web-vitals` を `apps/web/dependencies` に追加、layout chunk から購読。Lighthouse CI は 4.3-C-followup 候補として保留。
+- 命名: `web.vitals.{lcp,fcp,inp,cls,ttfb}`。既存 `web.ui.*` と sibling、`web.*` プレフィックスでまとめて Loki / Grafana ルート可能。
+- PII: `web-vitals/attribution` entry point は **未 import**。span 属性は `value` / `delta` / `rating` / `navigation_type` のみ。同名 vitest 内の key snapshot で contract 固定。
+- bundle delta: `/` First Load JS 130 → 131 kB (+1)、layout chunk 7.4 → 14.4 kB raw（≈ +3 kB gzipped）。`/practice/[s]/[a]` は丸め内で変化なし。
+
+##### 4.3-D 着手前の前提
+
+ADR 0018 + 4.3-C で「最大の font レバー = Amiri Arabic ~204 KiB（両 weight）」の数値は確定。4.3-D で Quran-subset 化したあと、4.3-C の RUM データで LCP / FCP の delta を観測する形を取る。
 
 #### 4.4 クライアント側テレメトリ — Done in PRs #241, #242
 
@@ -511,3 +522,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。 |
 | 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化 |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記 |
