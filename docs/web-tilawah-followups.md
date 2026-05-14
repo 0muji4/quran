@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-14 (post 4.3-D in flight)
+- **Last Updated**: 2026-05-14 (Phase 4.3 fully consumed)
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -400,8 +400,10 @@ POST /me/attempts             (body: Attempt)
 |----|---------|----------|----------|
 | **4.3-A** | bundle analyzer 導入 + baseline 計測 — ✅ Done in #245 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
 | **4.3-B** | `PracticeClient` の server/client 境界分割 — ✅ Done in #246 | `PracticeClient.tsx` (削除) `recordingEvents.ts` | ~80 |
-| **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done (PR 進行中) | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx` | ~180 |
-| **4.3-D** | Amiri を Quran corpus に pre-subset 化（ADR 0020）— ✅ Done (PR 進行中) | `scripts/build-amiri-quran-subset.sh` `apps/web/app/fonts/*.woff2` `layout.tsx` | ~250 |
+| **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done in #248 | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx` | ~180 |
+| **4.3-D** | Amiri を Quran corpus に pre-subset 化（ADR 0020）— ✅ Done in #249 | `scripts/build-amiri-quran-subset.sh` `apps/web/app/fonts/*.woff2` `layout.tsx` | ~250 |
+
+**Phase 4.3 状態**: 全 4 サブ PR 消化済。第一手で baseline を取り（A）、フラット化（B）、RUM 計測の口（C）、最大レバーの font subset（D）の順に進めた。残りは 2.4 / 4.1 / 任意残のみ。
 
 ##### 4.3 baseline（2026-05-13、PR 進行中 / Phase 4.3-A）
 
@@ -533,3 +535,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-C を PR #248 で消化済とマーク。4.3-D（Amiri Quran subset、ADR 0020）の進行中 PR を §4.3 サブ表に記録し、Amiri first-paint payload 204 → 94 KiB（−54%）、OFL Reserved-Font-Name 対応、visual 5/5 通過の実装メモを本文に追記。Phase 4.3 全 4 サブ PR が完了見込み |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-D を PR #249 で消化済とマークし「全 4 サブ PR 消化済」状態をサブ表直下にメモ。あわせて `docs/telemetry.md` に Web-only RUM セクション、`README.md` に Amiri OFL attribution、ADR 0016 に ADR 0019 への "See also" pointer を追記（同一 PR 内） |

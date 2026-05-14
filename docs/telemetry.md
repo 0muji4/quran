@@ -60,6 +60,21 @@ Per platform:
 - Web — events flushed via `apps/web/app/telemetry/`
 - Android — Logcat tag `com.tilawah.android` (production wiring is `TraceTelemetry`; `androidx.tracing.Trace` brackets the `measure(...)` regions so they appear in Perfetto and Studio Profiler timelines). Constants live in `apps/android/.../telemetry/Telemetry.kt`.
 
+## Web-only RUM (browser OTel spans)
+
+The events listed above are the **cross-platform** contract — every platform emits them with the same name. The Tilawah web build additionally ships two browser-only span namespaces that have no iOS / Android counterpart and therefore don't appear in the tables above:
+
+| Namespace | Source | Spec |
+|-----------|--------|------|
+| `web.ui.*` | User-driven UI events (`recording_started`, `loop_toggled`, `suggested_clicked`, etc.) emitted via `trackUiEvent()` from `apps/web/app/telemetry/use-ui-event.ts`. | ADR 0016 |
+| `web.vitals.*` | Auto-captured Core Web Vitals (`lcp`, `fcp`, `inp`, `cls`, `ttfb`) emitted via `apps/web/app/telemetry/web-vitals.ts` from the `web-vitals` library. | ADR 0019 |
+
+Both flow through the same `WebTracerProvider` registered by `web-tracer.ts` and are gated by `NEXT_PUBLIC_OTEL_ENDPOINT`. The collector / Loki / Grafana can route them onto a web-perf dashboard with a `name =~ "web\..*"` filter while leaving the cross-platform `library.* / practice.* / result.*` stream intact.
+
+PII rules (numeric / boolean / enum attributes only — no email, transcript, displayName, URL path) apply to both namespaces. ADR 0016 §"PII rules" is the canonical statement; ADR 0019 §"PII boundary" reinforces it for `web.vitals.*` and pins the contract with an attribute-key snapshot in the unit test.
+
+## Adding events
+
 ## Adding events
 
 1. Decide the dot-segmented name; respect existing sub-domains (`library.*`, `practice.*`, `result.*`).
