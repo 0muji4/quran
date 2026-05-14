@@ -37,8 +37,24 @@ class AuthViewModel(
         _state.update { it.copy(password = value, error = null) }
     }
 
+    fun setDisplayName(value: String) {
+        _state.update { it.copy(displayName = value, error = null) }
+    }
+
+    fun setLevel(value: Level) {
+        _state.update { it.copy(level = value) }
+    }
+
+    fun setAgreedToTerms(value: Boolean) {
+        _state.update { it.copy(agreedToTerms = value, termsError = if (value) false else it.termsError) }
+    }
+
     fun signIn(onSuccess: () -> Unit) {
         viewModelScope.launch { signInInternal(onSuccess) }
+    }
+
+    fun signUp(onSuccess: () -> Unit) {
+        viewModelScope.launch { signUpInternal(onSuccess) }
     }
 
     /** Suspending helper exposed for tests. */
@@ -50,6 +66,29 @@ class AuthViewModel(
             val payload = authApi.signIn(
                 email = current.email.trim(),
                 password = current.password,
+            )
+            authSession.save(payload)
+            _state.update { it.copy(pending = false) }
+            onSuccess()
+        } catch (cause: AppError) {
+            _state.update { it.copy(pending = false, error = cause) }
+        }
+    }
+
+    /** Suspending helper exposed for tests. */
+    suspend fun signUpInternal(onSuccess: () -> Unit) {
+        val current = _state.value
+        if (current.pending) return
+        if (!current.agreedToTerms) {
+            _state.update { it.copy(termsError = true) }
+            return
+        }
+        _state.update { it.copy(pending = true, error = null, termsError = false) }
+        try {
+            val payload = authApi.signUp(
+                email = current.email.trim(),
+                password = current.password,
+                displayName = current.displayName.trim().takeIf { it.isNotEmpty() },
             )
             authSession.save(payload)
             _state.update { it.copy(pending = false) }
