@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-14 (post 4.3-C in flight)
+- **Last Updated**: 2026-05-14 (post 4.3-D in flight)
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -401,7 +401,7 @@ POST /me/attempts             (body: Attempt)
 | **4.3-A** | bundle analyzer 導入 + baseline 計測 — ✅ Done in #245 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
 | **4.3-B** | `PracticeClient` の server/client 境界分割 — ✅ Done in #246 | `PracticeClient.tsx` (削除) `recordingEvents.ts` | ~80 |
 | **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done (PR 進行中) | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx` | ~180 |
-| **4.3-D** | Amiri unicode-range で Quran glyph subset 化 | `layout.tsx` の `next/font/google` → `next/font/local` 切替 | ~60 |
+| **4.3-D** | Amiri を Quran corpus に pre-subset 化（ADR 0020）— ✅ Done (PR 進行中) | `scripts/build-amiri-quran-subset.sh` `apps/web/app/fonts/*.woff2` `layout.tsx` | ~250 |
 
 ##### 4.3 baseline（2026-05-13、PR 進行中 / Phase 4.3-A）
 
@@ -443,6 +443,15 @@ POST /me/attempts             (body: Attempt)
 ##### 4.3-D 着手前の前提
 
 ADR 0018 + 4.3-C で「最大の font レバー = Amiri Arabic ~204 KiB（両 weight）」の数値は確定。4.3-D で Quran-subset 化したあと、4.3-C の RUM データで LCP / FCP の delta を観測する形を取る。
+
+##### 4.3-D で確定した実装メモ（ADR 0020）
+
+- Amiri Regular + Bold を 91 codepoint（`db/seed_quran.sql` から抽出 + UI 許容セット）に絞り込み、`apps/web/app/fonts/*.woff2` として commit。`pyftsubset` 経由のスクリプト `scripts/build-amiri-quran-subset.sh` で再生成可能。
+- OFL §"Reserved Font Name" 対応：subset のフォント family を `"Tilawah Amiri Quran Subset"` にリネーム（`scripts/_rename-font-family.py`）。`OFL.txt` も同梱。
+- `next/font/google` → `next/font/local`。`var(--font-amiri)` は据置のため CSS 側変更不要。
+- Amiri first-paint payload **204 KiB → 93.9 KiB（−110 KiB / −54%）**。全 Amiri ファイル合計だと 269 KiB → 94 KiB（−65%）。
+- First Load JS は不変（font binary は JS bundle 外）。visual baseline は 5/5 通過、glyph outline は同一の Amiri 1.001 ソース由来のため pixel drift なし。
+- 再生成は dev-only。`python3 -m pip install --user 'fonttools[woff]'` 後にスクリプト実行。production build は font 同梱のため依存なし。
 
 #### 4.4 クライアント側テレメトリ — Done in PRs #241, #242
 
@@ -523,3 +532,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記 |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-C を PR #248 で消化済とマーク。4.3-D（Amiri Quran subset、ADR 0020）の進行中 PR を §4.3 サブ表に記録し、Amiri first-paint payload 204 → 94 KiB（−54%）、OFL Reserved-Font-Name 対応、visual 5/5 通過の実装メモを本文に追記。Phase 4.3 全 4 サブ PR が完了見込み |
