@@ -74,10 +74,74 @@ class AuthViewModelTest {
         assertNull(viewModel.state.value.error)
     }
 
+    @Test
+    fun `signUp without terms surfaces termsError and skips API call`() = runTest {
+        val api = FakeAuthApi(signUpResult = { _, _, _ -> error("should not be called") })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.setEmail("noor@example.com")
+        viewModel.setPassword("long-enough-pw")
+
+        var success = false
+        viewModel.signUpInternal { success = true }
+
+        assertFalse(success)
+        assertTrue(viewModel.state.value.termsError)
+        assertNull(api.lastSignUpEmail)
+    }
+
+    @Test
+    fun `signUp 409 surfaces EmailInUse and clears termsError`() = runTest {
+        val api = FakeAuthApi(signUpResult = { _, _, _ -> throw AppError.EmailInUse })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.setEmail("noor@example.com")
+        viewModel.setPassword("long-enough-pw")
+        viewModel.setAgreedToTerms(true)
+        viewModel.setLevel(Level.Advanced)
+
+        viewModel.signUpInternal { }
+
+        assertEquals(AppError.EmailInUse, viewModel.state.value.error)
+        assertFalse(viewModel.state.value.termsError)
+    }
+
+    @Test
+    fun `signUp never sends level or terms to the API`() = runTest {
+        val api = FakeAuthApi(
+            signUpResult = { _, _, displayName ->
+                AuthSessionPayload(
+                    accessToken = "a",
+                    refreshToken = "r",
+                    user = AuthUser("u-1", "noor@example.com", displayName),
+                )
+            },
+        )
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.setEmail("noor@example.com")
+        viewModel.setPassword("long-enough-pw")
+        viewModel.setDisplayName("  Noor  ")
+        viewModel.setLevel(Level.Intermediate)
+        viewModel.setAgreedToTerms(true)
+
+        viewModel.signUpInternal { }
+
+        // The fake API only records the three parameters the interface
+        // exposes; if level or terms ever leak into AuthApi.signUp this
+        // assertion has to change deliberately.
+        assertEquals("noor@example.com", api.lastSignUpEmail)
+        assertEquals("Noor", api.lastSignUpDisplayName)
+    }
+
     private class FakeAuthApi(
-        val signInResult: (String, String) -> AuthSessionPayload,
+        val signInResult: (String, String) -> AuthSessionPayload = { _, _ ->
+            error("signIn not configured")
+        },
+        val signUpResult: (String, String, String?) -> AuthSessionPayload = { _, _, _ ->
+            error("signUp not configured")
+        },
     ) : AuthApi {
         var lastSignInEmail: String? = null
+        var lastSignUpEmail: String? = null
+        var lastSignUpDisplayName: String? = null
 
         override suspend fun signIn(email: String, password: String): AuthSessionPayload {
             lastSignInEmail = email
@@ -88,6 +152,10 @@ class AuthViewModelTest {
             email: String,
             password: String,
             displayName: String?,
-        ): AuthSessionPayload = throw NotImplementedError("not used in sign-in tests")
+        ): AuthSessionPayload {
+            lastSignUpEmail = email
+            lastSignUpDisplayName = displayName
+            return signUpResult(email, password, displayName)
+        }
     }
 }
