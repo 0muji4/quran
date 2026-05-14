@@ -29,6 +29,12 @@ vi.mock('../../lib/storage', () => ({
   migrateAnonymousCacheToBff: () => migrateAnonymousCacheToBffMock()
 }));
 
+// Accept the sign-up terms gate so a submission can go through. Kept as a
+// helper because every sign-up flow now has to clear it first.
+const acceptTerms = (): void => {
+  fireEvent.click(screen.getByRole('checkbox', { name: /terms of service/i }));
+};
+
 describe('AuthForm', () => {
   beforeEach(() => {
     replace.mockReset();
@@ -93,6 +99,7 @@ describe('AuthForm', () => {
     render(<AuthForm mode="signup" />);
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
+    acceptTerms();
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
@@ -109,9 +116,10 @@ describe('AuthForm', () => {
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
-    fireEvent.change(screen.getByLabelText('Display name (optional)'), {
+    fireEvent.change(screen.getByLabelText('Your name'), {
       target: { value: 'Aisha' }
     });
+    acceptTerms();
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() =>
@@ -129,6 +137,7 @@ describe('AuthForm', () => {
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
+    acceptTerms();
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() =>
@@ -138,5 +147,46 @@ describe('AuthForm', () => {
         displayName: undefined
       })
     );
+  });
+
+  it('blocks sign-up until the terms checkbox is accepted', async () => {
+    signUpActionMock.mockResolvedValue({ id: 'u5', email: 'a@b.co', displayName: null });
+    render(<AuthForm mode="signup" />);
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
+
+    // Submitting without accepting the terms is gated: no action, error shown.
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(signUpActionMock).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/terms of service/i);
+
+    // Accepting the terms clears the gate and lets the submission through.
+    acceptTerms();
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await waitFor(() => expect(signUpActionMock).toHaveBeenCalledTimes(1));
+  });
+
+  it('toggles password visibility with the Show / Hide control', () => {
+    render(<AuthForm mode="signin" />);
+
+    const password = screen.getByLabelText('Password');
+    expect(password).toHaveAttribute('type', 'password');
+
+    const toggle = screen.getByRole('button', { name: 'Show password' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(toggle);
+    expect(password).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
+
+  it('renders the deferred OAuth buttons as disabled placeholders', () => {
+    render(<AuthForm mode="signin" />);
+    expect(screen.getByRole('button', { name: /google/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /apple/i })).toBeDisabled();
   });
 });

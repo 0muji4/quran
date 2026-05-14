@@ -1,9 +1,9 @@
-import { AuthForm } from '../AuthForm';
+import { AuthScreen } from '../AuthScreen';
 
 export const metadata = {
   title: 'Sign up · Tilawah'
 };
 
 export default function SignUpPage() {
-  return <AuthForm mode="signup" />;
+  return <AuthScreen mode="signup" />;
 }
