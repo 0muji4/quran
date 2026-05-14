@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-14 (Phase 4.3 fully consumed)
+- **Last Updated**: 2026-05-14 (Phase 2.4 dropped, Phase 4.1 parked)
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -235,15 +235,13 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 - ~~on-cream の AA 不足 3 パターン~~ ✅ 解消済み。ADR 0003 の split-token 移行は commit `a83baff` で全パターン消化（`.eyebrow` → `var(--color-gold-on-light)`、`.btnGold` の color: `#fff` → `var(--color-ink-strong)`、`--color-ink-muted` darken）。`grep "color: #fff"` で残るのは teal / ink-strong 背景上のみ。axe `color-contrast` 違反ゼロ、`KNOWN_VIOLATIONS = []` を維持（`e2e/tests/a11y/axe.spec.ts:23`）。ADR 0004 の視覚回帰 baseline は既存 3 シーン（library / history / practice-idle）が gold-button を覆っているため、別途 baseline 撮影は不要。
 - macOS VoiceOver / NVDA での実機読み上げ確認（2.3-B の aria-live、2.3-E の skip link は DevTools / Playwright で機能確認済み）。
 
-#### 2.4 Press-and-hold マイクジェスチャの再検討
+#### 2.4 Press-and-hold マイクジェスチャの再検討 — Dropped (2026-05-14)
 
-モックアップの当初コピーに合わせて press-and-hold（押し下げで録音開始、離して停止）を実装するか、現在の tap-to-start / tap-to-stop コピーで確定するかをプロダクト判断する。実装する場合、以下の挙動を満たす：
+**決定**: 実装しない。tap-to-start / tap-to-stop で確定。
 
-- マウス長押し / タッチ長押しの両方に対応
-- 100ms 未満の誤タップは録音開始扱いにしない
-- スワイプキャンセル（押下中に外に動かして離すと送信せず破棄）
+**Rationale**: ビックテックの音声録音 UX（iOS / Android のボイスメモ系、Slack / WhatsApp / Telegram の voice message など主要プロダクト）を参照すると、押下保持型は短いメッセージ送信に最適化された UI パターンで、本プロダクトの「ayah 単位の朗誦練習」のように **数秒〜十数秒の連続発声を要する文脈には合わない**。指の保持コストが集中を阻害し、録音中の没入感（Phase 2.3 で整えた状態アナウンスや waveform 装飾の効き）も殺ぐ。tap-to-start / tap-to-stop の現行モデルがプロダクトの一次ジョブに対して合致しているため、コピー側で確定して終了。
 
-**影響度 M / 工数 M**。決定保留中であれば本フォローアップから除外可。
+**残作業**: なし。`recorderStatus.ts:14-15` / `practice/[surahId]/[ayahNumber]/page.tsx:90` の現行コピーがそのまま正となる。
 
 ### Phase 3: 中期（次スプリント、構造変更を伴う）
 
@@ -352,13 +350,28 @@ POST /me/attempts             (body: Attempt)
 
 複数領域に跨り、必ずしも単一スプリントで完結しない継続的取り組み。
 
-#### 4.1 i18n（特にアラビア語 UI）
+#### 4.1 i18n（特にアラビア語 UI） — Parked (2026-05-14)
 
 **現状**: UI ラベルは英語ハードコード。アプリの基本ユーザー像を踏まえるとアラビア語切替の価値は高い。
 
 **ゴール**: `next-intl` を導入し、英・アラビアの 2 言語を切替可能にする。RTL レイアウトに対応するため、`<html dir>` の動的切替と CSS Logical Properties（`margin-inline-start` 等）への置き換えを段階的に行う。
 
 **影響度 S / 工数 L**。
+
+**保留理由**: 本プロジェクトは motoshi.suzuki 単独運営（[[project_solo_maintainer]]）であり、**アラビア語の register（フスハー vs 口語）／ Quran 学習文脈に詳しいネイティブレビュアーが確保できていない**。翻訳カタログを起こしても誤訳が品質チェックを抜け、母語ユーザーの信頼を毀損するリスクが高いため着手を見送る。
+
+**再開トリガー**:
+
+1. アラビア語ネイティブの翻訳レビュアー（朗誦学習文脈に親和性のある人物）を確保できた、または LLM 翻訳 → ネイティブ校閲のパイプラインを敷ける目処が立った
+2. かつ、UI Arabic 用フォント方針が決まった — 現行 `apps/web/app/fonts/*.woff2` は ADR 0020 で Quran 朗誦 corpus 91 codepoint に pre-subset 化済で UI 文字列を覆えない。Noto Naskh Arabic 等を追加 family として持ち込むか、Amiri を UI corpus も含めて再 subset するか、Phase 4.3-D の payload 削減（204 → 94 KiB）を毀損しない設計を選ぶ必要がある
+
+**着手時の技術的見立て**（保留解除時のために残置）:
+
+- 段階導入: ① UI 文字列を `useTranslations()` 経由に書き換え（英語のみのまま i18n キー化）→ ② アラビア語カタログ追加 → ③ RTL レイアウト対応、の 3 PR 分割が現実的
+- CSS 物理プロパティは `apps/web/app/styles/` で約 16 箇所（`padding-left` / `margin-right` / `text-align: left` / `left:` / `right:` 系）。Logical Properties（`padding-inline-start` / `inset-inline-start` / `text-align: start`）への置換は機械的。装飾 SVG（ContinueCard のコンパス・コーナー装飾・8 点星）の RTL 時ミラーリング判断はデザイン側
+- Server Component 群と `apps/web/app/lib/classify.ts:80` `formatPracticedAt`（"just now" / "min ago" / "yesterday" ハードコード）の locale プロパゲートが必要。relative time は `Intl.RelativeTimeFormat` に寄せる
+- ロケール永続化: 匿名はクッキー、認証ユーザーは `users.preferred_locale` カラムを 3.1 BFF 永続化に追加 migration
+- visual regression baseline（ADR 0004、5 scene）の RTL 版再撮影が CI 時間に影響する点に留意
 
 #### 4.2 Cross-browser e2e — Done in PR #243
 
@@ -485,7 +498,7 @@ Phase 1 (1.1, 1.2, 1.3)        ─┐
 Phase 2 (2.1)                ────┘ → 単独でマージ可
 Phase 2 (2.2 mobile)         ────  → 単独でマージ可
 Phase 2 (2.3 a11y)           ────  → 単独でマージ可（@axe-core/playwright 導入を伴う）
-Phase 2 (2.4 hold gesture)   ────  → プロダクト決定待ち
+Phase 2 (2.4 hold gesture)   ────  → Dropped (2026-05-14)
 
 Phase 3 (3.2 auth)           ────┐
                                   ├─ 3.1（永続化）が両者に依存
@@ -493,7 +506,7 @@ Phase 3 (3.1 persistence)    ────┘
 Phase 3 (3.3 suggestions)    ────  → 3.1 完了後
 Phase 3 (3.4 visual regress) ────  → 単独でマージ可
 
-Phase 4 (4.1 i18n)           ────  → 任意のタイミング、ただし 2.3 の a11y 改善後が望ましい
+Phase 4 (4.1 i18n)           ────  → Parked (2026-05-14, アラビア語レビュアー確保待ち)
 Phase 4 (4.2 cross-browser)  ────  → 単独
 Phase 4 (4.3 performance)    ────  → 単独
 Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
@@ -505,12 +518,21 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 
 「影響度 / 工数」が高く、依存ブロックが少ないものから順に着手する。
 
-1. **2.1 スコア結果画面** — 採点機能の存在感を引き上げる。データ層変更不要で短期で成果が見える
-2. **2.3 アクセシビリティ pass** — ユーザー対応範囲を広げる基礎工事。`@axe-core/playwright` 導入で恒常的にガード
-3. **3.1 + 3.2 永続化 + 認証** — プロダクト化の必須事項。両者をペアで進める
-4. **2.2 モバイル最適化** — 並走可能。実機検証次第でスコープ拡縮
-5. **4.4 クライアントテレメトリ** — 永続化を待たず開始可。KR2（仮説検証サイクル加速）の早期 Win
-6. **2.4 / 3.3 / 3.4 / 4.1 / 4.2 / 4.3** — 上記が片付き次第、残工数で消化
+1. **2.1 スコア結果画面** — 採点機能の存在感を引き上げる。データ層変更不要で短期で成果が見える ✅ Done
+2. **2.3 アクセシビリティ pass** — ユーザー対応範囲を広げる基礎工事。`@axe-core/playwright` 導入で恒常的にガード ✅ Done
+3. **3.1 + 3.2 永続化 + 認証** — プロダクト化の必須事項。両者をペアで進める ✅ Done
+4. **2.2 モバイル最適化** — 並走可能。実機検証次第でスコープ拡縮 ✅ Done
+5. **4.4 クライアントテレメトリ** — 永続化を待たず開始可。KR2（仮説検証サイクル加速）の早期 Win ✅ Done
+6. **3.3 / 3.4 / 4.2 / 4.3** — 上記が片付き次第、残工数で消化 ✅ Done
+
+**残スコープ（2026-05-14 時点）**:
+
+- §2.4 Press-and-hold: **Dropped**（ビックテック比較から本プロダクトの一次ジョブと不整合のため不採用）
+- §4.1 i18n / RTL: **Parked**（アラビア語ネイティブレビュアー確保 + UI Arabic フォント方針決定がトリガー）
+- 任意の手動検証: iOS Safari / Chrome 実機（§2.2 残課題）/ VoiceOver / NVDA 実機読み上げ（§2.3 残課題）
+- 運用判断トリガー待ち: Playwright multi-viewport の nightly 切替（§2.2 末尾）、Phase 3.3 閾値の telemetry 反映校正（§3.3 末尾）、Amiri subset の RUM delta 観測（§4.3 末尾）
+
+実装系として残るロードマップ項目はない。本ドキュメントの本体スコープは事実上クローズ済み。
 
 ## 6. スコープ外（明示的に保留）
 
@@ -536,3 +558,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記 |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-C を PR #248 で消化済とマーク。4.3-D（Amiri Quran subset、ADR 0020）の進行中 PR を §4.3 サブ表に記録し、Amiri first-paint payload 204 → 94 KiB（−54%）、OFL Reserved-Font-Name 対応、visual 5/5 通過の実装メモを本文に追記。Phase 4.3 全 4 サブ PR が完了見込み |
 | 2026-05-14 | motoshi.suzuki | Phase 4.3-D を PR #249 で消化済とマークし「全 4 サブ PR 消化済」状態をサブ表直下にメモ。あわせて `docs/telemetry.md` に Web-only RUM セクション、`README.md` に Amiri OFL attribution、ADR 0016 に ADR 0019 への "See also" pointer を追記（同一 PR 内） |
+| 2026-05-14 | motoshi.suzuki | 残スコープ整理。§2.4 Press-and-hold を **Dropped**（ビックテック音声 UX 参照 — 押下保持型は短メッセージ用パターンで、ayah 単位の数秒〜十数秒の連続発声に不適合）。§4.1 i18n を **Parked**（アラビア語ネイティブレビュアー未確保 + ADR 0020 の UI 用フォント方針未確定）。§4 依存図と §5 推奨着手順を残スコープ視点に整理し、ロードマップ本体スコープが事実上クローズ済である旨を §5 末尾に明記 |
