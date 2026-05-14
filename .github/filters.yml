@@ -38,6 +38,14 @@ js:
   - 'packages/ts-config/**'
   - 'schemas/**'
   - 'scripts/generate-quran-seed.ts'
+  # e2e/** is the Playwright suite + baselines. Changes here (a new
+  # spec, a refreshed visual baseline, a config edit) must re-trigger
+  # the e2e job so the change is actually exercised end-to-end. Without
+  # this entry a baseline-only PR (e.g. #247) skips e2e and ships
+  # un-validated. The job condition in ci.yml gates on the js filter,
+  # so attaching here is sufficient — no separate `e2e` filter needed.
+  - 'e2e/**'
+  - 'playwright.config.ts'
 
 go:
   - *shared
