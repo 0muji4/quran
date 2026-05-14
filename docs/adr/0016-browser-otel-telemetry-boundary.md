@@ -97,4 +97,5 @@ Anything else is opt-in by editing `UiEventAttrs` (currently `Record<string, Att
 - `apps/web/app/telemetry/WebTelemetryInit.tsx` — layout init component
 - `apps/web/app/layout.tsx` — wiring site
 - ADR 0015 — Phase 3.3 `reason` field that 4.4 surfaces in `web.ui.suggested_clicked`
+- ADR 0019 — extends this namespacing convention with a sibling `web.vitals.*` stream (Core Web Vitals via the same `WebTracerProvider`, same PII envelope, same env gate)
 - `docs/web-tilawah-followups.md` §4.4 — original carve-out

@@ -76,3 +76,14 @@ the [Tanzil Uthmani text](https://tanzil.net/) via
 licensed under [CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/);
 it is reproduced without modification. Regenerate the seed via
 `pnpm gen:quran-seed` when the upstream dataset is bumped.
+
+The Arabic typeface used on the web client is **Amiri**, distributed under the
+[SIL Open Font License v1.1](https://openfontlicense.org/). The two woff2 files
+under `apps/web/app/fonts/` are pre-subsetted derivatives of the upstream
+[`aliftype/amiri`](https://github.com/aliftype/amiri) `1.001` release covering
+only the Quran corpus plus a small UI allow-list; per OFL §"Reserved Font Name"
+they identify internally as `Tilawah Amiri Quran Subset` rather than `Amiri`.
+A verbatim copy of the licence lives at `apps/web/app/fonts/OFL.txt`.
+Regenerate the subset via `scripts/build-amiri-quran-subset.sh` when upstream
+ships a new release or the Quran corpus changes — see ADR 0020 and
+`apps/web/app/fonts/README.md` for the recipe.
