@@ -24,6 +24,15 @@
 "error.storageUnavailable.title" = "Couldn't save locally";
 "error.storageUnavailable.recovery" = "Free up some space on your device and try again.";
 
+"error.invalidCredentials.title" = "Invalid email or password";
+"error.invalidCredentials.recovery" = "Check the email and password and try again.";
+
+"error.emailInUse.title" = "Email already in use";
+"error.emailInUse.recovery" = "An account with this email exists. Sign in instead.";
+
+"error.validationFailed.title" = "Check your details";
+"error.validationFailed.recovery" = "Please review the fields and try again.";
+
 /* Library tab */
 "library.eyebrow" = "Your practice";
 "library.title" = "Choose a surah to recite";
@@ -93,3 +102,54 @@
 
 /* Accessibility */
 "library.surah.a11yHint" = "Opens Practice for this surah";
+
+/* Auth — shared */
+"auth.divider.or" = "OR";
+"auth.divider.orWithEmail" = "OR WITH EMAIL";
+"auth.social.google" = "Continue with Google";
+"auth.social.apple" = "Continue with Apple";
+"auth.field.email" = "EMAIL";
+"auth.field.password" = "PASSWORD";
+"auth.field.name" = "YOUR NAME";
+"auth.password.show" = "Show";
+"auth.password.hide" = "Hide";
+
+/* Auth — sign in */
+"auth.signin.title" = "Welcome back";
+"auth.signin.subtitle" = "Sign in to continue your practice";
+"auth.signin.submit" = "Sign in";
+"auth.signin.submitPending" = "Signing in…";
+"auth.forgotPassword" = "Forgot password?";
+"auth.signin.footerPrompt" = "New here?";
+"auth.signin.footerAction" = "Create an account";
+
+/* Auth — sign up */
+"auth.signup.step" = "Step 1 of 1";
+"auth.signup.eyebrow" = "Begin your journey";
+"auth.signup.title" = "Create your account";
+"auth.signup.lede" = "Practise daily, track every attempt.";
+"auth.signup.submit" = "Create account";
+"auth.signup.submitPending" = "Creating account…";
+"auth.signup.footerPrompt" = "Already have an account?";
+"auth.signup.footerAction" = "Sign in";
+"auth.password.helper" = "Use 8+ characters with a mix of letters and numbers";
+"auth.level.title" = "YOUR LEVEL";
+"auth.level.beginner.label" = "Beginner";
+"auth.level.beginner.description" = "Learning Arabic";
+"auth.level.intermediate.label" = "Intermediate";
+"auth.level.intermediate.description" = "Working on tajweed";
+"auth.level.advanced.label" = "Advanced";
+"auth.level.advanced.description" = "Polishing recitation";
+"auth.terms.label" = "I agree to the Terms of Service and Privacy Policy.";
+"auth.terms.error" = "Please accept the Terms of Service to continue.";
+
+/* Auth — accessibility */
+"auth.back.a11y" = "Back";
+"auth.password.toggle.a11y" = "Show or hide password";
+
+/* Profile tab */
+"profile.signedOut.title" = "Welcome";
+"profile.signedOut.subtitle" = "Sign in to sync your practice across devices.";
+"profile.action.signIn" = "Sign in";
+"profile.action.createAccount" = "Create an account";
+"profile.action.signOut" = "Sign out";

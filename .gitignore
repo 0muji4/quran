@@ -76,3 +76,7 @@ ops/terraform/**/*.tfstate.*
 ops/terraform/**/terraform.tfvars
 ops/terraform/**/backend.hcl
 ops/terraform/**/.terraform.tfstate.lock.info
+
+# iOS SwiftPM build artifacts
+apps/ios/.build/
+apps/ios/Package.resolved
