@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import localFont from 'next/font/local';
-import { AppShell } from './components/AppShell';
-import { getCurrentSession } from './lib/session';
 import { WebTelemetryInit } from './telemetry/WebTelemetryInit';
 import './globals.css';
 
@@ -39,13 +37,15 @@ export const metadata: Metadata = {
     'Listen to a teacher recite, then practice your own tilawah and get scored against the reference.'
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const session = await getCurrentSession();
+// Root layout is intentionally thin: <html>/<body>, fonts, telemetry. The
+// persistent chrome (AppShell + session) lives in the (app) route group so
+// the (auth) group can render full-bleed without it.
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable} ${amiri.variable}`}>
       <body suppressHydrationWarning>
         <WebTelemetryInit />
-        <AppShell session={session}>{children}</AppShell>
+        {children}
       </body>
     </html>
   );
