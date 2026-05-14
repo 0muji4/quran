@@ -36,6 +36,16 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
 
     data object StorageUnavailable : AppError(message = "storage unavailable")
 
+    /** BFF `POST /auth/login` returned 401. */
+    data object InvalidCredentials : AppError(message = "invalid email or password")
+
+    /** BFF `POST /auth/signup` returned 409 — email already in use. */
+    data object EmailInUse : AppError(message = "email already in use")
+
+    /** BFF returned 400 — request body failed Zod validation. */
+    data class ValidationFailed(val reason: String) :
+        AppError(message = "validation failed: $reason")
+
     /**
      * Whether the action that produced this error can be retried as-is
      * (without user intervention beyond a button tap). Drives the
@@ -46,7 +56,8 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
         get() = when (this) {
             is Network, is BackendUnavailable, ScoringTimeout -> true
             AudioPermissionDenied, is AudioRecordingFailed, is AudioPlaybackFailed,
-            is ReferenceUnavailable, StorageUnavailable -> false
+            is ReferenceUnavailable, StorageUnavailable,
+            InvalidCredentials, EmailInUse, is ValidationFailed -> false
         }
 
     /**
@@ -64,6 +75,9 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is ReferenceUnavailable -> "reference_unavailable"
             ScoringTimeout -> "scoring_timeout"
             StorageUnavailable -> "storage_unavailable"
+            InvalidCredentials -> "invalid_credentials"
+            EmailInUse -> "email_in_use"
+            is ValidationFailed -> "validation_failed"
         }
 
     /**
@@ -82,6 +96,9 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is ReferenceUnavailable -> R.string.error_reference_unavailable_title
             ScoringTimeout -> R.string.error_scoring_timeout_title
             StorageUnavailable -> R.string.error_storage_unavailable_title
+            InvalidCredentials -> R.string.error_invalid_credentials_title
+            EmailInUse -> R.string.error_email_in_use_title
+            is ValidationFailed -> R.string.error_validation_failed_title
         }
 
     @get:StringRes
@@ -95,5 +112,8 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is ReferenceUnavailable -> R.string.error_reference_unavailable_recovery
             ScoringTimeout -> R.string.error_scoring_timeout_recovery
             StorageUnavailable -> R.string.error_storage_unavailable_recovery
+            InvalidCredentials -> R.string.error_invalid_credentials_recovery
+            EmailInUse -> R.string.error_email_in_use_recovery
+            is ValidationFailed -> R.string.error_validation_failed_recovery
         }
 }
