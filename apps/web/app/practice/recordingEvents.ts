@@ -13,7 +13,6 @@ export function notifyRecordingStarted(): void {
 
 export function onRecordingStarted(handler: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
-  const listener: EventListener = () => handler();
-  window.addEventListener(EVENT_NAME, listener);
-  return () => window.removeEventListener(EVENT_NAME, listener);
+  window.addEventListener(EVENT_NAME, handler);
+  return () => window.removeEventListener(EVENT_NAME, handler);
 }
