@@ -173,15 +173,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
       ayahNumber: ayah.ayahNumber
     });
     await recorder.start();
-  }, [
-    job,
-    recorder,
-    surah.id,
-    surah.nameEn,
-    surah.nameAr,
-    surah.ayahCount,
-    ayah.ayahNumber
-  ]);
+  }, [job, recorder, surah.id, surah.nameEn, surah.nameAr, surah.ayahCount, ayah.ayahNumber]);
 
   const handleStop = useCallback(async () => {
     const elapsedAtStop = recorder.elapsedMs;
