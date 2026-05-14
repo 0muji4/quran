@@ -6,6 +6,9 @@
   --color-bg-nav: #1f1a14;
   --color-bg-continue: #2b1f14;
   --color-bg-recording: #14181c;
+  /* Auth brand panel — the deepest brown surface. Darker than
+   * --color-bg-continue so the gold mihrab line-art reads cleanly. */
+  --color-bg-brand-dark: #221814;
 
   /* Brand accents
    *
