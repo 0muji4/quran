@@ -1,46 +1,161 @@
-.shell {
+/* Sign-in / sign-up two-panel screen.
+ *
+ * Layout: a full-bleed grid — dark brand panel (left) + cream form panel
+ * (right). The (auth) route group renders this with no TopNav. Collapses
+ * to a single column below 720px (the repo-wide breakpoint), hiding the
+ * decorative brand panel so the form owns the mobile viewport.
+ *
+ * Colour discipline (ADR 0003): gold text uses --color-gold-on-light on
+ * the cream form panel and --color-gold-on-dark on the brown brand panel;
+ * body text on the brand panel uses the --color-ink-on-dark* tokens. */
+
+.viewport {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--color-bg-page);
+}
+
+/* ---- Brand panel (left) -------------------------------------------- */
+
+.brandPanel {
   display: flex;
-  justify-content: center;
-  padding: var(--space-10) var(--space-6);
+  flex-direction: column;
+  padding: var(--space-10) var(--space-8);
+  background-color: var(--color-bg-brand-dark);
+  /* Faint gold diamond lattice — two crossed line gratings. Kept very
+   * low opacity so it never competes with the foreground text. */
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 22px,
+      rgba(217, 178, 106, 0.045) 22px,
+      rgba(217, 178, 106, 0.045) 23px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 22px,
+      rgba(217, 178, 106, 0.045) 22px,
+      rgba(217, 178, 106, 0.045) 23px
+    );
+  color: var(--color-ink-on-dark);
 }
 
-.card {
-  width: 100%;
-  max-width: 420px;
-  background: var(--color-bg-paper);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-8) var(--space-6);
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.eyebrow {
-  font-size: 12px;
+.wordmarkIcon {
+  display: inline-flex;
+  color: var(--color-gold-on-dark);
+}
+
+.wordmarkText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.wordmarkTitle {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-ink-on-dark);
+}
+
+.wordmarkKicker {
+  margin-top: 2px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-gold-on-light);
+  color: var(--color-ink-on-dark-mut);
+}
+
+.mihrab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+.ayahBlock {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 400px;
+}
+
+.ayahText {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.9;
+  color: var(--color-gold-on-dark);
+}
+
+.ayahCaption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.5;
+  color: var(--color-ink-on-dark-mut);
+}
+
+.ayahCitation {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-gold-on-dark);
+}
+
+/* ---- Form panel (right) -------------------------------------------- */
+
+.formPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-8);
+}
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Pairs with the global .eyebrow class — only adds spacing. */
+.eyebrow {
   margin-bottom: var(--space-2);
 }
 
 .title {
   font-family: var(--font-serif);
-  font-size: 28px;
+  font-size: clamp(28px, 3.4vw, 36px);
   font-weight: 600;
+  line-height: 1.15;
   color: var(--color-ink-strong);
-  margin: 0 0 var(--space-2);
 }
 
 .lede {
-  margin: 0 0 var(--space-6);
+  margin-top: var(--space-3);
   color: var(--color-ink-muted);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .field {
@@ -56,6 +171,7 @@
 }
 
 .input {
+  width: 100%;
   font: inherit;
   font-size: 15px;
   padding: var(--space-3) var(--space-4);
@@ -70,6 +186,258 @@
   outline-color: var(--color-teal);
 }
 
+/* ---- Password field ------------------------------------------------ */
+
+.passwordRow {
+  position: relative;
+  display: flex;
+}
+
+.passwordInput {
+  /* Leave room for the Show / Hide toggle. */
+  padding-right: 68px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-teal-deep);
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.passwordToggle:disabled {
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+.helperText {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--color-ink-muted);
+}
+
+/* ---- Sign-in options row ------------------------------------------- */
+
+.optionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--color-ink-default);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-teal);
+}
+
+.forgotLink {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-teal-deep);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.forgotLink:disabled {
+  color: var(--color-ink-muted);
+  font-weight: 500;
+  cursor: not-allowed;
+}
+
+/* ---- Divider ------------------------------------------------------- */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-1) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.dividerLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+/* ---- OAuth buttons (disabled — federated auth deferred) ------------ */
+
+.oauthRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.oauthButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: var(--space-3);
+  background: var(--color-bg-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-default);
+  cursor: pointer;
+}
+
+.oauthButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Level selector (sign-up) -------------------------------------- */
+
+.levelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.levelLegend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-default);
+}
+
+.levelLegendHint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+
+.levelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.levelCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  background: var(--color-bg-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.levelRadio {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  margin: 0;
+  accent-color: var(--color-teal);
+}
+
+.levelCard:has(.levelRadio:checked) {
+  border-color: var(--color-teal);
+  background: var(--color-mint-bg);
+}
+
+.levelCard:has(.levelRadio:focus-visible) {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+.levelCardText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: var(--space-4);
+}
+
+.levelCardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-strong);
+}
+
+.levelCardSubtitle {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--color-ink-muted);
+}
+
+/* ---- Terms gate (sign-up) ------------------------------------------ */
+
+.termsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.termsCheckbox {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--color-teal);
+}
+
+.termsLabel {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-ink-default);
+  cursor: pointer;
+}
+
+.termsLabel a {
+  color: var(--color-teal-deep);
+  text-decoration: underline;
+}
+
+.termsError {
+  margin-top: calc(var(--space-1) * -1);
+  font-size: 12px;
+  color: var(--color-red);
+}
+
+/* ---- Submit + error + footer -------------------------------------- */
+
 .error {
   background: rgba(192, 57, 43, 0.08);
   color: var(--color-red);
@@ -80,21 +448,25 @@
 }
 
 .submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   font: inherit;
   font-size: 15px;
   font-weight: 600;
   padding: var(--space-3) var(--space-5);
-  background: var(--color-ink-strong);
+  background: var(--color-teal);
   color: var(--color-tan-soft);
   border: none;
   border-radius: var(--radius-pill);
   min-height: 48px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.submit:hover {
-  opacity: 0.92;
+.submit:hover:not(:disabled) {
+  background: var(--color-teal-deep);
 }
 
 .submit:disabled {
@@ -102,14 +474,38 @@
   cursor: progress;
 }
 
-.aside {
+.footer {
   margin-top: var(--space-6);
   font-size: 13px;
   color: var(--color-ink-muted);
   text-align: center;
 }
 
-.aside a {
+.footer a {
   color: var(--color-teal-deep);
+  font-weight: 600;
   text-decoration: underline;
+}
+
+/* ---- Responsive: collapse to a single column ----------------------- */
+
+@media (max-width: 720px) {
+  .viewport {
+    grid-template-columns: 1fr;
+  }
+
+  /* The brand panel is decorative — drop it so the form owns the
+   * mobile viewport rather than pushing it below a tall illustration. */
+  .brandPanel {
+    display: none;
+  }
+
+  .formPanel {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .oauthRow,
+  .levelGrid {
+    grid-template-columns: 1fr;
+  }
 }
