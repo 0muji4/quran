@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
@@ -39,6 +40,8 @@ import com.tilawah.android.audio.MediaRecorderRecorder
 import com.tilawah.android.audio.Player
 import com.tilawah.android.audio.Recorder
 import com.tilawah.android.backend.ApolloQuranBackend
+import com.tilawah.android.backend.AuthApi
+import com.tilawah.android.backend.OkHttpAuthApi
 import com.tilawah.android.backend.QuranBackend
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.library.LibraryScreen
@@ -47,10 +50,14 @@ import com.tilawah.android.features.practice.PracticeScreen
 import com.tilawah.android.features.practice.PracticeViewModel
 import com.tilawah.android.features.history.HistoryScreen
 import com.tilawah.android.features.history.HistoryViewModel
+import com.tilawah.android.features.profile.ProfileAuthHost
+import com.tilawah.android.features.profile.ProfileViewModel
 import com.tilawah.android.features.result.ResultDetailScreen
 import com.tilawah.android.features.result.ResultDetailViewModel
+import com.tilawah.android.storage.AuthSession
 import com.tilawah.android.storage.DataStoreHistoryStore
 import com.tilawah.android.storage.HistoryStore
+import com.tilawah.android.storage.InMemoryAuthSession
 import com.tilawah.android.storage.InMemoryHistoryStore
 import com.tilawah.android.storage.LastPracticed
 import com.tilawah.android.telemetry.NoOpTelemetry
@@ -67,6 +74,7 @@ enum class TopLevelTab(val title: String) {
     Library("Library"),
     Practice("Practice"),
     History("History"),
+    Profile("Profile"),
 }
 
 /** Defaults to Al-Fatihah ayah 1 when nothing else has been selected. */
@@ -84,6 +92,8 @@ fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
     backend: QuranBackend = remember { ApolloQuranBackend() },
     historyStore: HistoryStore = defaultHistoryStore(),
+    authApi: AuthApi = remember { OkHttpAuthApi() },
+    authSession: AuthSession = remember { InMemoryAuthSession() },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
     var practiceTarget by remember { mutableStateOf(DefaultPractice) }
@@ -109,6 +119,7 @@ fun AppRoot(
                                     TopLevelTab.Library -> Icons.Filled.List
                                     TopLevelTab.Practice -> Icons.Filled.PlayArrow
                                     TopLevelTab.History -> Icons.Filled.DateRange
+                                    TopLevelTab.Profile -> Icons.Filled.AccountCircle
                                 },
                                 contentDescription = tab.title,
                             )
@@ -167,9 +178,20 @@ fun AppRoot(
                     }
                 }
                 TopLevelTab.History -> HistoryTabHost(historyStore = historyStore)
+                TopLevelTab.Profile -> ProfileTabHost(authApi = authApi, authSession = authSession)
             }
         }
     }
+}
+
+@Composable
+private fun ProfileTabHost(authApi: AuthApi, authSession: AuthSession) {
+    val viewModel: ProfileViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { ProfileViewModel(authSession = authSession) }
+        },
+    )
+    ProfileAuthHost(authApi = authApi, authSession = authSession, profileViewModel = viewModel)
 }
 
 @Composable
