@@ -10,6 +10,7 @@ import { AnalysingCard } from './AnalysingCard';
 import { RecorderBars } from './RecorderBars';
 import { ScoringErrorCard } from './ScoringErrorCard';
 import { recorderStatusMessage } from './recorderStatus';
+import { notifyRecordingStarted } from './recordingEvents';
 import {
   getBestScore,
   recordAttempt,
@@ -23,7 +24,6 @@ import styles from '../styles/practice.module.css';
 type Props = {
   surah: SurahSummary;
   ayah: AyahRecord;
-  onRecordingStart?: () => void;
 };
 
 const formatElapsed = (ms: number): string => {
@@ -49,7 +49,7 @@ const STUCK_HINT_AT_MS = 30_000;
 // reason ("Recording was 0.6 s — too short to score").
 const MIN_RECORDING_MS = 1_000;
 
-export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
+export function RecorderPanel({ surah, ayah }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
   const router = useRouter();
@@ -167,7 +167,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
       ayahCount: surah.ayahCount,
       practicedAt: new Date().toISOString()
     });
-    onRecordingStart?.();
+    notifyRecordingStarted();
     trackUiEvent('web.ui.recording_started', {
       surahId: surah.id,
       ayahNumber: ayah.ayahNumber
@@ -180,8 +180,7 @@ export function RecorderPanel({ surah, ayah, onRecordingStart }: Props) {
     surah.nameEn,
     surah.nameAr,
     surah.ayahCount,
-    ayah.ayahNumber,
-    onRecordingStart
+    ayah.ayahNumber
   ]);
 
   const handleStop = useCallback(async () => {
