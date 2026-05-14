@@ -4,7 +4,8 @@ import { fetchSurahAyahs, fetchSurahs } from '../../../actions';
 import type { AyahRecord, SurahSummary } from '../../../lib/types';
 import { AyahDisplayCard } from '../../AyahDisplayCard';
 import { AyahProgressDots } from '../../AyahProgressDots';
-import { PracticeClient } from '../../PracticeClient';
+import { RecorderPanel } from '../../RecorderPanel';
+import { TeacherPanel } from '../../TeacherPanel';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 import styles from '../../../styles/practice.module.css';
 
@@ -70,7 +71,10 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
 
       <AyahDisplayCard ayah={selectedAyah} surahNameEn={surah.nameEn} />
 
-      <PracticeClient surah={surah} ayah={selectedAyah} />
+      <div className={styles.panels}>
+        <TeacherPanel surahId={Number(surah.id)} ayahNumber={selectedAyah.ayahNumber} />
+        <RecorderPanel surah={surah} ayah={selectedAyah} />
+      </div>
 
       <div className={styles.navRow}>
         {prevAyah !== null ? (

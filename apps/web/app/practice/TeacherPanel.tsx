@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useTeacherAudio, type PlaybackRate } from '../hooks/useTeacherAudio';
 import { LoopIcon, PauseIcon, PlayIcon, SpeakerIcon } from '../components/icons/MediaIcons';
 import { Waveform } from './Waveform';
+import { onRecordingStarted } from './recordingEvents';
 import { trackUiEvent } from '../telemetry/use-ui-event';
 import styles from '../styles/practice.module.css';
 
@@ -19,17 +20,12 @@ const formatTime = (seconds: number): string => {
 type Props = {
   surahId: number;
   ayahNumber: number;
-  pauseSignal?: number;
 };
 
-export function TeacherPanel({ surahId, ayahNumber, pauseSignal }: Props) {
+export function TeacherPanel({ surahId, ayahNumber }: Props) {
   const audio = useTeacherAudio(surahId, ayahNumber);
 
-  useEffect(() => {
-    if (pauseSignal !== undefined && pauseSignal > 0) {
-      audio.pause();
-    }
-  }, [pauseSignal, audio]);
+  useEffect(() => onRecordingStarted(() => audio.pause()), [audio]);
 
   const progress = audio.duration > 0 ? audio.currentTime / audio.duration : 0;
   const seed = surahId * 1000 + ayahNumber;
