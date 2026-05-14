@@ -1,7 +1,7 @@
 # Tilawah Web リデザイン後のフォローアップロードマップ
 
 - **Author**: motoshi.suzuki
-- **Last Updated**: 2026-05-13
+- **Last Updated**: 2026-05-14
 - **Status**: Draft
 - **Related PR**: [#87 feat(web): Tilawah brand redesign — surah library, practice flow, history](https://github.com/0muji4/quran-project/pull/87)
 - **Related DD**: `docs/dd/teacher-voice-and-pronunciation-feedback.md`
@@ -384,7 +384,7 @@ POST /me/attempts             (body: Attempt)
 
 #### 4.3 パフォーマンス最適化
 
-**現状**: 3 種の Google Fonts（Cormorant + Inter + Amiri）を `next/font/google` で自己ホストしている。バンドル測定はまだ。
+**現状**: 3 種の Google Fonts（Cormorant + Inter + Amiri）を `next/font/google` で自己ホストしている。Phase 4.3-A で `@next/bundle-analyzer` を env-gate 導入し、初回 baseline を取得済み（PR 進行中 / ADR 0018）。
 
 **観点**:
 
@@ -393,6 +393,45 @@ POST /me/attempts             (body: Attempt)
 - Lighthouse スコアと FCP / LCP / TTI の継続計測
 
 **影響度 M / 工数 M**。
+
+##### 4.3 サブ PR 分割
+
+| サブ PR | スコープ | 主な対象 | 推定行数 |
+|----|---------|----------|----------|
+| **4.3-A** | bundle analyzer 導入 + baseline 計測 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
+| **4.3-B** | `PracticeClient` の server/client 境界分割 | `PracticeClient.tsx` `AyahDisplayCard.tsx` `SegmentHighlights.tsx` | ~200 |
+| **4.3-C** | Web Vitals → OTel / Lighthouse CI baseline | `web-tracer.ts` 拡張 or `.github/workflows/nightly-ci.yml` | ~150 |
+| **4.3-D** | Amiri unicode-range で Quran glyph subset 化 | `layout.tsx` の `next/font/google` → `next/font/local` 切替 | ~60 |
+
+##### 4.3 baseline（2026-05-13、PR 進行中 / Phase 4.3-A）
+
+`ANALYZE=true pnpm --filter @quran-project/web run analyze` で取得。詳細は ADR 0018。
+
+**Per-route First Load JS（gzipped）**:
+
+| Route | Page JS | First Load JS |
+| ----- | ------- | ------------- |
+| `/practice/[s]/[a]` | 6.82 kB | **136 kB** ← 最重 |
+| `/practice/[s]/[a]/result/[jobId]` | 5.03 kB | **134 kB** |
+| `/` | 6.2 kB | 130 kB |
+| `/history` | 3.03 kB | 108 kB |
+| `/sign-in` / `/sign-up` | 2.87 kB | 108 kB |
+| shared baseline | — | 102 kB (54.2 + 45.4 + 1.95) |
+
+**Per-font woff2（first-paint cost）**:
+
+| 用途 | Font / subset | サイズ |
+| ---- | ------------- | ------ |
+| 英語 UI body | Cormorant latin `.p` | ~37 KiB |
+| 英語 UI sans | Inter latin `.p` | ~47 KiB |
+| **Ayah Arabic 本体** | **Amiri arabic-400 `.p`** | **~106 KiB** ← 最重 |
+| Ayah Arabic 太字 | Amiri arabic-700 `.p` | ~98 KiB |
+| 1 routes per-paint 合計（400 のみ） | | ~190 KiB |
+| 1 routes per-paint 合計（400 + 700） | | ~288 KiB |
+
+→ **4.3-D の Amiri Quran-subset 化が単独で最大の font 削減レバー**。Quran 朗誦 corpus は ~700 glyph、Amiri full は ~3,500 glyph。
+
+→ **4.3-B の `/practice` JS 分割が単独で最大の JS 削減レバー**。shared 102 kB の 54 kB / 45 kB チャンクは framework + OTel browser tracer と推定。analyzer HTML で confirm 予定。
 
 #### 4.4 クライアント側テレメトリ — Done in PRs #241, #242
 
@@ -471,3 +510,4 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 | 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映 |
 | 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。 |
 | 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記 |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化 |
