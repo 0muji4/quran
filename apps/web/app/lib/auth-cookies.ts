@@ -35,18 +35,6 @@ export const setAuthCookies = async (input: {
   });
 };
 
-// Refresh the access cookie in-place after `/auth/refresh` mints a new
-// short-lived token. The refresh cookie keeps its existing TTL — the
-// BFF does not rotate refresh tokens (rotation is tracked as a separate
-// follow-up).
-export const updateAccessCookie = async (accessToken: string): Promise<void> => {
-  const store = await cookies();
-  store.set(ACCESS_COOKIE, accessToken, {
-    ...baseCookieOptions(),
-    maxAge: ACCESS_MAX_AGE_S
-  });
-};
-
 export const clearAuthCookies = async (): Promise<void> => {
   const store = await cookies();
   store.delete(ACCESS_COOKIE);
