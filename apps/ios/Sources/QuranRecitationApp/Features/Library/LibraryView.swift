@@ -2,20 +2,27 @@ import SwiftUI
 
 /// Library tab — vertical list of surahs with a search bar and
 /// difficulty chip filter, plus a Continue card when the user has a
-/// recent practice session.
+/// recent practice session, and a personalised "Suggested for you"
+/// card when the BFF returns one for a signed-in user.
 struct LibraryView: View {
   @StateObject var viewModel: LibraryViewModel
+  @ObservedObject var session: SessionStore
   let historyStore: HistoryStore
   let onResume: ((LastPracticed) -> Void)?
+  let onSuggestedBegin: ((SurahSummary) -> Void)?
 
   init(
     viewModel: @autoclosure @escaping () -> LibraryViewModel,
+    session: SessionStore,
     historyStore: HistoryStore,
-    onResume: ((LastPracticed) -> Void)? = nil
+    onResume: ((LastPracticed) -> Void)? = nil,
+    onSuggestedBegin: ((SurahSummary) -> Void)? = nil
   ) {
     self._viewModel = StateObject(wrappedValue: viewModel())
+    self._session = ObservedObject(wrappedValue: session)
     self.historyStore = historyStore
     self.onResume = onResume
+    self.onSuggestedBegin = onSuggestedBegin
   }
 
   var body: some View {
@@ -26,6 +33,14 @@ struct LibraryView: View {
           ContinueCard(entry: lastPracticed) { entry in
             viewModel.continueTapped(entry)
             onResume?(entry)
+          }
+          .padding(.horizontal, Spacing.screenHorizontal)
+        }
+        if let suggestion = viewModel.suggestion,
+           case let .loaded(items) = viewModel.state {
+          SuggestedCard(suggestion: suggestion, surahs: items) { surah in
+            viewModel.suggestedTapped(surah)
+            onSuggestedBegin?(surah)
           }
           .padding(.horizontal, Spacing.screenHorizontal)
         }
@@ -43,6 +58,16 @@ struct LibraryView: View {
     .task {
       if case .idle = viewModel.state {
         await viewModel.load()
+      }
+    }
+    .task(id: session.currentUser?.id) {
+      // Re-fetch on sign-in / sign-out / first appearance. `task(id:)`
+      // cancels the previous task whenever the id changes, so a
+      // sign-out mid-flight does not race a stale success.
+      if session.isSignedIn {
+        await viewModel.refreshSuggestion()
+      } else {
+        viewModel.clearSuggestion()
       }
     }
   }
