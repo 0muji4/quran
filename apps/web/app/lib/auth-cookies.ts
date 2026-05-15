@@ -13,24 +13,37 @@ const REFRESH_MAX_AGE_S = 30 * 24 * 60 * 60; // 30 days
 
 const isProd = (): boolean => process.env.NODE_ENV === 'production';
 
+const baseCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProd(),
+  sameSite: 'lax' as const,
+  path: '/'
+});
+
 export const setAuthCookies = async (input: {
   accessToken: string;
   refreshToken: string;
 }): Promise<void> => {
   const store = await cookies();
-  const baseOptions = {
-    httpOnly: true,
-    secure: isProd(),
-    sameSite: 'lax' as const,
-    path: '/'
-  };
   store.set(ACCESS_COOKIE, input.accessToken, {
-    ...baseOptions,
+    ...baseCookieOptions(),
     maxAge: ACCESS_MAX_AGE_S
   });
   store.set(REFRESH_COOKIE, input.refreshToken, {
-    ...baseOptions,
+    ...baseCookieOptions(),
     maxAge: REFRESH_MAX_AGE_S
+  });
+};
+
+// Refresh the access cookie in-place after `/auth/refresh` mints a new
+// short-lived token. The refresh cookie keeps its existing TTL — the
+// BFF does not rotate refresh tokens (rotation is tracked as a separate
+// follow-up).
+export const updateAccessCookie = async (accessToken: string): Promise<void> => {
+  const store = await cookies();
+  store.set(ACCESS_COOKIE, accessToken, {
+    ...baseCookieOptions(),
+    maxAge: ACCESS_MAX_AGE_S
   });
 };
 
