@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import type { AuthedRequest } from './auth';
 import { logger } from '../telemetry';
 import { hashPassword, issueAccessToken, issueRefreshToken, verifyPassword } from './credentials';
+import { hashRefreshToken, recordIssuedRefreshToken } from './refresh-tokens';
 import { createUserWithPassword, findUserByEmail } from './users';
 
 export const authRouter = Router();
@@ -28,19 +30,27 @@ type AuthSuccess = {
   user: { id: string; email: string; displayName: string | null };
 };
 
-const formatSuccess = (user: {
+const issueAuthSuccess = async (user: {
   id: string;
   email: string;
   displayName: string | null;
-}): AuthSuccess => {
+}): Promise<AuthSuccess> => {
   const payload = {
     sub: user.id,
     email: user.email,
     name: user.displayName ?? undefined
   };
+  const accessToken = issueAccessToken(payload);
+  const refreshToken = issueRefreshToken(payload);
+  const decoded = jwt.decode(refreshToken) as { exp: number };
+  await recordIssuedRefreshToken({
+    userId: user.id,
+    tokenHash: hashRefreshToken(refreshToken),
+    expiresAt: new Date(decoded.exp * 1000)
+  });
   return {
-    accessToken: issueAccessToken(payload),
-    refreshToken: issueRefreshToken(payload),
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       email: user.email,
@@ -69,7 +79,7 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
       passwordHash
     });
 
-    res.status(201).json(formatSuccess(user));
+    res.status(201).json(await issueAuthSuccess(user));
   } catch (error) {
     logger.error('POST /auth/signup failed', { email, error });
     res.status(502).json({ error: 'Failed to create account' });
@@ -95,7 +105,7 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
       return res.status(401).json({ error: 'invalid email or password' });
     }
 
-    res.json(formatSuccess(user));
+    res.json(await issueAuthSuccess(user));
   } catch (error) {
     logger.error('POST /auth/login failed', { email, error });
     res.status(502).json({ error: 'Failed to sign in' });
