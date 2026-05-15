@@ -30,14 +30,16 @@ CREATE TABLE IF NOT EXISTS ayahs (
     UNIQUE (surah_id, ayah_number)
 );
 
--- Application accounts.
+-- Application accounts. password_hash is nullable so the seeded mock
+-- user and any pre-OAuth rows stay valid; /auth/login refuses null.
 CREATE TABLE IF NOT EXISTS users (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email       CITEXT UNIQUE,
-    display_name TEXT,
-    preferences JSONB        DEFAULT '{}'::jsonb,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email         CITEXT UNIQUE,
+    display_name  TEXT,
+    password_hash TEXT,
+    preferences   JSONB        DEFAULT '{}'::jsonb,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Attempts table for scoring storage.
