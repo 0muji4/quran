@@ -4,6 +4,14 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import type { AuthedRequest } from '../auth';
 import { requireAuth } from '../auth';
+import { issueAccessToken, issueRefreshToken } from '../auth/credentials';
+import {
+  findRefreshToken,
+  hashRefreshToken,
+  markRefreshTokenUsed,
+  recordIssuedRefreshToken,
+  revokeAllRefreshTokensForUser
+} from '../auth/refresh-tokens';
 import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
 import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra';
 import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
@@ -193,32 +201,63 @@ restRouter.get('/scoring-jobs/:jobId', async (req: AuthedRequest, res) => {
   logger.info('scoring job fetched', { session_id: jobId, status: job.status });
 });
 
-restRouter.post('/auth/refresh', (req: AuthedRequest, res) => {
+restRouter.post('/auth/refresh', async (req: AuthedRequest, res) => {
   const validation = refreshTokenSchema.safeParse(req);
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
   }
   const { refreshToken } = validation.data.body;
-
   const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
-  const accessSecret = process.env.JWT_SECRET;
-
-  if (!refreshSecret || !accessSecret) {
-    logger.error('JWT secrets are not configured');
+  if (!refreshSecret) {
+    logger.error('REFRESH_TOKEN_SECRET is not configured');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
+  // Stateless verify first (defense in depth): a forged token is
+  // rejected without a DB round-trip. The DB row is then authoritative
+  // for "has this exact token been redeemed or revoked".
+  let payload: jwt.JwtPayload;
   try {
-    const payload = jwt.verify(refreshToken, refreshSecret) as jwt.JwtPayload;
-    const session = {
-      sub: (payload.sub as string) ?? (payload.id as string) ?? 'anonymous',
-      email: payload.email,
-      name: payload.name ?? payload.displayName
-    };
-    const token = jwt.sign(session, accessSecret, { expiresIn: '15m' });
-    res.json({ accessToken: token });
+    payload = jwt.verify(refreshToken, refreshSecret) as jwt.JwtPayload;
   } catch {
-    res.status(401).json({ error: 'invalid refresh token' });
+    return res.status(401).json({ error: 'invalid refresh token' });
+  }
+
+  const tokenHash = hashRefreshToken(refreshToken);
+  try {
+    const row = await findRefreshToken(tokenHash);
+    if (!row || row.revokedAt) {
+      return res.status(401).json({ error: 'invalid refresh token' });
+    }
+    if (row.usedAt) {
+      // Replay: the same token is being redeemed twice. We can't tell
+      // which holder is legitimate, so revoke every outstanding token
+      // for the user and force a fresh /auth/login.
+      logger.warn('refresh token replay detected', { user_id: row.userId });
+      await revokeAllRefreshTokensForUser(row.userId);
+      return res.status(401).json({ error: 'invalid refresh token' });
+    }
+
+    await markRefreshTokenUsed(tokenHash);
+
+    const session = {
+      sub: row.userId,
+      email: payload.email as string | undefined,
+      name: (payload.name ?? payload.displayName) as string | undefined
+    };
+    const newAccessToken = issueAccessToken(session);
+    const newRefreshToken = issueRefreshToken(session);
+    const decoded = jwt.decode(newRefreshToken) as { exp: number };
+    await recordIssuedRefreshToken({
+      userId: row.userId,
+      tokenHash: hashRefreshToken(newRefreshToken),
+      expiresAt: new Date(decoded.exp * 1000)
+    });
+
+    res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+  } catch (error) {
+    logger.error('POST /auth/refresh failed', { error });
+    res.status(502).json({ error: 'Failed to refresh token' });
   }
 });
 
