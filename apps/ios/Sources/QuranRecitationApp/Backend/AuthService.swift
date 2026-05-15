@@ -25,6 +25,15 @@ protocol AuthService {
   /// `.network` on transport failure. `displayName` is omitted from the
   /// request body when `nil`.
   func signUp(email: String, password: String, displayName: String?) async throws -> AuthSuccess
+
+  /// `POST /auth/refresh`. Trades the current refresh token for a
+  /// freshly rotated access + refresh pair. Throws
+  /// `AppError.invalidCredentials` on 401 — the BFF returns 401 for an
+  /// unknown, revoked, or already-redeemed (replay) refresh token, and
+  /// each case means the caller must sign the user out. `.network` /
+  /// `.backendUnavailable` on transport / 5xx so the caller can retry
+  /// without nuking the session.
+  func refresh(refreshToken: String) async throws -> AuthTokens
 }
 
 /// Production `AuthService` backed by `URLSession`. Every failure path
@@ -55,6 +64,38 @@ final class URLSessionAuthService: AuthService {
       body: SignUpRequestBody(email: email, password: password, displayName: displayName),
       operation: "auth.signup"
     )
+  }
+
+  func refresh(refreshToken: String) async throws -> AuthTokens {
+    var request = URLRequest(url: baseURL.appendingPathComponent("auth/refresh"))
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+    do {
+      request.httpBody = try JSONEncoder().encode(RefreshRequestBody(refreshToken: refreshToken))
+      let (data, response) = try await session.data(for: request)
+      guard let http = response as? HTTPURLResponse else {
+        throw AppError.network(underlying: URLError(.badServerResponse))
+      }
+      switch http.statusCode {
+      case 200..<300:
+        guard let payload = try? JSONDecoder().decode(RefreshResponseBody.self, from: data) else {
+          throw AppError.backendUnavailable(operation: "auth.refresh.parse")
+        }
+        return AuthTokens(accessToken: payload.accessToken, refreshToken: payload.refreshToken)
+      case 400:
+        throw AppError.validationFailed
+      case 401:
+        throw AppError.invalidCredentials
+      default:
+        throw AppError.backendUnavailable(operation: "auth.refresh")
+      }
+    } catch let error as AppError {
+      throw error
+    } catch {
+      throw AppError.network(underlying: error)
+    }
   }
 
   // MARK: - Request plumbing
@@ -143,4 +184,18 @@ private struct AuthSuccessResponse: Decodable {
     let email: String
     let displayName: String?
   }
+}
+
+/// `POST /auth/refresh` body.
+private struct RefreshRequestBody: Encodable {
+  let refreshToken: String
+}
+
+/// 2xx response shape for `/auth/refresh`. Verified against
+/// `apps/bff/src/rest/rest.ts:257` — note the rotation endpoint
+/// returns only the JWT pair (no `user` field, since the identity
+/// has not changed).
+private struct RefreshResponseBody: Decodable {
+  let accessToken: String
+  let refreshToken: String
 }
