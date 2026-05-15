@@ -1,24 +1,31 @@
 import SwiftUI
 
-/// Tab-based shell with three tabs: Library, Practice, History. Each
-/// tab owns its own `NavigationStack` so drilling in one does not
-/// reset the others. History stays a placeholder until PR 22 lands.
-/// See ADR 0005.
+/// Tab-based shell with four tabs: Library, Practice, History, Profile.
+/// Each tab owns its own `NavigationStack` so drilling in one does not
+/// reset the others. The app is usable anonymously — sign-in lives
+/// inside the Profile tab, there is no launch gate (see ADR 0005, ADR
+/// 0010, and the Android `AppRoot` it mirrors).
 struct AppRoot: View {
   private let backend: QuranBackend
+  private let authService: AuthService
   private let referenceClient: ReferenceAudioClient
   private let telemetry: Telemetry
   private let historyStore: HistoryStore
+  @ObservedObject private var session: SessionStore
   @State private var selectedTab: AppTab = .library
   @State private var practiceContext: PracticeContext
 
   init(
+    session: SessionStore,
     backend: QuranBackend,
+    authService: AuthService,
     telemetry: Telemetry,
     historyStore: HistoryStore = UserDefaultsHistoryStore(),
     referenceClient: ReferenceAudioClient? = nil
   ) {
+    self._session = ObservedObject(wrappedValue: session)
     self.backend = backend
+    self.authService = authService
     self.telemetry = telemetry
     self.historyStore = historyStore
     self.referenceClient = referenceClient ?? HTTPReferenceAudioClient()
@@ -32,6 +39,7 @@ struct AppRoot: View {
       libraryTab
       practiceTab
       historyTab
+      profileTab
     }
     .tint(Color.brand.primary)
     .onChange(of: selectedTab) { newValue in
@@ -81,6 +89,16 @@ struct AppRoot: View {
     .tabItem { Label("History", systemImage: "clock") }
     .tag(AppTab.history)
   }
+
+  private var profileTab: some View {
+    ProfileView(
+      session: session,
+      authService: authService,
+      telemetry: telemetry
+    )
+    .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+    .tag(AppTab.profile)
+  }
 }
 
 /// Lightweight value the Library Continue card writes into to redirect
@@ -93,7 +111,7 @@ private struct PracticeContext: Equatable {
 
 /// Hosts the Practice `NavigationStack` and the typed `PracticeRoute`
 /// destinations (`.result(...)` here, future ones layer on). Extracted
-/// from `AppRoot` so the routing graph is readable in one place.
+/// so the routing graph is readable in one place.
 private struct PracticeNavigationStack: View {
   @Binding var practiceContext: PracticeContext
   let backend: QuranBackend
