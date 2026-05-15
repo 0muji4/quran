@@ -27,5 +27,5 @@ export type Attempt = {
   jobId: string;
   createdAt: string;
   status: 'COMPLETED' | 'FAILED';
-  durationMs?: number;
+  durationMs?: number | null;
 };
