@@ -6,12 +6,21 @@ import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
 import { createUserWithPassword, findUserByEmail } from '../users';
 import { hashPassword, verifyPassword } from '../credentials';
+import { recordIssuedRefreshToken } from '../refresh-tokens';
 
 vi.mock('../users', () => ({
   findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
   createUserWithPassword: vi.fn()
 }));
+
+vi.mock('../refresh-tokens', async () => {
+  const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
+  return {
+    ...actual,
+    recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined)
+  };
+});
 
 vi.mock('../credentials', async () => {
   const actual = await vi.importActual<typeof import('../credentials')>('../credentials');
@@ -180,6 +189,50 @@ describe('POST /auth/signup and /auth/login', () => {
 
       const decoded = jwt.verify(res.body.refreshToken, 'test-refresh-secret');
       expect(decoded).toMatchObject({ sub: 'user-2' });
+    });
+
+    it('persists the issued refresh token hash with the user id and expiry', async () => {
+      vi.mocked(findUserByEmail).mockResolvedValue(null);
+      vi.mocked(createUserWithPassword).mockResolvedValue({
+        id: 'user-3',
+        email: 'p@example.com',
+        displayName: null,
+        passwordHash: 'x'
+      });
+      const before = Date.now();
+
+      const res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'p@example.com', password: 'long-enough-pw' });
+
+      expect(recordIssuedRefreshToken).toHaveBeenCalledTimes(1);
+      const call = vi.mocked(recordIssuedRefreshToken).mock.calls[0][0];
+      expect(call.userId).toBe('user-3');
+      expect(typeof call.tokenHash).toBe('string');
+      // SHA-256 hex digest is 64 chars and is not the raw JWT.
+      expect(call.tokenHash).toHaveLength(64);
+      expect(call.tokenHash).not.toBe(res.body.refreshToken);
+      // 30d ± 5s window from the moment we made the request.
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      expect(call.expiresAt.getTime()).toBeGreaterThanOrEqual(before + thirtyDays - 5000);
+      expect(call.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + thirtyDays + 5000);
+    });
+
+    it('persists a refresh token hash on /auth/login too', async () => {
+      const hash = await hashPassword('correct-horse-battery-staple');
+      vi.mocked(findUserByEmail).mockResolvedValue({
+        id: 'user-4',
+        email: 'l@example.com',
+        displayName: null,
+        passwordHash: hash
+      });
+
+      await request(app)
+        .post('/auth/login')
+        .send({ email: 'l@example.com', password: 'correct-horse-battery-staple' });
+
+      expect(recordIssuedRefreshToken).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(recordIssuedRefreshToken).mock.calls[0][0].userId).toBe('user-4');
     });
   });
 });
