@@ -5,7 +5,7 @@ import {
   clearAuthCookies,
   readAccessToken,
   readRefreshToken,
-  updateAccessCookie
+  setAuthCookies
 } from './auth-cookies';
 
 // Inlined to keep this module independent of `actions.ts` (which is
@@ -57,9 +57,11 @@ const fetchWithBearer = async (
 
 const isAuthEndpoint = (url: string): boolean => url.includes('/auth/');
 
-// Exchange the refresh cookie for a fresh access token and persist it
-// back to the access cookie. Returns the new access token, or `null`
-// if no refresh cookie is set or the BFF rejected it.
+// Exchange the refresh cookie for a fresh access + refresh pair and
+// persist both back to the cookie store. Returns the new access token,
+// or `null` if no refresh cookie is set or the BFF rejected it. The BFF
+// rotates the refresh token on every successful call — see the
+// refresh-token rotation flow in apps/bff/src/rest/rest.ts.
 const tryRefreshAccessToken = async (): Promise<string | null> => {
   const refreshToken = await readRefreshToken();
   if (!refreshToken) return null;
@@ -71,11 +73,22 @@ const tryRefreshAccessToken = async (): Promise<string | null> => {
       body: JSON.stringify({ refreshToken })
     });
     if (!response.ok) return null;
-    const payload = (await response.json()) as { accessToken?: unknown };
-    if (typeof payload.accessToken !== 'string' || payload.accessToken.length === 0) {
+    const payload = (await response.json()) as {
+      accessToken?: unknown;
+      refreshToken?: unknown;
+    };
+    if (
+      typeof payload.accessToken !== 'string' ||
+      payload.accessToken.length === 0 ||
+      typeof payload.refreshToken !== 'string' ||
+      payload.refreshToken.length === 0
+    ) {
       return null;
     }
-    await updateAccessCookie(payload.accessToken);
+    await setAuthCookies({
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken
+    });
     return payload.accessToken;
   } catch (error) {
     logger.error('bffFetch: refresh failed', { error: (error as Error).message });

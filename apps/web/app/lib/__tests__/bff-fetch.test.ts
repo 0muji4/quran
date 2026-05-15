@@ -51,7 +51,7 @@ describe('bffFetch', () => {
     store.set(REFRESH_COOKIE, 'r-1');
     vi.mocked(fetch)
       .mockResolvedValueOnce(makeResponse(401, {})) // initial
-      .mockResolvedValueOnce(makeResponse(200, { accessToken: 'access-2' })) // /auth/refresh
+      .mockResolvedValueOnce(makeResponse(200, { accessToken: 'access-2', refreshToken: 'r-2' })) // /auth/refresh
       .mockResolvedValueOnce(makeResponse(200, { ok: true })); // retry
 
     const response = await bffFetch('http://bff/me/last-practiced');
@@ -59,10 +59,28 @@ describe('bffFetch', () => {
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(authorizationFrom(vi.mocked(fetch).mock.calls[2][1])).toBe('Bearer access-2');
-    // Access cookie was rotated; refresh cookie left intact (the BFF
-    // does not rotate refresh tokens this pass).
+    // Both cookies are rotated — the BFF rotates the refresh token on
+    // every successful /auth/refresh.
     expect(store.get(ACCESS_COOKIE)?.value).toBe('access-2');
-    expect(store.get(REFRESH_COOKIE)?.value).toBe('r-1');
+    expect(store.get(REFRESH_COOKIE)?.value).toBe('r-2');
+  });
+
+  it('on 401, treats a refresh response missing the new refresh token as a failure', async () => {
+    const store = await cookies();
+    store.set(ACCESS_COOKIE, 'expired');
+    store.set(REFRESH_COOKIE, 'r-1');
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(makeResponse(401, {}))
+      // BFF must always return both tokens; a malformed payload is
+      // indistinguishable from a server bug and we must not retry on it.
+      .mockResolvedValueOnce(makeResponse(200, { accessToken: 'access-2' }));
+
+    const response = await bffFetch('http://bff/me/last-practiced');
+
+    expect(response.status).toBe(401);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(store.get(ACCESS_COOKIE)).toBeUndefined();
+    expect(store.get(REFRESH_COOKIE)).toBeUndefined();
   });
 
   it('on 401 with no refresh cookie, returns the 401 and clears auth cookies', async () => {
