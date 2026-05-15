@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -29,7 +30,11 @@ const requireSecret = (envVar: string): string => {
 export const issueAccessToken = (payload: TokenPayload): string =>
   jwt.sign(payload, requireSecret('JWT_SECRET'), { expiresIn: ACCESS_TTL });
 
+// Each refresh token carries a unique `jti` so two tokens minted in the
+// same second for the same user still hash to different values. Without
+// it the SHA-256 token-hash column would PK-collide on rapid re-issue.
 export const issueRefreshToken = (payload: TokenPayload): string =>
   jwt.sign(payload, requireSecret('REFRESH_TOKEN_SECRET'), {
-    expiresIn: REFRESH_TTL
+    expiresIn: REFRESH_TTL,
+    jwtid: randomUUID()
   });

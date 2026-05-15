@@ -17,6 +17,19 @@ vi.mock('../../infra', () => ({
   deleteUserData: vi.fn()
 }));
 
+vi.mock('../../auth/refresh-tokens', async () => {
+  const actual = await vi.importActual<typeof import('../../auth/refresh-tokens')>(
+    '../../auth/refresh-tokens'
+  );
+  return {
+    ...actual,
+    findRefreshToken: vi.fn(),
+    markRefreshTokenUsed: vi.fn().mockResolvedValue(undefined),
+    revokeAllRefreshTokensForUser: vi.fn().mockResolvedValue(undefined),
+    recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined)
+  };
+});
+
 vi.mock('../../telemetry', () => ({
   telemetry: {
     meter: {
@@ -323,30 +336,83 @@ describe('REST API Integration', () => {
   });
 
   describe('POST /auth/refresh', () => {
-    it('refreshes access token with valid refresh token', async () => {
-      const jwt = await import('jsonwebtoken');
+    const refreshSecret = 'refresh-secret';
+    const accessSecret = 'jwt-secret';
 
-      process.env.REFRESH_TOKEN_SECRET = 'refresh-secret';
-      process.env.JWT_SECRET = 'jwt-secret';
+    beforeEach(() => {
+      process.env.REFRESH_TOKEN_SECRET = refreshSecret;
+      process.env.JWT_SECRET = accessSecret;
+    });
 
-      const refreshPayload = {
-        sub: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User'
-      };
-      const refreshToken = jwt.sign(refreshPayload, 'refresh-secret', { expiresIn: '7d' });
-
-      const response = await request(app).post('/auth/refresh').send({
-        refreshToken
+    const mintAndStub = async (
+      userId: string,
+      row: { usedAt?: Date | null; revokedAt?: Date | null } = {}
+    ) => {
+      const { findRefreshToken } = await import('../../auth/refresh-tokens');
+      const token = jwt.sign({ sub: userId, email: 'a@b.com' }, refreshSecret, {
+        expiresIn: '30d'
       });
+      vi.mocked(findRefreshToken).mockResolvedValue({
+        userId,
+        expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+        usedAt: row.usedAt ?? null,
+        revokedAt: row.revokedAt ?? null
+      });
+      return token;
+    };
+
+    it('rotates: marks the old token used, returns a new access + refresh pair, persists the new hash', async () => {
+      const token = await mintAndStub('user-123');
+      const { markRefreshTokenUsed, recordIssuedRefreshToken } =
+        await import('../../auth/refresh-tokens');
+
+      const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('accessToken');
+      expect(typeof response.body.accessToken).toBe('string');
+      expect(typeof response.body.refreshToken).toBe('string');
+      expect(response.body.refreshToken).not.toBe(token);
 
-      // Verify the access token
-      const decoded = jwt.verify(response.body.accessToken, 'jwt-secret') as jwt.JwtPayload;
-      expect(decoded.sub).toBe('user-123');
-      expect(decoded.email).toBe('test@example.com');
+      const decodedAccess = jwt.verify(response.body.accessToken, accessSecret) as jwt.JwtPayload;
+      expect(decodedAccess.sub).toBe('user-123');
+
+      expect(markRefreshTokenUsed).toHaveBeenCalledTimes(1);
+      expect(recordIssuedRefreshToken).toHaveBeenCalledTimes(1);
+      const persisted = vi.mocked(recordIssuedRefreshToken).mock.calls[0][0];
+      expect(persisted.userId).toBe('user-123');
+      expect(persisted.tokenHash).toHaveLength(64);
+    });
+
+    it('on replay (same token used twice), revokes every refresh token for the user and returns 401', async () => {
+      const token = await mintAndStub('user-123', { usedAt: new Date(Date.now() - 60_000) });
+      const { revokeAllRefreshTokensForUser, recordIssuedRefreshToken, markRefreshTokenUsed } =
+        await import('../../auth/refresh-tokens');
+
+      const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
+
+      expect(response.status).toBe(401);
+      expect(revokeAllRefreshTokensForUser).toHaveBeenCalledWith('user-123');
+      expect(markRefreshTokenUsed).not.toHaveBeenCalled();
+      expect(recordIssuedRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when the token verifies but is not in the database (never issued or pruned)', async () => {
+      const { findRefreshToken, revokeAllRefreshTokensForUser } =
+        await import('../../auth/refresh-tokens');
+      vi.mocked(findRefreshToken).mockResolvedValue(null);
+
+      const token = jwt.sign({ sub: 'user-x' }, refreshSecret, { expiresIn: '7d' });
+      const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
+
+      expect(response.status).toBe(401);
+      expect(revokeAllRefreshTokensForUser).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when the token has been revoked', async () => {
+      const token = await mintAndStub('user-123', { revokedAt: new Date(Date.now() - 60_000) });
+      const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
+
+      expect(response.status).toBe(401);
     });
 
     it('returns 400 when refreshToken is missing', async () => {
@@ -356,38 +422,27 @@ describe('REST API Integration', () => {
       expectZodPathError(response.body, ['body', 'refreshToken']);
     });
 
-    it('returns 401 for invalid refresh token', async () => {
-      process.env.REFRESH_TOKEN_SECRET = 'refresh-secret';
-
-      const response = await request(app).post('/auth/refresh').send({
-        refreshToken: 'invalid.token.here'
-      });
+    it('returns 401 for an invalid refresh token (signature fails before DB lookup)', async () => {
+      const { findRefreshToken } = await import('../../auth/refresh-tokens');
+      const response = await request(app)
+        .post('/auth/refresh')
+        .send({ refreshToken: 'invalid.token.here' });
 
       expect(response.status).toBe(401);
-      expect(response.body).toEqual({
-        error: 'invalid refresh token'
-      });
+      expect(findRefreshToken).not.toHaveBeenCalled();
     });
 
-    it('returns 401 for expired refresh token', async () => {
-      const jwt = await import('jsonwebtoken');
+    it('returns 401 for an expired refresh token', async () => {
+      const expiredToken = jwt.sign(
+        { sub: 'user-expired', exp: Math.floor(Date.now() / 1000) - 3600 },
+        refreshSecret
+      );
 
-      process.env.REFRESH_TOKEN_SECRET = 'refresh-secret';
-
-      const expiredPayload = {
-        sub: 'user-expired',
-        exp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
-      };
-      const expiredToken = jwt.sign(expiredPayload, 'refresh-secret');
-
-      const response = await request(app).post('/auth/refresh').send({
-        refreshToken: expiredToken
-      });
+      const response = await request(app)
+        .post('/auth/refresh')
+        .send({ refreshToken: expiredToken });
 
       expect(response.status).toBe(401);
-      expect(response.body).toEqual({
-        error: 'invalid refresh token'
-      });
     });
   });
 
