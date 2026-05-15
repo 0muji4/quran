@@ -7,6 +7,7 @@ enum AppTab: String, Hashable {
   case library
   case practice
   case history
+  case profile
 }
 
 /// Library tab destinations. Empty until PR 9 introduces a list and
@@ -23,3 +24,12 @@ enum PracticeRoute: Hashable {
 
 /// History tab destinations.
 enum HistoryRoute: Hashable {}
+
+/// Profile-tab auth destinations. The Profile tab's `NavigationStack`
+/// has the profile content as its root; `.signIn` / `.signUp` are
+/// pushed when the user taps into the auth forms. The two cross-link
+/// to each other and pop back to the profile content on success.
+enum AuthRoute: Hashable {
+  case signIn
+  case signUp
+}
