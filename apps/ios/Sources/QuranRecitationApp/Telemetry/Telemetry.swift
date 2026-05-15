@@ -52,4 +52,9 @@ enum TelemetryEvent {
   // Result
   static let resultTryAgainTapped  = "result.try_again.tapped"
   static let resultContinueTapped  = "result.continue.tapped"
+
+  // Auth — sign-in / sign-up success and failure are emitted by
+  // `telemetry.measure("auth.signin" / "auth.signup")` as
+  // `<name>.succeeded` / `<name>.failed`; no discrete event names are
+  // needed here.
 }
