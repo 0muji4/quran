@@ -88,6 +88,7 @@ final class MeClientTests: XCTestCase {
   // MARK: - Last practiced
 
   func test_lastPracticed_decodesValidPayloadIncludingFractionalSecondsTimestamp() async throws {
+    let iso = "2026-05-08T10:00:00.000Z"
     let body = Data("""
       {
         "surahId": "1",
@@ -95,7 +96,7 @@ final class MeClientTests: XCTestCase {
         "surahNameEn": "Al-Fatihah",
         "surahNameAr": "الفاتحة",
         "ayahCount": 7,
-        "practicedAt": "2026-05-08T10:00:00.000Z"
+        "practicedAt": "\(iso)"
       }
       """.utf8)
     let spy = TransportSpy(responses: [
@@ -107,7 +108,7 @@ final class MeClientTests: XCTestCase {
 
     XCTAssertEqual(entry?.surahId, "1")
     XCTAssertEqual(entry?.ayahNumber, 3)
-    XCTAssertEqual(entry?.practicedAt.timeIntervalSince1970, 1762596000.0)
+    XCTAssertEqual(entry?.practicedAt, Self.parseISO(iso))
   }
 
   func test_lastPracticed_nullBody_returnsNil() async throws {
@@ -236,6 +237,12 @@ final class MeClientTests: XCTestCase {
   }
 
   // MARK: - Helpers
+
+  private static func parseISO(_ value: String) -> Date {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return f.date(from: value) ?? Date(timeIntervalSince1970: 0)
+  }
 
   private func makeClient(transport: @escaping AuthHTTPClient.Transport) -> HTTPMeClient {
     let tokenStore = InMemoryTokenStore(tokens: tokens, user: nil)
