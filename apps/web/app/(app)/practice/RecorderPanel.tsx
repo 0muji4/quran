@@ -12,7 +12,7 @@ import { ScoringErrorCard } from './ScoringErrorCard';
 import { recorderStatusMessage } from './recorderStatus';
 import { notifyRecordingStarted } from './recordingEvents';
 import {
-  getBestScore,
+  getRecentAttempts,
   recordAttempt,
   recordBestScore,
   setLastPracticed,
@@ -53,7 +53,10 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
   const router = useRouter();
-  const [lastBest, setLastBest] = useState<{ score: number; achievedAt: string } | null>(null);
+  // The footer ("Last attempt: N / 100") reflects the most recent
+  // completed scoring for this ayah, refreshed on mount, on ayah
+  // navigation, and after each new attempt lands.
+  const [lastAttempt, setLastAttempt] = useState<Attempt | null>(null);
   const [scoringElapsedMs, setScoringElapsedMs] = useState(0);
   const [tooShortReason, setTooShortReason] = useState<string | null>(null);
 
@@ -67,7 +70,14 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const navigatedJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setLastBest(getBestScore(surah.id, ayah.ayahNumber));
+    const match = getRecentAttempts().find(
+      (a) =>
+        a.surahId === surah.id &&
+        a.ayahNumber === ayah.ayahNumber &&
+        a.status === 'COMPLETED' &&
+        typeof a.score === 'number'
+    );
+    setLastAttempt(match ?? null);
   }, [surah.id, ayah.ayahNumber]);
 
   // Reset state when navigating ayahs.
@@ -126,6 +136,12 @@ export function RecorderPanel({ surah, ayah }: Props) {
       durationMs: lastDurationMsRef.current ?? undefined
     };
     recordAttempt(attempt);
+    if (completed && score !== null) {
+      // Promote the in-memory snapshot too — otherwise the footer
+      // stays frozen on the mount-time read until the user
+      // navigates ayahs.
+      setLastAttempt(attempt);
+    }
 
     if (completed && navigatedJobIdRef.current !== job.job.jobId) {
       navigatedJobIdRef.current = job.job.jobId;
@@ -344,11 +360,15 @@ export function RecorderPanel({ surah, ayah }: Props) {
 
       {recordingError && <p className="status error">{recordingError}</p>}
 
-      {!isRecording && !isScoringError && stage === 'idle' && lastBest && (
-        <p className={styles.recorderFooter}>
-          Last attempt: <span className={styles.lastScore}>{lastBest.score} / 100</span>
-        </p>
-      )}
+      {!isRecording &&
+        !isScoringError &&
+        stage === 'idle' &&
+        lastAttempt &&
+        lastAttempt.score !== null && (
+          <p className={styles.recorderFooter}>
+            Last attempt: <span className={styles.lastScore}>{lastAttempt.score} / 100</span>
+          </p>
+        )}
     </div>
   );
 }
