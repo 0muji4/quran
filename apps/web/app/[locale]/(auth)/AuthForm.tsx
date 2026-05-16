@@ -1,10 +1,11 @@
 'use client';
 
 import { FormEvent, useRef, useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '../../../i18n/navigation';
 import { signInAction, signUpAction } from '../../actions';
 import { clearLocalCache, refreshAllFromBff } from '../../lib/storage';
-import { AUTH_COPY, type AuthMode } from './copy';
+import type { AuthMode } from './copy';
 import { Divider } from './Divider';
 import { LevelSelector } from './LevelSelector';
 import { OAuthButtons } from './OAuthButtons';
@@ -142,7 +143,8 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
   const termsRef = useRef<HTMLInputElement>(null);
-  const copy = AUTH_COPY[mode];
+  const t = useTranslations('auth');
+  const modeT = useTranslations(`auth.${mode}`);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -159,14 +161,14 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
     // The helper text already advertises 8+ characters; failing here saves
     // a server round-trip and lets a11y users hear the same error banner.
     if (mode === 'signup' && password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('password.tooShort'));
       return;
     }
 
     // Sign-up terms gate: block submission and move focus to the checkbox
     // so the requirement is announced rather than silently failing.
     if (mode === 'signup' && !agreedToTerms) {
-      setTermsError('Please accept the Terms of Service and Privacy Policy to continue.');
+      setTermsError(t('terms.error'));
       termsRef.current?.focus();
       return;
     }
@@ -194,7 +196,7 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         router.replace(unlocalized);
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Something went wrong');
+        setError(err instanceof Error ? err.message : t('error.unknown'));
       }
     });
   };
@@ -211,14 +213,14 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         {mode === 'signup' && (
           <>
             <OAuthButtons variant="full" />
-            <Divider label="Or with email" />
+            <Divider label={t('divider.orWithEmail')} />
           </>
         )}
 
         {mode === 'signup' && (
           <div className={fieldClass}>
             <label className={labelClass} htmlFor="auth-display-name">
-              Your name
+              {t('field.name')}
             </label>
             <input
               id="auth-display-name"
@@ -234,7 +236,7 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
 
         <div className={fieldClass}>
           <label className={labelClass} htmlFor="auth-email">
-            Email
+            {t('field.email')}
           </label>
           <input
             id="auth-email"
@@ -250,13 +252,11 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         <PasswordField
           id="auth-password"
           name="password"
-          label="Password"
+          label={t('field.password')}
           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
           minLength={mode === 'signup' ? 8 : undefined}
           disabled={pending}
-          helperText={
-            mode === 'signup' ? 'Use 8+ characters with a mix of letters and numbers.' : undefined
-          }
+          helperText={mode === 'signup' ? t('password.helper') : undefined}
         />
 
         {mode === 'signup' && <LevelSelector disabled={pending} />}
@@ -281,8 +281,10 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
                 aria-describedby={termsError ? 'auth-terms-error' : undefined}
               />
               <label className={termsLabelClass} htmlFor="auth-terms">
-                I agree to the <a href="/terms">Terms of Service</a> and{' '}
-                <a href="/privacy">Privacy Policy</a>.
+                {t.rich('terms.label', {
+                  tosLink: (chunks) => <a href="/terms">{chunks}</a>,
+                  privacyLink: (chunks) => <a href="/privacy">{chunks}</a>
+                })}
               </label>
             </div>
             {termsError && (
@@ -295,12 +297,12 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
 
         <button className={submitClass} type="submit" disabled={pending}>
           <span aria-hidden="true">→</span>
-          {pending ? copy.submitPending : copy.submit}
+          {pending ? modeT('submitPending') : modeT('submit')}
         </button>
 
         {mode === 'signin' && (
           <>
-            <Divider label="Or" />
+            <Divider label={t('divider.or')} />
             <OAuthButtons variant="compact" />
           </>
         )}
@@ -309,11 +311,11 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
       <p className={footerClass}>
         {mode === 'signin' ? (
           <>
-            New to Tilawah? <Link href="/sign-up">Create an account</Link>
+            {modeT('footerPrompt')} <Link href="/sign-up">{modeT('footerAction')}</Link>
           </>
         ) : (
           <>
-            Already have an account? <Link href="/sign-in">Sign in</Link>
+            {modeT('footerPrompt')} <Link href="/sign-in">{modeT('footerAction')}</Link>
           </>
         )}
       </p>

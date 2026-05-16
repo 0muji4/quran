@@ -1,4 +1,7 @@
-import { LEVEL_OPTIONS } from './copy';
+'use client';
+
+import { useTranslations } from 'next-intl';
+import { LEVEL_VALUES } from './copy';
 import { css } from '../../../styled-system/css';
 
 type Props = {
@@ -88,28 +91,30 @@ const cardSubtitleClass = css({
 });
 
 // Sign-up "current level" picker. Native radios in a fieldset — the card
-// styling is driven entirely by CSS (:has(:checked)), so no client state
-// is needed. UI-only this pass: the value rides along in the form but is
-// not read by the submit handler (see plan / copy.ts).
+// styling is driven entirely by CSS (:has(:checked)), so no React state
+// is needed; this only takes `'use client'` so AuthForm (`'use client'`)
+// can render it directly and so the translation hook works.
 export function LevelSelector({ disabled }: Props) {
+  const t = useTranslations('auth.level');
+
   return (
     <fieldset className={groupClass} disabled={disabled}>
       <legend className={legendClass}>
-        Your current level <span className={legendHintClass}>(you can change this later)</span>
+        {t('legend')} <span className={legendHintClass}>{t('legendHint')}</span>
       </legend>
       <div className={gridClass}>
-        {LEVEL_OPTIONS.map((option, index) => (
-          <label key={option.value} className={cardClass}>
+        {LEVEL_VALUES.map((value, index) => (
+          <label key={value} className={cardClass}>
             <input
               type="radio"
               name="level"
-              value={option.value}
+              value={value}
               defaultChecked={index === 0}
               className={radioClass}
             />
             <span className={cardTextClass}>
-              <span className={cardTitleClass}>{option.label}</span>
-              <span className={cardSubtitleClass}>{option.description}</span>
+              <span className={cardTitleClass}>{t(`${value}.label`)}</span>
+              <span className={cardSubtitleClass}>{t(`${value}.description`)}</span>
             </span>
           </label>
         ))}
