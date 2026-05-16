@@ -1,9 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -25,4 +28,4 @@ const enableAnalyzer = withBundleAnalyzer({
   openAnalyzer: false
 });
 
-export default enableAnalyzer(nextConfig);
+export default withNextIntl(enableAnalyzer(nextConfig));
