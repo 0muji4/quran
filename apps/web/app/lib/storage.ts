@@ -25,6 +25,19 @@ const HISTORY_LIMIT = 50;
 const REFRESH_INTERVAL_MS = 30_000;
 const lastRefreshedAt = new Map<string, number>();
 
+// Surface fire-and-forget BFF failures to the browser console
+// instead of silently swallowing them. A previous version used
+// `.catch(() => {})`, which masked a multi-hour outage where the
+// BFF rejected every `POST /me/attempts` with a 400 (Web sent
+// fractional-second `durationMs`). Logging keeps the failure
+// recoverable on the next refresh while still being visible to
+// the developer.
+const logBffFailure =
+  (operation: string) =>
+  (error: unknown): void => {
+    console.error(`[storage] ${operation} BFF write failed`, error);
+  };
+
 // Module-level signed-in gate. `StorageSessionBridge` (mounted by
 // AppShell) keeps this in sync with the server-rendered session;
 // every read returns null / empty and every write drops on the
@@ -147,9 +160,7 @@ export const setLastPracticed = (entry: LastPracticed): void => {
   if (!_signedIn) return;
   writeJson(KEY_LAST, entry);
   markRefreshed(KEY_LAST);
-  void putLastPracticedToBff(entry).catch(() => {
-    /* ignore; the next refresh will reconcile */
-  });
+  void putLastPracticedToBff(entry).catch(logBffFailure('setLastPracticed'));
 };
 
 export const getBestScores = (): BestScores => {
@@ -188,9 +199,7 @@ export const recordBestScore = (surahId: string, ayahNumber: number, score: numb
   all[key] = entry;
   writeJson(KEY_BEST, all);
   markRefreshed(KEY_BEST);
-  void putBestScoreToBff(surahId, ayahNumber, entry).catch(() => {
-    /* ignore */
-  });
+  void putBestScoreToBff(surahId, ayahNumber, entry).catch(logBffFailure('recordBestScore'));
 };
 
 export const getRecentAttempts = (limit = HISTORY_LIMIT): Attempt[] => {
@@ -207,9 +216,7 @@ export const recordAttempt = (attempt: Attempt): void => {
   const next = [attempt, ...existing].slice(0, HISTORY_LIMIT);
   writeJson(KEY_HIST, { attempts: next });
   markRefreshed(KEY_HIST);
-  void postAttemptToBff(attempt).catch(() => {
-    /* ignore */
-  });
+  void postAttemptToBff(attempt).catch(logBffFailure('recordAttempt'));
 };
 
 export const getAttemptsForToday = (surahId: string, ayahNumber: number): Attempt[] => {

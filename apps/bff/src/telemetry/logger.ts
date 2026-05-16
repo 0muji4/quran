@@ -1,7 +1,12 @@
 import { trace } from '@opentelemetry/api';
 import winston from 'winston';
 
-const logLevel = process.env.LOG_LEVEL ?? 'info';
+// winston's level names are lowercase (`info`, `warn`, `error`, …);
+// supplying `INFO` silently disables every log line because winston
+// matches the level string exactly. Normalise so the config is
+// case-insensitive — `LOG_LEVEL=INFO` (the value we used to ship in
+// `compose.dev.yml`) cost a multi-hour silent-failure debug session.
+const logLevel = (process.env.LOG_LEVEL ?? 'info').toLowerCase();
 const logFormat = process.env.LOG_FORMAT ?? 'json';
 
 /**
