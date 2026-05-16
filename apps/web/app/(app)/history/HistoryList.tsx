@@ -13,12 +13,35 @@ const formatDate = (iso: string): string => {
   return d.toLocaleString();
 };
 
-export function HistoryList() {
+type Props = {
+  signedIn: boolean;
+};
+
+export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
 
   useEffect(() => {
     setAttempts(getRecentAttempts());
   }, []);
+
+  if (!signedIn) {
+    return (
+      <div className={styles.empty}>
+        <p className={styles.emptyTitle}>Sign in to track your practice</p>
+        <p>
+          Your attempts, best scores and continue-from progress sync across devices when you have an
+          account.
+        </p>
+        <Link
+          href="/sign-in"
+          className={styles.statusPill + ' ' + styles.statusPillCompleted}
+          style={{ marginTop: 'var(--space-4)' }}
+        >
+          Sign in <ArrowRightIcon size={14} />
+        </Link>
+      </div>
+    );
+  }
 
   if (attempts === null) {
     return null; // first paint, before localStorage hydrate
