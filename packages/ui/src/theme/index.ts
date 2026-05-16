@@ -1,2 +1,2 @@
 export { tokens } from './tokens';
-export { recipes } from './recipes';
+export { recipes, slotRecipes } from './recipes';
