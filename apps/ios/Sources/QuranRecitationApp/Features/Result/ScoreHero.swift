@@ -1,28 +1,32 @@
 import SwiftUI
 
-/// Score dial + verdict badge from
+/// Score dial + 3-band verdict from
 /// `docs/design/iOS _ Result detail.png`. Renders an animated arc
-/// ring around the central numeral. `score` is 0…100; the arc fills
-/// proportionally and the verdict badge sits above the dial.
+/// ring around the central numeral with a verdict badge on top and
+/// a headline + subhead below. `score` is 0…100; the arc fills
+/// proportionally. The `verdict` carries badge / headline / subhead
+/// computed by `verdictForScore(_:)` so iOS stays bit-for-bit aligned
+/// with the web `verdictForScore` band table.
 struct ScoreHero: View {
   let score: Double?
-  let verdict: String?
-  let detail: String?
+  let verdict: VerdictBand
 
   var body: some View {
     BrandCard {
-      VStack(spacing: Spacing.lg) {
-        if let verdict {
-          VerdictBadge(text: verdict)
-        }
+      VStack(spacing: Spacing.md) {
+        VerdictBadge(text: verdict.badge)
         ScoreDial(score: clampedScore)
-        if let detail {
-          Text(detail)
+        VStack(spacing: Spacing.xs) {
+          Text(verdict.headline)
+            .font(Font.brand.body.weight(.semibold))
+            .foregroundColor(Color.brand.textPrimary)
+            .multilineTextAlignment(.center)
+          Text(verdict.subhead)
             .font(Font.brand.caption)
             .foregroundColor(Color.brand.textSecondary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, Spacing.md)
         }
+        .padding(.horizontal, Spacing.md)
       }
       .frame(maxWidth: .infinity)
     }
