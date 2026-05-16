@@ -1,7 +1,12 @@
+import { getTranslations } from 'next-intl/server';
 import { BookIcon } from '../../components/icons/BookIcon';
 import { MihrabIllustration } from './icons/MihrabIllustration';
-import { BRAND_COPY } from './copy';
 import { css, cx } from '../../../styled-system/css';
+
+// The Al-Muzzammil 73:4 ayah the app is named after. The Arabic source
+// text is universal across UI locales, so it stays inline instead of
+// living in the message catalog.
+const AYAH_AR = 'وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا';
 
 // Faint gold diamond lattice — two crossed line gratings at low alpha
 // so they sit under the foreground text without competing. Kept as a
@@ -100,7 +105,9 @@ const ayahCitationClass = css({
 // illustration, and the Al-Muzzammil ayah the app is named after.
 // Hidden on narrow viewports — it is brand showcase, not part of the
 // form flow.
-export function AuthBrandPanel() {
+export async function AuthBrandPanel() {
+  const t = await getTranslations('auth.brand');
+
   return (
     <aside className={brandPanelClass}>
       <div className={wordmarkClass}>
@@ -108,8 +115,8 @@ export function AuthBrandPanel() {
           <BookIcon size={22} />
         </span>
         <span className={wordmarkTextClass}>
-          <span className={wordmarkTitleClass}>{BRAND_COPY.wordmark}</span>
-          <span className={wordmarkKickerClass}>{BRAND_COPY.kicker}</span>
+          <span className={wordmarkTitleClass}>{t('wordmark')}</span>
+          <span className={wordmarkKickerClass}>{t('kicker')}</span>
         </span>
       </div>
 
@@ -118,12 +125,11 @@ export function AuthBrandPanel() {
       </div>
 
       <figure className={ayahBlockClass}>
-        <blockquote className={cx(ayahTextClass, 'ar-text')} lang="ar">
-          {BRAND_COPY.ayah}
+        <blockquote className={cx(ayahTextClass, 'ar-text')} lang="ar" dir="rtl">
+          {AYAH_AR}
         </blockquote>
         <figcaption className={ayahCaptionClass}>
-          “{BRAND_COPY.ayahTranslation}”
-          <span className={ayahCitationClass}>{BRAND_COPY.ayahCitation}</span>
+          “{t('ayahTranslation')}”<span className={ayahCitationClass}>{t('ayahCitation')}</span>
         </figcaption>
       </figure>
     </aside>
