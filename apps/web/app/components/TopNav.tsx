@@ -230,10 +230,18 @@ export function TopNav({ session }: Props) {
 
       <div className={profileClass}>
         {session ? (
+          // Avatar links to `/profile` so the dropdown-style nav doubles
+          // as the entry point to the account page; the inline "Sign out"
+          // button stays on the nav so signed-in users still have a
+          // one-click escape without first visiting /profile.
           <>
-            <span className={avatarClass} aria-label={t('signedInAs', { label: session.label })}>
+            <Link
+              href="/profile"
+              className={avatarClass}
+              aria-label={t('signedInAs', { label: session.label })}
+            >
               {session.initial}
-            </span>
+            </Link>
             <button
               type="button"
               className={profileActionClass}
