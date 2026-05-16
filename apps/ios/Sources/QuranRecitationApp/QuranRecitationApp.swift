@@ -6,6 +6,7 @@ struct QuranRecitationApp: App {
   private let backend: QuranBackend
   private let authService: AuthService
   private let meClient: MeClient
+  private let historyStore: HistoryStore
   private let telemetry: Telemetry
 
   init() {
@@ -20,11 +21,16 @@ struct QuranRecitationApp: App {
       refresher: refresher,
       onSignOut: { session.signOut() }
     )
+    let historyStore = SignInGatedHistoryStore(
+      base: UserDefaultsHistoryStore(),
+      isSignedIn: { session.isSignedIn }
+    )
 
     self.telemetry = telemetry
     self.backend = backend
     self.authService = authService
     self.meClient = HTTPMeClient(http: http)
+    self.historyStore = historyStore
     self._session = StateObject(wrappedValue: session)
   }
 
@@ -35,6 +41,7 @@ struct QuranRecitationApp: App {
         backend: backend,
         authService: authService,
         telemetry: telemetry,
+        historyStore: historyStore,
         meClient: meClient
       )
     }

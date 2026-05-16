@@ -53,6 +53,11 @@ protocol HistoryStore {
 
   func recentAttempts(limit: Int) -> [Attempt]
   func recordAttempt(_ attempt: Attempt)
+
+  /// Drop every persisted record. Called by `SessionStore.signOut()`
+  /// (via the AppRoot observer) so a signed-out device does not leak
+  /// the previous user's history into the next sign-in (see ADR 0021).
+  func clear()
 }
 
 extension HistoryStore {

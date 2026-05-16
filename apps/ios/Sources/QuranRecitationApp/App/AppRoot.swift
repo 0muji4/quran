@@ -50,6 +50,16 @@ struct AppRoot: View {
         telemetry.event(TelemetryEvent.libraryTabSelected)
       }
     }
+    .onChange(of: session.currentUser) { newValue in
+      // ADR 0021: a signed-out device must not leak the previous
+      // user's history into the next sign-in. The decorator already
+      // hides reads while signed-out, but the underlying cache must
+      // also be wiped so a future sign-in (different account or same)
+      // starts from a known-empty state.
+      if newValue == nil {
+        historyStore.clear()
+      }
+    }
   }
 
   private var libraryTab: some View {
@@ -95,7 +105,8 @@ struct AppRoot: View {
   private var historyTab: some View {
     NavigationStack {
       HistoryView(
-        viewModel: HistoryViewModel(historyStore: historyStore, telemetry: telemetry)
+        viewModel: HistoryViewModel(historyStore: historyStore, telemetry: telemetry),
+        session: session
       )
     }
     .tabItem { Label("History", systemImage: "clock") }
