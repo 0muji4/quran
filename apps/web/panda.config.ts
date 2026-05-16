@@ -15,6 +15,15 @@ export default defineConfig({
   exclude: ['**/*.module.css'],
   outdir: 'styled-system',
   theme: {
-    tokens
+    tokens,
+    // Match the @media widths the existing CSS modules already use:
+    // nav 600, library 640/900, history 720, practice 720/760.
+    breakpoints: {
+      sm: '600px',
+      md: '640px',
+      lg: '720px',
+      xl: '760px',
+      '2xl': '900px'
+    }
   }
 });
