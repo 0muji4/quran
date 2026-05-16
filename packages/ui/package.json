@@ -21,6 +21,10 @@
     "./theme/recipes": {
       "types": "./src/theme/recipes/index.ts",
       "default": "./src/theme/recipes/index.ts"
+    },
+    "./theme/global-css": {
+      "types": "./src/theme/global-css.ts",
+      "default": "./src/theme/global-css.ts"
     }
   },
   "scripts": {
