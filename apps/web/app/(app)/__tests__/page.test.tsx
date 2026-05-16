@@ -6,8 +6,10 @@ import userEvent from '@testing-library/user-event';
 import { LibraryClient } from '../library/LibraryClient';
 import type { SurahSummary } from '../../lib/types';
 
+const refreshMock = vi.fn();
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/'
+  usePathname: () => '/',
+  useRouter: () => ({ refresh: refreshMock })
 }));
 
 const mockSurahs: SurahSummary[] = [
@@ -19,6 +21,7 @@ const mockSurahs: SurahSummary[] = [
 describe('Surah library', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    refreshMock.mockReset();
   });
 
   afterEach(() => {
@@ -63,5 +66,29 @@ describe('Surah library', () => {
   it('shows the All counter reflecting the total surah count', () => {
     render(<LibraryClient surahs={mockSurahs} />);
     expect(screen.getByRole('button', { name: 'All 3' })).toBeInTheDocument();
+  });
+
+  it('renders an explicit error state when the surah fetch failed', () => {
+    render(<LibraryClient surahs={[]} loadError />);
+
+    // The page no longer pretends the library is just empty; the failure
+    // is announced and a recovery affordance is offered.
+    expect(screen.getByRole('alert')).toHaveTextContent(/Couldn't load the surah list/i);
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    // Continue / Suggested / search / filter / grid are suppressed in
+    // the error state so the user isn't presented with controls that
+    // can't do anything until the underlying fetch succeeds.
+    expect(
+      screen.queryByPlaceholderText('Search by surah name or number...')
+    ).not.toBeInTheDocument();
+  });
+
+  it('triggers a server refresh when Retry is clicked in the error state', async () => {
+    const user = userEvent.setup();
+    render(<LibraryClient surahs={[]} loadError />);
+
+    await user.click(screen.getByRole('button', { name: /retry/i }));
+
+    expect(refreshMock).toHaveBeenCalledTimes(1);
   });
 });
