@@ -18,8 +18,12 @@ test.describe('History', () => {
 
     await page.goto('/history');
 
-    await expect(page.getByText(/sign in to track your practice/i)).toBeVisible();
-    await expect(page.getByRole('link', { name: /^sign in$/i })).toBeVisible();
+    // TopNav also shows a "Sign in" link for anonymous users; scope to
+    // the main content area so the assertion targets the empty-state
+    // CTA specifically.
+    const main = page.locator('#main-content');
+    await expect(main.getByText(/sign in to track your practice/i)).toBeVisible();
+    await expect(main.getByRole('link', { name: /^sign in$/i })).toBeVisible();
   });
 
   test.skip(
