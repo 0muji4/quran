@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getRecentAttempts, type Attempt } from '../../lib/storage';
 import { formatPracticedAt } from '../../lib/classify';
 import { ArrowRightIcon } from '../../components/icons/ArrowRightIcon';
+import { HistoryStatsGrid } from './HistoryStatsGrid';
+import { computeHistoryStats } from './historyStats';
 import { css, cx } from '../../../styled-system/css';
 import { statusPill } from '../../../styled-system/recipes';
 
@@ -113,6 +115,8 @@ export function HistoryList({ signedIn }: Props) {
     setAttempts(getRecentAttempts());
   }, []);
 
+  const stats = useMemo(() => (attempts ? computeHistoryStats(attempts) : null), [attempts]);
+
   if (!signedIn) {
     return (
       <div className={emptyClass}>
@@ -145,39 +149,42 @@ export function HistoryList({ signedIn }: Props) {
   }
 
   return (
-    <ul className={listClass}>
-      {attempts.map((a) => {
-        const completed = a.status === 'COMPLETED';
-        return (
-          <li key={a.id} className={listItemClass}>
-            <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
-              <span
-                className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
-                aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
-              >
-                {completed && a.score !== null ? a.score : '—'}
-              </span>
-              <div className={infoClass}>
-                <p className={titleClass}>
-                  {a.surahNameEn} · ayah {a.ayahNumber}
-                </p>
-                <p className={metaClass}>
-                  {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
-                </p>
-              </div>
-              <span
-                className={cx(
-                  statusPill({ tone: completed ? 'completed' : 'failed' }),
-                  statusPillMobileClass
-                )}
-              >
-                {completed ? 'Completed' : 'Failed'}
-              </span>
-              <ArrowRightIcon size={14} />
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      {stats && <HistoryStatsGrid stats={stats} />}
+      <ul className={listClass}>
+        {attempts.map((a) => {
+          const completed = a.status === 'COMPLETED';
+          return (
+            <li key={a.id} className={listItemClass}>
+              <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
+                <span
+                  className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
+                  aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
+                >
+                  {completed && a.score !== null ? a.score : '—'}
+                </span>
+                <div className={infoClass}>
+                  <p className={titleClass}>
+                    {a.surahNameEn} · ayah {a.ayahNumber}
+                  </p>
+                  <p className={metaClass}>
+                    {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
+                  </p>
+                </div>
+                <span
+                  className={cx(
+                    statusPill({ tone: completed ? 'completed' : 'failed' }),
+                    statusPillMobileClass
+                  )}
+                >
+                  {completed ? 'Completed' : 'Failed'}
+                </span>
+                <ArrowRightIcon size={14} />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
