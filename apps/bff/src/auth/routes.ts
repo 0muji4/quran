@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import type { AuthedRequest } from './auth';
+import { requireAuth, type AuthedRequest } from './auth';
 import { logger } from '../telemetry';
 import { hashPassword, issueAccessToken, issueRefreshToken, verifyPassword } from './credentials';
 import { hashRefreshToken, recordIssuedRefreshToken } from './refresh-tokens';
 import {
   createUserWithPassword,
   findUserByEmail,
+  findUserById,
   VALID_LEVELS,
   type UserLevel,
   type UserRow
@@ -103,6 +104,34 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('POST /auth/signup failed', { email, error });
     res.status(502).json({ error: 'Failed to create account' });
+  }
+});
+
+/// Returns the current signed-in user. Reads from the DB on every
+/// call so a fresh level / displayName from "Edit profile" lands
+/// without forcing a re-sign-in. 401 if no valid access cookie is
+/// presented; 404 if the JWT verifies but the row has been deleted
+/// (rare race, but possible during account-deletion rollout).
+authRouter.get('/auth/me', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  try {
+    const user = await findUserById(session.id);
+    if (!user) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        createdAt: user.createdAt.toISOString(),
+        level: user.level
+      }
+    });
+  } catch (error) {
+    logger.error('GET /auth/me failed', { userId: session.id, error });
+    res.status(502).json({ error: 'Failed to load user' });
   }
 });
 
