@@ -130,17 +130,31 @@ export const upsertBestScore = async (
 ): Promise<BestScoreEntry> => {
   const pool = getDatabasePool();
   if (!pool) throw new Error('database not configured');
-  await pool.query(
+  // Best-score writes are commutative under MAX: a lower-score upload
+  // from a device whose local cache is stale must not clobber a
+  // higher-score row written by another device. `achieved_at` follows
+  // the winning score so the surfaced timestamp matches the surfaced
+  // value. `RETURNING` gives the caller the actually-stored row so
+  // its local cache can converge on the server's view without an
+  // extra round-trip.
+  const result = await pool.query(
     `
     INSERT INTO best_scores (user_id, surah_id, ayah_number, score, achieved_at)
     VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT (user_id, surah_id, ayah_number) DO UPDATE SET
-      score       = EXCLUDED.score,
-      achieved_at = EXCLUDED.achieved_at
+      score       = GREATEST(EXCLUDED.score, best_scores.score),
+      achieved_at = CASE
+        WHEN EXCLUDED.score > best_scores.score THEN EXCLUDED.achieved_at
+        ELSE best_scores.achieved_at
+      END
+    RETURNING score, achieved_at
     `,
     [userId, surahId, ayahNumber, entry.score, entry.achievedAt]
   );
-  return entry;
+  const row = result.rows[0] as { score: number; achieved_at: Date | string };
+  const achievedAt =
+    row.achieved_at instanceof Date ? row.achieved_at.toISOString() : String(row.achieved_at);
+  return { score: Number(row.score), achievedAt };
 };
 
 export const recordPracticeAttempt = async (
