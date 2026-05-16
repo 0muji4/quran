@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { getRecentAttempts, type Attempt } from '../../lib/storage';
 import { formatPracticedAt } from '../../lib/classify';
 import { ArrowRightIcon } from '../../components/icons/ArrowRightIcon';
+import { HistoryFilterChips } from './HistoryFilterChips';
 import { HistoryStatsGrid } from './HistoryStatsGrid';
+import {
+  ALL_FILTER,
+  filterAttempts,
+  historyFilterOptions,
+  type HistoryFilter
+} from './historyFilters';
 import { computeHistoryStats } from './historyStats';
 import { css, cx } from '../../../styled-system/css';
 import { statusPill } from '../../../styled-system/recipes';
@@ -98,6 +105,17 @@ const emptyTitleClass = css({
 
 const emptyCtaClass = css({ marginTop: '4', textDecoration: 'none' });
 
+// Inline empty state for the "filter matched nothing" case — distinct
+// from the full-page empty state because the chips above are still
+// available to reset the filter back to All.
+const filteredEmptyClass = css({
+  textAlign: 'center',
+  paddingBlock: '8',
+  paddingInline: '4',
+  color: 'ink.muted',
+  fontSize: '[14px]'
+});
+
 const formatDate = (iso: string): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
@@ -110,6 +128,7 @@ type Props = {
 
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
+  const [filter, setFilter] = useState<HistoryFilter>(ALL_FILTER);
 
   // Re-read on mount and whenever the sign-in state flips. iOS does the
   // same via `task(id: session.currentUser?.id)` so the gated history
@@ -134,6 +153,8 @@ export function HistoryList({ signedIn }: Props) {
   }, []);
 
   const stats = useMemo(() => (attempts ? computeHistoryStats(attempts) : null), [attempts]);
+  const filterOptions = useMemo(() => historyFilterOptions(attempts ?? []), [attempts]);
+  const visibleAttempts = useMemo(() => filterAttempts(attempts ?? [], filter), [attempts, filter]);
 
   if (!signedIn) {
     return (
@@ -169,40 +190,45 @@ export function HistoryList({ signedIn }: Props) {
   return (
     <>
       {stats && <HistoryStatsGrid stats={stats} />}
-      <ul className={listClass}>
-        {attempts.map((a) => {
-          const completed = a.status === 'COMPLETED';
-          return (
-            <li key={a.id} className={listItemClass}>
-              <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
-                <span
-                  className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
-                  aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
-                >
-                  {completed && a.score !== null ? a.score : '—'}
-                </span>
-                <div className={infoClass}>
-                  <p className={titleClass}>
-                    {a.surahNameEn} · ayah {a.ayahNumber}
-                  </p>
-                  <p className={metaClass}>
-                    {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
-                  </p>
-                </div>
-                <span
-                  className={cx(
-                    statusPill({ tone: completed ? 'completed' : 'failed' }),
-                    statusPillMobileClass
-                  )}
-                >
-                  {completed ? 'Completed' : 'Failed'}
-                </span>
-                <ArrowRightIcon size={14} />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
+      {visibleAttempts.length === 0 ? (
+        <p className={filteredEmptyClass}>No attempts for the selected surah yet.</p>
+      ) : (
+        <ul className={listClass}>
+          {visibleAttempts.map((a) => {
+            const completed = a.status === 'COMPLETED';
+            return (
+              <li key={a.id} className={listItemClass}>
+                <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
+                  <span
+                    className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
+                    aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
+                  >
+                    {completed && a.score !== null ? a.score : '—'}
+                  </span>
+                  <div className={infoClass}>
+                    <p className={titleClass}>
+                      {a.surahNameEn} · ayah {a.ayahNumber}
+                    </p>
+                    <p className={metaClass}>
+                      {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={cx(
+                      statusPill({ tone: completed ? 'completed' : 'failed' }),
+                      statusPillMobileClass
+                    )}
+                  >
+                    {completed ? 'Completed' : 'Failed'}
+                  </span>
+                  <ArrowRightIcon size={14} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </>
   );
 }
