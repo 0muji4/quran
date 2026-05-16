@@ -17,6 +17,18 @@ final class AuthViewModelTests: XCTestCase {
     XCTAssertFalse(viewModel.canSubmit, "whitespace-only email")
   }
 
+  func test_canSubmitSignUp_requires8CharacterPassword() {
+    let viewModel = makeViewModel()
+    viewModel.email = "noor@example.com"
+
+    viewModel.password = "short"
+    XCTAssertFalse(viewModel.canSubmitSignUp, "<8-char password is rejected for sign-up")
+    XCTAssertTrue(viewModel.canSubmit, "but the same password is fine for sign-in (legacy accounts)")
+
+    viewModel.password = "exactly8"
+    XCTAssertTrue(viewModel.canSubmitSignUp, "exactly 8 characters meets the sign-up minimum")
+  }
+
   func test_signIn_success_persistsSessionAndInvokesOnSuccess() async {
     let expected = AuthSuccess.fixture()
     let service = MockAuthService(signInResult: .success(expected))

@@ -50,6 +50,16 @@ final class AuthViewModel: ObservableObject {
     !email.trimmedForAuth.isEmpty && !password.isEmpty
   }
 
+  /// Stricter gate for the sign-up screen: also requires 8+ characters,
+  /// matching the BFF zod schema (`password.min(8)` on `/auth/sign-up`).
+  /// Sign-in deliberately stays on `canSubmit` so accounts created before
+  /// this rule existed can still authenticate.
+  var canSubmitSignUp: Bool {
+    canSubmit && password.count >= AuthViewModel.minSignUpPasswordLength
+  }
+
+  static let minSignUpPasswordLength = 8
+
   func signIn(onSuccess: @escaping () -> Void) async {
     guard !isSubmitting else { return }
     isSubmitting = true

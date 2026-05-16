@@ -142,6 +142,31 @@ describe('AuthForm', () => {
     );
   });
 
+  it('blocks sign-up with passwords shorter than 8 characters', async () => {
+    render(<AuthForm mode="signup" />);
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
+    acceptTerms();
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(signUpActionMock).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/at least 8 characters/i);
+  });
+
+  it('allows sign-in with any non-empty password regardless of length', async () => {
+    // Existing accounts may have been created before the 8-char rule landed,
+    // so sign-in must not enforce it client-side. The BFF lets them through.
+    signInActionMock.mockResolvedValueOnce({ id: 'legacy', email: 'a@b.co', displayName: null });
+    render(<AuthForm mode="signin" />);
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => expect(signInActionMock).toHaveBeenCalled());
+  });
+
   it('blocks sign-up until the terms checkbox is accepted', async () => {
     signUpActionMock.mockResolvedValue({ id: 'u5', email: 'a@b.co', displayName: null });
     render(<AuthForm mode="signup" />);
