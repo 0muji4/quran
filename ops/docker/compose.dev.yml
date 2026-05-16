@@ -121,7 +121,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-backend
       SERVICE_VERSION: "0.1.0"
-      LOG_LEVEL: INFO
+      LOG_LEVEL: info
       LOG_FORMAT: json
     ports:
       - "8080:8080"
@@ -166,7 +166,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-bff
       SERVICE_VERSION: "0.1.0"
-      LOG_LEVEL: INFO
+      LOG_LEVEL: info
       LOG_FORMAT: json
     ports:
       - "4000:4000"
@@ -204,7 +204,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-worker
       SERVICE_VERSION: "0.1.0"
-      LOG_LEVEL: INFO
+      LOG_LEVEL: info
       LOG_FORMAT: json
 
   web:
@@ -219,7 +219,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-web
       SERVICE_VERSION: "0.1.0"
-      LOG_LEVEL: INFO
+      LOG_LEVEL: info
       LOG_FORMAT: json
     ports:
       - "3000:3000"
