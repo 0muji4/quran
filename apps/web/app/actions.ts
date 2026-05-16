@@ -610,6 +610,42 @@ export const signOutAction = async (): Promise<void> => {
   );
 };
 
+// Server-action wrapper around `PATCH /auth/me`. Throws on non-2xx
+// so the modal can show the BFF's error message without separately
+// having to inspect a status code; the only caller today is the web
+// Edit profile modal, which catches and surfaces the message.
+export const updateProfileAction = async (input: {
+  displayName?: string;
+  level?: UserLevel;
+}): Promise<AuthSessionUser> => {
+  return tracer.startActiveSpan(
+    'ServerAction: updateProfileAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'updateProfileAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/me`, {
+          method: 'PATCH',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(input)
+        });
+        const payload = await parseJson<{ user: AuthSessionUser }>(response);
+        logger.info('updateProfileAction completed', { userId: payload.user.id });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.user;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('updateProfileAction failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 // Fetched on every profile page render rather than cached on the
 // session, so a freshly-edited level / displayName lands without a
 // re-sign-in. Returns `null` for any failure mode so the page can
