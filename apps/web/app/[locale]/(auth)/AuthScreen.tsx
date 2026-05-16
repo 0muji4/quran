@@ -1,6 +1,7 @@
+import { getTranslations } from 'next-intl/server';
 import { AuthBrandPanel } from './AuthBrandPanel';
 import { AuthForm } from './AuthForm';
-import { AUTH_COPY, type AuthMode } from './copy';
+import type { AuthMode } from './copy';
 import { css, cx } from '../../../styled-system/css';
 
 type Props = {
@@ -48,8 +49,8 @@ const ledeClass = css({
 // Top-level composition for /sign-in and /sign-up: the dark brand panel
 // plus the form panel (eyebrow / title / lede + the interactive AuthForm).
 // Server component — AuthForm is the only client island.
-export function AuthScreen({ mode, redirectTo }: Props) {
-  const copy = AUTH_COPY[mode];
+export async function AuthScreen({ mode, redirectTo }: Props) {
+  const t = await getTranslations(`auth.${mode}`);
 
   return (
     <>
@@ -57,12 +58,12 @@ export function AuthScreen({ mode, redirectTo }: Props) {
       <div className={formPanelClass}>
         <section className={formColumnClass} aria-labelledby="auth-title">
           <p className={cx('eyebrow', eyebrowSpacingClass)}>
-            <span aria-hidden="true">✦</span> {copy.eyebrow}
+            <span aria-hidden="true">✦</span> {t('eyebrow')}
           </p>
           <h1 id="auth-title" className={titleClass}>
-            {copy.title}
+            {t('title')}
           </h1>
-          <p className={ledeClass}>{copy.lede}</p>
+          <p className={ledeClass}>{t('lede')}</p>
           <AuthForm mode={mode} redirectTo={redirectTo} />
         </section>
       </div>

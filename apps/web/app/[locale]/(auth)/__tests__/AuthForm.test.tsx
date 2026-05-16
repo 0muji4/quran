@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { AuthForm } from '../AuthForm';
+import messages from '../../../../messages/en.json';
 
 afterEach(() => cleanup());
 
@@ -30,6 +32,16 @@ vi.mock('../../../lib/storage', () => ({
   refreshAllFromBff: () => refreshAllFromBffMock()
 }));
 
+// next-intl reads messages + locale from context. Wrap every render with
+// the real en.json catalogue so existing English assertions ("Email",
+// "Sign in", etc.) keep working without per-string mocking.
+const renderForm = (props: React.ComponentProps<typeof AuthForm>) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <AuthForm {...props} />
+    </NextIntlClientProvider>
+  );
+
 // Accept the sign-up terms gate so a submission can go through. Kept as a
 // helper because every sign-up flow now has to clear it first.
 const acceptTerms = (): void => {
@@ -48,7 +60,7 @@ describe('AuthForm', () => {
 
   it('signs in with the entered credentials and routes home on success', async () => {
     signInActionMock.mockResolvedValueOnce({ id: 'u1', email: 'a@b.co', displayName: null });
-    render(<AuthForm mode="signin" />);
+    renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
@@ -68,7 +80,7 @@ describe('AuthForm', () => {
 
   it('shows the BFF error when sign-in fails and stays on the form', async () => {
     signInActionMock.mockRejectedValueOnce(new Error('invalid email or password'));
-    render(<AuthForm mode="signin" />);
+    renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong' } });
@@ -92,7 +104,7 @@ describe('AuthForm', () => {
       order.push('refresh');
     });
 
-    render(<AuthForm mode="signup" />);
+    renderForm({ mode: 'signup' });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
     acceptTerms();
@@ -108,7 +120,7 @@ describe('AuthForm', () => {
       email: 'a@b.co',
       displayName: 'Aisha'
     });
-    render(<AuthForm mode="signup" />);
+    renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
@@ -129,7 +141,7 @@ describe('AuthForm', () => {
 
   it('omits an empty display name on sign-up', async () => {
     signUpActionMock.mockResolvedValueOnce({ id: 'u3', email: 'a@b.co', displayName: null });
-    render(<AuthForm mode="signup" />);
+    renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
@@ -146,7 +158,7 @@ describe('AuthForm', () => {
   });
 
   it('blocks sign-up with passwords shorter than 8 characters', async () => {
-    render(<AuthForm mode="signup" />);
+    renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
@@ -161,7 +173,7 @@ describe('AuthForm', () => {
     // Existing accounts may have been created before the 8-char rule landed,
     // so sign-in must not enforce it client-side. The BFF lets them through.
     signInActionMock.mockResolvedValueOnce({ id: 'legacy', email: 'a@b.co', displayName: null });
-    render(<AuthForm mode="signin" />);
+    renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
@@ -172,7 +184,7 @@ describe('AuthForm', () => {
 
   it('blocks sign-up until the terms checkbox is accepted', async () => {
     signUpActionMock.mockResolvedValue({ id: 'u5', email: 'a@b.co', displayName: null });
-    render(<AuthForm mode="signup" />);
+    renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
@@ -189,7 +201,7 @@ describe('AuthForm', () => {
   });
 
   it('toggles password visibility with the Show / Hide control', () => {
-    render(<AuthForm mode="signin" />);
+    renderForm({ mode: 'signin' });
 
     const password = screen.getByLabelText('Password');
     expect(password).toHaveAttribute('type', 'password');
@@ -206,7 +218,7 @@ describe('AuthForm', () => {
   });
 
   it('renders the deferred OAuth buttons as disabled placeholders', () => {
-    render(<AuthForm mode="signin" />);
+    renderForm({ mode: 'signin' });
     expect(screen.getByRole('button', { name: /google/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /apple/i })).toBeDisabled();
   });
