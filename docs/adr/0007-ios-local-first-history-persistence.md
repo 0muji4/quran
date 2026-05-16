@@ -1,6 +1,6 @@
 # ADR 0007: iOS History Persistence — Local-First, Mirroring the Web Schema
 
-- Status: Accepted
+- Status: Superseded in part by [ADR 0021](0021-account-required-multi-device-history.md) (2026-05-16). Reconsider trigger #1 fired: product decided multi-device history is required. The protocol seam this ADR established is the path 0021 plugs into.
 - Date: 2026-05-09
 - Author: motoshi.suzuki
 
