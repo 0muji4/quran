@@ -25,6 +25,17 @@ const HISTORY_LIMIT = 50;
 const REFRESH_INTERVAL_MS = 30_000;
 const lastRefreshedAt = new Map<string, number>();
 
+// Module-level signed-in gate. `StorageSessionBridge` (mounted by
+// AppShell) keeps this in sync with the server-rendered session;
+// every read returns null / empty and every write drops on the
+// floor while it is false. `refreshAllFromBff` and `clearLocalCache`
+// bypass the gate — they are the auth-transition tools.
+let _signedIn = false;
+
+export const setSignedInGate = (signedIn: boolean): void => {
+  _signedIn = signedIn;
+};
+
 const isBrowser = (): boolean =>
   typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
@@ -69,6 +80,7 @@ const markRefreshed = (key: string): void => {
 // Fire-and-forget refresh. Errors are swallowed because the cache is
 // the user-facing fallback; the next call will re-attempt anyway.
 const refreshLastPracticed = async (): Promise<void> => {
+  if (!_signedIn) return;
   if (!shouldRefresh(KEY_LAST)) return;
   markRefreshed(KEY_LAST);
   try {
@@ -81,6 +93,7 @@ const refreshLastPracticed = async (): Promise<void> => {
 };
 
 const refreshBestScores = async (): Promise<void> => {
+  if (!_signedIn) return;
   if (!shouldRefresh(KEY_BEST)) return;
   markRefreshed(KEY_BEST);
   try {
@@ -92,6 +105,7 @@ const refreshBestScores = async (): Promise<void> => {
 };
 
 const refreshRecentAttempts = async (): Promise<void> => {
+  if (!_signedIn) return;
   if (!shouldRefresh(KEY_HIST)) return;
   markRefreshed(KEY_HIST);
   try {
@@ -102,10 +116,13 @@ const refreshRecentAttempts = async (): Promise<void> => {
   }
 };
 
-// Eager pull of all three keys, used by AppShell on mount and again on
-// sign-in transitions. Bypasses the throttle so the first paint after
-// authenticating sees fresh data.
+// Eager pull of all three keys, used by the auth transition handler
+// right after sign-in / sign-up succeeds and again on mount. Flips
+// the gate to true up-front because the React tree hasn't re-
+// rendered yet, and bypasses the per-key throttle so the first
+// paint after authenticating sees fresh data.
 export const refreshAllFromBff = async (): Promise<void> => {
+  setSignedInGate(true);
   lastRefreshedAt.clear();
   await Promise.allSettled([refreshLastPracticed(), refreshBestScores(), refreshRecentAttempts()]);
 };
@@ -120,41 +137,14 @@ export const clearLocalCache = (): void => {
   lastRefreshedAt.clear();
 };
 
-// One-shot migration on first sign-up: push every cache entry an
-// anonymous user accumulated to the BFF so their progress survives
-// the auth transition. Best-effort — a 401 / 5xx is swallowed so
-// sign-up still completes for the user.
-export const migrateAnonymousCacheToBff = async (): Promise<void> => {
-  if (!isBrowser()) return;
-
-  const last = readJson<LastPracticed>(KEY_LAST);
-  const scores = readJson<BestScores>(KEY_BEST) ?? {};
-  const attempts = readJson<{ attempts: Attempt[] }>(KEY_HIST)?.attempts ?? [];
-
-  const tasks: Promise<unknown>[] = [];
-  if (last) tasks.push(putLastPracticedToBff(last));
-
-  for (const [key, entry] of Object.entries(scores)) {
-    const [surahId, ayahRaw] = key.split(':');
-    const ayahNumber = Number(ayahRaw);
-    if (!surahId || !Number.isInteger(ayahNumber) || ayahNumber < 1) continue;
-    tasks.push(putBestScoreToBff(surahId, ayahNumber, entry));
-  }
-
-  // Replay attempts oldest-first so the BFF's "most recent" ordering
-  // matches the chronology the user saw locally.
-  const ordered = [...attempts].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  for (const attempt of ordered) tasks.push(postAttemptToBff(attempt));
-
-  await Promise.allSettled(tasks);
-};
-
 export const getLastPracticed = (): LastPracticed | null => {
+  if (!_signedIn) return null;
   void refreshLastPracticed();
   return readJson<LastPracticed>(KEY_LAST);
 };
 
 export const setLastPracticed = (entry: LastPracticed): void => {
+  if (!_signedIn) return;
   writeJson(KEY_LAST, entry);
   markRefreshed(KEY_LAST);
   void putLastPracticedToBff(entry).catch(() => {
@@ -163,6 +153,7 @@ export const setLastPracticed = (entry: LastPracticed): void => {
 };
 
 export const getBestScores = (): BestScores => {
+  if (!_signedIn) return {};
   void refreshBestScores();
   return readJson<BestScores>(KEY_BEST) ?? {};
 };
@@ -187,6 +178,7 @@ export const getBestScoreForSurah = (surahId: string): number | null => {
 };
 
 export const recordBestScore = (surahId: string, ayahNumber: number, score: number): void => {
+  if (!_signedIn) return;
   const all = readJson<BestScores>(KEY_BEST) ?? {};
   const key = bestScoreKey(surahId, ayahNumber);
   const existing = all[key];
@@ -202,6 +194,7 @@ export const recordBestScore = (surahId: string, ayahNumber: number, score: numb
 };
 
 export const getRecentAttempts = (limit = HISTORY_LIMIT): Attempt[] => {
+  if (!_signedIn) return [];
   void refreshRecentAttempts();
   const log = readJson<{ attempts: Attempt[] }>(KEY_HIST);
   if (!log?.attempts) return [];
@@ -209,6 +202,7 @@ export const getRecentAttempts = (limit = HISTORY_LIMIT): Attempt[] => {
 };
 
 export const recordAttempt = (attempt: Attempt): void => {
+  if (!_signedIn) return;
   const existing = readJson<{ attempts: Attempt[] }>(KEY_HIST)?.attempts ?? [];
   const next = [attempt, ...existing].slice(0, HISTORY_LIMIT);
   writeJson(KEY_HIST, { attempts: next });

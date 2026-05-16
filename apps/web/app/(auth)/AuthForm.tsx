@@ -4,7 +4,7 @@ import { FormEvent, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInAction, signUpAction } from '../actions';
-import { clearLocalCache, migrateAnonymousCacheToBff, refreshAllFromBff } from '../lib/storage';
+import { clearLocalCache, refreshAllFromBff } from '../lib/storage';
 import { AUTH_COPY, type AuthMode } from './copy';
 import { Divider } from './Divider';
 import { LevelSelector } from './LevelSelector';
@@ -58,14 +58,11 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
             password,
             displayName: displayName ? displayName : undefined
           });
-          // First-time auth: push the anonymous browsing history up so
-          // the user's prior practice is linked to the new account.
-          await migrateAnonymousCacheToBff();
         } else {
           await signInAction({ email, password });
         }
-        // Drop the prior identity's cached last-practiced / best-scores
-        // before pulling the new user's view from the BFF.
+        // Drop any pre-rollout anonymous data before pulling the
+        // freshly authenticated view from the BFF.
         clearLocalCache();
         await refreshAllFromBff();
         router.replace(redirectTo);

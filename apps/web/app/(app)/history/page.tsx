@@ -1,9 +1,11 @@
+import { getCurrentSession } from '../../lib/session';
 import { HistoryList } from './HistoryList';
 import styles from '../../styles/history.module.css';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-export default function HistoryPage() {
+export default async function HistoryPage() {
+  const session = await getCurrentSession();
   return (
     <>
       <header className={styles.hero}>
@@ -12,10 +14,11 @@ export default function HistoryPage() {
         </span>
         <h1>Recent attempts</h1>
         <p className={styles.heroDescription}>
-          A log of your recent recitations and scores. Stored locally in this browser.
+          A log of your recent recitations and scores. Synced across your devices when you are
+          signed in.
         </p>
       </header>
-      <HistoryList />
+      <HistoryList signedIn={session !== null} />
     </>
   );
 }
