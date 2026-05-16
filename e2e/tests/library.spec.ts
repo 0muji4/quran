@@ -71,7 +71,11 @@ test.describe('Surah library', () => {
 
       const resumeLink = page.getByRole('link', { name: /resume ayah 3/i });
       await expect(resumeLink).toBeVisible();
-      await expect(resumeLink).toHaveAttribute('href', `/practice/${testSurahs.alFatihah.id}/3`);
+      // ADR 0023: hrefs are locale-prefixed (default `en`).
+      await expect(resumeLink).toHaveAttribute(
+        'href',
+        new RegExp(`^/(en|ar)/practice/${testSurahs.alFatihah.id}/3$`)
+      );
     }
   );
 
