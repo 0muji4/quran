@@ -209,18 +209,6 @@ final class HTTPMeClient: MeClient {
 
   // MARK: - Codable helpers
 
-  private static let fractionalISO8601: ISO8601DateFormatter = {
-    let f = ISO8601DateFormatter()
-    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return f
-  }()
-
-  private static let plainISO8601: ISO8601DateFormatter = {
-    let f = ISO8601DateFormatter()
-    f.formatOptions = [.withInternetDateTime]
-    return f
-  }()
-
   private static func encoder() -> JSONEncoder {
     let encoder = JSONEncoder()
     // Encode with fractional seconds — that's what Node's
@@ -228,7 +216,7 @@ final class HTTPMeClient: MeClient {
     // shape mirrors) accepts on the round-trip.
     encoder.dateEncodingStrategy = .custom { date, encoder in
       var container = encoder.singleValueContainer()
-      try container.encode(fractionalISO8601.string(from: date))
+      try container.encode(MeClientISO8601.fractional.string(from: date))
     }
     return encoder
   }
@@ -241,7 +229,10 @@ final class HTTPMeClient: MeClient {
     decoder.dateDecodingStrategy = .custom { decoder in
       let container = try decoder.singleValueContainer()
       let raw = try container.decode(String.self)
-      if let date = fractionalISO8601.date(from: raw) ?? plainISO8601.date(from: raw) {
+      if let date =
+        MeClientISO8601.fractional.date(from: raw)
+        ?? MeClientISO8601.plain.date(from: raw)
+      {
         return date
       }
       throw DecodingError.dataCorruptedError(
@@ -301,4 +292,22 @@ private struct SuggestionResponseBody: Decodable {
 /// counts) can land without breaking clients.
 private struct AttemptsResponseBody: Decodable {
   let attempts: [Attempt]
+}
+
+/// File-scoped formatters so the encoder / decoder closures (Sendable,
+/// nonisolated) can reach them without crossing the @MainActor
+/// boundary of `HTTPMeClient`. `ISO8601DateFormatter`'s instance
+/// methods are documented thread-safe.
+private enum MeClientISO8601 {
+  static let fractional: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return f
+  }()
+
+  static let plain: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime]
+    return f
+  }()
 }
