@@ -68,6 +68,12 @@ final class UserDefaultsHistoryStore: HistoryStore {
     encode(AttemptLog(attempts: trimmed), key: HistoryStoreConstants.Key.recentAttempts)
   }
 
+  func clear() {
+    defaults.removeObject(forKey: HistoryStoreConstants.Key.lastPracticed)
+    defaults.removeObject(forKey: HistoryStoreConstants.Key.bestScores)
+    defaults.removeObject(forKey: HistoryStoreConstants.Key.recentAttempts)
+  }
+
   // MARK: - Helpers
 
   private struct AttemptLog: Codable {

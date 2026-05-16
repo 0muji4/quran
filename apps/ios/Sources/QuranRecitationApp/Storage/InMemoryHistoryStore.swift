@@ -53,4 +53,10 @@ final class InMemoryHistoryStore: HistoryStore {
       attempts = Array(attempts.prefix(HistoryStoreConstants.historyLimit))
     }
   }
+
+  func clear() {
+    lastPracticedEntry = nil
+    bestScores = [:]
+    attempts = []
+  }
 }
