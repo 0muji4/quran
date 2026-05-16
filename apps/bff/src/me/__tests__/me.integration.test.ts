@@ -239,6 +239,23 @@ describe('GET /me/* read endpoints', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('surfaces the stored row, not the request body, so callers see the MAX outcome', async () => {
+      // Storage applies MAX semantics: a lower-score upload from a
+      // device with a stale local cache must not surface as the new
+      // value to the caller. Simulate the case where the server
+      // already has a 95 and the client tried to write 70 — the
+      // response carries the stored 95 so the client converges on it.
+      const stored = { score: 95, achievedAt: '2026-05-08T10:00:00.000Z' };
+      vi.mocked(upsertBestScore).mockResolvedValue(stored);
+
+      const res = await request(app)
+        .put('/me/best-scores/1:1')
+        .send({ score: 70, achievedAt: '2026-05-09T10:00:00.000Z' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(stored);
+    });
   });
 
   describe('POST /me/attempts', () => {
