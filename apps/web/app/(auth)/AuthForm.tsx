@@ -10,7 +10,6 @@ import { Divider } from './Divider';
 import { LevelSelector } from './LevelSelector';
 import { OAuthButtons } from './OAuthButtons';
 import { PasswordField } from './PasswordField';
-import { RememberMeRow } from './RememberMeRow';
 import { css } from '../../styled-system/css';
 
 type Props = {
@@ -135,8 +134,8 @@ const footerClass = css({
 // The interactive island of the auth screen. AuthScreen renders the
 // eyebrow / title / lede around this; here we own the form fields, the
 // sign-up terms gate, and the existing BFF auth flow (server action →
-// cache migration → redirect). The BFF payload is unchanged: level and
-// remember-me are UI-only this pass and are never read here.
+// cache migration → redirect). The BFF payload is unchanged: level is
+// UI-only this pass and is never read here.
 export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -246,8 +245,6 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
             mode === 'signup' ? 'Use 8+ characters with a mix of letters and numbers.' : undefined
           }
         />
-
-        {mode === 'signin' && <RememberMeRow disabled={pending} />}
 
         {mode === 'signup' && <LevelSelector disabled={pending} />}
 
