@@ -3,6 +3,12 @@ import baseConfig from '@quran-project/eslint-config';
 export default [
   ...baseConfig,
   {
-    ignores: ['**/*.config.js', '**/*.config.cjs', '**/*.config.mjs', '**/*.config.ts']
+    ignores: [
+      '**/*.config.js',
+      '**/*.config.cjs',
+      '**/*.config.mjs',
+      '**/*.config.ts',
+      'styled-system/**'
+    ]
   }
 ];
