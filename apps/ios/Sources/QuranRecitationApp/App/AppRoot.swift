@@ -50,13 +50,18 @@ struct AppRoot: View {
         telemetry.event(TelemetryEvent.libraryTabSelected)
       }
     }
-    .onChange(of: session.currentUser) { newValue in
-      // ADR 0021: a signed-out device must not leak the previous
-      // user's history into the next sign-in. The decorator already
-      // hides reads while signed-out, but the underlying cache must
-      // also be wiped so a future sign-in (different account or same)
-      // starts from a known-empty state.
-      if newValue == nil {
+    .task(id: session.currentUser?.id) {
+      // Two responsibilities driven by one event:
+      //   1. On sign-out (id → nil), wipe the local cache so the
+      //      previous identity's history does not leak into the next
+      //      sign-in (different account or same).
+      //   2. On sign-in / first-launch-while-signed-in (id → value),
+      //      pull the authoritative state from BFF into the cache so
+      //      reads can stay synchronous and tab-switches feel
+      //      instant once data has landed.
+      if session.isSignedIn {
+        await historyStore.refreshFromRemote()
+      } else {
         historyStore.clear()
       }
     }

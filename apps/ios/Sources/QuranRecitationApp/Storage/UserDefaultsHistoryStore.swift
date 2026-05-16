@@ -74,6 +74,11 @@ final class UserDefaultsHistoryStore: HistoryStore {
     defaults.removeObject(forKey: HistoryStoreConstants.Key.recentAttempts)
   }
 
+  @MainActor
+  func refreshFromRemote() async {
+    // No remote; the cache is the source of truth.
+  }
+
   // MARK: - Helpers
 
   private struct AttemptLog: Codable {
