@@ -7,6 +7,10 @@ import SwiftUI
 struct RecordingPanel: View {
   let state: PracticeRecordingState
   let onTapRecord: () -> Void
+  // Mirrors `@media (prefers-reduced-motion)` on the web. When the
+  // system setting is on, the pulse rings stop animating; the static
+  // double-circle still communicates "recording" via colour.
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     BrandCard(style: .inverse) {
@@ -59,6 +63,13 @@ struct RecordingPanel: View {
   private var recordButton: some View {
     Button(action: onTapRecord) {
       ZStack {
+        if isRecording && !reduceMotion {
+          // Three rings, 0.4s apart, mirror the CSS keyframes in
+          // `apps/web/app/styles/practice.module.css` (`pulseRing`).
+          ForEach(0..<3, id: \.self) { index in
+            PulseRing(delay: Double(index) * 0.4)
+          }
+        }
         Circle()
           .strokeBorder(Color.brand.recording.opacity(0.4), lineWidth: 4)
           .frame(width: 100, height: 100)
@@ -104,5 +115,29 @@ struct RecordingPanel: View {
 
   private var secondary: LocalizedStringKey? {
     isRecording ? "practice.record.recordingSubtitle" : "practice.record.idleSubtitle"
+  }
+}
+
+/// One ripple ring radiating out from the record button while recording.
+/// Three of these are stacked with a 0.4s stagger to match the Web
+/// `pulseRing` cascade. The ring is decorative — `allowsHitTesting(false)`
+/// keeps the underlying record button hit area intact.
+private struct PulseRing: View {
+  let delay: Double
+  @State private var expanded = false
+
+  var body: some View {
+    Circle()
+      .strokeBorder(Color.brand.recording.opacity(0.55), lineWidth: 2)
+      .frame(width: 76, height: 76)
+      .scaleEffect(expanded ? 2.1 : 1.0)
+      .opacity(expanded ? 0 : 0.7)
+      .animation(
+        .easeOut(duration: 1.6).repeatForever(autoreverses: false).delay(delay),
+        value: expanded
+      )
+      .onAppear { expanded = true }
+      .allowsHitTesting(false)
+      .accessibilityHidden(true)
   }
 }
