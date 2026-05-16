@@ -1,11 +1,13 @@
+import { EditProfileButton } from './EditProfileButton';
 import { StreakBadge } from './StreakBadge';
+import type { UserLevel } from '../../../actions';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
 type Props = {
   displayName: string | null;
   email: string;
-  level: string | null;
+  level: UserLevel | null;
   createdAt: string | null;
 };
 
@@ -72,21 +74,6 @@ const badgeBaseClass = css({
 const badgeLevelClass = css({ backgroundColor: 'mint.bg', color: 'teal.deep' });
 const badgeJoinedClass = css({ backgroundColor: 'tan.soft', color: 'ink.muted' });
 
-const editButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'not-allowed',
-  _disabled: { opacity: 0.55, cursor: 'not-allowed' }
-});
-
 const initialFor = (displayName: string | null, email: string): string => {
   const source = (displayName ?? email).trim();
   return source.length > 0 ? source.charAt(0).toUpperCase() : '·';
@@ -128,14 +115,7 @@ export function ProfileHeader({ displayName, email, level, createdAt }: Props) {
           <StreakBadge />
         </div>
       </div>
-      <button
-        type="button"
-        className={editButtonClass}
-        disabled
-        aria-label="Edit profile — coming soon"
-      >
-        Edit profile
-      </button>
+      <EditProfileButton displayName={displayName} email={email} level={level} />
     </section>
   );
 }
