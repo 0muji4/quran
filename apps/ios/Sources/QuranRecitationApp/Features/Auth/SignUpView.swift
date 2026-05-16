@@ -140,7 +140,7 @@ struct SignUpView: View {
       }
     }
     .buttonStyle(.brandPrimary)
-    .disabled(!viewModel.canSubmit || viewModel.isSubmitting)
+    .disabled(!viewModel.canSubmitSignUp || viewModel.isSubmitting)
     .padding(.top, Spacing.sm)
   }
 

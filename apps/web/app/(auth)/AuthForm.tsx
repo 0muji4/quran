@@ -155,6 +155,16 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
     const password = String(data.get('password') ?? '');
     const displayName = String(data.get('displayName') ?? '').trim();
 
+    // Client-side password-length guard mirroring the BFF zod schema
+    // (`password.min(8)` on sign-up; sign-in stays unconstrained so users
+    // who created an account before this rule existed can still get in).
+    // The helper text already advertises 8+ characters; failing here saves
+    // a server round-trip and lets a11y users hear the same error banner.
+    if (mode === 'signup' && password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     // Sign-up terms gate: block submission and move focus to the checkbox
     // so the requirement is announced rather than silently failing.
     if (mode === 'signup' && !agreedToTerms) {
