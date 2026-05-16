@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
-import { createUserWithPassword, findUserByEmail } from '../users';
+import { createUserWithPassword, findUserByEmail, findUserById } from '../users';
 import { hashPassword, verifyPassword } from '../credentials';
 import { recordIssuedRefreshToken } from '../refresh-tokens';
 
@@ -249,7 +249,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-4',
         email: 'l@example.com',
         displayName: null,
-        passwordHash: hash
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
 
       await request(app)
@@ -258,6 +260,50 @@ describe('POST /auth/signup and /auth/login', () => {
 
       expect(recordIssuedRefreshToken).toHaveBeenCalledTimes(1);
       expect(vi.mocked(recordIssuedRefreshToken).mock.calls[0][0].userId).toBe('user-4');
+    });
+  });
+
+  describe('GET /auth/me', () => {
+    it('returns 401 without an access token', async () => {
+      const res = await request(app).get('/auth/me');
+      expect(res.status).toBe(401);
+      expect(findUserById).not.toHaveBeenCalled();
+    });
+
+    it('returns the current user from the DB on every call', async () => {
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-5',
+        email: 'me@example.com',
+        displayName: 'Noor',
+        passwordHash: 'h',
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate'
+      });
+
+      // Mint an access token the same way the production code path does
+      // so the auth middleware accepts it.
+      const token = jwt.sign({ sub: 'user-5', email: 'me@example.com' }, 'test-access-secret');
+
+      const res = await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.user).toEqual({
+        id: 'user-5',
+        email: 'me@example.com',
+        displayName: 'Noor',
+        createdAt: TEST_CREATED_AT.toISOString(),
+        level: 'intermediate'
+      });
+      expect(findUserById).toHaveBeenCalledWith('user-5');
+    });
+
+    it('returns 404 when the JWT verifies but the row is gone', async () => {
+      vi.mocked(findUserById).mockResolvedValue(null);
+      const token = jwt.sign({ sub: 'ghost' }, 'test-access-secret');
+
+      const res = await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
     });
   });
 });
