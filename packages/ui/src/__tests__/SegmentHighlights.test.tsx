@@ -64,13 +64,13 @@ describe('SegmentHighlights', () => {
     const scores = container.querySelectorAll('span[style*="color"]');
 
     // Word 1: 0.95 >= 0.8 → green
-    expect(scores[0]).toHaveStyle({ color: '#16a34a' });
+    expect(scores[0]).toHaveStyle({ color: 'var(--colors-score-pass)' });
 
     // Word 2: 0.78 >= 0.7 (0.8 - 0.1) → yellow
-    expect(scores[1]).toHaveStyle({ color: '#f59e0b' });
+    expect(scores[1]).toHaveStyle({ color: 'var(--colors-score-warn)' });
 
     // Word 3: 0.65 < 0.7 → red
-    expect(scores[2]).toHaveStyle({ color: '#dc2626' });
+    expect(scores[2]).toHaveStyle({ color: 'var(--colors-score-fail)' });
   });
 
   it('applies correct color coding based on custom threshold', () => {
@@ -85,13 +85,13 @@ describe('SegmentHighlights', () => {
     const scores = container.querySelectorAll('span[style*="color"]');
 
     // 0.90 >= 0.85 → green
-    expect(scores[0]).toHaveStyle({ color: '#16a34a' });
+    expect(scores[0]).toHaveStyle({ color: 'var(--colors-score-pass)' });
 
     // 0.82 >= 0.75 (0.85 - 0.1) → yellow
-    expect(scores[1]).toHaveStyle({ color: '#f59e0b' });
+    expect(scores[1]).toHaveStyle({ color: 'var(--colors-score-warn)' });
 
     // 0.70 < 0.75 → red
-    expect(scores[2]).toHaveStyle({ color: '#dc2626' });
+    expect(scores[2]).toHaveStyle({ color: 'var(--colors-score-fail)' });
   });
 
   it('displays metrics when present', () => {
@@ -151,7 +151,7 @@ describe('SegmentHighlights', () => {
     const scoreElement = container.querySelector('span[style*="color"]');
 
     // 0.85 >= 0.8 → green
-    expect(scoreElement).toHaveStyle({ color: '#16a34a' });
+    expect(scoreElement).toHaveStyle({ color: 'var(--colors-score-pass)' });
   });
 
   it('renders correct number of segment cards', () => {
