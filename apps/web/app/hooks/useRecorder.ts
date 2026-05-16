@@ -121,7 +121,14 @@ export function useRecorder(): UseRecorderApi {
         if (startedAtRef.current === null) return;
         setState((prev) => ({
           ...prev,
-          elapsedMs: performance.now() - (startedAtRef.current ?? 0)
+          // Round at the source: `performance.now()` is sub-ms float
+          // precision, but every downstream consumer treats the value
+          // as integer milliseconds (UI clock, telemetry, the BFF
+          // schema's `z.number().int()`). Keeping floats in the
+          // hook's state has already cost one silent-failure outage
+          // where the BFF rejected `4402.59…` with a 400 that the
+          // fire-and-forget call swallowed.
+          elapsedMs: Math.round(performance.now() - (startedAtRef.current ?? 0))
         }));
       }, TIMER_INTERVAL_MS);
 
