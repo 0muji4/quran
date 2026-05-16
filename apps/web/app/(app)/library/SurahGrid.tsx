@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { SurahSummary } from '../../lib/types';
 import { getBestScores, getLastPracticed } from '../../lib/storage';
 import { SurahCard } from './SurahCard';
-import styles from '../../styles/library.module.css';
+import { css } from '../../../styled-system/css';
 
 type Props = {
   surahs: SurahSummary[];
@@ -14,6 +14,21 @@ type Snapshot = {
   bestScores: Record<string, number>; // surahId → max best across ayahs (rounded to int)
   lastPracticedSurahId: string | null;
 };
+
+const GRID_MOBILE_MQ = '@media (max-width: 760px)';
+
+const emptyClass = css({
+  textAlign: 'center',
+  padding: '10',
+  color: 'ink.muted'
+});
+
+const gridClass = css({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: '4',
+  [GRID_MOBILE_MQ]: { gridTemplateColumns: '1fr' }
+});
 
 const buildSnapshot = (): Snapshot => {
   const all = getBestScores();
@@ -48,11 +63,11 @@ export function SurahGrid({ surahs }: Props) {
   }, []);
 
   if (surahs.length === 0) {
-    return <p className={styles.empty}>No surahs match your search.</p>;
+    return <p className={emptyClass}>No surahs match your search.</p>;
   }
 
   return (
-    <div className={styles.grid}>
+    <div className={gridClass}>
       {surahs.map((surah) => (
         <SurahCard
           key={surah.id}
