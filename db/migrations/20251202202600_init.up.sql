@@ -37,7 +37,11 @@ CREATE TABLE IF NOT EXISTS users (
     email         CITEXT UNIQUE,
     display_name  TEXT,
     password_hash TEXT,
-    preferences   JSONB        DEFAULT '{}'::jsonb,
+    -- Skill bucket the user chose on sign-up. Constrained to the three
+    -- known values so a typo in client code becomes a 23514 instead of
+    -- a render glitch on the profile badge.
+    level         TEXT
+                  CHECK (level IS NULL OR level IN ('beginner', 'intermediate', 'advanced')),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
