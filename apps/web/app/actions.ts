@@ -609,3 +609,36 @@ export const signOutAction = async (): Promise<void> => {
     }
   );
 };
+
+// Fetched on every profile page render rather than cached on the
+// session, so a freshly-edited level / displayName lands without a
+// re-sign-in. Returns `null` for any failure mode so the page can
+// surface a sensible empty state instead of throwing — the profile
+// route already gates on the access cookie before calling this.
+export const fetchCurrentUserProfile = async (): Promise<AuthSessionUser | null> => {
+  return tracer.startActiveSpan(
+    'ServerAction: fetchCurrentUserProfile',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'fetchCurrentUserProfile');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/me`, withNoStore);
+        if (!response.ok) {
+          logger.warn('fetchCurrentUserProfile non-2xx', { status: response.status });
+          span.setStatus({ code: SpanStatusCode.OK });
+          return null;
+        }
+        const payload = await parseJson<{ user: AuthSessionUser }>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.user;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('fetchCurrentUserProfile failed', { error: (error as Error).message });
+        return null;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
