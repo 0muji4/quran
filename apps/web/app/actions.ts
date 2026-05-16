@@ -491,7 +491,20 @@ export const postAttemptToBff = async (attempt: Attempt): Promise<Attempt> => {
 // refresh tokens in HttpOnly cookies and forwards the access cookie to the
 // BFF as `Authorization: Bearer …` via bffFetch.
 
-export type AuthSessionUser = { id: string; email: string; displayName: string | null };
+export type UserLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export type AuthSessionUser = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  // ISO-8601. Surfaced as the "Joined …" badge on the profile page.
+  // Optional for forward-compat — older BFF versions did not send it.
+  createdAt?: string | null;
+  // Skill bucket chosen on sign-up. Optional for the same reason and
+  // because clients that don't gather the field on sign-up (iOS today)
+  // produce a `null` here.
+  level?: UserLevel | null;
+};
 
 type AuthSuccessPayload = {
   accessToken: string;
@@ -511,6 +524,8 @@ export const signUpAction = async (input: {
   email: string;
   password: string;
   displayName?: string;
+  // BFF zod accepts the same enum; we forward the value as-is.
+  level?: UserLevel;
 }): Promise<AuthSessionUser> => {
   return tracer.startActiveSpan(
     'ServerAction: signUpAction',

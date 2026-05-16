@@ -5,7 +5,13 @@ import type { AuthedRequest } from './auth';
 import { logger } from '../telemetry';
 import { hashPassword, issueAccessToken, issueRefreshToken, verifyPassword } from './credentials';
 import { hashRefreshToken, recordIssuedRefreshToken } from './refresh-tokens';
-import { createUserWithPassword, findUserByEmail } from './users';
+import {
+  createUserWithPassword,
+  findUserByEmail,
+  VALID_LEVELS,
+  type UserLevel,
+  type UserRow
+} from './users';
 
 export const authRouter = Router();
 
@@ -13,7 +19,10 @@ const signupSchema = z.object({
   body: z.object({
     email: z.string().email(),
     password: z.string().min(8).max(128),
-    displayName: z.string().min(1).max(64).optional()
+    displayName: z.string().min(1).max(64).optional(),
+    // The web sign-up form collects this; iOS does not send it today.
+    // Persisted under users.preferences->'level' for the profile page.
+    level: z.enum(VALID_LEVELS).optional()
   })
 });
 
@@ -27,14 +36,22 @@ const loginSchema = z.object({
 type AuthSuccess = {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; email: string; displayName: string | null };
+  user: {
+    id: string;
+    email: string;
+    displayName: string | null;
+    // ISO-8601 UTC string. Surfaced on the profile page as the "Joined …"
+    // badge. Older clients ignore the field; newer ones treat it as the
+    // user's account-creation timestamp.
+    createdAt: string;
+    // `null` for users created before this rule existed (and for iOS
+    // sign-ups, which do not send the field). Clients render the badge
+    // conditionally so a null does not produce an empty pill.
+    level: UserLevel | null;
+  };
 };
 
-const issueAuthSuccess = async (user: {
-  id: string;
-  email: string;
-  displayName: string | null;
-}): Promise<AuthSuccess> => {
+const issueAuthSuccess = async (user: UserRow): Promise<AuthSuccess> => {
   const payload = {
     sub: user.id,
     email: user.email,
@@ -54,7 +71,9 @@ const issueAuthSuccess = async (user: {
     user: {
       id: user.id,
       email: user.email,
-      displayName: user.displayName
+      displayName: user.displayName,
+      createdAt: user.createdAt.toISOString(),
+      level: user.level
     }
   };
 };
@@ -64,7 +83,7 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
   }
-  const { email, password, displayName } = validation.data.body;
+  const { email, password, displayName, level } = validation.data.body;
 
   try {
     const existing = await findUserByEmail(email);
@@ -76,7 +95,8 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
     const user = await createUserWithPassword({
       email,
       displayName: displayName ?? null,
-      passwordHash
+      passwordHash,
+      level: level ?? null
     });
 
     res.status(201).json(await issueAuthSuccess(user));
