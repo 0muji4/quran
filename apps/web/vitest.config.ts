@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // jsdom does not render styles; disable the project's PostCSS pipeline so
+  // the Panda plugin (which expects a co-located panda.config.*) is not run
+  // on CSS Module imports during tests.
+  css: {
+    postcss: {
+      plugins: []
+    }
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
