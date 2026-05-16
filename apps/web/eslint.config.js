@@ -9,7 +9,8 @@ export default [
       '**/*.config.mjs',
       '**/*.config.ts',
       'next-env.d.ts',
-      '.next/**'
+      '.next/**',
+      'styled-system/**'
     ]
   }
 ];
