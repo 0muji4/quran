@@ -1,1 +1,74 @@
-{}
+{
+  "auth": {
+    "signin": {
+      "eyebrow": "Welcome back",
+      "title": "Sign in to continue your practice",
+      "lede": "Your attempts and progress are saved across every device you sign in to.",
+      "submit": "Sign in",
+      "submitPending": "Signing in…",
+      "footerPrompt": "New to Tilawah?",
+      "footerAction": "Create an account"
+    },
+    "signup": {
+      "eyebrow": "Begin your journey",
+      "title": "Create your Tilawah account",
+      "lede": "Practise daily, track every attempt, and watch your recitation grow.",
+      "submit": "Create account",
+      "submitPending": "Creating account…",
+      "footerPrompt": "Already have an account?",
+      "footerAction": "Sign in"
+    },
+    "field": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Your name"
+    },
+    "password": {
+      "show": "Show",
+      "hide": "Hide",
+      "a11ySuffix": "password",
+      "helper": "Use 8+ characters with a mix of letters and numbers.",
+      "tooShort": "Password must be at least 8 characters."
+    },
+    "divider": {
+      "or": "Or",
+      "orWithEmail": "Or with email"
+    },
+    "social": {
+      "googleFull": "Continue with Google",
+      "googleShort": "Google",
+      "appleFull": "Continue with Apple",
+      "appleShort": "Apple",
+      "comingSoonSuffix": "— coming soon"
+    },
+    "level": {
+      "legend": "Your current level",
+      "legendHint": "(you can change this later)",
+      "beginner": {
+        "label": "Beginner",
+        "description": "Learning Arabic"
+      },
+      "intermediate": {
+        "label": "Intermediate",
+        "description": "Working on tajweed"
+      },
+      "advanced": {
+        "label": "Advanced",
+        "description": "Polishing recitation"
+      }
+    },
+    "terms": {
+      "label": "I agree to the <tosLink>Terms of Service</tosLink> and <privacyLink>Privacy Policy</privacyLink>.",
+      "error": "Please accept the Terms of Service and Privacy Policy to continue."
+    },
+    "error": {
+      "unknown": "Something went wrong"
+    },
+    "brand": {
+      "wordmark": "Tilawah",
+      "kicker": "Recitation Practice",
+      "ayahTranslation": "And recite the Qur'an with measured recitation.",
+      "ayahCitation": "Al-Muzzammil · 73:4"
+    }
+  }
+}
