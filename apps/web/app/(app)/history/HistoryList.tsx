@@ -111,8 +111,26 @@ type Props = {
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
 
+  // Re-read on mount and whenever the sign-in state flips. iOS does the
+  // same via `task(id: session.currentUser?.id)` so the gated history
+  // store reflects the new identity without waiting for the next page
+  // navigation.
   useEffect(() => {
     setAttempts(getRecentAttempts());
+  }, [signedIn]);
+
+  // Re-read when the page becomes visible again (tab switch, app focus).
+  // iOS's `HistoryView.onAppear` covers the same case; on the web,
+  // staying on `/history` while another device records an attempt would
+  // otherwise leave the list stale until a manual reload.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setAttempts(getRecentAttempts());
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
 
   const stats = useMemo(() => (attempts ? computeHistoryStats(attempts) : null), [attempts]);
