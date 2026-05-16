@@ -149,7 +149,6 @@
 "auth.terms.error" = "Please accept the Terms of Service to continue.";
 
 /* Auth — accessibility */
-"auth.back.a11y" = "Back";
 "auth.password.toggle.a11y" = "Show or hide password";
 
 /* Profile tab */
