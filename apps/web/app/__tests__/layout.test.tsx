@@ -9,6 +9,14 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() })
 }));
 
+// AppShell renders <StorageSessionBridge> which writes to the shared
+// storage module's signed-in gate. Stub the call so the layout test
+// stays focused on TopNav rendering and doesn't pull the Server
+// Actions module in for nothing.
+vi.mock('../lib/storage', () => ({
+  setSignedInGate: vi.fn()
+}));
+
 describe('AppShell', () => {
   afterEach(() => {
     cleanup();
