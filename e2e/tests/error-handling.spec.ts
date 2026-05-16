@@ -28,8 +28,9 @@ test.describe('Error Handling', () => {
   }) => {
     await page.goto('/practice/999/1');
     // The server action throws; the page falls back to '/' which the
-    // tolerant home renders even before BFF is ready.
-    await expect(page).toHaveURL(/\/$|\/\?/);
+    // tolerant home renders even before BFF is ready. After ADR 0023 the
+    // home URL carries a locale prefix (default `/en`).
+    await expect(page).toHaveURL(/\/(en|ar)\/?(\?.*)?$/);
     await expect(homePage.heading).toBeVisible();
   });
 

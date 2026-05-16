@@ -4,7 +4,9 @@ import { render, screen, cleanup } from '@testing-library/react';
 
 import { AppShell } from '../components/AppShell';
 
-vi.mock('next/navigation', () => ({
+vi.mock('../../i18n/navigation', () => ({
+  Link: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) =>
+    React.createElement('a', props, children),
   usePathname: () => '/',
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() })
 }));
