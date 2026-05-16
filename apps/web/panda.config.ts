@@ -1,5 +1,6 @@
 import { defineConfig } from '@pandacss/dev';
 import { tokens } from '@quran-project/ui/theme/tokens';
+import { recipes } from '@quran-project/ui/theme/recipes';
 
 // preflight is off because globals.css owns the reset. strictTokens is
 // what locks in ADR 0003 (no `color: 'gold'` without an axis). Recipes
@@ -16,6 +17,7 @@ export default defineConfig({
   outdir: 'styled-system',
   theme: {
     tokens,
+    recipes,
     // Match the @media widths the existing CSS modules already use:
     // nav 600, library 640/900, history 720, practice 720/760.
     breakpoints: {
