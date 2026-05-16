@@ -69,9 +69,6 @@ struct SignUpView: View {
     HStack {
       AuthBackButton(action: onBack)
       Spacer()
-      Text("auth.signup.step", bundle: .module)
-        .font(Font.brand.caption)
-        .foregroundColor(Color.brand.textSecondary)
     }
   }
 
