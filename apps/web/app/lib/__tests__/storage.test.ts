@@ -5,10 +5,10 @@ import {
   getBestScores,
   getLastPracticed,
   getRecentAttempts,
-  migrateAnonymousCacheToBff,
   recordAttempt,
   recordBestScore,
   setLastPracticed,
+  setSignedInGate,
   getAttemptsForToday,
   type Attempt
 } from '../storage';
@@ -53,6 +53,9 @@ describe('storage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    // Default to "signed in" for the bulk of the suite; the gate
+    // behaviour gets its own describe block below.
+    setSignedInGate(true);
   });
 
   describe('recordAttempt + getRecentAttempts', () => {
@@ -190,52 +193,76 @@ describe('storage', () => {
     });
   });
 
-  describe('migrateAnonymousCacheToBff', () => {
-    it('replays last-practiced, best scores, and attempts (oldest first) to the BFF', async () => {
-      setLastPracticed({
-        surahId: '1',
-        ayahNumber: 3,
-        surahNameEn: 'Al-Fatihah',
-        surahNameAr: 'الفاتحة',
-        ayahCount: 7,
-        practicedAt: '2026-05-09T10:00:00.000Z'
-      });
-      recordBestScore('1', 1, 70);
-      recordBestScore('2', 5, 90);
-      recordAttempt(baseAttempt({ id: 'newer', createdAt: '2026-05-09T12:00:00.000Z' }));
-      recordAttempt(baseAttempt({ id: 'older', createdAt: '2026-05-08T12:00:00.000Z' }));
-      vi.clearAllMocks();
+  describe('signed-in gate', () => {
+    const entry = {
+      surahId: '1',
+      ayahNumber: 3,
+      surahNameEn: 'Al-Fatihah',
+      surahNameAr: 'الفاتحة',
+      ayahCount: 7,
+      practicedAt: '2026-05-09T10:00:00.000Z'
+    };
 
-      await migrateAnonymousCacheToBff();
-
-      expect(putLastPracticedToBff).toHaveBeenCalledTimes(1);
-      expect(putBestScoreToBff).toHaveBeenCalledTimes(2);
-      expect(postAttemptToBff).toHaveBeenCalledTimes(2);
-      const replayed = vi
-        .mocked(postAttemptToBff)
-        .mock.calls.map((call) => (call[0] as Attempt).id);
-      expect(replayed).toEqual(['older', 'newer']);
+    beforeEach(() => {
+      setSignedInGate(false);
     });
 
-    it('is a no-op when localStorage is empty', async () => {
-      await migrateAnonymousCacheToBff();
+    it('setLastPracticed drops on the floor and skips the Server Action', async () => {
+      setLastPracticed(entry);
+      await flushPromises();
+      expect(window.localStorage.getItem('tilawah:last-practiced')).toBeNull();
       expect(putLastPracticedToBff).not.toHaveBeenCalled();
-      expect(putBestScoreToBff).not.toHaveBeenCalled();
+    });
+
+    it('recordAttempt drops on the floor and skips the Server Action', async () => {
+      recordAttempt(baseAttempt({ id: 'anon' }));
+      await flushPromises();
+      expect(window.localStorage.getItem('tilawah:recent-attempts')).toBeNull();
       expect(postAttemptToBff).not.toHaveBeenCalled();
     });
 
-    it('swallows BFF rejections so sign-up still completes', async () => {
-      setLastPracticed({
-        surahId: '1',
-        ayahNumber: 1,
-        surahNameEn: 'Al-Fatihah',
-        surahNameAr: 'الفاتحة',
-        ayahCount: 7,
-        practicedAt: '2026-05-09T10:00:00.000Z'
-      });
-      vi.mocked(putLastPracticedToBff).mockRejectedValueOnce(new Error('boom'));
+    it('recordBestScore drops on the floor and skips the Server Action', async () => {
+      recordBestScore('1', 1, 90);
+      await flushPromises();
+      expect(window.localStorage.getItem('tilawah:best-scores')).toBeNull();
+      expect(putBestScoreToBff).not.toHaveBeenCalled();
+    });
 
-      await expect(migrateAnonymousCacheToBff()).resolves.toBeUndefined();
+    it('getLastPracticed returns null even when localStorage has stale data', () => {
+      window.localStorage.setItem('tilawah:last-practiced', JSON.stringify(entry));
+      expect(getLastPracticed()).toBeNull();
+    });
+
+    it('getBestScores returns an empty map even when localStorage has stale data', () => {
+      window.localStorage.setItem(
+        'tilawah:best-scores',
+        JSON.stringify({ '1:1': { score: 80, achievedAt: '2026-05-09T10:00:00.000Z' } })
+      );
+      expect(getBestScores()).toEqual({});
+    });
+
+    it('getRecentAttempts returns an empty array even when localStorage has stale data', () => {
+      window.localStorage.setItem(
+        'tilawah:recent-attempts',
+        JSON.stringify({ attempts: [baseAttempt({ id: 'stale' })] })
+      );
+      expect(getRecentAttempts()).toEqual([]);
+    });
+
+    it('refresh helpers do not fetch while the gate is closed', async () => {
+      getLastPracticed();
+      getBestScores();
+      getRecentAttempts();
+      await flushPromises();
+      expect(fetchLastPracticedFromBff).not.toHaveBeenCalled();
+      expect(fetchBestScoresFromBff).not.toHaveBeenCalled();
+      expect(fetchAttemptsFromBff).not.toHaveBeenCalled();
+    });
+
+    it('clearLocalCache still wipes the cache regardless of gate state', () => {
+      window.localStorage.setItem('tilawah:last-practiced', JSON.stringify(entry));
+      clearLocalCache();
+      expect(window.localStorage.getItem('tilawah:last-practiced')).toBeNull();
     });
   });
 });
