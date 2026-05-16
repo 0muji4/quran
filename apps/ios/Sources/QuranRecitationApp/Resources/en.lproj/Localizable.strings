@@ -94,6 +94,8 @@
 "history.title" = "History";
 "history.filter.all" = "All";
 "history.empty" = "No attempts yet — record one to start your history.";
+"history.signedOutTitle" = "Sign in to track your practice";
+"history.signedOutSubtitle" = "Your attempts, best scores and continue-from progress sync across devices when you have an account.";
 "history.stats.thisWeek" = "This week";
 "history.stats.attempts" = "attempts";
 "history.stats.average" = "Average";
