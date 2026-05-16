@@ -142,6 +142,59 @@ describe('storage', () => {
       await flushPromises();
       expect(postAttemptToBff).toHaveBeenCalledWith(attempt);
     });
+
+    it('recordAttempt surfaces a Server Action failure to the console instead of swallowing it', async () => {
+      // The previous behaviour was `.catch(() => {})`, which once
+      // masked a multi-hour outage where every attempt was rejected
+      // by the BFF as schema-invalid. Keep the failure recoverable
+      // (no throw) but make it visible.
+      vi.mocked(postAttemptToBff).mockRejectedValueOnce(new Error('boom'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      recordAttempt(baseAttempt({ id: 'fails' }));
+      await flushPromises();
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('recordAttempt BFF write failed'),
+        expect.any(Error)
+      );
+      consoleError.mockRestore();
+    });
+
+    it('setLastPracticed surfaces a Server Action failure to the console', async () => {
+      vi.mocked(putLastPracticedToBff).mockRejectedValueOnce(new Error('boom'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      setLastPracticed({
+        surahId: '1',
+        ayahNumber: 1,
+        surahNameEn: 'Al-Fatihah',
+        surahNameAr: 'الفاتحة',
+        ayahCount: 7,
+        practicedAt: '2026-05-09T10:00:00.000Z'
+      });
+      await flushPromises();
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('setLastPracticed BFF write failed'),
+        expect.any(Error)
+      );
+      consoleError.mockRestore();
+    });
+
+    it('recordBestScore surfaces a Server Action failure to the console', async () => {
+      vi.mocked(putBestScoreToBff).mockRejectedValueOnce(new Error('boom'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      recordBestScore('9', 9, 99);
+      await flushPromises();
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('recordBestScore BFF write failed'),
+        expect.any(Error)
+      );
+      consoleError.mockRestore();
+    });
   });
 
   describe('BFF read refresh', () => {
