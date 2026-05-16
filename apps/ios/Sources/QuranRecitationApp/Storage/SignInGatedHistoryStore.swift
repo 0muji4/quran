@@ -78,4 +78,12 @@ final class SignInGatedHistoryStore: HistoryStore {
   func clear() {
     base.clear()
   }
+
+  /// Delegates without gating. AppRoot calls this exactly when the
+  /// gate is about to flip to signed-in, so a guard here would race
+  /// the bridge that flips it.
+  @MainActor
+  func refreshFromRemote() async {
+    await base.refreshFromRemote()
+  }
 }
