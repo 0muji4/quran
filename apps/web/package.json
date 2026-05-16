@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "description": "Next.js RSC app",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "analyze": "ANALYZE=true next build",
+    "dev": "pnpm --filter @quran-project/ui codegen --silent && next dev",
+    "build": "pnpm --filter @quran-project/ui codegen --silent && next build",
+    "analyze": "pnpm --filter @quran-project/ui codegen --silent && ANALYZE=true next build",
     "start": "next start",
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../../apps/web/.prettierignore ../../apps/web",
     "lint": "eslint .",
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.0.3",
+    "@pandacss/dev": "^1.11.1",
     "@quran-project/eslint-config": "workspace:*",
     "@quran-project/ts-config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
