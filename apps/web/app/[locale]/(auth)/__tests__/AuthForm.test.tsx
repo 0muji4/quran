@@ -134,7 +134,10 @@ describe('AuthForm', () => {
       expect(signUpActionMock).toHaveBeenCalledWith({
         email: 'a@b.co',
         password: 'hunter2hunter2',
-        displayName: 'Aisha'
+        displayName: 'Aisha',
+        // The LevelSelector defaults its first option (`beginner`) to
+        // `defaultChecked`, so the form always submits a value.
+        level: 'beginner'
       })
     );
   });
@@ -152,7 +155,8 @@ describe('AuthForm', () => {
       expect(signUpActionMock).toHaveBeenCalledWith({
         email: 'a@b.co',
         password: 'hunter2hunter2',
-        displayName: undefined
+        displayName: undefined,
+        level: 'beginner'
       })
     );
   });

@@ -11,8 +11,14 @@ import { recordIssuedRefreshToken } from '../refresh-tokens';
 vi.mock('../users', () => ({
   findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
-  createUserWithPassword: vi.fn()
+  createUserWithPassword: vi.fn(),
+  VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
+
+// Frozen account-creation timestamp so the JSON response asserts can
+// match exactly. Real users get NOW() from the DB, but the tests mock
+// the storage layer, so we just pick a deterministic moment.
+const TEST_CREATED_AT = new Date('2026-01-15T12:00:00Z');
 
 vi.mock('../refresh-tokens', async () => {
   const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
@@ -58,18 +64,25 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-1',
         email: 'a@b.com',
         displayName: 'Alice',
-        passwordHash: 'hashed'
+        passwordHash: 'hashed',
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate'
       });
 
-      const res = await request(app)
-        .post('/auth/signup')
-        .send({ email: 'a@b.com', password: 'long-enough-pw', displayName: 'Alice' });
+      const res = await request(app).post('/auth/signup').send({
+        email: 'a@b.com',
+        password: 'long-enough-pw',
+        displayName: 'Alice',
+        level: 'intermediate'
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.user).toEqual({
         id: 'user-1',
         email: 'a@b.com',
-        displayName: 'Alice'
+        displayName: 'Alice',
+        createdAt: TEST_CREATED_AT.toISOString(),
+        level: 'intermediate'
       });
       expect(typeof res.body.accessToken).toBe('string');
       expect(typeof res.body.refreshToken).toBe('string');
@@ -84,7 +97,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'u',
         email: 'a@b.com',
         displayName: null,
-        passwordHash: 'x'
+        passwordHash: 'x',
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
 
       const res = await request(app)
@@ -119,7 +134,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-1',
         email: 'a@b.com',
         displayName: 'Alice',
-        passwordHash: hash
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: 'beginner'
       });
 
       const res = await request(app)
@@ -137,7 +154,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-1',
         email: 'a@b.com',
         displayName: null,
-        passwordHash: hash
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
 
       const res = await request(app)
@@ -162,7 +181,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-1',
         email: 'a@b.com',
         displayName: null,
-        passwordHash: null
+        passwordHash: null,
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
 
       const res = await request(app)
@@ -180,7 +201,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-2',
         email: 'r@example.com',
         displayName: null,
-        passwordHash: 'x'
+        passwordHash: 'x',
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
 
       const res = await request(app)
@@ -197,7 +220,9 @@ describe('POST /auth/signup and /auth/login', () => {
         id: 'user-3',
         email: 'p@example.com',
         displayName: null,
-        passwordHash: 'x'
+        passwordHash: 'x',
+        createdAt: TEST_CREATED_AT,
+        level: null
       });
       const before = Date.now();
 
