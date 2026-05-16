@@ -148,7 +148,9 @@ final class URLSessionAuthService: AuthService {
       user: AuthenticatedUser(
         id: payload.user.id,
         email: payload.user.email,
-        displayName: payload.user.displayName
+        displayName: payload.user.displayName,
+        createdAt: payload.user.createdAt,
+        level: payload.user.level
       )
     )
   }
@@ -183,6 +185,11 @@ private struct AuthSuccessResponse: Decodable {
     let id: String
     let email: String
     let displayName: String?
+    // Optional so this client decodes successfully against a BFF that
+    // pre-dates the profile work. The two fields were added together
+    // — see `apps/bff/src/auth/routes.ts`.
+    let createdAt: String?
+    let level: String?
   }
 }
 
