@@ -5,37 +5,7 @@
   "description": "Shared UI components package placeholder",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
-    "./styled-system/styles.css": "./styled-system/styles.css",
-    "./styled-system/css": {
-      "types": "./styled-system/css/index.d.ts",
-      "default": "./styled-system/css/index.mjs"
-    },
-    "./styled-system/recipes": {
-      "types": "./styled-system/recipes/index.d.ts",
-      "default": "./styled-system/recipes/index.mjs"
-    },
-    "./styled-system/patterns": {
-      "types": "./styled-system/patterns/index.d.ts",
-      "default": "./styled-system/patterns/index.mjs"
-    },
-    "./styled-system/tokens": {
-      "types": "./styled-system/tokens/index.d.ts",
-      "default": "./styled-system/tokens/index.mjs"
-    },
-    "./styled-system/jsx": {
-      "types": "./styled-system/jsx/index.d.ts",
-      "default": "./styled-system/jsx/index.mjs"
-    }
-  },
   "scripts": {
-    "prepare": "panda codegen --silent",
-    "codegen": "panda codegen",
-    "codegen:watch": "panda codegen --watch",
     "build": "tsc -p tsconfig.json",
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../ui/.prettierignore ../ui",
     "lint": "eslint .",
@@ -48,7 +18,6 @@
     "react": "^18.3.1"
   },
   "devDependencies": {
-    "@pandacss/dev": "^1.11.1",
     "@quran-project/eslint-config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
