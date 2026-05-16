@@ -154,6 +154,15 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
     const email = String(data.get('email') ?? '').trim();
     const password = String(data.get('password') ?? '');
     const displayName = String(data.get('displayName') ?? '').trim();
+    // LevelSelector posts its value through `name="level"` on the radio
+    // group. The first option is `defaultChecked`, so the field is
+    // always present on a sign-up submit. The signed-in user record
+    // gets the value back from the BFF for the profile badge.
+    const levelRaw = String(data.get('level') ?? '');
+    const level: 'beginner' | 'intermediate' | 'advanced' | undefined =
+      levelRaw === 'beginner' || levelRaw === 'intermediate' || levelRaw === 'advanced'
+        ? levelRaw
+        : undefined;
 
     // Client-side password-length guard mirroring the BFF zod schema
     // (`password.min(8)` on sign-up; sign-in stays unconstrained so users
@@ -180,7 +189,8 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
           await signUpAction({
             email,
             password,
-            displayName: displayName ? displayName : undefined
+            displayName: displayName ? displayName : undefined,
+            level
           });
         } else {
           await signInAction({ email, password });

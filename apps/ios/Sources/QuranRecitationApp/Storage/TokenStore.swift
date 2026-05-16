@@ -19,6 +19,33 @@ struct AuthenticatedUser: Codable, Equatable {
   let id: String
   let email: String
   let displayName: String?
+  /// ISO-8601 string. Optional because (a) the BFF only started
+  /// returning this with the profile work, and (b) accounts persisted
+  /// before that day still need to decode from Keychain without a
+  /// `keyNotFound` error.
+  let createdAt: String?
+  /// Skill bucket the user chose on sign-up. Optional for the same
+  /// backward-compatibility reasons as `createdAt`, plus iOS does not
+  /// send the field on sign-up today so the value can be `null` for
+  /// freshly created accounts as well.
+  let level: String?
+
+  // Default-valued init so call sites that pre-date `createdAt` / `level`
+  // (tests, fixtures, MockAuthService) keep compiling without a churn
+  // PR. New call sites can pass either field explicitly.
+  init(
+    id: String,
+    email: String,
+    displayName: String?,
+    createdAt: String? = nil,
+    level: String? = nil
+  ) {
+    self.id = id
+    self.email = email
+    self.displayName = displayName
+    self.createdAt = createdAt
+    self.level = level
+  }
 }
 
 // MARK: - Protocol
