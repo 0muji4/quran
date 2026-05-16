@@ -82,4 +82,4 @@ apps/ios/.build/
 apps/ios/Package.resolved
 
 # Panda CSS generated code
-packages/ui/styled-system/
+apps/web/styled-system/

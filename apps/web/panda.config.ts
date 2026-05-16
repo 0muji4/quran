@@ -10,10 +10,9 @@ export default defineConfig({
   strictTokens: false,
   strictPropertyValues: false,
   hash: false,
-  include: ['../../apps/web/app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
+  include: ['./app/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
   exclude: ['**/*.module.css'],
   outdir: 'styled-system',
-  emitPackage: false,
   theme: {
     extend: {}
   }
