@@ -130,7 +130,6 @@
 "auth.signin.footerAction" = "Create an account";
 
 /* Auth — sign up */
-"auth.signup.step" = "Step 1 of 1";
 "auth.signup.eyebrow" = "Begin your journey";
 "auth.signup.title" = "Create your account";
 "auth.signup.lede" = "Practise daily, track every attempt.";
