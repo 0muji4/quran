@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "description": "Next.js RSC app",
   "scripts": {
-    "prepare": "panda codegen --silent",
     "codegen": "panda codegen",
     "codegen:watch": "panda codegen --watch",
     "dev": "panda codegen --silent && next dev",
