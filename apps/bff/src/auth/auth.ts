@@ -52,6 +52,16 @@ export const authenticateRequest = (req: AuthedRequest): UserSession | null => {
   const secret = process.env.JWT_SECRET;
   const cookieName = process.env.SESSION_COOKIE_NAME ?? 'session';
 
+  const cookies = parseCookies(req.headers.cookie);
+  const cookieToken = cookies[cookieName];
+  // If the caller did present credentials but they failed to decode
+  // (expired token, tampered signature), surface that as 401 rather
+  // than fall through to MOCK_SESSION. The Web client only triggers
+  // its /auth/refresh path on a 401 from the BFF — silently treating
+  // an expired token as the mock user means writes land under the
+  // wrong user_id and refresh never fires.
+  const authAttempted = !!authHeader?.startsWith('Bearer ') || !!cookieToken;
+
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '').trim();
     const session = decodeJwt(token, secret);
@@ -59,14 +69,16 @@ export const authenticateRequest = (req: AuthedRequest): UserSession | null => {
     if (session) return session;
   }
 
-  const cookies = parseCookies(req.headers.cookie);
-  const cookieToken = cookies[cookieName];
   if (cookieToken) {
     const session = decodeJwt(cookieToken, secret);
     if (session) return session;
   }
 
-  if (process.env.MOCK_SESSION === 'true' && process.env.NODE_ENV !== 'production') {
+  if (
+    !authAttempted &&
+    process.env.MOCK_SESSION === 'true' &&
+    process.env.NODE_ENV !== 'production'
+  ) {
     return buildMockSession();
   }
 

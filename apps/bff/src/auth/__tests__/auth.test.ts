@@ -289,6 +289,59 @@ describe('authenticateRequest', () => {
     expect(result).toBeNull();
   });
 
+  it('returns null on an invalid Bearer token even when MOCK_SESSION is enabled', () => {
+    // The mock-session fallback is for *anonymous* dev traffic. A
+    // failed decode means the caller did present credentials and
+    // they were rejected — surfacing that as 401 lets the Web client
+    // trigger /auth/refresh, instead of being silently absorbed as
+    // the mock user.
+    process.env.MOCK_SESSION = 'true';
+    process.env.NODE_ENV = 'test';
+
+    const req = {
+      headers: { authorization: 'Bearer invalid.token.here' }
+    } as AuthedRequest;
+
+    const result = authenticateRequest(req);
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null on an expired Bearer token even when MOCK_SESSION is enabled', () => {
+    // Same invariant as the invalid-token case — exercised against
+    // the realistic scenario (token decoded but `exp` in the past)
+    // because the wire-level failure mode is identical to the
+    // tampered-signature case but the trigger path is different.
+    process.env.MOCK_SESSION = 'true';
+    process.env.NODE_ENV = 'test';
+
+    const expiredToken = jwt.sign(
+      { sub: 'user-123', email: 'a@b.co', exp: Math.floor(Date.now() / 1000) - 60 },
+      mockEnv.JWT_SECRET
+    );
+
+    const req = {
+      headers: { authorization: `Bearer ${expiredToken}` }
+    } as AuthedRequest;
+
+    const result = authenticateRequest(req);
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null on a bad Cookie token even when MOCK_SESSION is enabled', () => {
+    process.env.MOCK_SESSION = 'true';
+    process.env.NODE_ENV = 'test';
+
+    const req = {
+      headers: { cookie: 'session=not.a.jwt' }
+    } as AuthedRequest;
+
+    const result = authenticateRequest(req);
+
+    expect(result).toBeNull();
+  });
+
   it('uses custom cookie name from env', () => {
     process.env.SESSION_COOKIE_NAME = 'customSession';
 
