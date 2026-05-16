@@ -49,5 +49,41 @@ export const tokens = defineTokens({
       DEFAULT: { value: '#e5dcc9' },
       strong: { value: '#b8893c' }
     }
+  },
+  // 4px base, matches the --space-N scale globals.css has shipped with.
+  spacing: {
+    '1': { value: '4px' },
+    '2': { value: '8px' },
+    '3': { value: '12px' },
+    '4': { value: '16px' },
+    '5': { value: '20px' },
+    '6': { value: '24px' },
+    '8': { value: '32px' },
+    '10': { value: '40px' },
+    '12': { value: '48px' }
+  },
+  radii: {
+    xs: { value: '6px' },
+    sm: { value: '10px' },
+    md: { value: '14px' },
+    lg: { value: '20px' },
+    pill: { value: '999px' }
+  },
+  shadows: {
+    card: { value: '0 8px 24px rgba(40, 28, 12, 0.06)' },
+    cardHover: { value: '0 14px 32px rgba(40, 28, 12, 0.1)' }
+  },
+  // Font tokens reference the next/font CSS variables wired in
+  // app/layout.tsx (--font-cormorant / --font-inter / --font-amiri).
+  fonts: {
+    serif: {
+      value: 'var(--font-cormorant), "Cormorant Garamond", "Times New Roman", Georgia, serif'
+    },
+    sans: {
+      value: 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    },
+    arabic: {
+      value: 'var(--font-amiri), "Amiri", "Scheherazade New", serif'
+    }
   }
 });

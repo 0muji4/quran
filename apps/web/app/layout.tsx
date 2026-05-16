@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import { WebTelemetryInit } from './telemetry/WebTelemetryInit';
+// Panda's emitted stylesheet has to be imported before globals.css so
+// the legacy :root vars in globals.css win on shared properties during
+// the migration. Removed in PR 11 once globals.css's token block is gone.
+import '../styled-system/styles.css';
 import './globals.css';
 
 const cormorant = Cormorant_Garamond({

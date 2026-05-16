@@ -4,17 +4,17 @@
   "version": "0.0.0",
   "description": "Next.js RSC app",
   "scripts": {
-    "codegen": "panda codegen",
+    "codegen": "panda codegen --silent && panda cssgen --silent",
     "codegen:watch": "panda codegen --watch",
-    "dev": "panda codegen --silent && next dev",
-    "build": "panda codegen --silent && next build",
-    "analyze": "panda codegen --silent && ANALYZE=true next build",
+    "dev": "pnpm codegen && next dev",
+    "build": "pnpm codegen && next build",
+    "analyze": "pnpm codegen && ANALYZE=true next build",
     "start": "next start",
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../../apps/web/.prettierignore ../../apps/web",
-    "lint": "panda codegen --silent && eslint .",
-    "typecheck": "panda codegen --silent && tsc --noEmit",
-    "test": "panda codegen --silent && vitest run",
-    "test:watch": "panda codegen --silent && vitest"
+    "lint": "pnpm codegen && eslint .",
+    "typecheck": "pnpm codegen && tsc --noEmit",
+    "test": "pnpm codegen && vitest run",
+    "test:watch": "pnpm codegen && vitest"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
