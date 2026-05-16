@@ -49,6 +49,44 @@ export const findUserById = async (id: string): Promise<UserRow | null> => {
   return mapRow(result.rows[0]);
 };
 
+// Partial-update helper. `undefined` keeps the column as-is so the
+// caller can update one field without clobbering the other. `null` is
+// distinct from `undefined`: `displayName: null` clears the column
+// (rare — the web form forbids it today — but accepted for symmetry
+// with the create path) and `level: null` clears the skill bucket.
+export const updateUserProfile = async (
+  id: string,
+  updates: { displayName?: string | null; level?: UserLevel | null }
+): Promise<UserRow | null> => {
+  const pool = getDatabasePool();
+  if (!pool) return null;
+  // Build SET clause dynamically so we don't overwrite a column that
+  // wasn't sent. COALESCE is wrong here: it would treat an explicit
+  // null as "no update".
+  const sets: string[] = ['updated_at = NOW()'];
+  const values: unknown[] = [];
+  if (Object.prototype.hasOwnProperty.call(updates, 'displayName')) {
+    values.push(updates.displayName ?? null);
+    sets.push(`display_name = $${values.length}`);
+  }
+  if (Object.prototype.hasOwnProperty.call(updates, 'level')) {
+    values.push(updates.level ?? null);
+    sets.push(`level = $${values.length}`);
+  }
+  // Nothing to update? Treat as a read so the caller still gets a
+  // current snapshot to refresh its UI with.
+  if (values.length === 0) {
+    return findUserById(id);
+  }
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE users SET ${sets.join(', ')} WHERE id = $${values.length} RETURNING ${USER_COLUMNS}`,
+    values
+  );
+  if (!result.rowCount) return null;
+  return mapRow(result.rows[0]);
+};
+
 export const createUserWithPassword = async (input: {
   email: string;
   displayName: string | null;

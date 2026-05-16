@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
-import { createUserWithPassword, findUserByEmail, findUserById } from '../users';
+import { createUserWithPassword, findUserByEmail, findUserById, updateUserProfile } from '../users';
 import { hashPassword, verifyPassword } from '../credentials';
 import { recordIssuedRefreshToken } from '../refresh-tokens';
 
@@ -12,6 +12,7 @@ vi.mock('../users', () => ({
   findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
   createUserWithPassword: vi.fn(),
+  updateUserProfile: vi.fn(),
   VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
 
@@ -302,6 +303,92 @@ describe('POST /auth/signup and /auth/login', () => {
       const token = jwt.sign({ sub: 'ghost' }, 'test-access-secret');
 
       const res = await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('PATCH /auth/me', () => {
+    const token = jwt.sign({ sub: 'user-6', email: 'edit@example.com' }, 'test-access-secret');
+
+    it('returns 401 without an access token', async () => {
+      const res = await request(app).patch('/auth/me').send({ displayName: 'New Name' });
+      expect(res.status).toBe(401);
+      expect(updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('updates displayName and returns the fresh user shape', async () => {
+      vi.mocked(updateUserProfile).mockResolvedValue({
+        id: 'user-6',
+        email: 'edit@example.com',
+        displayName: 'New Name',
+        passwordHash: 'h',
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate'
+      });
+
+      const res = await request(app)
+        .patch('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ displayName: 'New Name' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user).toEqual({
+        id: 'user-6',
+        email: 'edit@example.com',
+        displayName: 'New Name',
+        createdAt: TEST_CREATED_AT.toISOString(),
+        level: 'intermediate'
+      });
+      expect(updateUserProfile).toHaveBeenCalledWith('user-6', { displayName: 'New Name' });
+    });
+
+    it('updates level only when displayName is omitted', async () => {
+      vi.mocked(updateUserProfile).mockResolvedValue({
+        id: 'user-6',
+        email: 'edit@example.com',
+        displayName: 'Existing',
+        passwordHash: 'h',
+        createdAt: TEST_CREATED_AT,
+        level: 'advanced'
+      });
+
+      const res = await request(app)
+        .patch('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ level: 'advanced' });
+
+      expect(res.status).toBe(200);
+      expect(updateUserProfile).toHaveBeenCalledWith('user-6', { level: 'advanced' });
+    });
+
+    it('rejects an empty body with 400', async () => {
+      const res = await request(app)
+        .patch('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown level value with 400', async () => {
+      const res = await request(app)
+        .patch('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ level: 'wizard' });
+
+      expect(res.status).toBe(400);
+      expect(updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 if the row vanished mid-edit', async () => {
+      vi.mocked(updateUserProfile).mockResolvedValue(null);
+
+      const res = await request(app)
+        .patch('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ displayName: 'Whoever' });
 
       expect(res.status).toBe(404);
     });
