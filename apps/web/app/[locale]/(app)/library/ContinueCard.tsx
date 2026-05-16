@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
 import type { SurahSummary } from '../../../lib/types';
 import { getLastPracticed } from '../../../lib/storage';
@@ -123,6 +124,7 @@ const btnGhostDarkClass = css({
 
 export function ContinueCard({ surahs }: Props) {
   const [last] = useLocalStorageState(getLastPracticed, null);
+  const t = useTranslations('library.continue');
   const p = panel({ surface: 'continue' });
 
   if (!last) {
@@ -130,17 +132,15 @@ export function ContinueCard({ surahs }: Props) {
       <div className={cx(p.root, continueRootExtras)}>
         <div className={ornamentClass}>{COMPASS_SVG}</div>
         <span className={p.badge}>
-          <BookmarkIcon /> Get started
+          <BookmarkIcon /> {t('badgeGetStarted')}
         </span>
         <div className={cx(p.body, bodyExtras)}>
-          <h2 className={p.title}>Begin your tilawah</h2>
-          <p className={cx(p.subtitle, metaOverride)}>
-            Pick any surah from the library below to record your first ayah.
-          </p>
+          <h2 className={p.title}>{t('emptyTitle')}</h2>
+          <p className={cx(p.subtitle, metaOverride)}>{t('emptyDescription')}</p>
         </div>
         <div className={actionsClass}>
           <Link className={button({ tone: 'gold' })} href={`/practice/${surahs[0]?.id ?? '1'}/1`}>
-            <ArrowRightIcon /> Start practice
+            <ArrowRightIcon /> {t('emptyCta')}
           </Link>
         </div>
       </div>
@@ -158,7 +158,7 @@ export function ContinueCard({ surahs }: Props) {
     <div className={cx(p.root, continueRootExtras)}>
       <div className={ornamentClass}>{COMPASS_SVG}</div>
       <span className={p.badge}>
-        <BookmarkIcon /> Continue
+        <BookmarkIcon /> {t('badge')}
       </span>
       <div className={cx(p.body, bodyExtras)}>
         <div className={rowClass}>
@@ -168,8 +168,11 @@ export function ContinueCard({ surahs }: Props) {
           <span className={p.title}>{surahNameEn}</span>
         </div>
         <p className={cx(p.subtitle, metaOverride)}>
-          Ayah {last.ayahNumber} of {ayahCount} · last practiced{' '}
-          {new Date(last.practicedAt).toLocaleDateString()}
+          {t('progress', {
+            ayah: last.ayahNumber,
+            total: ayahCount,
+            date: new Date(last.practicedAt).toLocaleDateString()
+          })}
         </p>
         <div className={progressTrackClass} aria-hidden="true">
           <div className={progressFillClass} style={{ width: `${progress}%` }} />
@@ -180,10 +183,10 @@ export function ContinueCard({ surahs }: Props) {
           className={button({ tone: 'gold' })}
           href={`/practice/${last.surahId}/${last.ayahNumber}`}
         >
-          <ArrowRightIcon /> Resume ayah {last.ayahNumber}
+          <ArrowRightIcon /> {t('resume', { ayah: last.ayahNumber })}
         </Link>
         <Link className={btnGhostDarkClass} href={`/practice/${last.surahId}/1`}>
-          Start over
+          {t('startOver')}
         </Link>
       </div>
     </div>

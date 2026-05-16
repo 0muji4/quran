@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 
 import { AppShell } from '../components/AppShell';
+import messages from '../../messages/en.json';
 
 vi.mock('../../i18n/navigation', () => ({
   Link: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) =>
@@ -19,17 +21,24 @@ vi.mock('../lib/storage', () => ({
   setSignedInGate: vi.fn()
 }));
 
+const renderShell = (props: React.ComponentProps<typeof AppShell>) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <AppShell {...props} />
+    </NextIntlClientProvider>
+  );
+
 describe('AppShell', () => {
   afterEach(() => {
     cleanup();
   });
 
   it('renders the Tilawah brand and primary tabs', () => {
-    render(
-      <AppShell session={null}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     expect(screen.getByText('Tilawah')).toBeInTheDocument();
     expect(screen.getByText('Recitation Practice')).toBeInTheDocument();
@@ -39,11 +48,11 @@ describe('AppShell', () => {
   });
 
   it('renders children inside the main element', () => {
-    render(
-      <AppShell session={null}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     const main = screen.getByRole('main');
     expect(main).toBeInTheDocument();
@@ -51,11 +60,11 @@ describe('AppShell', () => {
   });
 
   it('marks the active tab based on pathname', () => {
-    render(
-      <AppShell session={null}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     const surahTab = screen.getByRole('link', { name: 'Surah library' });
     expect(surahTab).toHaveAttribute('aria-current', 'page');
@@ -65,22 +74,22 @@ describe('AppShell', () => {
   });
 
   it('shows a Sign in link when no session is present', () => {
-    render(
-      <AppShell session={null}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in');
     expect(screen.queryByRole('button', { name: /sign out/i })).not.toBeInTheDocument();
   });
 
   it('shows the avatar initial and Sign out button when signed in', () => {
-    render(
-      <AppShell session={{ id: 'u1', email: 'a@b.co', displayName: 'Aisha' }}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: { id: 'u1', email: 'a@b.co', displayName: 'Aisha' },
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     const avatar = screen.getByLabelText('Signed in as Aisha');
     expect(avatar).toHaveTextContent('A');
@@ -88,11 +97,11 @@ describe('AppShell', () => {
   });
 
   it('falls back to the email initial when displayName is missing', () => {
-    render(
-      <AppShell session={{ id: 'u1', email: 'b@c.co', displayName: null }}>
-        <div>Test Content</div>
-      </AppShell>
-    );
+    renderShell({
+      session: { id: 'u1', email: 'b@c.co', displayName: null },
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
 
     expect(screen.getByLabelText('Signed in as b@c.co')).toHaveTextContent('B');
   });

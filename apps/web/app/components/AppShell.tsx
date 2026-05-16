@@ -7,9 +7,13 @@ import { TopNav } from './TopNav';
 type Props = {
   children: ReactNode;
   session: Session | null;
+  // Translated label for the skip link. Passed in by the async layout
+  // owner via `getTranslations` so AppShell stays a sync component and
+  // can still be unit-tested with @testing-library.
+  skipLinkLabel: string;
 };
 
-export function AppShell({ children, session }: Props) {
+export function AppShell({ children, session, skipLinkLabel }: Props) {
   const sessionView = session
     ? { initial: initialFor(session), label: session.displayName ?? session.email }
     : null;
@@ -24,7 +28,7 @@ export function AppShell({ children, session }: Props) {
        * main landmark is given tabIndex={-1} so that focus actually lands on
        * it after activation rather than scrolling past silently. */}
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        {skipLinkLabel}
       </a>
       <TopNav session={sessionView} />
       <main id="main-content" tabIndex={-1} className="page-content" role="main">
