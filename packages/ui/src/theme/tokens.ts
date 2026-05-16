@@ -48,6 +48,15 @@ export const tokens = defineTokens({
     border: {
       DEFAULT: { value: '#e5dcc9' },
       strong: { value: '#b8893c' }
+    },
+    // Per-segment scoring status, used by SegmentHighlights and any
+    // future score-breakdown surface. Intentionally keeps the universal
+    // traffic-light hues rather than brand-aligning to teal/red — pass
+    // / warn / fail need to read at a glance regardless of palette.
+    score: {
+      pass: { value: '#16a34a' },
+      warn: { value: '#f59e0b' },
+      fail: { value: '#dc2626' }
     }
   },
   // 4px base, matches the --space-N scale globals.css has shipped with.
