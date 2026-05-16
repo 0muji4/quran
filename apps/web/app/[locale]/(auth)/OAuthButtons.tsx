@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { AppleIcon } from './icons/AppleIcon';
 import { css } from '../../../styled-system/css';
@@ -38,9 +41,13 @@ const buttonClass = css({
 // Google / Apple sign-in buttons. Rendered to match the design but
 // disabled — federated auth is deferred per ADR 0010 (no OAuth client
 // config yet). The aria-label spells out why they are inert.
+// Client component because AuthForm (`'use client'`) instantiates it
+// directly; the only state we touch here is translation lookup.
 export function OAuthButtons({ variant }: Props) {
-  const googleLabel = variant === 'full' ? 'Continue with Google' : 'Google';
-  const appleLabel = variant === 'full' ? 'Continue with Apple' : 'Apple';
+  const t = useTranslations('auth.social');
+  const googleLabel = t(variant === 'full' ? 'googleFull' : 'googleShort');
+  const appleLabel = t(variant === 'full' ? 'appleFull' : 'appleShort');
+  const comingSoon = t('comingSoonSuffix');
 
   return (
     <div className={rowClass}>
@@ -48,7 +55,7 @@ export function OAuthButtons({ variant }: Props) {
         type="button"
         className={buttonClass}
         disabled
-        aria-label={`${googleLabel} — coming soon`}
+        aria-label={`${googleLabel} ${comingSoon}`}
       >
         <GoogleIcon />
         <span>{googleLabel}</span>
@@ -57,7 +64,7 @@ export function OAuthButtons({ variant }: Props) {
         type="button"
         className={buttonClass}
         disabled
-        aria-label={`${appleLabel} — coming soon`}
+        aria-label={`${appleLabel} ${comingSoon}`}
       >
         <AppleIcon />
         <span>{appleLabel}</span>

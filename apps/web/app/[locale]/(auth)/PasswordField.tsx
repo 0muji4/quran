@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { css, cx } from '../../../styled-system/css';
 
 type Props = {
@@ -92,6 +93,7 @@ export function PasswordField({
 }: Props) {
   const [visible, setVisible] = useState(false);
   const helperId = useId();
+  const t = useTranslations('auth.password');
 
   return (
     <div className={fieldClass}>
@@ -118,8 +120,8 @@ export function PasswordField({
           aria-controls={id}
           disabled={disabled}
         >
-          {visible ? 'Hide' : 'Show'}
-          <span className="sr-only"> password</span>
+          {visible ? t('hide') : t('show')}
+          <span className="sr-only"> {t('a11ySuffix')}</span>
         </button>
       </div>
       {helperText && (
