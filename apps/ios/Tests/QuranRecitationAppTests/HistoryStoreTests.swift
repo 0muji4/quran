@@ -72,6 +72,22 @@ final class HistoryStoreTests: XCTestCase {
     XCTAssertEqual(store.recentAttempts(limit: 100).count, 10)
   }
 
+  func test_clear_dropsAllPersistedRecords() {
+    store.setLastPracticed(LastPracticed(
+      surahId: "1", ayahNumber: 1,
+      surahNameEn: "Al-Fatihah", surahNameAr: "الفاتحة",
+      ayahCount: 7, practicedAt: Date()
+    ))
+    store.recordBestScore(surahId: "1", ayahNumber: 1, score: 88, achievedAt: Date())
+    store.recordAttempt(makeAttempt(id: "a1"))
+
+    store.clear()
+
+    XCTAssertNil(store.lastPracticed())
+    XCTAssertNil(store.bestScore(surahId: "1", ayahNumber: 1))
+    XCTAssertEqual(store.recentAttempts(limit: 50), [])
+  }
+
   // MARK: - Helpers
 
   private func makeAttempt(id: String) -> Attempt {
