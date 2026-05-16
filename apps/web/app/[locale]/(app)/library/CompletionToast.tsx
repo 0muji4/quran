@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '../../../../i18n/navigation';
 import { css } from '../../../../styled-system/css';
 
@@ -76,6 +77,7 @@ export function CompletionToast() {
   const searchParams = useSearchParams();
   const completed = searchParams.get('completed');
   const [visible, setVisible] = useState(Boolean(completed));
+  const t = useTranslations('library.completion');
 
   useEffect(() => {
     if (!completed) {
@@ -106,16 +108,16 @@ export function CompletionToast() {
         ✦
       </span>
       <div>
-        <strong className={titleClass}>{decodeURIComponent(completed)} completed</strong>
-        <p className={bodyClass}>
-          Beautifully done — pick another surah whenever you&apos;re ready.
-        </p>
+        <strong className={titleClass}>
+          {t('title', { surahName: decodeURIComponent(completed) })}
+        </strong>
+        <p className={bodyClass}>{t('body')}</p>
       </div>
       <button
         type="button"
         className={closeClass}
         onClick={() => setVisible(false)}
-        aria-label="Dismiss"
+        aria-label={t('dismiss')}
       >
         ×
       </button>

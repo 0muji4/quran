@@ -1,8 +1,9 @@
 'use client';
 
 import { useTransition } from 'react';
-import { useRouter } from '../../../../i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { WarningTriangleIcon } from '../../../components/icons/ArrowRightIcon';
+import { useRouter } from '../../../../i18n/navigation';
 import { css } from '../../../../styled-system/css';
 import { button } from '../../../../styled-system/recipes';
 
@@ -40,6 +41,7 @@ const recoveryClass = css({
 export function LibraryErrorState() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations('library.error');
 
   const onRetry = (): void => {
     startTransition(() => {
@@ -50,18 +52,15 @@ export function LibraryErrorState() {
   return (
     <div className={wrapperClass} role="alert">
       <WarningTriangleIcon className={iconClass} />
-      <p className={titleClass}>Couldn&apos;t load the surah list</p>
-      <p className={recoveryClass}>
-        Check your connection and try again. If the problem persists, the service may be temporarily
-        unavailable.
-      </p>
+      <p className={titleClass}>{t('title')}</p>
+      <p className={recoveryClass}>{t('recovery')}</p>
       <button
         type="button"
         className={button({ tone: 'teal', size: 'lg' })}
         onClick={onRetry}
         disabled={pending}
       >
-        {pending ? 'Retrying…' : 'Retry'}
+        {pending ? t('retrying') : t('retry')}
       </button>
     </div>
   );

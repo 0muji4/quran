@@ -1,7 +1,8 @@
 'use client';
 
-import { Link } from '../../../../i18n/navigation';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { Link } from '../../../../i18n/navigation';
 import type { SurahSummary } from '../../../lib/types';
 import type { BffSuggestionResponse } from '../../../lib/classify';
 import { getLastPracticed } from '../../../lib/storage';
@@ -67,18 +68,9 @@ const linkTealClass = css({
   _hover: { color: 'teal.deep' }
 });
 
-const blurbFor = (surah: SurahSummary): string => {
-  if (surah.ayahCount <= 5) {
-    return `Short surah · ${surah.ayahCount} ayahs · ~90 seconds. A great warm-up before longer practice.`;
-  }
-  if (surah.ayahCount <= 15) {
-    return `${surah.ayahCount} ayahs · perfect for a focused practice session.`;
-  }
-  return `${surah.ayahCount} ayahs · build endurance with regular reading.`;
-};
-
 export function SuggestedCard({ surahs, suggestion = null }: Props) {
   const [last] = useLocalStorageState(getLastPracticed, null);
+  const t = useTranslations('library.suggested');
   const picked = useMemo(
     () => pickSuggestion(surahs, last, suggestion?.suggested.surahId),
     [surahs, last, suggestion?.suggested.surahId]
@@ -90,17 +82,19 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
 
   const difficulty = difficultyOf(picked, suggestion?.difficulties);
   const p = panel({ surface: 'paper' });
+  const blurbKey =
+    picked.ayahCount <= 5 ? 'blurbShort' : picked.ayahCount <= 15 ? 'blurbMedium' : 'blurbLong';
 
   return (
     <div className={cx(p.root, rootExtras)}>
       <span className={p.badge}>
-        <PlusIcon /> Suggested for you
+        <PlusIcon /> {t('badge')}
       </span>
       <h2 className={cx(p.title, titleExtras)}>{picked.nameEn}</h2>
-      <p className={cx(p.subtitle, descExtras)}>{blurbFor(picked)}</p>
+      <p className={cx(p.subtitle, descExtras)}>{t(blurbKey, { count: picked.ayahCount })}</p>
       <div className={footerClass}>
         <span className={metaClass}>
-          <span>{picked.ayahCount} ayahs</span>
+          <span>{t('meta', { count: picked.ayahCount })}</span>
           <span className={dotClass} aria-hidden="true" />
           <span>{picked.revelationPlace}</span>
           <span className={dotClass} aria-hidden="true" />
@@ -119,7 +113,7 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
             })
           }
         >
-          Begin <ArrowRightIcon size={14} />
+          {t('begin')} <ArrowRightIcon size={14} />
         </Link>
       </div>
     </div>
