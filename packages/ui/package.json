@@ -17,6 +17,10 @@
     "./theme/tokens": {
       "types": "./src/theme/tokens.ts",
       "default": "./src/theme/tokens.ts"
+    },
+    "./theme/recipes": {
+      "types": "./src/theme/recipes/index.ts",
+      "default": "./src/theme/recipes/index.ts"
     }
   },
   "scripts": {
