@@ -21,15 +21,19 @@ struct QuranRecitationApp: App {
       refresher: refresher,
       onSignOut: { session.signOut() }
     )
+    let meClient = HTTPMeClient(http: http)
     let historyStore = SignInGatedHistoryStore(
-      base: UserDefaultsHistoryStore(),
+      base: RemoteSyncedHistoryStore(
+        cache: UserDefaultsHistoryStore(),
+        me: meClient
+      ),
       isSignedIn: { session.isSignedIn }
     )
 
     self.telemetry = telemetry
     self.backend = backend
     self.authService = authService
-    self.meClient = HTTPMeClient(http: http)
+    self.meClient = meClient
     self.historyStore = historyStore
     self._session = StateObject(wrappedValue: session)
   }

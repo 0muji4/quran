@@ -85,6 +85,156 @@ final class MeClientTests: XCTestCase {
     XCTAssertEqual(spy.requests.first?.url?.lastPathComponent, "suggestions")
   }
 
+  // MARK: - Last practiced
+
+  func test_lastPracticed_decodesValidPayloadIncludingFractionalSecondsTimestamp() async throws {
+    let body = Data("""
+      {
+        "surahId": "1",
+        "ayahNumber": 3,
+        "surahNameEn": "Al-Fatihah",
+        "surahNameAr": "الفاتحة",
+        "ayahCount": 7,
+        "practicedAt": "2026-05-08T10:00:00.000Z"
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let entry = try await client.lastPracticed()
+
+    XCTAssertEqual(entry?.surahId, "1")
+    XCTAssertEqual(entry?.ayahNumber, 3)
+    XCTAssertEqual(entry?.practicedAt.timeIntervalSince1970, 1762596000.0)
+  }
+
+  func test_lastPracticed_nullBody_returnsNil() async throws {
+    // The BFF emits literal `null` when the row is absent. JSONDecoder
+    // refuses `null` for a non-Optional target, so MeClient probes the
+    // bytes before decoding.
+    let spy = TransportSpy(responses: [
+      { (Data("null".utf8), httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let entry = try await client.lastPracticed()
+
+    XCTAssertNil(entry)
+  }
+
+  // MARK: - Best scores
+
+  func test_bestScores_decodesDictionary() async throws {
+    let body = Data("""
+      {
+        "1:1": { "score": 88, "achievedAt": "2026-05-08T10:00:00.000Z" },
+        "2:3": { "score": 95, "achievedAt": "2026-05-08T11:00:00.000Z" }
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let scores = try await client.bestScores()
+
+    XCTAssertEqual(scores["1:1"]?.score, 88)
+    XCTAssertEqual(scores["2:3"]?.score, 95)
+  }
+
+  func test_putBestScore_putsAtComposedKeyUrl() async throws {
+    let body = Data("""
+      { "score": 92, "achievedAt": "2026-05-08T10:00:00.000Z" }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let entry = BestScoreEntry(score: 92, achievedAt: Date(timeIntervalSince1970: 1762596000))
+    _ = try await client.putBestScore(surahId: "2", ayahNumber: 3, entry: entry)
+
+    let request = try XCTUnwrap(spy.requests.first)
+    XCTAssertEqual(request.httpMethod, "PUT")
+    XCTAssertEqual(request.url?.path, "/me/best-scores/2:3")
+  }
+
+  // MARK: - Attempts
+
+  func test_attempts_unwrapsEnvelopeAndPropagatesLimitQuery() async throws {
+    let body = Data("""
+      {
+        "attempts": [
+          {
+            "id": "a1",
+            "surahId": "1",
+            "surahNameEn": "Al-Fatihah",
+            "ayahNumber": 1,
+            "score": 88,
+            "jobId": "job-1",
+            "createdAt": "2026-05-08T10:00:00.000Z",
+            "status": "COMPLETED",
+            "durationMs": 4200
+          }
+        ]
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let attempts = try await client.attempts(limit: 50)
+
+    XCTAssertEqual(attempts.count, 1)
+    XCTAssertEqual(attempts.first?.id, "a1")
+    XCTAssertEqual(spy.requests.first?.url?.query, "limit=50")
+  }
+
+  func test_recordAttempt_postsJsonBody() async throws {
+    let body = Data("""
+      {
+        "id": "a1",
+        "surahId": "1",
+        "surahNameEn": "Al-Fatihah",
+        "ayahNumber": 1,
+        "score": 88,
+        "jobId": "job-1",
+        "createdAt": "2026-05-08T10:00:00.000Z",
+        "status": "COMPLETED",
+        "durationMs": 4200
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 201)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let attempt = Attempt(
+      id: "client-uuid",
+      surahId: "1",
+      surahNameEn: "Al-Fatihah",
+      ayahNumber: 1,
+      score: 88,
+      jobId: "job-1",
+      createdAt: Date(timeIntervalSince1970: 1762596000),
+      status: .completed,
+      durationMs: 4200
+    )
+
+    let returned = try await client.recordAttempt(attempt)
+
+    let request = try XCTUnwrap(spy.requests.first)
+    XCTAssertEqual(request.httpMethod, "POST")
+    XCTAssertEqual(request.url?.path, "/me/attempts")
+    // The server returned a different id ("a1") than the client sent;
+    // MeClient surfaces what the server stored so the caller can
+    // reconcile.
+    XCTAssertEqual(returned.id, "a1")
+  }
+
   // MARK: - Helpers
 
   private func makeClient(transport: @escaping AuthHTTPClient.Transport) -> HTTPMeClient {

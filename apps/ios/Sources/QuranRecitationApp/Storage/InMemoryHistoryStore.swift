@@ -59,4 +59,9 @@ final class InMemoryHistoryStore: HistoryStore {
     bestScores = [:]
     attempts = []
   }
+
+  @MainActor
+  func refreshFromRemote() async {
+    // No remote; in-memory state is the source of truth.
+  }
 }

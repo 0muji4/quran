@@ -58,6 +58,15 @@ protocol HistoryStore {
   /// (via the AppRoot observer) so a signed-out device does not leak
   /// the previous user's history into the next sign-in (see ADR 0021).
   func clear()
+
+  /// Pull authoritative state from the remote source, replacing the
+  /// local cache. AppRoot invokes this when the session transitions
+  /// to signed-in so the new user's data lands before any view reads
+  /// it. Implementations without a remote (UserDefaults, InMemory)
+  /// no-op; the decorator delegates; only `RemoteSyncedHistoryStore`
+  /// does real work.
+  @MainActor
+  func refreshFromRemote() async
 }
 
 extension HistoryStore {
