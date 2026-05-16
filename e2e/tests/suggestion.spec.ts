@@ -34,7 +34,8 @@ test.describe('Suggested card', () => {
     await expect(beginLink).toBeVisible();
 
     const href = await beginLink.getAttribute('href');
-    expect(href).toMatch(/^\/practice\/\d+\/1$/);
+    // After ADR 0023, the href carries a locale prefix (e.g. `/en/practice/1/1`).
+    expect(href).toMatch(/^\/(en|ar)\/practice\/\d+\/1$/);
   });
 
   test('shows a heading and difficulty label inside the card', async ({ homePage, page }) => {
