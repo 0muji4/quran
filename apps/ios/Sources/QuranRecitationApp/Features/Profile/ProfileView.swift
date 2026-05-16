@@ -33,14 +33,12 @@ struct ProfileView: View {
           case .signIn:
             SignInView(
               viewModel: authViewModel,
-              onBack: { path = [] },
               onNavigateToSignUp: { path = [.signUp] },
               onAuthenticated: { path = [] }
             )
           case .signUp:
             SignUpView(
               viewModel: authViewModel,
-              onBack: { path = [] },
               onNavigateToSignIn: { path = [.signIn] },
               onAuthenticated: { path = [] }
             )

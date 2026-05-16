@@ -3,26 +3,20 @@ import SwiftUI
 /// Sign in screen — pushed onto the Profile tab's `NavigationStack`.
 /// Brand mark, email + password fields, the primary "Sign in" action,
 /// the deferred social buttons, and a link across to sign-up. Matches
-/// `docs/design/iOS _ Sign in` (plus a back chevron, since the screen
-/// is now reached from the Profile tab rather than a launch gate).
+/// `docs/design/iOS _ Sign in`. Users leave the screen by signing in,
+/// crossing to sign-up via the footer, swiping back, or switching tabs.
 ///
 /// The `AuthViewModel` is owned by `ProfileView` and shared with
 /// `SignUpView`, so anything typed survives the sign-in ↔ sign-up
 /// toggle.
 struct SignInView: View {
   @ObservedObject var viewModel: AuthViewModel
-  let onBack: () -> Void
   let onNavigateToSignUp: () -> Void
   let onAuthenticated: () -> Void
 
   var body: some View {
     ScrollView {
       VStack(spacing: Spacing.xl) {
-        HStack {
-          AuthBackButton(action: onBack)
-          Spacer()
-        }
-
         VStack(spacing: Spacing.md) {
           MihrabMark()
           VStack(spacing: Spacing.xs) {
