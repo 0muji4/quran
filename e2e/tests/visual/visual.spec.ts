@@ -92,7 +92,13 @@ const stableSnapshot = async (page: Page): Promise<void> => {
 test.use({ viewport: VIEWPORT });
 
 test.describe('visual regression — desktop 1280x720', () => {
-  test('library landing with seeded Continue card', async ({ page, context }) => {
+  test.skip('library landing with seeded Continue card (signed-in path)', async ({
+    page,
+    context
+  }) => {
+    // Re-enable when the signed-in Playwright fixture lands. Continue
+    // and History data are account-scoped — anonymous localStorage
+    // seeding no longer surfaces in the rendered card.
     await context.addInitScript((seed) => {
       window.localStorage.setItem('tilawah:last-practiced', JSON.stringify(seed));
     }, SEEDED_LAST_PRACTICED);
@@ -107,7 +113,11 @@ test.describe('visual regression — desktop 1280x720', () => {
     });
   });
 
-  test('history with three seeded attempts', async ({ page, context }) => {
+  test.skip('history with three seeded attempts (signed-in path)', async ({
+    page,
+    context
+  }) => {
+    // Re-enable when the signed-in Playwright fixture lands.
     await context.addInitScript((attempts) => {
       window.localStorage.setItem(
         'tilawah:recent-attempts',
