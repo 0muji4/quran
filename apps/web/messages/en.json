@@ -70,5 +70,72 @@
       "ayahTranslation": "And recite the Qur'an with measured recitation.",
       "ayahCitation": "Al-Muzzammil · 73:4"
     }
+  },
+  "nav": {
+    "brand": {
+      "wordmark": "Tilawah",
+      "kicker": "Recitation Practice"
+    },
+    "tab": {
+      "library": "Surah library",
+      "practice": "Practice",
+      "history": "History"
+    },
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "signedInAs": "Signed in as {label}",
+    "skipToContent": "Skip to main content",
+    "primaryNavAriaLabel": "Primary"
+  },
+  "library": {
+    "eyebrow": "+ Continue your practice",
+    "title": "Choose a surah to recite",
+    "description": "Listen to a teacher's recitation, then record your own. We'll score your pronunciation against the reference.",
+    "searchPlaceholder": "Search by surah name or number...",
+    "searchAriaLabel": "Search surahs",
+    "filterAriaLabel": "Filter surahs",
+    "filter": {
+      "all": "All {count}",
+      "mecca": "Mecca",
+      "medina": "Medina",
+      "short": "Short"
+    },
+    "continue": {
+      "badge": "Continue",
+      "badgeGetStarted": "Get started",
+      "emptyTitle": "Begin your tilawah",
+      "emptyDescription": "Pick any surah from the library below to record your first ayah.",
+      "emptyCta": "Start practice",
+      "progress": "Ayah {ayah} of {total} · last practiced {date}",
+      "resume": "Resume ayah {ayah}",
+      "startOver": "Start over"
+    },
+    "suggested": {
+      "badge": "Suggested for you",
+      "begin": "Begin",
+      "blurbShort": "Short surah · {count} ayahs · ~90 seconds. A great warm-up before longer practice.",
+      "blurbMedium": "{count} ayahs · perfect for a focused practice session.",
+      "blurbLong": "{count} ayahs · build endurance with regular reading.",
+      "meta": "{count} ayahs"
+    },
+    "surahCard": {
+      "the": "The {meaning}",
+      "ayahs": "{count} ayahs",
+      "bestScore": "Best score {score}",
+      "ariaLabel": "{name}, {place}, {count} ayahs",
+      "ariaLabelWithScore": "{name}, {place}, {count} ayahs, best score {score}"
+    },
+    "error": {
+      "title": "Couldn't load the surah list",
+      "recovery": "Check your connection and try again. If the problem persists, the service may be temporarily unavailable.",
+      "retry": "Retry",
+      "retrying": "Retrying…"
+    },
+    "completion": {
+      "title": "{surahName} completed",
+      "body": "Beautifully done — pick another surah whenever you're ready.",
+      "dismiss": "Dismiss"
+    }
   }
 }

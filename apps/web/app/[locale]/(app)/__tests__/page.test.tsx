@@ -2,9 +2,11 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { NextIntlClientProvider } from 'next-intl';
 
 import { LibraryClient } from '../library/LibraryClient';
 import type { SurahSummary } from '../../../lib/types';
+import messages from '../../../../messages/en.json';
 
 const refreshMock = vi.fn();
 vi.mock('../../../../i18n/navigation', () => ({
@@ -20,6 +22,13 @@ const mockSurahs: SurahSummary[] = [
   { id: '112', nameEn: 'Al-Ikhlas', nameAr: 'الإخلاص', ayahCount: 4, revelationPlace: 'Meccan' }
 ];
 
+const renderLibrary = (props: React.ComponentProps<typeof LibraryClient>) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <LibraryClient {...props} />
+    </NextIntlClientProvider>
+  );
+
 describe('Surah library', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -31,14 +40,14 @@ describe('Surah library', () => {
   });
 
   it('renders the hero copy and the search input', () => {
-    render(<LibraryClient surahs={mockSurahs} />);
+    renderLibrary({ surahs: mockSurahs });
 
     expect(screen.getByRole('heading', { name: /Choose a surah to recite/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search by surah name or number...')).toBeInTheDocument();
   });
 
   it('renders a card per surah with a link to the practice page', () => {
-    render(<LibraryClient surahs={mockSurahs} />);
+    renderLibrary({ surahs: mockSurahs });
 
     const fatihahLink = screen.getByRole('link', { name: /Al-Fatihah/i });
     expect(fatihahLink).toHaveAttribute('href', '/practice/1/1');
@@ -46,7 +55,7 @@ describe('Surah library', () => {
 
   it('filters surahs by search query', async () => {
     const user = userEvent.setup();
-    render(<LibraryClient surahs={mockSurahs} />);
+    renderLibrary({ surahs: mockSurahs });
 
     const search = screen.getByPlaceholderText('Search by surah name or number...');
     await user.type(search, 'baqarah');
@@ -57,7 +66,7 @@ describe('Surah library', () => {
 
   it('filters surahs by revelation place', async () => {
     const user = userEvent.setup();
-    render(<LibraryClient surahs={mockSurahs} />);
+    renderLibrary({ surahs: mockSurahs });
 
     await user.click(screen.getByRole('button', { name: /Medina/i }));
 
@@ -66,12 +75,12 @@ describe('Surah library', () => {
   });
 
   it('shows the All counter reflecting the total surah count', () => {
-    render(<LibraryClient surahs={mockSurahs} />);
+    renderLibrary({ surahs: mockSurahs });
     expect(screen.getByRole('button', { name: 'All 3' })).toBeInTheDocument();
   });
 
   it('renders an explicit error state when the surah fetch failed', () => {
-    render(<LibraryClient surahs={[]} loadError />);
+    renderLibrary({ surahs: [], loadError: true });
 
     // The page no longer pretends the library is just empty; the failure
     // is announced and a recovery affordance is offered.
@@ -87,7 +96,7 @@ describe('Surah library', () => {
 
   it('triggers a server refresh when Retry is clicked in the error state', async () => {
     const user = userEvent.setup();
-    render(<LibraryClient surahs={[]} loadError />);
+    renderLibrary({ surahs: [], loadError: true });
 
     await user.click(screen.getByRole('button', { name: /retry/i }));
 
