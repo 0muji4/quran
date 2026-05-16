@@ -53,8 +53,11 @@ const smallOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
 // Average tile uses the dark "continue" surface to call out the running
 // average, matching the iOS design's inverse BrandCard treatment).
 export function HistoryStatsGrid({ stats }: Props) {
-  const paperPanel = panel({ surface: 'paper' });
-  const continuePanel = panel({ surface: 'continue' });
+  // `panel(...)` is a slot recipe: it returns an object with one class
+  // per slot (root / body / title / …). We only need the outer surface
+  // here, so pluck `.root` for each variant up front.
+  const paperPanel = panel({ surface: 'paper' }).root;
+  const continuePanel = panel({ surface: 'continue' }).root;
 
   return (
     <section className={gridClass} aria-label="Practice summary">
