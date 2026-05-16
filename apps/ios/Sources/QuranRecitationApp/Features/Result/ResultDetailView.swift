@@ -57,10 +57,15 @@ struct ResultDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, Spacing.xxl)
     case .loaded(let result):
+      // BFF's `result.verdict` is deliberately ignored: the
+      // `scoring_jobs.verdict` column is never populated server-side, so
+      // we compute the band locally — same thresholds, same copy as the
+      // web `verdictForScore` so a 72 on iPhone and the same 72 on Web
+      // never disagree about whether it's "Great progress" or "Some
+      // work to do".
       ScoreHero(
         score: result.score,
-        verdict: result.verdict,
-        detail: result.score.map { detailMessage(for: $0) }
+        verdict: verdictForScore(result.score)
       )
       .padding(.horizontal, Spacing.screenHorizontal)
       MetricBars(feedback: result.feedback, fallbackScore: result.score)
@@ -122,16 +127,5 @@ struct ResultDetailView: View {
 
   private var continueLabel: LocalizedStringKey {
     "result.action.continue \(viewModel.ayahNumber + 1)"
-  }
-
-  private func detailMessage(for score: Double) -> String {
-    let key: String
-    switch score {
-    case 90...:    key = "result.detail.excellent"
-    case 75..<90:  key = "result.detail.strong"
-    case 50..<75:  key = "result.detail.midway"
-    default:       key = "result.detail.beginner"
-    }
-    return NSLocalizedString(key, bundle: .module, comment: "")
   }
 }

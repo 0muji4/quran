@@ -6,15 +6,18 @@ import type { BffSuggestionResponse } from '../../lib/classify';
 import type { SurahSummary } from '../../lib/types';
 
 export default async function HomePage() {
-  // The BFF or DB may not yet be ready (e.g. during e2e bring-up before
-  // migrations run). Degrade gracefully to an empty list so `/` still
-  // returns 200 — the client-rendered LibraryClient handles the empty
-  // state and a refresh will pick up surahs once the BFF is healthy.
+  // The Library is unusable without a surah list, so on a fetch failure
+  // we surface an explicit error state with a Retry control rather than
+  // degrade to an empty grid that's indistinguishable from "your filter
+  // matched nothing." The page still returns 200 — the failure is in
+  // the body, not the response status — so e2e bring-up flows that
+  // expect `/` to be reachable before migrations run keep working.
   let surahs: SurahSummary[] = [];
+  let loadError = false;
   try {
     surahs = await fetchSurahs();
   } catch {
-    surahs = [];
+    loadError = true;
   }
 
   // Suggestion + difficulties are personalised per user. The action
@@ -30,7 +33,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <LibraryClient surahs={surahs} suggestion={suggestion} />
+      <LibraryClient surahs={surahs} suggestion={suggestion} loadError={loadError} />
       {/* Suspense boundary required so useSearchParams in the toast doesn't
           opt the whole page into client-side rendering. */}
       <Suspense fallback={null}>
