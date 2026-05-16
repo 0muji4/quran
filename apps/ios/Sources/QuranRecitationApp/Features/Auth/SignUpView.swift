@@ -67,9 +67,6 @@ struct SignUpView: View {
   private var topBar: some View {
     HStack {
       Spacer()
-      Text("auth.signup.step", bundle: .module)
-        .font(Font.brand.caption)
-        .foregroundColor(Color.brand.textSecondary)
     }
   }
 
