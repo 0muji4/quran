@@ -21,12 +21,10 @@ vi.mock('../../actions', () => ({
 
 const clearLocalCacheMock = vi.fn();
 const refreshAllFromBffMock = vi.fn(async () => {});
-const migrateAnonymousCacheToBffMock = vi.fn(async () => {});
 
 vi.mock('../../lib/storage', () => ({
   clearLocalCache: () => clearLocalCacheMock(),
-  refreshAllFromBff: () => refreshAllFromBffMock(),
-  migrateAnonymousCacheToBff: () => migrateAnonymousCacheToBffMock()
+  refreshAllFromBff: () => refreshAllFromBffMock()
 }));
 
 // Accept the sign-up terms gate so a submission can go through. Kept as a
@@ -43,7 +41,6 @@ describe('AuthForm', () => {
     signUpActionMock.mockReset();
     clearLocalCacheMock.mockReset();
     refreshAllFromBffMock.mockClear();
-    migrateAnonymousCacheToBffMock.mockClear();
   });
 
   it('signs in with the entered credentials and routes home on success', async () => {
@@ -64,7 +61,6 @@ describe('AuthForm', () => {
     expect(refresh).toHaveBeenCalled();
     expect(clearLocalCacheMock).toHaveBeenCalled();
     expect(refreshAllFromBffMock).toHaveBeenCalled();
-    expect(migrateAnonymousCacheToBffMock).not.toHaveBeenCalled();
   });
 
   it('shows the BFF error when sign-in fails and stays on the form', async () => {
@@ -80,14 +76,11 @@ describe('AuthForm', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('runs the anonymous cache migration on sign-up before clearing the cache', async () => {
+  it('signs up then clears the local cache and pulls fresh BFF state', async () => {
     const order: string[] = [];
     signUpActionMock.mockImplementationOnce(async () => {
       order.push('signUp');
       return { id: 'u4', email: 'a@b.co', displayName: null };
-    });
-    migrateAnonymousCacheToBffMock.mockImplementationOnce(async () => {
-      order.push('migrate');
     });
     clearLocalCacheMock.mockImplementationOnce(() => {
       order.push('clear');
@@ -103,7 +96,7 @@ describe('AuthForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
-    expect(order).toEqual(['signUp', 'migrate', 'clear', 'refresh']);
+    expect(order).toEqual(['signUp', 'clear', 'refresh']);
   });
 
   it('passes the optional display name through on sign-up', async () => {
