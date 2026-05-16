@@ -6,6 +6,7 @@ import type { BffSuggestionResponse } from '../../lib/classify';
 import { countByRevelation, filterSurahs, type RevelationFilter } from '../../lib/surahFilters';
 import { SearchIcon } from '../../components/icons/ArrowRightIcon';
 import { ContinueCard } from './ContinueCard';
+import { LibraryErrorState } from './LibraryErrorState';
 import { SuggestedCard } from './SuggestedCard';
 import { SurahGrid } from './SurahGrid';
 import { css, cx } from '../../../styled-system/css';
@@ -16,6 +17,11 @@ type Props = {
   // Personalised payload from the BFF (ADR 0015). `null` for guests and
   // BFF-failure modes; SuggestedCard falls back to the local heuristic.
   suggestion?: BffSuggestionResponse | null;
+  // True when the server-side fetch for the surah list failed. The
+  // Library is unusable without it, so we surface an explicit error
+  // state instead of rendering an empty grid (which would be
+  // indistinguishable from a filter mismatch).
+  loadError?: boolean;
 };
 
 const SEARCH_MOBILE_MQ = '@media (max-width: 600px)';
@@ -110,12 +116,27 @@ const FILTERS: { value: RevelationFilter; label: (count: number) => string }[] =
   { value: 'short', label: () => 'Short' }
 ];
 
-export function LibraryClient({ surahs, suggestion = null }: Props) {
+export function LibraryClient({ surahs, suggestion = null, loadError = false }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<RevelationFilter>('all');
 
   const counts = useMemo(() => countByRevelation(surahs), [surahs]);
   const filtered = useMemo(() => filterSurahs(surahs, query, filter), [surahs, query, filter]);
+
+  if (loadError) {
+    return (
+      <>
+        <header className={heroClass}>
+          <h1>Choose a surah to recite</h1>
+          <p className={heroDescriptionClass}>
+            Listen to a teacher&apos;s recitation, then record your own. We&apos;ll score your
+            pronunciation against the reference.
+          </p>
+        </header>
+        <LibraryErrorState />
+      </>
+    );
+  }
 
   return (
     <>
