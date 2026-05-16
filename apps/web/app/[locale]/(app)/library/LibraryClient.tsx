@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { SurahSummary } from '../../../lib/types';
 import type { BffSuggestionResponse } from '../../../lib/classify';
 import { countByRevelation, filterSurahs, type RevelationFilter } from '../../../lib/surahFilters';
@@ -109,16 +110,12 @@ const pillActiveClass = css({
   color: 'bg.paper'
 });
 
-const FILTERS: { value: RevelationFilter; label: (count: number) => string }[] = [
-  { value: 'all', label: (c) => `All ${c}` },
-  { value: 'mecca', label: () => 'Mecca' },
-  { value: 'medina', label: () => 'Medina' },
-  { value: 'short', label: () => 'Short' }
-];
+const FILTER_VALUES: RevelationFilter[] = ['all', 'mecca', 'medina', 'short'];
 
 export function LibraryClient({ surahs, suggestion = null, loadError = false }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<RevelationFilter>('all');
+  const t = useTranslations('library');
 
   const counts = useMemo(() => countByRevelation(surahs), [surahs]);
   const filtered = useMemo(() => filterSurahs(surahs, query, filter), [surahs, query, filter]);
@@ -127,11 +124,8 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
     return (
       <>
         <header className={heroClass}>
-          <h1>Choose a surah to recite</h1>
-          <p className={heroDescriptionClass}>
-            Listen to a teacher&apos;s recitation, then record your own. We&apos;ll score your
-            pronunciation against the reference.
-          </p>
+          <h1>{t('title')}</h1>
+          <p className={heroDescriptionClass}>{t('description')}</p>
         </header>
         <LibraryErrorState />
       </>
@@ -142,13 +136,10 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
     <>
       <header className={heroClass}>
         <span className="eyebrow" aria-hidden="true">
-          + Continue your practice
+          {t('eyebrow')}
         </span>
-        <h1>Choose a surah to recite</h1>
-        <p className={heroDescriptionClass}>
-          Listen to a teacher&apos;s recitation, then record your own. We&apos;ll score your
-          pronunciation against the reference.
-        </p>
+        <h1>{t('title')}</h1>
+        <p className={heroDescriptionClass}>{t('description')}</p>
       </header>
 
       <section className={heroCardsClass}>
@@ -162,26 +153,27 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
           <input
             type="search"
             className={searchInputClass}
-            placeholder="Search by surah name or number..."
+            placeholder={t('searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search surahs"
+            aria-label={t('searchAriaLabel')}
           />
         </div>
-        <div className={filterPillsClass} role="group" aria-label="Filter surahs">
-          {FILTERS.map((f) => {
-            const active = filter === f.value;
-            const count = counts[f.value];
+        <div className={filterPillsClass} role="group" aria-label={t('filterAriaLabel')}>
+          {FILTER_VALUES.map((value) => {
+            const active = filter === value;
             const baseClass = button({ tone: 'nav', size: 'lg' });
+            const label =
+              value === 'all' ? t('filter.all', { count: counts.all }) : t(`filter.${value}`);
             return (
               <button
-                key={f.value}
+                key={value}
                 type="button"
                 className={active ? cx(baseClass, pillActiveClass) : baseClass}
-                onClick={() => setFilter(f.value)}
+                onClick={() => setFilter(value)}
                 aria-pressed={active}
               >
-                {f.label(count)}
+                {label}
               </button>
             );
           })}
