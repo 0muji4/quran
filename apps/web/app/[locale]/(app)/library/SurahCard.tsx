@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
 import type { SurahSummary } from '../../../lib/types';
 import { ChevronRightIcon } from '../../../components/icons/ArrowRightIcon';
@@ -121,18 +122,24 @@ const chevronClass = css({
 });
 
 export function SurahCard({ surah, bestScore, isLastPracticed }: Props) {
+  const t = useTranslations('library.surahCard');
   const className = isLastPracticed ? cx(cardClass, cardActiveClass) : cardClass;
   // Collapse the visible spans into a single screen-reader announcement so
   // assistive tech reads the card as one link instead of stitching together
   // the surah number, name, dot separators, and badges.
-  const ariaLabel = [
-    surah.nameEn,
-    surah.revelationPlace,
-    `${surah.ayahCount} ayahs`,
-    bestScore !== null ? `best score ${bestScore}` : null
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const ariaLabel =
+    bestScore !== null
+      ? t('ariaLabelWithScore', {
+          name: surah.nameEn,
+          place: surah.revelationPlace,
+          count: surah.ayahCount,
+          score: bestScore
+        })
+      : t('ariaLabel', {
+          name: surah.nameEn,
+          place: surah.revelationPlace,
+          count: surah.ayahCount
+        });
   return (
     <Link href={`/practice/${surah.id}/1`} className={className} aria-label={ariaLabel}>
       <span className={numberClass} aria-hidden="true">
@@ -142,16 +149,18 @@ export function SurahCard({ surah, bestScore, isLastPracticed }: Props) {
         <span className={nameRowClass}>
           <span className={nameEnClass}>{surah.nameEn}</span>
           <span className={dotClass} />
-          <span className={nameMeaningClass}>The {surah.nameEn.split('-').pop()}</span>
+          <span className={nameMeaningClass}>
+            {t('the', { meaning: surah.nameEn.split('-').pop() ?? surah.nameEn })}
+          </span>
         </span>
         <span className={metaRowClass}>
           <span>{surah.revelationPlace}</span>
           <span className={dotClass} />
-          <span>{surah.ayahCount} ayahs</span>
+          <span>{t('ayahs', { count: surah.ayahCount })}</span>
           {bestScore !== null && (
             <>
               <span className={dotClass} />
-              <span className={bestScoreClass}>Best score {bestScore}</span>
+              <span className={bestScoreClass}>{t('bestScore', { score: bestScore })}</span>
             </>
           )}
         </span>

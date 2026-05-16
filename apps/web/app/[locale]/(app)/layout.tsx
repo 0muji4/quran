@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { getTranslations } from 'next-intl/server';
 import { AppShell } from '../../components/AppShell';
 import { getCurrentSession } from '../../lib/session';
 
@@ -7,6 +8,10 @@ import { getCurrentSession } from '../../lib/session';
 // rather than the root layout so the (auth) group can render full-bleed
 // without the nav. Route groups do not affect URLs.
 export default async function AppGroupLayout({ children }: { children: ReactNode }) {
-  const session = await getCurrentSession();
-  return <AppShell session={session}>{children}</AppShell>;
+  const [session, t] = await Promise.all([getCurrentSession(), getTranslations('nav')]);
+  return (
+    <AppShell session={session} skipLinkLabel={t('skipToContent')}>
+      {children}
+    </AppShell>
+  );
 }

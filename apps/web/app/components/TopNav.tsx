@@ -1,9 +1,8 @@
 'use client';
 
-import { Link } from '../../i18n/navigation';
-import { usePathname } from '../../i18n/navigation';
 import { useTransition } from 'react';
-import { useRouter } from '../../i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, usePathname, useRouter } from '../../i18n/navigation';
 import { signOutAction } from '../actions';
 import { clearLocalCache } from '../lib/storage';
 import { BookIcon } from './icons/BookIcon';
@@ -11,18 +10,18 @@ import { css } from '../../styled-system/css';
 
 type Tab = {
   href: string;
-  label: string;
+  labelKey: 'library' | 'practice' | 'history';
   match: (pathname: string) => boolean;
 };
 
 const TABS: Tab[] = [
-  { href: '/', label: 'Surah library', match: (p) => p === '/' || p.startsWith('/library') },
+  { href: '/', labelKey: 'library', match: (p) => p === '/' || p.startsWith('/library') },
   {
     href: '/practice',
-    label: 'Practice',
+    labelKey: 'practice',
     match: (p) => p.startsWith('/practice') || p.startsWith('/record')
   },
-  { href: '/history', label: 'History', match: (p) => p.startsWith('/history') }
+  { href: '/history', labelKey: 'history', match: (p) => p.startsWith('/history') }
 ];
 
 type SessionView = {
@@ -190,6 +189,7 @@ export function TopNav({ session }: Props) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations('nav');
 
   const onSignOut = (): void => {
     startTransition(async () => {
@@ -201,14 +201,14 @@ export function TopNav({ session }: Props) {
   };
 
   return (
-    <nav className={navClass} aria-label="Primary">
+    <nav className={navClass} aria-label={t('primaryNavAriaLabel')}>
       <Link href="/" className={brandClass}>
         <span className={brandIconClass} aria-hidden="true">
           <BookIcon size={22} />
         </span>
         <span className={brandTextClass}>
-          <span className={brandTitleClass}>Tilawah</span>
-          <span className={brandSubtitleClass}>Recitation Practice</span>
+          <span className={brandTitleClass}>{t('brand.wordmark')}</span>
+          <span className={brandSubtitleClass}>{t('brand.kicker')}</span>
         </span>
       </Link>
 
@@ -222,7 +222,7 @@ export function TopNav({ session }: Props) {
               className={active ? `${tabClass} ${tabActiveClass}` : tabClass}
               aria-current={active ? 'page' : undefined}
             >
-              {tab.label}
+              {t(`tab.${tab.labelKey}`)}
             </Link>
           );
         })}
@@ -231,7 +231,7 @@ export function TopNav({ session }: Props) {
       <div className={profileClass}>
         {session ? (
           <>
-            <span className={avatarClass} aria-label={`Signed in as ${session.label}`}>
+            <span className={avatarClass} aria-label={t('signedInAs', { label: session.label })}>
               {session.initial}
             </span>
             <button
@@ -240,12 +240,12 @@ export function TopNav({ session }: Props) {
               onClick={onSignOut}
               disabled={pending}
             >
-              {pending ? 'Signing out…' : 'Sign out'}
+              {pending ? t('signingOut') : t('signOut')}
             </button>
           </>
         ) : (
           <Link href="/sign-in" className={profileActionClass}>
-            Sign in
+            {t('signIn')}
           </Link>
         )}
       </div>
