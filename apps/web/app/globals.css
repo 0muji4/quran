@@ -1,16 +1,25 @@
-:root {
-  /* Surfaces */
-  --color-bg-page: #f5f0e5;
-  --color-bg-paper: #ffffff;
-  --color-bg-paper-soft: #faf6ec;
-  --color-bg-nav: #1f1a14;
-  --color-bg-continue: #2b1f14;
-  --color-bg-recording: #14181c;
-  /* Auth brand panel — the deepest brown surface. Darker than
+/* Wrap legacy globals in @layer base so Panda's @layer recipes (and
+ * utilities) win on shared properties without specificity tricks.
+ * Without this layer, the unlayered h2/h3/a rules below beat Panda's
+ * recipe styles in the cascade, which produced a11y contrast
+ * regressions during the Panda migration. CSS custom properties
+ * declared on :root inside @layer base are still inherited globally
+ * — layers only affect cascade resolution for competing declarations,
+ * not the propagation of inherited values. */
+@layer base {
+  :root {
+    /* Surfaces */
+    --color-bg-page: #f5f0e5;
+    --color-bg-paper: #ffffff;
+    --color-bg-paper-soft: #faf6ec;
+    --color-bg-nav: #1f1a14;
+    --color-bg-continue: #2b1f14;
+    --color-bg-recording: #14181c;
+    /* Auth brand panel — the deepest brown surface. Darker than
    * --color-bg-continue so the gold mihrab line-art reads cleanly. */
-  --color-bg-brand-dark: #221814;
+    --color-bg-brand-dark: #221814;
 
-  /* Brand accents
+    /* Brand accents
    *
    * The gold family is split by usage axis (see ADR 0003):
    *   --color-gold-surface  → backgrounds (.btnGold bg, .progressFill,
@@ -24,256 +33,257 @@
    *                          hover-state background for .btnGold.
    * The single --color-gold token is intentionally removed so that
    * future component authors must pick the right axis. */
-  --color-gold-surface: #b8893c;
-  --color-gold-on-light: #6e4f1e;
-  --color-gold-on-dark: #d9b26a;
-  --color-teal: #2d5a4f;
-  --color-teal-deep: #1f4036;
-  --color-mint-bg: #d9efe3;
-  --color-mint-ink: #2d5a4f;
-  --color-tan: #e8d9b8;
-  --color-tan-soft: #f3ead4;
-  --color-red: #c0392b;
-  --color-red-soft: #e74c3c;
+    --color-gold-surface: #b8893c;
+    --color-gold-on-light: #6e4f1e;
+    --color-gold-on-dark: #d9b26a;
+    --color-teal: #2d5a4f;
+    --color-teal-deep: #1f4036;
+    --color-mint-bg: #d9efe3;
+    --color-mint-ink: #2d5a4f;
+    --color-tan: #e8d9b8;
+    --color-tan-soft: #f3ead4;
+    --color-red: #c0392b;
+    --color-red-soft: #e74c3c;
 
-  /* Ink */
-  --color-ink-strong: #1f1a14;
-  --color-ink-default: #3a322a;
-  /* Darkened from #7b6e5c (~4.37:1 on cream) to clear WCAG AA 4.5:1
+    /* Ink */
+    --color-ink-strong: #1f1a14;
+    --color-ink-default: #3a322a;
+    /* Darkened from #7b6e5c (~4.37:1 on cream) to clear WCAG AA 4.5:1
    * on the page / paper surfaces. See ADR 0003. */
-  --color-ink-muted: #6b5d4a;
-  --color-ink-on-dark: #efe4ce;
-  /* Bumped from #b8a88c (~3.5:1 on #14181c) to clear WCAG AA 4.5:1 on
+    --color-ink-muted: #6b5d4a;
+    --color-ink-on-dark: #efe4ce;
+    /* Bumped from #b8a88c (~3.5:1 on #14181c) to clear WCAG AA 4.5:1 on
    * the recording / nav / continue dark surfaces. See Phase 2.3-D. */
-  --color-ink-on-dark-mut: #d4c4a4;
+    --color-ink-on-dark-mut: #d4c4a4;
 
-  /* Lines */
-  --color-border: #e5dcc9;
-  --color-border-strong: #b8893c;
+    /* Lines */
+    --color-border: #e5dcc9;
+    --color-border-strong: #b8893c;
 
-  /* Radii */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-pill: 999px;
+    /* Radii */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
 
-  /* Shadows */
-  --shadow-card: 0 8px 24px rgba(40, 28, 12, 0.06);
-  --shadow-card-hover: 0 14px 32px rgba(40, 28, 12, 0.1);
+    /* Shadows */
+    --shadow-card: 0 8px 24px rgba(40, 28, 12, 0.06);
+    --shadow-card-hover: 0 14px 32px rgba(40, 28, 12, 0.1);
 
-  /* Spacing (4-base) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+    /* Spacing (4-base) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
 
-  /* Typography */
-  --font-serif: var(--font-cormorant), 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-arabic: var(--font-amiri), 'Amiri', 'Scheherazade New', serif;
-}
+    /* Typography */
+    --font-serif: var(--font-cormorant), 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+    --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-arabic: var(--font-amiri), 'Amiri', 'Scheherazade New', serif;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
 
-body {
-  background: var(--color-bg-page);
-  color: var(--color-ink-default);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  body {
+    background: var(--color-bg-page);
+    color: var(--color-ink-default);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-serif);
-  color: var(--color-ink-strong);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  margin: 0;
-}
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    color: var(--color-ink-strong);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
 
-h1 {
-  font-size: clamp(40px, 5vw, 64px);
-  line-height: 1.05;
-  font-weight: 500;
-}
+  h1 {
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1.05;
+    font-weight: 500;
+  }
 
-h2 {
-  font-size: clamp(28px, 3vw, 36px);
-  line-height: 1.15;
-}
+  h2 {
+    font-size: clamp(28px, 3vw, 36px);
+    line-height: 1.15;
+  }
 
-h3 {
-  font-size: 22px;
-  line-height: 1.2;
-}
+  h3 {
+    font-size: 22px;
+    line-height: 1.2;
+  }
 
-p {
-  margin: 0;
-}
+  p {
+    margin: 0;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-/* Baseline keyboard-focus indicator. The brand uses gold accents on cream
+  /* Baseline keyboard-focus indicator. The brand uses gold accents on cream
  * panels, so a teal ring with a small offset stays visible on every surface.
  * Scoped to :focus-visible so mouse users are not affected. Programmatically
  * focused elements (e.g. the AutoFocusHeading at the top of the result page)
  * do not match :focus-visible, so they stay clean.
  */
-:focus-visible {
-  outline: 2px solid var(--color-teal);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-  font-size: inherit;
-  padding: 0;
-}
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    padding: 0;
+  }
 
-button:disabled {
-  cursor: not-allowed;
-}
+  button:disabled {
+    cursor: not-allowed;
+  }
 
-.ar-text {
-  font-family: var(--font-arabic);
-  direction: rtl;
-  unicode-bidi: bidi-override;
-  font-feature-settings: 'liga', 'calt';
-}
+  .ar-text {
+    font-family: var(--font-arabic);
+    direction: rtl;
+    unicode-bidi: bidi-override;
+    font-feature-settings: 'liga', 'calt';
+  }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--color-gold-on-light);
-}
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-gold-on-light);
+  }
 
-.muted {
-  color: var(--color-ink-muted);
-}
+  .muted {
+    color: var(--color-ink-muted);
+  }
 
-/* Skip link — visible only when focused. Sits above all other content
+  /* Skip link — visible only when focused. Sits above all other content
  * (z-index: 1000) so keyboard users can bypass the top nav from any
  * route. The link points at #main-content, which is the AppShell's
  * <main> element with tabIndex={-1} so focus lands there on Enter.
  * Phase 2.3-E. */
-.skip-link {
-  position: absolute;
-  top: -100px;
-  left: var(--space-4);
-  z-index: 1000;
-  background: var(--color-bg-paper);
-  color: var(--color-ink-strong);
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  text-decoration: none;
-  box-shadow: var(--shadow-card-hover);
-}
-
-.skip-link:focus {
-  top: var(--space-4);
-}
-
-#main-content:focus {
-  outline: none;
-}
-
-/* Visually hidden, screen-reader only */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Page shell */
-.page-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg-page);
-}
-
-.page-content {
-  flex: 1;
-  padding: var(--space-10) var(--space-6) var(--space-12);
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-@media (max-width: 720px) {
-  .page-content {
-    padding: var(--space-6) var(--space-4) var(--space-10);
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: var(--space-4);
+    z-index: 1000;
+    background: var(--color-bg-paper);
+    color: var(--color-ink-strong);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: var(--shadow-card-hover);
   }
-}
 
-/* Status / error banners reused across screens */
-.status {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
-  background: rgba(45, 90, 79, 0.08);
-  border: 1px solid rgba(45, 90, 79, 0.18);
-  color: var(--color-teal);
-  font-size: 14px;
-}
+  .skip-link:focus {
+    top: var(--space-4);
+  }
 
-.status.error {
-  background: rgba(192, 57, 43, 0.08);
-  border-color: rgba(192, 57, 43, 0.25);
-  color: var(--color-red);
-}
+  #main-content:focus {
+    outline: none;
+  }
 
-/* Pills */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  font-size: 13px;
-}
+  /* Visually hidden, screen-reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
-/* Generic divider */
-.divider {
-  border-top: 1px solid var(--color-border);
-  margin: var(--space-5) 0;
-}
+  /* Page shell */
+  .page-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-page);
+  }
+
+  .page-content {
+    flex: 1;
+    padding: var(--space-10) var(--space-6) var(--space-12);
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 720px) {
+    .page-content {
+      padding: var(--space-6) var(--space-4) var(--space-10);
+    }
+  }
+
+  /* Status / error banners reused across screens */
+  .status {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: rgba(45, 90, 79, 0.08);
+    border: 1px solid rgba(45, 90, 79, 0.18);
+    color: var(--color-teal);
+    font-size: 14px;
+  }
+
+  .status.error {
+    background: rgba(192, 57, 43, 0.08);
+    border-color: rgba(192, 57, 43, 0.25);
+    color: var(--color-red);
+  }
+
+  /* Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  /* Generic divider */
+  .divider {
+    border-top: 1px solid var(--color-border);
+    margin: var(--space-5) 0;
+  }
+} /* end @layer base */
