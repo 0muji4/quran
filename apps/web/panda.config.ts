@@ -1,6 +1,7 @@
 import { defineConfig } from '@pandacss/dev';
 import { tokens } from '@quran-project/ui/theme/tokens';
 import { recipes, slotRecipes } from '@quran-project/ui/theme/recipes';
+import { globalCss } from '@quran-project/ui/theme/global-css';
 
 // preflight is off because globals.css owns the reset. strictTokens is
 // what locks in ADR 0003 (no `color: 'gold'` without an axis). Recipes
@@ -28,5 +29,6 @@ export default defineConfig({
       xl: '760px',
       '2xl': '900px'
     }
-  }
+  },
+  globalCss
 });
