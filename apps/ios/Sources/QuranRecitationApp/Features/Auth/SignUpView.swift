@@ -10,7 +10,6 @@ import SwiftUI
 /// `ProfileView`) so typed input survives the sign-in ↔ sign-up toggle.
 struct SignUpView: View {
   @ObservedObject var viewModel: AuthViewModel
-  let onBack: () -> Void
   let onNavigateToSignIn: () -> Void
   let onAuthenticated: () -> Void
 
@@ -67,7 +66,6 @@ struct SignUpView: View {
 
   private var topBar: some View {
     HStack {
-      AuthBackButton(action: onBack)
       Spacer()
       Text("auth.signup.step", bundle: .module)
         .font(Font.brand.caption)
