@@ -9,6 +9,7 @@ import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  updateUserProfile,
   VALID_LEVELS,
   type UserLevel,
   type UserRow
@@ -107,6 +108,21 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   }
 });
 
+const patchMeSchema = z.object({
+  body: z
+    .object({
+      // `min(1)` matches the sign-up schema; `max(64)` keeps it in
+      // sync with the display_name column's practical limit. `null` is
+      // not accepted here — clearing the display name is intentionally
+      // not a supported edit (the avatar falls back to email otherwise).
+      displayName: z.string().min(1).max(64).optional(),
+      level: z.enum(VALID_LEVELS).optional()
+    })
+    .refine((body) => body.displayName !== undefined || body.level !== undefined, {
+      message: 'at least one field must be present'
+    })
+});
+
 /// Returns the current signed-in user. Reads from the DB on every
 /// call so a fresh level / displayName from "Edit profile" lands
 /// without forcing a re-sign-in. 401 if no valid access cookie is
@@ -132,6 +148,43 @@ authRouter.get('/auth/me', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('GET /auth/me failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to load user' });
+  }
+});
+
+/// Edit profile flow on the web client. Today the only editable
+/// fields are `displayName` and `level`; email / password change have
+/// their own endpoints. `at-least-one-field` is enforced by zod so a
+/// no-op PATCH returns 400 rather than silently spending a DB round
+/// trip. The response shape mirrors GET /auth/me so the client can
+/// reuse the same Profile component without conditional rendering.
+authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  const validation = patchMeSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { displayName, level } = validation.data.body;
+  try {
+    const updated = await updateUserProfile(session.id, {
+      ...(displayName !== undefined ? { displayName } : {}),
+      ...(level !== undefined ? { level } : {})
+    });
+    if (!updated) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+    res.json({
+      user: {
+        id: updated.id,
+        email: updated.email,
+        displayName: updated.displayName,
+        createdAt: updated.createdAt.toISOString(),
+        level: updated.level
+      }
+    });
+  } catch (error) {
+    logger.error('PATCH /auth/me failed', { userId: session.id, error });
+    res.status(502).json({ error: 'Failed to update profile' });
   }
 });
 
