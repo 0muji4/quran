@@ -233,3 +233,8 @@
 "profile.deleteAccount.confirm.header" = "Confirm";
 "profile.deleteAccount.confirm.helper" = "Type DELETE in capital letters to confirm.";
 "profile.deleteAccount.confirm.placeholder" = "DELETE";
+
+/* Profile tab — reactivation banner */
+"profile.reactivation.title" = "Welcome back!";
+"profile.reactivation.body" = "Your account has been restored. Picking up where you left off.";
+"profile.reactivation.dismiss.a11y" = "Dismiss welcome-back message";
