@@ -15,6 +15,7 @@ import {
   findUserById,
   reactivateUser,
   softDeleteUser,
+  updateUserEmail,
   updateUserPassword,
   updateUserProfile,
   VALID_LEVELS,
@@ -134,6 +135,16 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   }
 });
 
+const changeEmailSchema = z.object({
+  body: z.object({
+    // Same length floor as `/auth/login` so legacy short passwords can
+    // still rotate their email. The new email itself is checked for
+    // RFC-5321-ish format and bounded length.
+    currentPassword: z.string().min(1).max(128),
+    newEmail: z.string().email().max(254)
+  })
+});
+
 const changePasswordSchema = z.object({
   body: z.object({
     // `currentPassword` is verified before we touch anything; its length
@@ -222,6 +233,66 @@ authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('PATCH /auth/me failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to update profile' });
+  }
+});
+
+/// Email change for a signed-in user (Phase 2.C-lite — no
+/// confirmation email is sent, the BFF trusts the verified
+/// current-password as proof of intent). Returns 401 on a wrong
+/// current password (same status as a failed sign-in), 409 if the
+/// new address is already taken, 200 with the refreshed user shape
+/// on success. The response mirrors GET /auth/me so the client can
+/// reuse the same Profile component without conditional rendering.
+authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  const validation = changeEmailSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { currentPassword, newEmail } = validation.data.body;
+  try {
+    const user = await findUserById(session.id);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'current password is incorrect' });
+    }
+    const ok = await verifyPassword(currentPassword, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'current password is incorrect' });
+    }
+    // Short-circuit on a no-op rotation — saves a DB write and the
+    // confusing 409 the user would get if their own email matched a
+    // soft-deleted shadow under the UNIQUE constraint.
+    if (newEmail.toLowerCase() === user.email.toLowerCase()) {
+      return res.status(200).json({
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          createdAt: user.createdAt.toISOString(),
+          level: user.level
+        }
+      });
+    }
+    const updated = await updateUserEmail(session.id, newEmail);
+    if (updated === null) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+    if (updated === 'conflict') {
+      return res.status(409).json({ error: 'email already in use' });
+    }
+    res.json({
+      user: {
+        id: updated.id,
+        email: updated.email,
+        displayName: updated.displayName,
+        createdAt: updated.createdAt.toISOString(),
+        level: updated.level
+      }
+    });
+  } catch (error) {
+    logger.error('POST /auth/me/email failed', { userId: session.id, error });
+    res.status(502).json({ error: 'Failed to update email' });
   }
 });
 
