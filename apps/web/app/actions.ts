@@ -510,6 +510,19 @@ type AuthSuccessPayload = {
   accessToken: string;
   refreshToken: string;
   user: AuthSessionUser;
+  // Present and `true` only when the sign-in resurrected a soft-deleted
+  // row (ADR-0024 §4). Forwarded verbatim to clients so they can
+  // surface the "Welcome back — your account has been restored" toast.
+  reactivated?: boolean;
+};
+
+// What the sign-in / sign-up Server Actions return to their callers.
+// The user record is the primary payload; `reactivated` rides along
+// so the AuthForm can branch the redirect URL without a second
+// round-trip.
+export type SignInResult = {
+  user: AuthSessionUser;
+  reactivated: boolean;
 };
 
 const persistAuthSession = async (payload: AuthSuccessPayload): Promise<AuthSessionUser> => {
@@ -559,7 +572,7 @@ export const signUpAction = async (input: {
 export const signInAction = async (input: {
   email: string;
   password: string;
-}): Promise<AuthSessionUser> => {
+}): Promise<SignInResult> => {
   return tracer.startActiveSpan(
     'ServerAction: signInAction',
     { kind: SpanKind.CLIENT },
@@ -574,9 +587,10 @@ export const signInAction = async (input: {
         });
         const payload = await parseJson<AuthSuccessPayload>(response);
         const user = await persistAuthSession(payload);
-        logger.info('signInAction completed', { userId: user.id });
+        const reactivated = payload.reactivated === true;
+        logger.info('signInAction completed', { userId: user.id, reactivated });
         span.setStatus({ code: SpanStatusCode.OK });
-        return user;
+        return { user, reactivated };
       } catch (error) {
         span.recordException(error as Error);
         span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
