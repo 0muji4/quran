@@ -669,7 +669,9 @@ export const deleteAccountAction = async (): Promise<void> => {
 // the refreshed user shape so the modal can update its local view
 // without a separate /auth/me round-trip. Throws on non-2xx so the
 // modal surfaces the BFF error message inline (incl. 409 "email
-// already in use" and 401 "current password is incorrect").
+// already in use" and 422 "current password is incorrect" — distinct
+// from 401 so this re-verification failure isn't mistaken for an
+// expired access token).
 export const updateEmailAction = async (input: {
   currentPassword: string;
   newEmail: string;
