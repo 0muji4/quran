@@ -13,6 +13,14 @@ vi.mock('../../i18n/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() })
 }));
 
+// AppShell renders WelcomeBackToast, which reads `?welcome-back=1`
+// via `useSearchParams` from next/navigation. Stub it to an empty
+// URLSearchParams so the layout suite stays focused on TopNav rather
+// than the toast itself.
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams()
+}));
+
 // AppShell renders <StorageSessionBridge> which writes to the shared
 // storage module's signed-in gate. Stub the call so the layout test
 // stays focused on TopNav rendering and doesn't pull the Server
