@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"strconv"
@@ -48,6 +49,14 @@ type Config struct {
 	MaxDeliveries int
 	// TLS configures whether to use TLS (rediss://).
 	TLS bool
+	// TLSConfig overrides the default TLS configuration. When nil and
+	// TLS is enabled, the default tls.Config{} is used (the system
+	// trust store and the host from RedisURL as ServerName). Callers
+	// who must skip verification — e.g. local docker-compose with a
+	// self-signed cert — should construct an explicit
+	// &tls.Config{InsecureSkipVerify: true} here rather than relying
+	// on a hidden default.
+	TLSConfig *tls.Config
 }
 
 type redisConn struct {
@@ -57,7 +66,7 @@ type redisConn struct {
 	writer *bufio.Writer
 }
 
-func newRedisConn(u *url.URL, useTLS bool) (*redisConn, error) {
+func newRedisConn(u *url.URL, useTLS bool, tlsCfg *tls.Config) (*redisConn, error) {
 	addr := u.Host
 	if !strings.Contains(addr, ":") {
 		addr += ":6379"
@@ -66,7 +75,22 @@ func newRedisConn(u *url.URL, useTLS bool) (*redisConn, error) {
 	var conn net.Conn
 	var err error
 	if useTLS {
-		conn, err = tls.Dial("tcp", addr, &tls.Config{InsecureSkipVerify: true})
+		cfg := tlsCfg
+		if cfg == nil {
+			cfg = &tls.Config{}
+		}
+		// Populate ServerName from the URL host when the caller did
+		// not pre-fill it, so SNI and certificate verification work
+		// even with default config.
+		if cfg.ServerName == "" {
+			host, _, splitErr := net.SplitHostPort(addr)
+			if splitErr != nil {
+				host = addr
+			}
+			cfg = cfg.Clone()
+			cfg.ServerName = host
+		}
+		conn, err = tls.Dial("tcp", addr, cfg)
 	} else {
 		conn, err = net.Dial("tcp", addr)
 	}
@@ -163,8 +187,11 @@ func readReply(r *bufio.Reader) (any, error) {
 		if size == -1 {
 			return nil, errNil
 		}
+		// Read exactly size + 2 bytes (payload + trailing "\r\n").
+		// bufio.Reader.Read may return short; io.ReadFull guarantees
+		// the full slice is populated or an error is returned.
 		buf := make([]byte, size+2)
-		if _, err := r.Read(buf); err != nil {
+		if _, err := io.ReadFull(r, buf); err != nil {
 			return nil, err
 		}
 		return string(buf[:size]), nil
@@ -213,7 +240,7 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	useTLS := cfg.TLS || parsed.Scheme == "rediss"
-	conn, err := newRedisConn(parsed, useTLS)
+	conn, err := newRedisConn(parsed, useTLS, cfg.TLSConfig)
 	if err != nil {
 		return nil, err
 	}
