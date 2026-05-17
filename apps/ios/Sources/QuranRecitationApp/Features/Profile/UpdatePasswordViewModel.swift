@@ -97,10 +97,10 @@ final class UpdatePasswordViewModel: ObservableObject, Identifiable {
   static func message(for error: AppError) -> String {
     switch error {
     case .invalidCredentials:
-      // ProfileService maps "current password incorrect" 401 to
-      // .invalidCredentials (see ProfileService.updatePassword — uses
-      // retryOn401: false so the response isn't mistaken for an
-      // expired access token).
+      // ProfileService maps the BFF's 422 ("current password is
+      // incorrect") to .invalidCredentials. A real expired-token
+      // 401 is handled by AuthHTTPClient before reaching here, so
+      // this branch is unambiguously the wrong-password case.
       return "Current password is incorrect."
     case .validationFailed:
       return "Please check the form and try again."
