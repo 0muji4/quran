@@ -7,6 +7,14 @@ import SwiftUI
 /// profile sheet in PR-H3.
 struct ProfileHeader: View {
   let user: AuthenticatedUser
+  /// `nil` keeps the Edit affordance disabled — the H2 default state.
+  /// PR-H3 onward passes a closure to open the Edit Profile sheet.
+  let onEdit: (() -> Void)?
+
+  init(user: AuthenticatedUser, onEdit: (() -> Void)? = nil) {
+    self.user = user
+    self.onEdit = onEdit
+  }
 
   var body: some View {
     HStack(alignment: .top, spacing: Spacing.lg) {
@@ -26,15 +34,21 @@ struct ProfileHeader: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
-      // Disabled placeholder: actual edit sheet lands in PR-H3.
       Button {
-        // intentionally empty — disabled in PR-H2
+        onEdit?()
       } label: {
         Text("profile.header.edit", bundle: .module)
           .font(Font.brand.caption.weight(.semibold))
       }
-      .disabled(true)
-      .accessibilityLabel(Text("profile.header.edit.a11yDisabled", bundle: .module))
+      .disabled(onEdit == nil)
+      .accessibilityLabel(
+        Text(
+          onEdit == nil
+            ? LocalizedStringKey("profile.header.edit.a11yDisabled")
+            : LocalizedStringKey("profile.header.edit"),
+          bundle: .module
+        )
+      )
     }
     .padding(Spacing.lg)
     .background(Color.brand.card)
