@@ -174,6 +174,84 @@ final class PracticeViewModelTests: XCTestCase {
     XCTAssertEqual(attributes.first?["rate"], "0.75", "0.6 should snap to the nearest supported rate (0.75)")
   }
 
+  // MARK: - Prev/Next ayah navigation
+
+  func test_canGoToPreviousAyah_isFalseOnFirstAyah() {
+    let viewModel = makeViewModel(surahId: "1", ayahNumber: 1)
+    XCTAssertFalse(viewModel.canGoToPreviousAyah)
+  }
+
+  func test_canGoToNextAyah_requiresSurahHeader() {
+    // Until the surah header has loaded we don't know the ayah count,
+    // so next must conservatively disable. The web client renders an
+    // empty href in the same situation; iOS gates the button instead.
+    let viewModel = makeViewModel(surahId: "1", ayahNumber: 1)
+    XCTAssertFalse(viewModel.canGoToNextAyah, "no header → no next")
+  }
+
+  func test_goToNextAyah_advancesAndReloadsAyah() async {
+    let backend = MockBackend()
+    backend.surahLookup = { _ in
+      SurahSummary(id: "1", nameAr: "الفاتحة", nameEn: "Al-Fatihah", ayahCount: 7, revelationPlace: "Mecca")
+    }
+    backend.ayahLookup = { _, ayahNumber in
+      AyahDetail(id: "1:\(ayahNumber)", surahId: "1", ayahNumber: ayahNumber, textAr: "ayah \(ayahNumber) text")
+    }
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(surahId: "1", ayahNumber: 1, backend: backend, telemetry: telemetry)
+    await viewModel.load()
+    XCTAssertTrue(viewModel.canGoToNextAyah)
+
+    await viewModel.goToNextAyah()
+
+    XCTAssertEqual(viewModel.currentAyahNumber, 2)
+    XCTAssertEqual(viewModel.ayah?.ayahNumber, 2)
+    XCTAssertTrue(
+      telemetry.records.contains { record in
+        if case let .event(name, attrs) = record {
+          return name == "practice.ayah.navigated" && attrs["direction"] == "next" && attrs["ayah"] == "2"
+        }
+        return false
+      },
+      "expected practice.ayah.navigated event with direction=next, ayah=2"
+    )
+  }
+
+  func test_goToPreviousAyah_decrementsAndStopsAtFirst() async {
+    let backend = MockBackend()
+    backend.surahLookup = { _ in
+      SurahSummary(id: "1", nameAr: "الفاتحة", nameEn: "Al-Fatihah", ayahCount: 7, revelationPlace: "Mecca")
+    }
+    backend.ayahLookup = { _, ayahNumber in
+      AyahDetail(id: "1:\(ayahNumber)", surahId: "1", ayahNumber: ayahNumber, textAr: "ayah \(ayahNumber)")
+    }
+    let viewModel = makeViewModel(surahId: "1", ayahNumber: 2, backend: backend)
+    await viewModel.load()
+
+    await viewModel.goToPreviousAyah()
+    XCTAssertEqual(viewModel.currentAyahNumber, 1)
+
+    // Already on the first ayah — no-op.
+    await viewModel.goToPreviousAyah()
+    XCTAssertEqual(viewModel.currentAyahNumber, 1)
+  }
+
+  func test_goToNextAyah_pastFinalAyah_isNoOp() async {
+    let backend = MockBackend()
+    backend.surahLookup = { _ in
+      SurahSummary(id: "112", nameAr: "الإخلاص", nameEn: "Al-Ikhlas", ayahCount: 4, revelationPlace: "Mecca")
+    }
+    backend.ayahLookup = { _, ayahNumber in
+      AyahDetail(id: "112:\(ayahNumber)", surahId: "112", ayahNumber: ayahNumber, textAr: "ayah \(ayahNumber)")
+    }
+    let viewModel = makeViewModel(surahId: "112", ayahNumber: 4, backend: backend)
+    await viewModel.load()
+    XCTAssertFalse(viewModel.canGoToNextAyah)
+
+    await viewModel.goToNextAyah()
+    XCTAssertEqual(viewModel.currentAyahNumber, 4, "must not step past the final ayah")
+  }
+
   // MARK: - Helpers
 
   private func makeViewModel(
