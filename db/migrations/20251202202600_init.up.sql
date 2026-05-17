@@ -43,8 +43,22 @@ CREATE TABLE IF NOT EXISTS users (
     level         TEXT
                   CHECK (level IS NULL OR level IN ('beginner', 'intermediate', 'advanced')),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- Soft-delete marker per ADR-0024. NULL = live; non-NULL = the
+    -- account is scheduled for hard deletion after a 30-day grace
+    -- window. Every authenticated read filters on `deleted_at IS NULL`
+    -- so a deleted user behaves identically to a never-existed user
+    -- until the purge job (PR-E8) physically removes the row.
+    deleted_at    TIMESTAMPTZ
 );
+
+-- Partial index lets the daily purge job find purge-eligible rows
+-- without scanning live users. The grace-window comparison is done
+-- in the WHERE of the purge query itself; this index just narrows
+-- the scan to soft-deleted rows.
+CREATE INDEX IF NOT EXISTS users_deleted_at_idx
+    ON users (deleted_at)
+    WHERE deleted_at IS NOT NULL;
 
 -- Attempts table for scoring storage.
 -- Partitioning was originally intended (PARTITION BY RANGE (created_at)) but
