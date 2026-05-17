@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { ActionRow } from '../ActionRow';
 import messages from '../../../../../../messages/en.json';
@@ -12,7 +12,6 @@ vi.mock('../../../../../../i18n/navigation', () => ({
 
 afterEach(() => {
   cleanup();
-  vi.useRealTimers();
 });
 
 const renderRow = (props: React.ComponentProps<typeof ActionRow>) =>
@@ -47,28 +46,11 @@ describe('ActionRow', () => {
     expect(tryAgain).toHaveAttribute('href', '/practice/1/3');
   });
 
-  describe('Save attempt', () => {
-    it('shows the "Save attempt" button by default', () => {
-      renderRow({ surahId: '1', surahName: 'Al-Fatihah', ayahNumber: 2, totalAyahs: 7 });
-      expect(screen.getByRole('button', { name: /save attempt/i })).toBeInTheDocument();
-    });
-
-    it('flips to "Saved to history" on click', () => {
-      renderRow({ surahId: '1', surahName: 'Al-Fatihah', ayahNumber: 2, totalAyahs: 7 });
-      fireEvent.click(screen.getByRole('button', { name: /save attempt/i }));
-      expect(screen.getByRole('button', { name: /saved to history/i })).toBeInTheDocument();
-    });
-
-    it('reverts to "Save attempt" after the confirmation timeout', () => {
-      vi.useFakeTimers();
-      renderRow({ surahId: '1', surahName: 'Al-Fatihah', ayahNumber: 2, totalAyahs: 7 });
-      fireEvent.click(screen.getByRole('button', { name: /save attempt/i }));
-      expect(screen.getByRole('button', { name: /saved to history/i })).toBeInTheDocument();
-      act(() => {
-        vi.advanceTimersByTime(2_000);
-      });
-      expect(screen.getByRole('button', { name: /save attempt/i })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /saved to history/i })).not.toBeInTheDocument();
-    });
+  it('renders no Save button — persistence is automatic via recordAttempt', () => {
+    renderRow({ surahId: '1', surahName: 'Al-Fatihah', ayahNumber: 2, totalAyahs: 7 });
+    // Defensive: a future regression that re-introduces the dead button
+    // would fail here and force a deliberate UX decision rather than a
+    // silent re-add.
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

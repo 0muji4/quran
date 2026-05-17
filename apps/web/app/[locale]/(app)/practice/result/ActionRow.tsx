@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../../components/icons/ArrowRightIcon';
@@ -12,8 +11,6 @@ type Props = {
   ayahNumber: number;
   totalAyahs: number;
 };
-
-const CONFIRMATION_MS = 2_000;
 
 export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props) {
   const t = useTranslations('result.action');
@@ -27,54 +24,18 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
     : `/practice/${surahId}/${ayahNumber + 1}`;
   const continueLabel = isLastAyah ? t('finish') : t('continue', { next: ayahNumber + 1 });
 
-  // The attempt is already persisted by recordAttempt() the moment scoring
-  // completes (see RecorderPanel). This button acknowledges that — clicking
-  // it surfaces a brief "Saved to history ✓" so the user sees they don't have
-  // to do anything to keep the result. When Phase 3.1 adds BFF persistence,
-  // this is the natural place to upgrade to a real sync trigger.
-  const [confirmed, setConfirmed] = useState(false);
-  useEffect(() => {
-    if (!confirmed) return;
-    const id = setTimeout(() => setConfirmed(false), CONFIRMATION_MS);
-    return () => clearTimeout(id);
-  }, [confirmed]);
-
+  // Persistence is automatic: `recordAttempt()` writes to localStorage and the
+  // BFF the moment scoring completes (RecorderPanel). No manual save action —
+  // the iOS client has none either, and a placeholder "Save" button confused
+  // users into thinking the save was opt-in.
   return (
     <div className={styles.resultActionRow}>
       <Link href={tryAgainHref} className={styles.btnGhost}>
         <ArrowLeftIcon /> {t('tryAgain')}
       </Link>
-      <button
-        type="button"
-        className={`${styles.btnGhost} ${styles.saveAttemptBtn}`}
-        onClick={() => setConfirmed(true)}
-        aria-live="polite"
-      >
-        {confirmed ? (
-          <>
-            <CheckGlyph /> {t('saved')}
-          </>
-        ) : (
-          t('saveAttempt')
-        )}
-      </button>
       <Link href={continueHref} className={`${styles.btnTeal} ${styles.resultPrimaryBtn}`}>
         {continueLabel} <ArrowRightIcon />
       </Link>
     </div>
-  );
-}
-
-function CheckGlyph() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path
-        d="M2.5 6.2 5 8.5l4.5-5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
