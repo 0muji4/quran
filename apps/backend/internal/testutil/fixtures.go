@@ -11,10 +11,10 @@ import (
 	"quran-project/apps/backend/internal/domain"
 )
 
-// SurahOption is a functional option for customizing Surah test data
+// SurahOption is a functional option for customizing Surah test data.
 type SurahOption func(*domain.Surah)
 
-// BuildSurah creates a test Surah with sensible defaults and optional overrides
+// BuildSurah creates a test Surah with sensible defaults and optional overrides.
 func BuildSurah(opts ...SurahOption) domain.Surah {
 	s := domain.Surah{
 		ID:              1,
@@ -37,14 +37,14 @@ func BuildSurah(opts ...SurahOption) domain.Surah {
 	return s
 }
 
-// WithSurahID sets the surah ID
+// WithSurahID sets the surah ID.
 func WithSurahID(id int32) SurahOption {
 	return func(s *domain.Surah) {
 		s.ID = id
 	}
 }
 
-// WithSurahName sets both Arabic and English names
+// WithSurahName sets both Arabic and English names.
 func WithSurahName(ar, en string) SurahOption {
 	return func(s *domain.Surah) {
 		s.NameAR = ar
@@ -52,24 +52,24 @@ func WithSurahName(ar, en string) SurahOption {
 	}
 }
 
-// WithRevelationPlace sets the revelation place
+// WithRevelationPlace sets the revelation place.
 func WithRevelationPlace(place string) SurahOption {
 	return func(s *domain.Surah) {
 		s.RevelationPlace = place
 	}
 }
 
-// WithAyahCount sets the ayah count
+// WithAyahCount sets the ayah count.
 func WithAyahCount(count int32) SurahOption {
 	return func(s *domain.Surah) {
 		s.AyahCount = count
 	}
 }
 
-// AyahOption is a functional option for customizing Ayah test data
+// AyahOption is a functional option for customizing Ayah test data.
 type AyahOption func(*domain.Ayah)
 
-// BuildAyah creates a test Ayah with sensible defaults and optional overrides
+// BuildAyah creates a test Ayah with sensible defaults and optional overrides.
 func BuildAyah(opts ...AyahOption) domain.Ayah {
 	a := domain.Ayah{
 		ID:              1,
@@ -94,52 +94,52 @@ func BuildAyah(opts ...AyahOption) domain.Ayah {
 	return a
 }
 
-// WithAyahID sets the ayah ID
+// WithAyahID sets the ayah ID.
 func WithAyahID(id int64) AyahOption {
 	return func(a *domain.Ayah) {
 		a.ID = id
 	}
 }
 
-// WithSurahIDForAyah sets the surah ID for an ayah
+// WithSurahIDForAyah sets the surah ID for an ayah.
 func WithSurahIDForAyah(surahID int32) AyahOption {
 	return func(a *domain.Ayah) {
 		a.SurahID = surahID
 	}
 }
 
-// WithAyahNumber sets the ayah number
+// WithAyahNumber sets the ayah number.
 func WithAyahNumber(num int32) AyahOption {
 	return func(a *domain.Ayah) {
 		a.AyahNumber = num
 	}
 }
 
-// WithTextAR sets the Arabic text
+// WithTextAR sets the Arabic text.
 func WithTextAR(text string) AyahOption {
 	return func(a *domain.Ayah) {
 		a.TextAR = text
 	}
 }
 
-// WithTextEN sets the English translation
+// WithTextEN sets the English translation.
 func WithTextEN(text string) AyahOption {
 	return func(a *domain.Ayah) {
 		a.TextEN = text
 	}
 }
 
-// WithTransliteration sets the transliteration
+// WithTransliteration sets the transliteration.
 func WithTransliteration(text string) AyahOption {
 	return func(a *domain.Ayah) {
 		a.Transliteration = text
 	}
 }
 
-// ASRResultOption is a functional option for customizing ASRResult test data
+// ASRResultOption is a functional option for customizing ASRResult test data.
 type ASRResultOption func(*domain.ASRResult)
 
-// BuildASRResult creates a test ASRResult with sensible defaults
+// BuildASRResult creates a test ASRResult with sensible defaults.
 func BuildASRResult(opts ...ASRResultOption) domain.ASRResult {
 	r := domain.ASRResult{
 		SessionID:      "test-session-123",
@@ -168,28 +168,28 @@ func BuildASRResult(opts ...ASRResultOption) domain.ASRResult {
 	return r
 }
 
-// WithSessionID sets the session ID
+// WithSessionID sets the session ID.
 func WithSessionID(id string) ASRResultOption {
 	return func(r *domain.ASRResult) {
 		r.SessionID = id
 	}
 }
 
-// WithAudioKey sets the audio key
+// WithAudioKey sets the audio key.
 func WithAudioKey(key string) ASRResultOption {
 	return func(r *domain.ASRResult) {
 		r.AudioKey = key
 	}
 }
 
-// WithTranscript sets the transcript
+// WithTranscript sets the transcript.
 func WithTranscript(transcript string) ASRResultOption {
 	return func(r *domain.ASRResult) {
 		r.Transcript = transcript
 	}
 }
 
-// WithWER sets the Word Error Rate
+// WithWER sets the Word Error Rate.
 func WithWER(wer float64) ASRResultOption {
 	return func(r *domain.ASRResult) {
 		r.WER = wer
@@ -209,7 +209,7 @@ func mustMarshalMetadata(t *testing.T, v map[string]any) []byte {
 	return b
 }
 
-// SeedStandardData inserts a standard set of test data (Al-Fatiha) into the database
+// SeedStandardData inserts a standard set of test data (Al-Fatiha) into the database.
 func SeedStandardData(t *testing.T, db *sql.DB) {
 	t.Helper()
 
@@ -259,7 +259,7 @@ func SeedStandardData(t *testing.T, db *sql.DB) {
 	}
 }
 
-// SeedMultipleSurahs inserts multiple surahs for pagination testing
+// SeedMultipleSurahs inserts multiple surahs for pagination testing.
 func SeedMultipleSurahs(t *testing.T, db *sql.DB, count int) {
 	t.Helper()
 
