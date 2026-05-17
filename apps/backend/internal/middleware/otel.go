@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"quran-project/apps/backend/internal/telemetry"
@@ -20,33 +22,50 @@ var (
 
 	httpServerDuration metric.Float64Histogram
 	httpServerRequests metric.Int64Counter
+
+	initOnce sync.Once
 )
 
-func init() {
-	tracer = telemetry.Tracer()
-	meter = telemetry.Meter()
+// Init binds the package-level tracer and meter to the current global
+// providers and registers HTTP server instruments. It is safe to call
+// repeatedly; only the first invocation has effect. Returns an error
+// when an instrument cannot be registered so the caller decides how to
+// surface the failure rather than panicking from an init function.
+func Init() error {
+	var initErr error
+	initOnce.Do(func() {
+		tracer = telemetry.Tracer()
+		meter = telemetry.Meter()
 
-	var err error
-	httpServerDuration, err = meter.Float64Histogram(
-		"http.server.duration",
-		metric.WithDescription("HTTP server request duration in milliseconds"),
-		metric.WithUnit("ms"),
-	)
-	if err != nil {
-		panic(err)
-	}
+		var err error
+		httpServerDuration, err = meter.Float64Histogram(
+			"http.server.duration",
+			metric.WithDescription("HTTP server request duration in milliseconds"),
+			metric.WithUnit("ms"),
+		)
+		if err != nil {
+			initErr = fmt.Errorf("middleware: register http.server.duration: %w", err)
+			return
+		}
 
-	httpServerRequests, err = meter.Int64Counter(
-		"http.server.requests.total",
-		metric.WithDescription("Total HTTP server requests"),
-	)
-	if err != nil {
-		panic(err)
-	}
+		httpServerRequests, err = meter.Int64Counter(
+			"http.server.requests.total",
+			metric.WithDescription("Total HTTP server requests"),
+		)
+		if err != nil {
+			initErr = fmt.Errorf("middleware: register http.server.requests.total: %w", err)
+			return
+		}
+	})
+	return initErr
 }
 
 // OTEL wraps an HTTP handler with OpenTelemetry instrumentation.
+// It lazily binds to the global tracer/meter providers via Init the
+// first time it is called, so tests that do not call Init explicitly
+// still get a working middleware.
 func OTEL(next http.Handler) http.Handler {
+	_ = Init()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
