@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { css, cx } from '../../../../styled-system/css';
 import { button } from '../../../../styled-system/recipes';
 import { filterKey, type HistoryFilter } from './historyFilters';
@@ -25,15 +28,16 @@ type Props = {
 };
 
 export function HistoryFilterChips({ options, selected, onSelect }: Props) {
+  const t = useTranslations('history.filter');
   const baseClass = button({ tone: 'nav', size: 'lg' });
   const selectedKey = filterKey(selected);
 
   return (
-    <div className={rowClass} role="group" aria-label="Filter attempts by surah">
+    <div className={rowClass} role="group" aria-label={t('ariaLabel')}>
       {options.map((option) => {
         const key = filterKey(option);
         const active = key === selectedKey;
-        const label = option.kind === 'all' ? 'All' : option.nameEn;
+        const label = option.kind === 'all' ? t('all') : option.nameEn;
         return (
           <button
             key={key}

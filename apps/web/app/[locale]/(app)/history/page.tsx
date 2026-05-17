@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getCurrentSession } from '../../../lib/session';
 import { HistoryList } from './HistoryList';
 import { css } from '../../../../styled-system/css';
@@ -18,18 +19,15 @@ const heroDescriptionClass = css({
 });
 
 export default async function HistoryPage() {
-  const session = await getCurrentSession();
+  const [session, t] = await Promise.all([getCurrentSession(), getTranslations('history')]);
   return (
     <>
       <header className={heroClass}>
         <span className="eyebrow" aria-hidden="true">
-          + Your tilawah journey
+          {t('eyebrow')}
         </span>
-        <h1>Recent attempts</h1>
-        <p className={heroDescriptionClass}>
-          A log of your recent recitations and scores. Synced across your devices when you are
-          signed in.
-        </p>
+        <h1>{t('title')}</h1>
+        <p className={heroDescriptionClass}>{t('description')}</p>
       </header>
       <HistoryList signedIn={session !== null} />
     </>
