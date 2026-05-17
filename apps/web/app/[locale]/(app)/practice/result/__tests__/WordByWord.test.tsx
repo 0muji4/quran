@@ -1,9 +1,19 @@
 import { afterEach, describe, it, expect } from 'vitest';
+import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import type { WordAlignment } from '@quran-project/shared-ts';
 import { WordByWord } from '../WordByWord';
+import messages from '../../../../../../messages/en.json';
 
 afterEach(() => cleanup());
+
+const renderWords = (props: React.ComponentProps<typeof WordByWord>) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <WordByWord {...props} />
+    </NextIntlClientProvider>
+  );
 
 const alignments: WordAlignment[] = [
   { op: 'equal', refWord: 'بِسْمِ', hypWord: 'بِسْمِ' },
@@ -14,13 +24,13 @@ const alignments: WordAlignment[] = [
 
 describe('WordByWord', () => {
   it('renders both EXPECTED and WHAT WE HEARD rows', () => {
-    render(<WordByWord wordAlignments={alignments} wer={0.5} />);
+    renderWords({ wordAlignments: alignments, wer: 0.5 });
     expect(screen.getByText('EXPECTED (TEACHER)')).toBeInTheDocument();
     expect(screen.getByText('WHAT WE HEARD')).toBeInTheDocument();
   });
 
   it('formats WER as percent', () => {
-    const { container } = render(<WordByWord wordAlignments={alignments} wer={0.5} />);
+    const { container } = renderWords({ wordAlignments: alignments, wer: 0.5 });
     // The percentage is in the dedicated WER span; getByText would also match
     // the wrapping <p>, so query the leaf span directly.
     const werNode = container.querySelector('p span');
@@ -28,19 +38,19 @@ describe('WordByWord', () => {
   });
 
   it('shows em-dash when WER is null', () => {
-    const { container } = render(<WordByWord wordAlignments={alignments} wer={null} />);
+    const { container } = renderWords({ wordAlignments: alignments, wer: null });
     const werNode = container.querySelector('p span');
     expect(werNode?.textContent).toBe('—');
   });
 
   it('falls back to "…" placeholder for missing words', () => {
-    render(<WordByWord wordAlignments={alignments} wer={0.5} />);
+    renderWords({ wordAlignments: alignments, wer: 0.5 });
     // delete op has no hypWord; insert op has no refWord.
     expect(screen.getAllByText('…').length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders a single combined empty-state copy when there are no alignments', () => {
-    render(<WordByWord wordAlignments={[]} wer={null} />);
+    renderWords({ wordAlignments: [], wer: null });
     expect(
       screen.getByText(/Word-level alignment is not available for this attempt yet/)
     ).toBeInTheDocument();

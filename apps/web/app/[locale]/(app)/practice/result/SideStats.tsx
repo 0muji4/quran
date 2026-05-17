@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 import { getAttemptsForToday, getBestScore } from '../../../../lib/storage';
 
@@ -21,6 +22,7 @@ const formatDuration = (ms: number | null | undefined): string => {
 export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
   const [personalBest, setPersonalBest] = useState<number | null>(null);
   const [attemptsToday, setAttemptsToday] = useState<number>(0);
+  const t = useTranslations('result.sideStats');
 
   useEffect(() => {
     const best = getBestScore(surahId, ayahNumber);
@@ -31,15 +33,15 @@ export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
   return (
     <dl className={styles.sideStats}>
       <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>PERSONAL BEST</dt>
+        <dt className={styles.sideStatLabel}>{t('personalBest')}</dt>
         <dd className={styles.sideStatValue}>{personalBest ?? '—'}</dd>
       </div>
       <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>ATTEMPTS TODAY</dt>
+        <dt className={styles.sideStatLabel}>{t('attemptsToday')}</dt>
         <dd className={styles.sideStatValue}>{attemptsToday}</dd>
       </div>
       <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>DURATION</dt>
+        <dt className={styles.sideStatLabel}>{t('duration')}</dt>
         <dd className={styles.sideStatValue}>{formatDuration(durationMs)}</dd>
       </div>
     </dl>

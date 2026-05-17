@@ -1,10 +1,14 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
+type MetricKind = 'accuracy' | 'fluency' | 'completeness';
+
 type Props = {
-  label: string;
+  kind: MetricKind;
   // 0..1 fraction (matches PronunciationFeedback.accuracy etc).
   value: number | null | undefined;
-  description: string;
   tone?: 'amber' | 'red' | 'teal';
 };
 
@@ -21,7 +25,8 @@ const toPercent = (
   return { display: `${pct.toFixed(1)}%`, pct, tone };
 };
 
-export function MetricCard({ label, value, description, tone }: Props) {
+export function MetricCard({ kind, value, tone }: Props) {
+  const t = useTranslations('result.metric');
   const computed = toPercent(value);
   const effectiveTone = tone ?? computed.tone;
   const trackClass =
@@ -31,14 +36,14 @@ export function MetricCard({ label, value, description, tone }: Props) {
         ? styles.metricBarFillAmber
         : styles.metricBarFillRed;
 
-  const labelId = `metric-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const labelId = `metric-${kind}`;
   const isUnknown = computed.display === '—';
 
   return (
     <div className={styles.metricCard}>
       <div className={styles.metricCardHead}>
         <span id={labelId} className={styles.metricCardLabel}>
-          {label}
+          {t(`${kind}.label`)}
         </span>
         <span className={styles.metricCardValue} aria-hidden="true">
           {computed.display}
@@ -51,11 +56,11 @@ export function MetricCard({ label, value, description, tone }: Props) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={isUnknown ? undefined : Math.round(computed.pct)}
-        aria-valuetext={isUnknown ? 'No score yet' : computed.display}
+        aria-valuetext={isUnknown ? t('noScore') : computed.display}
       >
         <span className={trackClass} style={{ width: `${computed.pct}%` }} aria-hidden="true" />
       </div>
-      <p className={styles.metricCardDescription}>{description}</p>
+      <p className={styles.metricCardDescription}>{t(`${kind}.description`)}</p>
     </div>
   );
 }
