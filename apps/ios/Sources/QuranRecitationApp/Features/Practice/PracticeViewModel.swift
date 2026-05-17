@@ -45,6 +45,7 @@ final class PracticeViewModel: ObservableObject {
   ) {
     self.surahId = surahId
     self.initialAyahNumber = ayahNumber
+    self.currentAyahNumber = ayahNumber
     self.backend = backend
     self.referenceClient = referenceClient
     self.recorder = recorder
@@ -77,9 +78,73 @@ final class PracticeViewModel: ObservableObject {
     }
   }
 
-  /// Currently shown ayah number. Identical to `initialAyahNumber`
-  /// today; PR 21's "Continue to ayah N+1" action will advance it.
-  var currentAyahNumber: Int { initialAyahNumber }
+  /// Currently shown ayah number. Mutates via `goToPreviousAyah()` /
+  /// `goToNextAyah()`. Reset to `initialAyahNumber` on construction
+  /// so deep-link entries (e.g. Library Continue) land where the
+  /// caller expects.
+  @Published private(set) var currentAyahNumber: Int
+
+  /// True when there is a previous ayah to navigate to. The UI uses
+  /// this to disable the prev button on ayah 1.
+  var canGoToPreviousAyah: Bool { currentAyahNumber > 1 }
+
+  /// True when there is a next ayah to navigate to. The UI uses
+  /// this to disable the next button on the last ayah of the surah.
+  /// Reads `surah?.ayahCount` — until the header has loaded, the
+  /// next button is conservatively disabled.
+  var canGoToNextAyah: Bool {
+    guard let count = surah?.ayahCount else { return false }
+    return currentAyahNumber < count
+  }
+
+  /// Step back one ayah and reload its text and reference audio.
+  /// No-op if already on ayah 1. The teacher player is stopped first
+  /// so a half-played previous-ayah reference can't bleed into the
+  /// new one.
+  func goToPreviousAyah() async {
+    guard canGoToPreviousAyah else { return }
+    await moveTo(ayahNumber: currentAyahNumber - 1, direction: "prev")
+  }
+
+  /// Step forward one ayah and reload its text and reference audio.
+  /// No-op once past the surah's final ayah.
+  func goToNextAyah() async {
+    guard canGoToNextAyah else { return }
+    await moveTo(ayahNumber: currentAyahNumber + 1, direction: "next")
+  }
+
+  private func moveTo(ayahNumber: Int, direction: String) async {
+    player.stop()
+    if case let .ready(_, _, _, rate) = teacherState {
+      // Step out of `.ready` so the panel shows the loading state
+      // until the new reference resolves.
+      teacherState = .loading
+      _ = rate
+    } else {
+      teacherState = .loading
+    }
+    currentAyahNumber = ayahNumber
+    telemetry.event(
+      TelemetryEvent.practiceAyahNavigated,
+      attributes: [
+        "surah_id": surahId,
+        "ayah": String(ayahNumber),
+        "direction": direction
+      ]
+    )
+    do {
+      let nextAyah = try await backend.ayah(surahId: surahId, ayahNumber: ayahNumber)
+      self.ayah = nextAyah
+    } catch let error as AppError {
+      telemetry.error(error, context: ["screen": "practice", "scope": "ayah-nav"])
+      state = .error(error)
+    } catch {
+      let appError = AppError.network(underlying: error)
+      telemetry.error(appError, context: ["screen": "practice", "scope": "ayah-nav"])
+      state = .error(appError)
+    }
+    await loadReference()
+  }
 
   // MARK: - Teacher reference (PR 13)
 
