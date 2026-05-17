@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -80,9 +79,6 @@ func Init(ctx context.Context) error {
 		))
 	})
 
-	if initErr != nil {
-		log.Printf("telemetry init failed: %v", initErr)
-	}
 	return initErr
 }
 

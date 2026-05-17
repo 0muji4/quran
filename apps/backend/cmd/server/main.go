@@ -30,6 +30,9 @@ func main() {
 	if err := telemetry.InitMetrics(); err != nil {
 		log.Printf("metrics init failed: %v", err)
 	}
+	if err := middleware.Init(); err != nil {
+		log.Printf("middleware init failed: %v", err)
+	}
 
 	logger := telemetry.Logger()
 	logger.Info("Starting quran-backend service")
