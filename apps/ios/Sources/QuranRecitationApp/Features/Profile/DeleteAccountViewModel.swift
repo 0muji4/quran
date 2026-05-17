@@ -85,11 +85,11 @@ final class DeleteAccountViewModel: ObservableObject, Identifiable {
     case .network:
       return "Network error. Check your connection and try again."
     case .invalidCredentials:
-      // The DELETE endpoint runs over the standard Bearer flow
-      // (retryOn401: true), so a 401 means the rotated refresh
-      // also failed and AuthHTTPClient has already signed us out.
-      // The sheet will be torn down by the parent's session
-      // observer; meanwhile show neutral copy rather than nothing.
+      // The DELETE endpoint never returns 422; a 401 here means
+      // AuthHTTPClient already tried to refresh, the refresh failed,
+      // and the sign-out callback has fired. The sheet will be torn
+      // down by the parent's session observer; meanwhile show
+      // neutral copy rather than nothing.
       return "Your session has expired. Sign in again."
     default:
       return fallbackMessage

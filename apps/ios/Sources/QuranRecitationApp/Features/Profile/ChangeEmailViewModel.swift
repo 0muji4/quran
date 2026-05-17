@@ -106,9 +106,11 @@ final class ChangeEmailViewModel: ObservableObject, Identifiable {
   static func message(for error: AppError) -> String {
     switch error {
     case .invalidCredentials:
-      // ProfileService maps the "current password incorrect" 401 to
-      // .invalidCredentials (retryOn401: false escape hatch keeps
-      // AuthHTTPClient from interpreting it as an expired token).
+      // ProfileService maps the BFF's 422 ("current password is
+      // incorrect") to .invalidCredentials so this branch covers
+      // the re-verification failure without conflating it with a
+      // genuine expired-token sign-out (which AuthHTTPClient
+      // handles before the response reaches us).
       return "Current password is incorrect."
     case .emailInUse:
       return "An account with this email already exists."

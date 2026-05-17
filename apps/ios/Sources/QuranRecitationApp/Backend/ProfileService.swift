@@ -112,21 +112,20 @@ final class HTTPProfileService: ProfileService {
       operation: "profile.email"
     )
 
-    // retryOn401: false — on this endpoint a 401 means "current
-    // password is incorrect" (BFF reuses the auth-failure code for
-    // re-verification). Letting AuthHTTPClient interpret it as an
-    // expired access token would refresh, retry, get another 401, and
-    // sign the user out for getting their password wrong.
-    let (data, response) = try await http.send(request, retryOn401: false)
+    let (data, response) = try await http.send(request)
     switch response.statusCode {
     case 200..<300:
       return try Self.decodeUser(from: data, operation: "profile.email")
     case 400:
       throw AppError.validationFailed
-    case 401:
-      throw AppError.invalidCredentials
     case 409:
       throw AppError.emailInUse
+    case 422:
+      // 422 = "current password is incorrect" (distinct from a 401,
+      // which AuthHTTPClient handles as token expiry). Map it to
+      // `.invalidCredentials` so the sheet shows the right banner
+      // and the session is left alone.
+      throw AppError.invalidCredentials
     default:
       throw AppError.backendUnavailable(operation: "profile.email")
     }
@@ -144,15 +143,16 @@ final class HTTPProfileService: ProfileService {
       operation: "profile.password"
     )
 
-    // retryOn401: false — same overloading as `updateEmail`: 401 here
-    // is the current-password rejection, not an expired token.
-    let (_, response) = try await http.send(request, retryOn401: false)
+    let (_, response) = try await http.send(request)
     switch response.statusCode {
     case 200..<300:
       return
     case 400:
       throw AppError.validationFailed
-    case 401:
+    case 422:
+      // Same overloading-resolved-by-status as `updateEmail`: 422
+      // means "current password incorrect", surface as
+      // `.invalidCredentials` for the banner.
       throw AppError.invalidCredentials
     default:
       throw AppError.backendUnavailable(operation: "profile.password")
