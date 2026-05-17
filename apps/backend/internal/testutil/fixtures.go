@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package testutil
 
@@ -156,10 +155,10 @@ func BuildASRResult(opts ...ASRResultOption) domain.ASRResult {
 				{"word": "الرحيم", "start": 1.5, "end": 2.0},
 			},
 		},
-		WER:               0.0,
-		AlignmentObjectID: "alignments/test-session-123.json",
-		CreatedAt:         time.Now().UTC(),
-		UpdatedAt:         time.Now().UTC(),
+		WER:                0.0,
+		AlignmentObjectKey: "alignments/test-session-123.json",
+		CreatedAt:          time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
 	}
 
 	for _, opt := range opts {
