@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"quran-project/apps/backend/internal/queue"
 	"quran-project/apps/backend/internal/service"
+	"quran-project/apps/backend/internal/telemetry"
 )
 
 // REST exposes minimal read-only endpoints for surahs and ayahs.
@@ -209,12 +209,15 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		ayahID,
 		*req.AyahNumber,
 	).Scan(&createdAt); err != nil {
-		log.Printf("failed to persist scoring job: %v", err)
+		telemetry.Logger().ErrorContext(r.Context(), "persist scoring job failed",
+			"session_id", sessionID, "error", err)
 		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.Enqueuer.PublishASRJob(r.Context(), sessionID, req.UploadKey, ayahID, expectedText, req.ReferenceAudioKey); err != nil {
+		telemetry.Logger().ErrorContext(r.Context(), "enqueue scoring job failed",
+			"session_id", sessionID, "ayah_id", ayahID, "error", err)
 		_, _ = h.DB.ExecContext(
 			r.Context(),
 			`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
