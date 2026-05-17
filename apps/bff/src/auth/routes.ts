@@ -238,11 +238,13 @@ authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
 
 /// Email change for a signed-in user (Phase 2.C-lite — no
 /// confirmation email is sent, the BFF trusts the verified
-/// current-password as proof of intent). Returns 401 on a wrong
-/// current password (same status as a failed sign-in), 409 if the
-/// new address is already taken, 200 with the refreshed user shape
-/// on success. The response mirrors GET /auth/me so the client can
-/// reuse the same Profile component without conditional rendering.
+/// current-password as proof of intent). Returns 422 on a wrong
+/// current password — distinct from a 401 so clients don't mistake
+/// re-verification failure for an expired access token and force a
+/// sign-out. 409 if the new address is already taken; 200 with the
+/// refreshed user shape on success. The response mirrors GET /auth/me
+/// so the client can reuse the same Profile component without
+/// conditional rendering.
 authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
   const session = requireAuth(req, res);
   if (!session) return;
@@ -254,11 +256,11 @@ authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
   try {
     const user = await findUserById(session.id);
     if (!user || !user.passwordHash) {
-      return res.status(401).json({ error: 'current password is incorrect' });
+      return res.status(422).json({ error: 'current password is incorrect' });
     }
     const ok = await verifyPassword(currentPassword, user.passwordHash);
     if (!ok) {
-      return res.status(401).json({ error: 'current password is incorrect' });
+      return res.status(422).json({ error: 'current password is incorrect' });
     }
     // Short-circuit on a no-op rotation — saves a DB write and the
     // confusing 409 the user would get if their own email matched a
@@ -300,9 +302,9 @@ authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
 /// before rotating so a hijacked access cookie can't change the
 /// password by itself (the attacker would still need the old one). The
 /// `newPassword` length rule matches the sign-up zod schema so the two
-/// stay in lockstep. Returns 401 on a wrong current password —
-/// deliberately the same status as a failed sign-in to give the same
-/// signal across both flows.
+/// stay in lockstep. Returns 422 on a wrong current password — distinct
+/// from a 401 (expired access token) so the client doesn't sign the
+/// user out for mistyping their password.
 ///
 /// Refresh-token revocation for other devices is intentionally NOT
 /// done here — that's a follow-up tracked in the password-change
@@ -319,11 +321,11 @@ authRouter.post('/auth/me/password', async (req: AuthedRequest, res) => {
   try {
     const user = await findUserById(session.id);
     if (!user || !user.passwordHash) {
-      return res.status(401).json({ error: 'current password is incorrect' });
+      return res.status(422).json({ error: 'current password is incorrect' });
     }
     const ok = await verifyPassword(currentPassword, user.passwordHash);
     if (!ok) {
-      return res.status(401).json({ error: 'current password is incorrect' });
+      return res.status(422).json({ error: 'current password is incorrect' });
     }
     const newHash = await hashPassword(newPassword);
     const updated = await updateUserPassword(session.id, newHash);
