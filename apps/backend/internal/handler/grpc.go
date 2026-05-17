@@ -20,7 +20,7 @@ func NewSurahGRPCServer(svc service.SurahService) *SurahGRPCServer {
 
 // GetSurahRequest mirrors a proto-generated request for a single surah.
 type GetSurahRequest struct {
-	SurahId int32
+	SurahID int32
 }
 
 // GetSurahResponse mirrors a proto-generated response.
@@ -30,7 +30,7 @@ type GetSurahResponse struct {
 
 // ListAyahsRequest fetches ayahs for a surah.
 type ListAyahsRequest struct {
-	SurahId int32
+	SurahID int32
 }
 
 // ListAyahsResponse wraps ayah results.
@@ -43,7 +43,7 @@ func (s *SurahGRPCServer) GetSurah(ctx context.Context, req *GetSurahRequest) (*
 	if req == nil {
 		return nil, errors.New("request required")
 	}
-	surah, err := s.svc.GetSurah(ctx, req.SurahId)
+	surah, err := s.svc.GetSurah(ctx, req.SurahID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *SurahGRPCServer) ListAyahs(ctx context.Context, req *ListAyahsRequest) 
 	if req == nil {
 		return nil, errors.New("request required")
 	}
-	ayahs, err := s.svc.ListAyahs(ctx, req.SurahId)
+	ayahs, err := s.svc.ListAyahs(ctx, req.SurahID)
 	if err != nil {
 		return nil, err
 	}
