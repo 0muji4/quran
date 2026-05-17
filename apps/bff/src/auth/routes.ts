@@ -13,6 +13,7 @@ import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  reactivateUser,
   softDeleteUser,
   updateUserPassword,
   updateUserProfile,
@@ -57,9 +58,16 @@ type AuthSuccess = {
     // conditionally so a null does not produce an empty pill.
     level: UserLevel | null;
   };
+  // Optional ADR-0024 §4 signal: present and `true` only when this
+  // sign-in resurrected a soft-deleted row. Clients use it to surface
+  // a "Welcome back — your account has been restored" toast.
+  reactivated?: boolean;
 };
 
-const issueAuthSuccess = async (user: UserRow): Promise<AuthSuccess> => {
+const issueAuthSuccess = async (
+  user: UserRow,
+  options?: { reactivated?: boolean }
+): Promise<AuthSuccess> => {
   const payload = {
     sub: user.id,
     email: user.email,
@@ -82,7 +90,8 @@ const issueAuthSuccess = async (user: UserRow): Promise<AuthSuccess> => {
       displayName: user.displayName,
       createdAt: user.createdAt.toISOString(),
       level: user.level
-    }
+    },
+    ...(options?.reactivated ? { reactivated: true } : {})
   };
 };
 
@@ -283,7 +292,10 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
   const { email, password } = validation.data.body;
 
   try {
-    const user = await findUserByEmail(email);
+    // `includeDeleted: true` so a soft-deleted account can sign in to
+    // reactivate (ADR-0024 §4). Every other authenticated read still
+    // hides the deleted row.
+    const user = await findUserByEmail(email, { includeDeleted: true });
     // Always run a verify pass even when the user is missing, so the
     // response timing is invariant with respect to existence (mitigates
     // user-enumeration via timing).
@@ -294,7 +306,14 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
       return res.status(401).json({ error: 'invalid email or password' });
     }
 
-    res.json(await issueAuthSuccess(user));
+    // The row was soft-deleted but the password still verifies and the
+    // 30-day grace window has not been purged yet: resurrect.
+    const wasReactivated = await reactivateUser(user.id);
+    if (wasReactivated) {
+      logger.info('login reactivated soft-deleted account', { userId: user.id });
+    }
+
+    res.json(await issueAuthSuccess(user, { reactivated: wasReactivated }));
   } catch (error) {
     logger.error('POST /auth/login failed', { email, error });
     res.status(502).json({ error: 'Failed to sign in' });
