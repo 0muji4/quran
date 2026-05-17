@@ -127,15 +127,15 @@ final class AuthHTTPClientTests: XCTestCase {
     XCTAssertEqual(spy.requests.count, 2)
   }
 
-  func test_send_retryOn401False_returns401WithoutRefreshOrSignOut() async throws {
-    // The escape hatch used by ProfileService.updateEmail and
-    // ProfileService.updatePassword, where 401 means "wrong current
-    // password" rather than "expired access token". The client must
-    // hand the 401 back unchanged so the caller can map it to
-    // .invalidCredentials, without spending a refresh round-trip or
-    // evicting the session.
+  func test_send_non401StatusReturnsResponseUnchanged() async throws {
+    // Domain status codes (404, 409, 422, 502, …) flow back to the
+    // caller untouched — only 401 triggers the rotate-and-retry
+    // path. Specifically asserting 422 here documents that the
+    // "current password is incorrect" overload was moved off 401
+    // (see BFF PR — fix: 422 for re-verification failure) so
+    // AuthHTTPClient no longer needs a retryOn401 escape hatch.
     let spy = TransportSpy(responses: [
-      { (Data("nope".utf8), httpResponse(status: 401)) }
+      { (Data("wrong-password".utf8), httpResponse(status: 422)) }
     ])
     var signOutCount = 0
     let client = makeClient(
@@ -145,12 +145,12 @@ final class AuthHTTPClientTests: XCTestCase {
       onSignOut: { signOutCount += 1 }
     )
 
-    let (data, response) = try await client.send(URLRequest(url: url), retryOn401: false)
+    let (data, response) = try await client.send(URLRequest(url: url))
 
-    XCTAssertEqual(response.statusCode, 401)
-    XCTAssertEqual(data, Data("nope".utf8))
-    XCTAssertEqual(spy.requests.count, 1, "no refresh round-trip with retryOn401: false")
-    XCTAssertEqual(signOutCount, 0, "401 with retryOn401: false must not evict the session")
+    XCTAssertEqual(response.statusCode, 422)
+    XCTAssertEqual(data, Data("wrong-password".utf8))
+    XCTAssertEqual(spy.requests.count, 1, "no refresh round-trip on non-401")
+    XCTAssertEqual(signOutCount, 0)
   }
 
   func test_send_transportNetworkError_propagatesWithoutSignOut() async {

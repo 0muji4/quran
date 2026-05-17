@@ -38,26 +38,23 @@ final class AuthHTTPClient {
 
   /// Send a request as the signed-in user. Returns the BFF response
   /// tuple on any non-401 outcome (so the caller can map domain status
-  /// codes like 404 or 502 themselves). Throws
+  /// codes like 404, 422, 502 themselves). Throws
   /// `AppError.invalidCredentials` and signs the user out when the
   /// auth path is confirmed dead — either no token, refresh rejected,
   /// or even the rotated token is refused.
   ///
-  /// `retryOn401`: when `false`, a 401 is returned to the caller
-  /// unchanged (no refresh, no sign-out). This is the escape hatch for
-  /// endpoints where 401 is semantically overloaded — `/auth/me/email`
-  /// and `/auth/me/password` reuse 401 for "current password
-  /// incorrect", and we must not let that response evict a still-valid
-  /// session. The default `true` preserves the standard rotate-and-
-  /// retry behaviour for plain Bearer-authenticated endpoints.
-  func send(_ request: URLRequest, retryOn401: Bool = true) async throws -> (Data, HTTPURLResponse) {
+  /// 401 means "the access token is no longer good" here — the BFF
+  /// never overloads it with domain meanings. Re-verification failures
+  /// (`/auth/me/email`, `/auth/me/password`) surface as 422, not 401,
+  /// so this method can treat 401 unambiguously.
+  func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
     guard let tokens = tokenStore.loadTokens() else {
       onSignOut()
       throw AppError.invalidCredentials
     }
 
     let first = try await attempt(request, accessToken: tokens.accessToken)
-    if first.1.statusCode != 401 || !retryOn401 {
+    if first.1.statusCode != 401 {
       return first
     }
 
