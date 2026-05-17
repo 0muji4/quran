@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from '../../../../i18n/navigation';
 import { useRecorder } from '../../../hooks/useRecorder';
 import { trackUiEvent } from '../../../telemetry/use-ui-event';
@@ -33,11 +34,7 @@ const formatElapsed = (ms: number): string => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-const ERROR_COPY: Record<string, string> = {
-  unsupported: 'Recording is not supported in this browser.',
-  denied: 'Microphone access was denied. Please grant permission and try again.',
-  failed: 'Could not start the recorder. Please try again.'
-};
+type DeviceErrorKey = 'unsupported' | 'denied' | 'failed';
 
 // Soft threshold for the scoring/uploading wait. The poll itself does not
 // stop — the worker may still finish — but at 30s we surface an explicit
@@ -53,6 +50,8 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
   const router = useRouter();
+  const t = useTranslations('practice.recorder');
+  const liveStatusT = useTranslations('practice.recorder.liveStatus');
   // The footer ("Last attempt: N / 100") reflects the most recent
   // completed scoring for this ayah, refreshed on mount, on ayah
   // navigation, and after each new attempt lands.
@@ -158,7 +157,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const isPendingNavigation = stage === 'done' && job.job?.status === 'COMPLETED';
   const isAnalysing = stage === 'uploading' || stage === 'scoring' || isPendingNavigation;
   const isStuck = isAnalysing && scoringElapsedMs >= STUCK_HINT_AT_MS;
-  const recordingError = recorder.error ? ERROR_COPY[recorder.error] : null;
+  const recordingError = recorder.error ? t(`device.${recorder.error as DeviceErrorKey}`) : null;
   // Could-not-score branch: scoring API/poll surfaced an error, OR we caught
   // a too-short recording client-side. Mic-permission failures
   // (recordingError) stay in their own banner since the remediation is
@@ -205,11 +204,11 @@ export function RecorderPanel({ surah, ayah }: Props) {
     });
     if (elapsedAtStop < MIN_RECORDING_MS) {
       const seconds = (elapsedAtStop / 1000).toFixed(1);
-      setTooShortReason(`Recording was ${seconds} s — too short to score`);
+      setTooShortReason(t('tooShort', { seconds }));
       return;
     }
     await job.submit({ blob, surahId: surah.id, ayahNumber: ayah.ayahNumber });
-  }, [recorder, job, surah.id, ayah.ayahNumber]);
+  }, [recorder, job, surah.id, ayah.ayahNumber, t]);
 
   // Bail out of a long-running scoring job. The job may still finish on the
   // worker, but the panel returns to idle so the user can record again.
@@ -253,34 +252,37 @@ export function RecorderPanel({ surah, ayah }: Props) {
         : `${styles.panelIcon} ${styles.panelIconTan}`;
 
   const headerTitle = isRecording
-    ? 'Recording…'
+    ? t('headerRecordingTitle')
     : isAnalysing
-      ? 'Analysing your recitation…'
+      ? t('headerAnalysingTitle')
       : isScoringError
-        ? "We couldn't hear that clearly"
-        : 'Now you recite';
+        ? t('headerErrorTitle')
+        : t('headerIdleTitle');
   const headerSubtitle = isRecording
-    ? 'Speak clearly into your microphone'
+    ? t('headerRecordingSubtitle')
     : isAnalysing
       ? isStuck
-        ? 'Taking longer than usual'
-        : 'Comparing against the teacher reference'
+        ? t('headerAnalysingStuckSubtitle')
+        : t('headerAnalysingSubtitle')
       : isScoringError
-        ? 'Your recording was too quiet or too short'
-        : 'Press the button when ready';
+        ? t('headerErrorSubtitle')
+        : t('headerIdleSubtitle');
 
   const errorReasons: string[] = [];
   if (tooShortReason) errorReasons.push(tooShortReason);
   if (stage === 'error' && job.error) errorReasons.push(job.error);
 
-  const liveStatus = recorderStatusMessage({
-    recordingError,
-    isScoringError,
-    errorReasons,
-    isStuck,
-    isAnalysing,
-    isRecording
-  });
+  const liveStatus = recorderStatusMessage(
+    {
+      recordingError,
+      isScoringError,
+      errorReasons,
+      isStuck,
+      isAnalysing,
+      isRecording
+    },
+    (key, values) => liveStatusT(key, values)
+  );
 
   return (
     <div className={panelClass}>
@@ -306,10 +308,10 @@ export function RecorderPanel({ surah, ayah }: Props) {
         {isAnalysing && (
           <span className={styles.scoringBadge}>
             <span className={styles.scoringBadgeDot} aria-hidden="true" />
-            Scoring
+            {t('badgeScoring')}
           </span>
         )}
-        {isScoringError && <span className={styles.errorBadge}>Couldn&apos;t process</span>}
+        {isScoringError && <span className={styles.errorBadge}>{t('badgeCouldntProcess')}</span>}
       </div>
 
       <div className={styles.recorderInner}>
@@ -318,7 +320,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
             <AnalysingCard elapsedMs={scoringElapsedMs} />
             {isStuck ? (
               <button type="button" className={styles.recorderCancel} onClick={handleCancelScoring}>
-                Cancel and try again
+                {t('cancel')}
               </button>
             ) : null}
           </>
@@ -346,13 +348,13 @@ export function RecorderPanel({ surah, ayah }: Props) {
                   isRecording ? `${styles.micButton} ${styles.micButtonStop}` : styles.micButton
                 }
                 onClick={handleMicClick}
-                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                aria-label={isRecording ? t('ariaStop') : t('ariaStart')}
               >
                 {isRecording ? <StopIcon size={22} /> : <MicIcon size={28} />}
               </button>
             </div>
             <p className={styles.recorderCaption}>
-              {isRecording ? 'Tap to stop and submit for scoring' : 'Tap the mic to begin'}
+              {isRecording ? t('captionRecording') : t('captionIdle')}
             </p>
           </>
         )}
@@ -366,7 +368,10 @@ export function RecorderPanel({ surah, ayah }: Props) {
         lastAttempt &&
         lastAttempt.score !== null && (
           <p className={styles.recorderFooter}>
-            Last attempt: <span className={styles.lastScore}>{lastAttempt.score} / 100</span>
+            {t.rich('lastAttempt', {
+              score: lastAttempt.score,
+              span: (chunks) => <span className={styles.lastScore}>{chunks}</span>
+            })}
           </p>
         )}
     </div>
