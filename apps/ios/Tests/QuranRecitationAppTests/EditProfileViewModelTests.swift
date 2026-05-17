@@ -17,10 +17,15 @@ final class EditProfileViewModelTests: XCTestCase {
     )
   }
 
+  // `MockProfileService` is `@MainActor`, so a default value would be
+  // constructed in a synchronous nonisolated context (Swift evaluates
+  // default args at the call site). Take an optional and build the
+  // mock inside the main-actor-isolated test instead.
   private func makeViewModel(
     user: AuthenticatedUser,
-    profileService: MockProfileService = MockProfileService()
+    profileService: MockProfileService? = nil
   ) -> (EditProfileViewModel, SessionStore, MockProfileService) {
+    let service = profileService ?? MockProfileService()
     let tokenStore = InMemoryTokenStore(
       tokens: AuthTokens(accessToken: "a", refreshToken: "r"),
       user: user
@@ -28,10 +33,10 @@ final class EditProfileViewModelTests: XCTestCase {
     let session = SessionStore(tokenStore: tokenStore)
     let viewModel = EditProfileViewModel(
       user: user,
-      profileService: profileService,
+      profileService: service,
       session: session
     )
-    return (viewModel, session, profileService)
+    return (viewModel, session, service)
   }
 
   // MARK: - Initial state
