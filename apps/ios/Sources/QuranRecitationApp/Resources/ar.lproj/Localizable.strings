@@ -224,3 +224,13 @@
 "profile.changeEmail.field.new" = "New email";
 "profile.changeEmail.field.new.placeholder" = "you@example.com";
 "profile.changeEmail.helper" = "We'll use this address for sign-in next time.";
+
+/* Profile tab — delete account sheet */
+"profile.deleteAccount.title" = "Delete account";
+"profile.deleteAccount.cancel" = "Cancel";
+"profile.deleteAccount.confirm" = "Delete account";
+"profile.deleteAccount.warning.title" = "This will deactivate your account";
+"profile.deleteAccount.warning.body" = "We'll soft-delete your account immediately. You have 30 days to restore it by signing in again. After that, your data is permanently removed.";
+"profile.deleteAccount.confirm.header" = "Confirm";
+"profile.deleteAccount.confirm.helper" = "Type DELETE in capital letters to confirm.";
+"profile.deleteAccount.confirm.placeholder" = "DELETE";
