@@ -103,8 +103,19 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   const { email, password, displayName, level } = validation.data.body;
 
   try {
-    const existing = await findUserByEmail(email);
+    // `includeDeleted: true` so we can branch on soft-deleted accounts
+    // — they hold the email under a UNIQUE constraint, so the row will
+    // come back even though authenticated reads can't see it.
+    const existing = await findUserByEmail(email, { includeDeleted: true });
     if (existing) {
+      if (existing.deletedAt !== null) {
+        // The grace window from ADR-0024 §4 is recoverable through
+        // sign-in, not sign-up. Tell the user where to go instead of
+        // a generic "email already in use" that would dead-end them.
+        return res.status(409).json({
+          error: 'this account is scheduled for deletion — sign in to restore it'
+        });
+      }
       return res.status(409).json({ error: 'email already in use' });
     }
 
