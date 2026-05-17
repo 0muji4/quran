@@ -132,6 +132,21 @@ export const updateUserPassword = async (id: string, passwordHash: string): Prom
   return (result.rowCount ?? 0) > 0;
 };
 
+// Flip a live row into the soft-deleted state per ADR-0024. Returns
+// false if the row was already soft-deleted (so the caller can
+// short-circuit a redundant token-revocation pass), `true` on the
+// first delete. Hard deletion happens via the purge job (PR-E8)
+// after the 30-day grace window expires.
+export const softDeleteUser = async (id: string): Promise<boolean> => {
+  const pool = getDatabasePool();
+  if (!pool) return false;
+  const result = await pool.query(
+    `UPDATE users SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
+    [id]
+  );
+  return (result.rowCount ?? 0) > 0;
+};
+
 export const createUserWithPassword = async (input: {
   email: string;
   displayName: string | null;
