@@ -3,7 +3,7 @@ import { Link, redirect } from '../../../../../../i18n/navigation';
 import { fetchSurahAyahs, fetchSurahs } from '../../../../../actions';
 import type { AyahRecord, SurahSummary } from '../../../../../lib/types';
 import { AyahDisplayCard } from '../../AyahDisplayCard';
-import { AyahProgressDots } from '../../AyahProgressDots';
+import { AyahProgressBar } from '../../AyahProgressBar';
 import { RecorderPanel } from '../../RecorderPanel';
 import { TeacherPanel } from '../../TeacherPanel';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../../../components/icons/ArrowRightIcon';
@@ -68,7 +68,7 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
           </span>
           <span>{t('breadcrumbThe', { meaning })}</span>
         </nav>
-        <AyahProgressDots total={totalAyahs} current={currentAyah} />
+        <AyahProgressBar total={totalAyahs} current={currentAyah} />
       </div>
 
       <AyahDisplayCard ayah={selectedAyah} surahNameEn={surah.nameEn} />
