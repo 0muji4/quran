@@ -4,7 +4,13 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
-import { createUserWithPassword, findUserByEmail, findUserById, updateUserProfile } from '../users';
+import {
+  createUserWithPassword,
+  findUserByEmail,
+  findUserById,
+  updateUserPassword,
+  updateUserProfile
+} from '../users';
 import { hashPassword, verifyPassword } from '../credentials';
 import { recordIssuedRefreshToken } from '../refresh-tokens';
 
@@ -13,6 +19,7 @@ vi.mock('../users', () => ({
   findUserById: vi.fn(),
   createUserWithPassword: vi.fn(),
   updateUserProfile: vi.fn(),
+  updateUserPassword: vi.fn(),
   VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
 
@@ -391,6 +398,107 @@ describe('POST /auth/signup and /auth/login', () => {
         .send({ displayName: 'Whoever' });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /auth/me/password', () => {
+    const token = jwt.sign({ sub: 'user-7' }, 'test-access-secret');
+
+    it('returns 401 without an access token', async () => {
+      const res = await request(app)
+        .post('/auth/me/password')
+        .send({ currentPassword: 'whatever', newPassword: 'new-strong-pw' });
+      expect(res.status).toBe(401);
+      expect(updateUserPassword).not.toHaveBeenCalled();
+    });
+
+    it('rotates the hash when the current password verifies', async () => {
+      const currentHash = await hashPassword('correct-horse-battery-staple');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-7',
+        email: 'rotate@example.com',
+        displayName: null,
+        passwordHash: currentHash,
+        createdAt: TEST_CREATED_AT,
+        level: null
+      });
+      vi.mocked(updateUserPassword).mockResolvedValue(true);
+
+      const res = await request(app)
+        .post('/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          currentPassword: 'correct-horse-battery-staple',
+          newPassword: 'something-much-stronger'
+        });
+
+      expect(res.status).toBe(204);
+      expect(updateUserPassword).toHaveBeenCalledTimes(1);
+      const [userId, newHash] = vi.mocked(updateUserPassword).mock.calls[0];
+      expect(userId).toBe('user-7');
+      // We can't compare to a literal — the hash is salted — but it
+      // must verify back against the plaintext we just sent.
+      expect(await verifyPassword('something-much-stronger', newHash)).toBe(true);
+    });
+
+    it('returns 401 when the current password is wrong', async () => {
+      const currentHash = await hashPassword('correct-horse-battery-staple');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-7',
+        email: 'rotate@example.com',
+        displayName: null,
+        passwordHash: currentHash,
+        createdAt: TEST_CREATED_AT,
+        level: null
+      });
+
+      const res = await request(app)
+        .post('/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          currentPassword: 'guessing',
+          newPassword: 'something-much-stronger'
+        });
+
+      expect(res.status).toBe(401);
+      expect(updateUserPassword).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when the user row has no password set', async () => {
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-7',
+        email: 'oauth-only@example.com',
+        displayName: null,
+        passwordHash: null,
+        createdAt: TEST_CREATED_AT,
+        level: null
+      });
+
+      const res = await request(app)
+        .post('/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'whatever', newPassword: 'something-much-stronger' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects a too-short new password with 400', async () => {
+      const res = await request(app)
+        .post('/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'whatever', newPassword: 'short' });
+
+      expect(res.status).toBe(400);
+      expect(findUserById).not.toHaveBeenCalled();
+    });
+
+    it('rejects an empty current password with 400', async () => {
+      const res = await request(app)
+        .post('/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: '', newPassword: 'something-much-stronger' });
+
+      expect(res.status).toBe(400);
     });
   });
 });
