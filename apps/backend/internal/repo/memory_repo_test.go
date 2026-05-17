@@ -14,7 +14,7 @@ func TestMemoryRepositorySurahs(t *testing.T) {
 		Surahs: []domain.Surah{{ID: 1, NameEN: "Al-Fatiha"}},
 	}
 
-	surahs, err := repo.List(context.Background())
+	surahs, err := repo.ListSurahs(context.Background())
 	require.NoError(t, err)
 	require.Len(t, surahs, 1)
 	require.Equal(t, int32(1), surahs[0].ID)
