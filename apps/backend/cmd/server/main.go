@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"os"
 
+	"quran-project/apps/backend/internal/enqueue"
 	"quran-project/apps/backend/internal/handler"
 	"quran-project/apps/backend/internal/middleware"
-	backendqueue "quran-project/apps/backend/internal/queue"
 	"quran-project/apps/backend/internal/repo"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/telemetry"
 	"quran-project/packages/go-pkg/db"
-	queuepkg "quran-project/packages/go-pkg/queue"
+	"quran-project/packages/go-pkg/queue"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -55,7 +55,7 @@ func main() {
 	if queueName == "" {
 		queueName = "quran:asr_jobs"
 	}
-	enqueuer, err := backendqueue.NewEnqueuer(queuepkg.Config{
+	enqueuer, err := enqueue.NewEnqueuer(queue.Config{
 		RedisURL:  os.Getenv("REDIS_URL"),
 		QueueName: queueName,
 	})
@@ -83,12 +83,13 @@ func main() {
 		port = "8080"
 	}
 
-	// Wrap mux with OTEL middleware
-	handler := middleware.OTEL(mux)
+	// Wrap mux with OTEL middleware. Use a local name that does not
+	// shadow the imported `handler` package.
+	rootHandler := middleware.OTEL(mux)
 
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: handler,
+		Handler: rootHandler,
 	}
 
 	logger.Info("backend listening", "addr", server.Addr)

@@ -1,4 +1,8 @@
-package queue
+// Package enqueue wraps packages/go-pkg/queue with backend-specific
+// observability (spans, metrics) for publishing ASR jobs. The name
+// avoids colliding with the lower-level queue package the project
+// re-uses across services.
+package enqueue
 
 import (
 	"context"
@@ -79,7 +83,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 		AyahID:            ayahID,
 		ExpectedTextAR:    expectedTextAR,
 		ReferenceAudioKey: referenceAudioKey,
-		EnqueuedAt:        time.Now().UTC(),
+		EnqueuedAt:        startedAt.UTC(),
 		AuthToken:         e.authToken,
 		TraceContext:      traceContext,
 	}
