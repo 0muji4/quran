@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { Link, redirect } from '../../../../../../i18n/navigation';
 import { fetchSurahAyahs, fetchSurahs } from '../../../../../actions';
 import type { AyahRecord, SurahSummary } from '../../../../../lib/types';
@@ -15,7 +15,7 @@ type RouteParams = {
 };
 
 export default async function PracticePage({ params }: { params: Promise<RouteParams> }) {
-  const locale = await getLocale();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('practice.page')]);
   const { surahId, ayahNumber: ayahNumberRaw } = await params;
   const requestedAyah = Number(ayahNumberRaw);
 
@@ -41,6 +41,7 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
   const totalAyahs = ayahs.length;
   const prevAyah = currentAyah > 1 ? currentAyah - 1 : null;
   const nextAyah = currentAyah < totalAyahs ? currentAyah + 1 : null;
+  const meaning = surah.nameEn.split('-').pop() ?? surah.nameEn;
 
   return (
     <>
@@ -49,12 +50,12 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
        * only consumer of this is axe's `page-has-heading-one` rule and
        * the heading-hierarchy contract; visible chrome stays unchanged. */}
       <h1 className="sr-only">
-        Practice {surah.nameEn} ayah {currentAyah} of {totalAyahs}
+        {t('h1', { surahName: surah.nameEn, ayah: currentAyah, total: totalAyahs })}
       </h1>
       <div className={styles.topRow}>
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <nav className={styles.breadcrumb} aria-label={t('breadcrumbAriaLabel')}>
           <Link href="/" className={styles.breadcrumbLink}>
-            Surah library
+            {t('breadcrumbLibrary')}
           </Link>
           <span className={styles.breadcrumbSep} aria-hidden="true">
             ›
@@ -65,7 +66,7 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
           <span className={styles.breadcrumbSep} aria-hidden="true">
             ·
           </span>
-          <span>The {surah.nameEn.split('-').pop()}</span>
+          <span>{t('breadcrumbThe', { meaning })}</span>
         </nav>
         <AyahProgressDots total={totalAyahs} current={currentAyah} />
       </div>
@@ -80,23 +81,23 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
       <div className={styles.navRow}>
         {prevAyah !== null ? (
           <Link href={`/practice/${surahId}/${prevAyah}`} className={styles.navBtn}>
-            <ArrowLeftIcon /> Previous ayah
+            <ArrowLeftIcon /> {t('prev')}
           </Link>
         ) : (
           <span className={`${styles.navBtn} ${styles.navBtnDisabled}`} aria-disabled="true">
-            <ArrowLeftIcon /> Previous ayah
+            <ArrowLeftIcon /> {t('prev')}
           </span>
         )}
 
-        <p className={styles.navTip}>Tip: tap the mic to record, tap again to stop and submit.</p>
+        <p className={styles.navTip}>{t('tip')}</p>
 
         {nextAyah !== null ? (
           <Link href={`/practice/${surahId}/${nextAyah}`} className={styles.navBtn}>
-            Next ayah <ArrowRightIcon />
+            {t('next')} <ArrowRightIcon />
           </Link>
         ) : (
           <span className={`${styles.navBtn} ${styles.navBtnDisabled}`} aria-disabled="true">
-            Next ayah <ArrowRightIcon />
+            {t('next')} <ArrowRightIcon />
           </span>
         )}
       </div>
