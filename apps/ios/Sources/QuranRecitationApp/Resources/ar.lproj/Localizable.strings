@@ -58,6 +58,8 @@
 "practice.teacher.rate.a11y %@" = "Playback speed %@";
 "practice.teacher.loop.on" = "Loop ayah — on";
 "practice.teacher.loop.off" = "Loop ayah — off";
+"practice.nav.prev" = "Previous ayah";
+"practice.nav.next" = "Next ayah";
 "practice.record.idleTitle" = "Ready to record";
 "practice.record.idleSubtitle" = "Tap to start";
 "practice.record.recordingTitle" = "Recording…";
