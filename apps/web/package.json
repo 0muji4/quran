@@ -6,7 +6,7 @@
   "scripts": {
     "codegen": "panda codegen --silent && panda cssgen --silent",
     "codegen:watch": "panda codegen --watch",
-    "dev": "pnpm codegen && next dev",
+    "dev": "pnpm codegen && next dev --turbopack",
     "build": "pnpm codegen && next build",
     "analyze": "pnpm codegen && ANALYZE=true next build",
     "start": "next start",
