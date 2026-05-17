@@ -12,6 +12,11 @@ final class PracticeViewModel: ObservableObject {
   @Published private(set) var surah: SurahSummary?
   @Published private(set) var teacherState: TeacherReferencePanel.State = .idle
 
+  /// Whether the teacher reference repeats on finish. Mirrors the
+  /// web `TeacherPanel` loop control. Driven by the loop toggle in
+  /// `TeacherReferencePanel`.
+  @Published private(set) var isLoopEnabled: Bool = false
+
   /// Reciter name surfaced on the teacher panel. Hard-coded today —
   /// when the BFF starts returning reciter metadata, this becomes a
   /// `@Published` populated by `loadReference()`.
@@ -89,6 +94,10 @@ final class PracticeViewModel: ObservableObject {
         ayahNumber: currentAyahNumber
       )
       try player.load(url: reference.url)
+      // load() builds a fresh AVAudioPlayer so the previous loop
+      // flag is lost; re-apply it here so the loop toggle survives
+      // ayah changes (and future reloads).
+      player.setLoopEnabled(isLoopEnabled)
       teacherState = .ready(
         duration: player.duration,
         isPlaying: false,
@@ -153,6 +162,20 @@ final class PracticeViewModel: ObservableObject {
   /// Supported teacher-audio playback rates. Centralised so the pill
   /// row, telemetry, and the snap-to-nearest helper all stay in sync.
   static let supportedReferenceRates: [Float] = [0.75, 1.0, 1.25]
+
+  /// Toggle the loop-ayah behaviour. When on, the teacher reference
+  /// repeats forever on finish; when off it stops and resets. The
+  /// new state is pushed straight into `AudioPlayer.numberOfLoops`
+  /// — the next reference load reuses the same flag because the
+  /// player is shared.
+  func toggleLoop() {
+    isLoopEnabled.toggle()
+    player.setLoopEnabled(isLoopEnabled)
+    telemetry.event(
+      TelemetryEvent.practiceLoopToggled,
+      attributes: ["enabled": String(isLoopEnabled)]
+    )
+  }
 
   private static func snapToSupportedRate(_ rate: Float) -> Float {
     supportedReferenceRates.min(by: { abs($0 - rate) < abs($1 - rate) }) ?? 1.0

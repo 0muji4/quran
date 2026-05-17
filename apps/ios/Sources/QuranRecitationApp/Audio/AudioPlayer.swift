@@ -54,6 +54,15 @@ final class AudioPlayer: NSObject, ObservableObject {
     stopProgressTimer()
   }
 
+  /// Enable or disable infinite looping. `numberOfLoops = -1` makes
+  /// `AVAudioPlayer` repeat the file forever; `0` plays once. We
+  /// intentionally don't expose a finite loop count — the only caller
+  /// today is the Practice teacher panel, where the user wants to
+  /// repeat an ayah until they switch the toggle off.
+  func setLoopEnabled(_ enabled: Bool) {
+    player?.numberOfLoops = enabled ? -1 : 0
+  }
+
   private func startProgressTimer() {
     progressTimer?.invalidate()
     progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
