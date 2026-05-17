@@ -60,4 +60,63 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertNil(store.loadTokens())
     XCTAssertNil(store.loadUser())
   }
+
+  // MARK: - Reactivation notice (ADR-0024 §4)
+
+  func test_init_pendingReactivationNotice_isFalse() {
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    XCTAssertFalse(session.pendingReactivationNotice)
+  }
+
+  func test_completeAuthentication_reactivatedTrue_flipsTheFlag() {
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let success = AuthSuccess(
+      tokens: AuthTokens(accessToken: "a", refreshToken: "r"),
+      user: AuthenticatedUser(id: "u1", email: "noor@example.com", displayName: nil),
+      reactivated: true
+    )
+
+    session.completeAuthentication(success)
+
+    XCTAssertTrue(session.pendingReactivationNotice)
+  }
+
+  func test_completeAuthentication_reactivatedFalse_leavesFlagOff() {
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+
+    session.completeAuthentication(AuthSuccess.fixture())  // default reactivated: false
+
+    XCTAssertFalse(session.pendingReactivationNotice)
+  }
+
+  func test_acknowledgeReactivationNotice_clearsFlag() {
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let success = AuthSuccess(
+      tokens: AuthTokens(accessToken: "a", refreshToken: "r"),
+      user: AuthenticatedUser(id: "u1", email: "noor@example.com", displayName: nil),
+      reactivated: true
+    )
+    session.completeAuthentication(success)
+    XCTAssertTrue(session.pendingReactivationNotice)
+
+    session.acknowledgeReactivationNotice()
+
+    XCTAssertFalse(session.pendingReactivationNotice)
+  }
+
+  func test_signOut_clearsReactivationFlag() {
+    // A stale notice from a previous session must not survive into
+    // the next sign-in.
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let success = AuthSuccess(
+      tokens: AuthTokens(accessToken: "a", refreshToken: "r"),
+      user: AuthenticatedUser(id: "u1", email: "noor@example.com", displayName: nil),
+      reactivated: true
+    )
+    session.completeAuthentication(success)
+
+    session.signOut()
+
+    XCTAssertFalse(session.pendingReactivationNotice)
+  }
 }
