@@ -143,6 +143,26 @@ export const updateUserPassword = async (id: string, passwordHash: string): Prom
   return (result.rowCount ?? 0) > 0;
 };
 
+// Daily purge step per ADR-0024 §5. Hard-deletes every user whose
+// `deleted_at` is older than the configured grace window. FK
+// CASCADE on attempts / last_practiced / best_scores /
+// refresh_tokens means the associated rows are removed in the same
+// statement. Returns the number of rows purged so the caller can
+// log it to OTel for support visibility.
+export const SOFT_DELETE_GRACE_DAYS = 30;
+
+export const purgeExpiredSoftDeletedUsers = async (
+  graceDays: number = SOFT_DELETE_GRACE_DAYS
+): Promise<number> => {
+  const pool = getDatabasePool();
+  if (!pool) return 0;
+  const result = await pool.query(
+    `DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - ($1 || ' days')::interval`,
+    [String(graceDays)]
+  );
+  return result.rowCount ?? 0;
+};
+
 // Flip a soft-deleted row back to live per ADR-0024 §4. Called by
 // the sign-in path when the user authenticates against a row whose
 // `deleted_at` is non-NULL within the grace window. Returns `true`
