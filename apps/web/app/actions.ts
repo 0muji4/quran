@@ -665,6 +665,43 @@ export const deleteAccountAction = async (): Promise<void> => {
   );
 };
 
+// Server-action wrapper around `POST /auth/me/email`. The BFF returns
+// the refreshed user shape so the modal can update its local view
+// without a separate /auth/me round-trip. Throws on non-2xx so the
+// modal surfaces the BFF error message inline (incl. 409 "email
+// already in use" and 401 "current password is incorrect").
+export const updateEmailAction = async (input: {
+  currentPassword: string;
+  newEmail: string;
+}): Promise<AuthSessionUser> => {
+  return tracer.startActiveSpan(
+    'ServerAction: updateEmailAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'updateEmailAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/me/email`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(input)
+        });
+        const payload = await parseJson<{ user: AuthSessionUser }>(response);
+        logger.info('updateEmailAction completed', { userId: payload.user.id });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.user;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('updateEmailAction failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 // Server-action wrapper around `POST /auth/me/password`. Returns
 // void on success (BFF returns 204) and throws on non-2xx so the
 // modal can surface the BFF error inline. The current-password is

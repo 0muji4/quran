@@ -1,3 +1,4 @@
+import { ChangeEmailButton } from './ChangeEmailButton';
 import { UpdatePasswordButton } from './UpdatePasswordButton';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
@@ -56,17 +57,6 @@ const helperClass = css({
   color: 'ink.muted'
 });
 
-const linkClass = css({
-  font: '[inherit]',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  color: 'teal.deep',
-  backgroundColor: '[transparent]',
-  borderWidth: '[0]',
-  cursor: 'pointer',
-  _disabled: { color: 'ink.muted', cursor: 'not-allowed' }
-});
-
 // "Account & data". Phase-1 surface: Email + Password rows render
 // the current value (or a placeholder) and a disabled action link
 // labelled "Change" / "Update". The change / update / delete /
@@ -87,14 +77,7 @@ export function AccountDataCard({ email }: Props) {
           <span className={primaryClass}>{email}</span>
           <span className={helperClass}>Used for sign-in and account recovery</span>
         </div>
-        <button
-          type="button"
-          className={linkClass}
-          disabled
-          aria-label="Change email — coming soon"
-        >
-          Change
-        </button>
+        <ChangeEmailButton currentEmail={email} />
       </div>
 
       <div className={rowClass}>
