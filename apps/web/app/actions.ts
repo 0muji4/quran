@@ -610,6 +610,47 @@ export const signOutAction = async (): Promise<void> => {
   );
 };
 
+// Soft-delete the signed-in user per ADR-0024. BFF returns 204 on
+// success; we then clear the HttpOnly auth cookies so the very next
+// navigation lands in the signed-out shell. The 30-day grace window
+// is the server's job — this client just stops the current session.
+export const deleteAccountAction = async (): Promise<void> => {
+  return tracer.startActiveSpan(
+    'ServerAction: deleteAccountAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'deleteAccountAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/me`, {
+          method: 'DELETE',
+          cache: 'no-store',
+          headers: jsonHeaders
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as unknown;
+          const message =
+            typeof payload === 'object' &&
+            payload &&
+            'error' in (payload as Record<string, unknown>)
+              ? (payload as Record<string, unknown>).error
+              : response.statusText;
+          throw new Error(typeof message === 'string' ? message : 'Failed to delete account');
+        }
+        await clearAuthCookies();
+        logger.info('deleteAccountAction completed');
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('deleteAccountAction failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 // Server-action wrapper around `POST /auth/me/password`. Returns
 // void on success (BFF returns 204) and throws on non-2xx so the
 // modal can surface the BFF error inline. The current-password is
