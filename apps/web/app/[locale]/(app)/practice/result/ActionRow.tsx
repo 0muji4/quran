@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../../components/icons/ArrowRightIcon';
 import styles from '../../../../styles/practice.module.css';
@@ -15,6 +16,7 @@ type Props = {
 const CONFIRMATION_MS = 2_000;
 
 export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props) {
+  const t = useTranslations('result.action');
   const tryAgainHref = `/practice/${surahId}/${ayahNumber}`;
   const isLastAyah = ayahNumber >= totalAyahs;
   // On the final ayah, route home with a hint so the library page can show a
@@ -23,7 +25,7 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
   const continueHref = isLastAyah
     ? `/?completed=${encodeURIComponent(surahName)}`
     : `/practice/${surahId}/${ayahNumber + 1}`;
-  const continueLabel = isLastAyah ? 'Finish surah' : `Continue to ayah ${ayahNumber + 1}`;
+  const continueLabel = isLastAyah ? t('finish') : t('continue', { next: ayahNumber + 1 });
 
   // The attempt is already persisted by recordAttempt() the moment scoring
   // completes (see RecorderPanel). This button acknowledges that — clicking
@@ -40,7 +42,7 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
   return (
     <div className={styles.resultActionRow}>
       <Link href={tryAgainHref} className={styles.btnGhost}>
-        <ArrowLeftIcon /> Try this ayah again
+        <ArrowLeftIcon /> {t('tryAgain')}
       </Link>
       <button
         type="button"
@@ -50,10 +52,10 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
       >
         {confirmed ? (
           <>
-            <CheckGlyph /> Saved to history
+            <CheckGlyph /> {t('saved')}
           </>
         ) : (
-          'Save attempt'
+          t('saveAttempt')
         )}
       </button>
       <Link href={continueHref} className={`${styles.btnTeal} ${styles.resultPrimaryBtn}`}>
