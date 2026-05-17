@@ -40,11 +40,17 @@ type Attempt struct {
 
 // SegmentScore stores per-segment scoring results for an attempt.
 type SegmentScore struct {
-	ID        int64          `json:"id"`
-	AttemptID string         `json:"attempt_id"`
-	Label     string         `json:"label"`
-	Score     float64        `json:"score"`
-	Metrics   map[string]any `json:"metrics,omitempty"`
+	ID        int64   `json:"id"`
+	AttemptID string  `json:"attempt_id"`
+	Label     string  `json:"label"`
+	Score     float64 `json:"score"`
+	// Metrics holds numeric breakdown signals produced by the scorer
+	// (e.g. WER, accuracy, fluency, completeness). Stable, machine-
+	// readable keys; consumed by UI to render score components.
+	Metrics map[string]any `json:"metrics,omitempty"`
+	// Metadata holds opaque scoring-provider details kept for audit
+	// and debugging (model version, decoding parameters, etc.). Not
+	// part of the user-facing surface and may be omitted.
 	Metadata  map[string]any `json:"metadata,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
 }

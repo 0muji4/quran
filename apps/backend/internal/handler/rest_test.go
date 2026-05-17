@@ -21,7 +21,7 @@ type fakeSurahRepo struct {
 	getFn  func(ctx context.Context, id int32) (domain.Surah, error)
 }
 
-func (f fakeSurahRepo) List(ctx context.Context) ([]domain.Surah, error) {
+func (f fakeSurahRepo) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 	return f.listFn(ctx)
 }
 
