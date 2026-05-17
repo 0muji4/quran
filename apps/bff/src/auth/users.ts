@@ -125,6 +125,51 @@ export const updateUserProfile = async (
   return mapRow(result.rows[0]);
 };
 
+// Targeted email rotation. Distinct from `updateUserProfile` because
+// the caller must verify the current password before reaching here —
+// bundling email into the generic partial update would invite the
+// same caller to skip the verify. Returns `null` if no live row
+// matched (already deleted / id mismatch), `'conflict'` if another
+// user already holds `newEmail` (the DB UNIQUE constraint raised
+// 23505), or the refreshed row on success.
+//
+// `Phase 2.C-lite`: no confirmation email is sent — the BFF accepts
+// the new address as-is and trusts that the client (and the
+// re-verified password) prove intent. Adding an email-verification
+// loop is tracked separately for when transactional email infra
+// lands.
+export type UpdateEmailOutcome = UserRow | 'conflict' | null;
+
+export const updateUserEmail = async (
+  id: string,
+  newEmail: string
+): Promise<UpdateEmailOutcome> => {
+  const pool = getDatabasePool();
+  if (!pool) return null;
+  try {
+    const result = await pool.query(
+      `UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL RETURNING ${USER_COLUMNS}`,
+      [newEmail, id]
+    );
+    if (!result.rowCount) return null;
+    return mapRow(result.rows[0]);
+  } catch (error: unknown) {
+    // 23505 = `unique_violation` from the `users.email` UNIQUE index.
+    // We surface this as a structured value rather than letting the
+    // PostgresError bubble up unrecognised; the route maps it to a
+    // 409 with a friendly message.
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === '23505'
+    ) {
+      return 'conflict';
+    }
+    throw error;
+  }
+};
+
 // Targeted password rotation. Kept separate from `updateUserProfile`
 // because the caller will always have done a `verifyPassword` round
 // trip before reaching here, and bundling password into the generic
