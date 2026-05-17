@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"quran-project/apps/backend/internal/queue"
+	"quran-project/apps/backend/internal/enqueue"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/telemetry"
 )
@@ -18,7 +18,7 @@ import (
 type REST struct {
 	SurahService service.SurahService
 	DB           *sql.DB
-	Enqueuer     *queue.Enqueuer
+	Enqueuer     *enqueue.Enqueuer
 }
 
 // Register wires endpoints onto provided mux under /api.
@@ -323,7 +323,13 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(v)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		// Body is already partially flushed; nothing actionable for
+		// the client. Surface the failure so encoder regressions on
+		// new response shapes are not silently dropped (Google
+		// Decisions: don't ignore errors).
+		telemetry.Logger().Warn("rest: encode response failed", "error", err)
+	}
 }
 
 // writeError sends a sanitised message to the client and logs the

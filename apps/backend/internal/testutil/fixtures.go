@@ -196,13 +196,26 @@ func WithWER(wer float64) ASRResultOption {
 	}
 }
 
+// mustMarshalMetadata serialises test metadata to JSON or fails the
+// test loudly. Replaces the prior pattern of dropping the marshal
+// error which masked regressions when a new metadata type stops
+// satisfying json.Marshaler.
+func mustMarshalMetadata(t *testing.T, v map[string]any) []byte {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatalf("marshal metadata: %v", err)
+	}
+	return b
+}
+
 // SeedStandardData inserts a standard set of test data (Al-Fatiha) into the database
 func SeedStandardData(t *testing.T, db *sql.DB) {
 	t.Helper()
 
 	// Insert Al-Fatiha
 	surah := BuildSurah()
-	metadataJSON, _ := json.Marshal(surah.Metadata)
+	metadataJSON := mustMarshalMetadata(t, surah.Metadata)
 
 	_, err := db.Exec(`
 		INSERT INTO surahs (id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at)
@@ -234,7 +247,7 @@ func SeedStandardData(t *testing.T, db *sql.DB) {
 			WithTransliteration(text.trans),
 		)
 
-		metadataJSON, _ := json.Marshal(ayah.Metadata)
+		metadataJSON := mustMarshalMetadata(t, ayah.Metadata)
 
 		_, err := db.Exec(`
 			INSERT INTO ayahs (id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at)
@@ -272,7 +285,7 @@ func SeedMultipleSurahs(t *testing.T, db *sql.DB, count int) {
 			WithAyahCount(s.ayahCount),
 		)
 
-		metadataJSON, _ := json.Marshal(surah.Metadata)
+		metadataJSON := mustMarshalMetadata(t, surah.Metadata)
 
 		_, err := db.Exec(`
 			INSERT INTO surahs (id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at)
