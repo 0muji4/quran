@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, type Ref } from 'react';
+import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
 type Props = {
@@ -12,14 +13,12 @@ type Props = {
 // Side-by-side playback so the user can compare their recitation against the
 // teacher's reference. Both URLs are presigned and short-lived (~1h); if one
 // is missing we hide that side rather than rendering a broken control.
-export function ListenBack({
-  teacherUrl,
-  userRecordingUrl,
-  teacherLabel = "Husary Mu'allim · slow reference"
-}: Props) {
+export function ListenBack({ teacherUrl, userRecordingUrl, teacherLabel }: Props) {
+  const t = useTranslations('result.listenBack');
   const teacherRef = useRef<HTMLAudioElement>(null);
   const userRef = useRef<HTMLAudioElement>(null);
   const canPlayBoth = teacherUrl !== null && userRecordingUrl !== null;
+  const resolvedTeacherLabel = teacherLabel ?? t('teacherDefault');
 
   const handlePlayBoth = () => {
     const teacher = teacherRef.current;
@@ -47,15 +46,13 @@ export function ListenBack({
       <header className={styles.listenBackHead}>
         <div>
           <h2 id="listen-back-heading" className={styles.listenBackTitle}>
-            Listen back
+            {t('title')}
           </h2>
-          <p className={styles.listenBackSubtitle}>
-            Compare your recitation with the teacher&apos;s reference.
-          </p>
+          <p className={styles.listenBackSubtitle}>{t('subtitle')}</p>
         </div>
         {canPlayBoth && (
           <button type="button" className={styles.listenBackPlayBoth} onClick={handlePlayBoth}>
-            Play both
+            {t('playBoth')}
             <span aria-hidden="true">▶▶</span>
           </button>
         )}
@@ -66,28 +63,28 @@ export function ListenBack({
           <ListenBackTile
             audioRef={teacherRef}
             kind="teacher"
-            title="Teacher"
-            subtitle={teacherLabel}
+            title={t('teacher')}
+            subtitle={resolvedTeacherLabel}
             src={teacherUrl}
+            fallback={t('audioFallback')}
           />
         ) : null}
         {userRecordingUrl ? (
           <ListenBackTile
             audioRef={userRef}
             kind="user"
-            title="Your recitation"
-            subtitle="just now"
+            title={t('you')}
+            subtitle={t('youJustNow')}
             src={userRecordingUrl}
+            fallback={t('audioFallback')}
           />
         ) : (
           <div className={`${styles.listenBackTile} ${styles.listenBackTileMuted}`}>
             <div className={styles.listenBackTileHead}>
-              <span className={styles.listenBackTileTitle}>Your recitation</span>
-              <span className={styles.listenBackTileSubtitle}>not available</span>
+              <span className={styles.listenBackTileTitle}>{t('you')}</span>
+              <span className={styles.listenBackTileSubtitle}>{t('youNotAvailable')}</span>
             </div>
-            <p className={styles.listenBackEmpty}>
-              The recording is no longer accessible. Try recording again to get a fresh comparison.
-            </p>
+            <p className={styles.listenBackEmpty}>{t('youEmpty')}</p>
           </div>
         )}
       </div>
@@ -100,13 +97,15 @@ function ListenBackTile({
   kind,
   title,
   subtitle,
-  src
+  src,
+  fallback
 }: {
   audioRef: Ref<HTMLAudioElement>;
   kind: 'teacher' | 'user';
   title: string;
   subtitle: string;
   src: string;
+  fallback: string;
 }) {
   const tileClass =
     kind === 'teacher'
@@ -125,7 +124,7 @@ function ListenBackTile({
         src={src}
         className={styles.listenBackAudio}
       >
-        Your browser does not support the audio element.
+        {fallback}
       </audio>
     </div>
   );
