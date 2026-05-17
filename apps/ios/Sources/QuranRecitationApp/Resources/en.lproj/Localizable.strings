@@ -167,3 +167,27 @@
 "profile.action.signIn" = "Sign in";
 "profile.action.createAccount" = "Create an account";
 "profile.action.signOut" = "Sign out";
+
+/* Profile tab — signed in */
+"profile.header.edit" = "Edit";
+"profile.header.edit.a11yDisabled" = "Edit profile — coming soon";
+"profile.badge.level.beginner" = "Beginner";
+"profile.badge.level.intermediate" = "Intermediate";
+"profile.badge.level.advanced" = "Advanced";
+"profile.badge.joined" = "Joined %@";
+
+"profile.section.accountTitle" = "Account & data";
+"profile.section.email.eyebrow" = "Email";
+"profile.section.email.helper" = "Used for sign-in and account recovery.";
+"profile.section.email.cta" = "Change";
+"profile.section.email.cta.a11yDisabled" = "Change email — coming soon";
+"profile.section.password.eyebrow" = "Password";
+"profile.section.password.helper" = "Rotate when you suspect a leak or every few months.";
+"profile.section.password.cta" = "Update";
+"profile.section.password.cta.a11yDisabled" = "Update password — coming soon";
+
+"profile.dangerZone.eyebrow" = "Permanent";
+"profile.dangerZone.title" = "Delete account";
+"profile.dangerZone.helper" = "Soft delete with a 30-day grace window. Sign back in within 30 days to restore your account.";
+"profile.dangerZone.cta" = "Delete account";
+"profile.dangerZone.cta.a11yDisabled" = "Delete account — coming soon";
