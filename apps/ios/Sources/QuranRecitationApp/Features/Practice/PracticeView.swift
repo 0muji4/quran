@@ -27,8 +27,9 @@ struct PracticeView: View {
           TeacherReferencePanel(
             reciterName: viewModel.reciterName,
             state: viewModel.teacherState,
+            availableRates: PracticeViewModel.supportedReferenceRates,
             onTogglePlayback: { viewModel.toggleReferencePlayback() },
-            onChangeRate: { viewModel.cycleReferenceRate() }
+            onSelectRate: { viewModel.setReferenceRate($0) }
           )
           .padding(.horizontal, Spacing.screenHorizontal)
           activePanel

@@ -15,26 +15,59 @@ struct TeacherReferencePanel: View {
 
   let reciterName: String
   let state: State
+  let availableRates: [Float]
   let onTogglePlayback: () -> Void
-  let onChangeRate: () -> Void
+  let onSelectRate: (Float) -> Void
 
   var body: some View {
     BrandCard {
-      HStack(alignment: .center, spacing: Spacing.md) {
-        playButton
-        VStack(alignment: .leading, spacing: 2) {
-          Text("practice.teacher.label", bundle: .module)
-            .font(Font.brand.body.weight(.semibold))
-            .foregroundColor(Color.brand.textPrimary)
-          Text(metaText)
-            .font(Font.brand.caption)
+      VStack(alignment: .leading, spacing: Spacing.sm) {
+        HStack(alignment: .center, spacing: Spacing.md) {
+          playButton
+          VStack(alignment: .leading, spacing: 2) {
+            Text("practice.teacher.label", bundle: .module)
+              .font(Font.brand.body.weight(.semibold))
+              .foregroundColor(Color.brand.textPrimary)
+            Text(metaText)
+              .font(Font.brand.caption)
+              .foregroundColor(Color.brand.textSecondary)
+          }
+          Spacer()
+          Image(systemName: state == .unavailable ? "speaker.slash" : "speaker.wave.2")
             .foregroundColor(Color.brand.textSecondary)
         }
-        Spacer()
-        Image(systemName: state == .unavailable ? "speaker.slash" : "speaker.wave.2")
-          .foregroundColor(Color.brand.textSecondary)
+
+        if case let .ready(_, _, _, rate) = state {
+          rateRow(currentRate: rate)
+        }
       }
     }
+  }
+
+  /// Pill row that mirrors the web `TeacherPanel` 0.75× / 1× / 1.25×
+  /// controls. Only rendered in `.ready` because changing the rate
+  /// while loading would be ignored by the player.
+  private func rateRow(currentRate: Float) -> some View {
+    HStack(spacing: Spacing.xs) {
+      ForEach(availableRates, id: \.self) { rate in
+        Button {
+          onSelectRate(rate)
+        } label: {
+          Text(Self.format(rate: rate))
+            .font(.system(size: 12, weight: .semibold))
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 6)
+            .background(rate == currentRate ? Color.brand.primary : Color.brand.tile)
+            .foregroundColor(rate == currentRate ? Color.brand.textOnPrimary : Color.brand.textPrimary)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("practice.teacher.rate.a11y \(Self.format(rate: rate))", bundle: .module))
+        .accessibilityAddTraits(rate == currentRate ? [.isSelected] : [])
+      }
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(Text("practice.teacher.rate.legend", bundle: .module))
   }
 
   private var playButton: some View {
@@ -84,5 +117,15 @@ struct TeacherReferencePanel: View {
 
   private func format(rate: Float) -> String {
     String(format: "%.2f×", rate)
+  }
+
+  /// Compact pill label: 1×, 0.75×, 1.25× (matches the web pills).
+  /// `metaText` uses the verbose `%.2f×` form so the inline meta line
+  /// stays alignment-stable.
+  static func format(rate: Float) -> String {
+    let trimmed = rate.truncatingRemainder(dividingBy: 1) == 0
+      ? String(format: "%.0f", rate)
+      : String(format: "%g", rate)
+    return "\(trimmed)×"
   }
 }
