@@ -120,7 +120,9 @@ private struct ProfileSignedOutContent: View {
 /// Delete account (H6) wire them up over subsequent stacked PRs.
 private struct ProfileSignedInContent: View {
   let user: AuthenticatedUser
-  let session: SessionStore
+  /// Observed so `pendingReactivationNotice` toggles re-render the
+  /// banner without relying on the parent re-creating this view.
+  @ObservedObject var session: SessionStore
   let profileService: ProfileService?
   let onSignOut: () -> Void
   @State private var editViewModel: EditProfileViewModel?
@@ -131,6 +133,9 @@ private struct ProfileSignedInContent: View {
   var body: some View {
     ScrollView {
       VStack(spacing: Spacing.lg) {
+        if session.pendingReactivationNotice {
+          ReactivationBanner(onDismiss: session.acknowledgeReactivationNotice)
+        }
         ProfileHeader(user: user, onEdit: editAction)
         AccountDataCard(
           email: user.email,
