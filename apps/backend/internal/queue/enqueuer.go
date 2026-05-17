@@ -3,7 +3,6 @@ package queue
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -90,9 +89,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 		enqueueDurationMetric.Record(ctx, enqueueDurationMs, metric.WithAttributes(attribute.String("session_id", sessionID)))
 	}
 	if err != nil {
-		log.Printf("enqueue failed session_id=%s ayah_id=%d err=%v", sessionID, ayahID, err)
-		return err
+		return fmt.Errorf("enqueue: publish session_id=%s ayah_id=%d: %w", sessionID, ayahID, err)
 	}
-	log.Printf("enqueued job session_id=%s ayah_id=%d", sessionID, ayahID)
 	return nil
 }
