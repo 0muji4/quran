@@ -43,6 +43,7 @@ enum TelemetryEvent {
 
   // Practice
   static let practiceReferencePlayed = "practice.reference.played"
+  static let practiceRateChanged      = "practice.rate.changed"
   static let practiceRecordingStarted = "practice.recording.started"
   static let practiceRecordingStopped = "practice.recording.stopped"
   static let practiceUploadCompleted  = "practice.upload.completed"
