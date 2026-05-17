@@ -258,7 +258,7 @@ func TestSurahGRPCServer(t *testing.T) {
 	_, err := server.GetSurah(context.Background(), nil)
 	require.Error(t, err)
 
-	resp, err := server.ListAyahs(context.Background(), &ListAyahsRequest{SurahId: 5})
+	resp, err := server.ListAyahs(context.Background(), &ListAyahsRequest{SurahID: 5})
 	require.NoError(t, err)
 	require.Len(t, resp.Ayahs, 1)
 	require.Equal(t, int32(5), resp.Ayahs[0].SurahID)
