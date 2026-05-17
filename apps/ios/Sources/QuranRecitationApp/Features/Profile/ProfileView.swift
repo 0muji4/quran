@@ -124,12 +124,16 @@ private struct ProfileSignedInContent: View {
   let profileService: ProfileService?
   let onSignOut: () -> Void
   @State private var editViewModel: EditProfileViewModel?
+  @State private var updatePasswordViewModel: UpdatePasswordViewModel?
 
   var body: some View {
     ScrollView {
       VStack(spacing: Spacing.lg) {
         ProfileHeader(user: user, onEdit: editAction)
-        AccountDataCard(email: user.email)
+        AccountDataCard(
+          email: user.email,
+          onUpdatePassword: updatePasswordAction
+        )
         DangerZoneCard()
         SignOutSection(onSignOut: onSignOut)
           .padding(.top, Spacing.sm)
@@ -141,6 +145,9 @@ private struct ProfileSignedInContent: View {
     .sheet(item: $editViewModel) { viewModel in
       EditProfileSheet(viewModel: viewModel, onDismiss: { editViewModel = nil })
     }
+    .sheet(item: $updatePasswordViewModel) { viewModel in
+      UpdatePasswordSheet(viewModel: viewModel, onDismiss: { updatePasswordViewModel = nil })
+    }
   }
 
   private var editAction: (() -> Void)? {
@@ -151,6 +158,13 @@ private struct ProfileSignedInContent: View {
         profileService: profileService,
         session: session
       )
+    }
+  }
+
+  private var updatePasswordAction: (() -> Void)? {
+    guard let profileService else { return nil }
+    return {
+      updatePasswordViewModel = UpdatePasswordViewModel(profileService: profileService)
     }
   }
 }
