@@ -41,6 +41,16 @@ final class SessionStore: ObservableObject {
     currentUser = success.user
   }
 
+  /// Replace the stored user profile without rotating tokens. Called
+  /// after `ProfileService.updateProfile` / `.updateEmail` so the
+  /// header card and any other view bound to `currentUser` refreshes
+  /// without forcing a re-sign-in. The token pair is left untouched
+  /// — those endpoints don't return a new pair.
+  func updateUser(_ user: AuthenticatedUser) {
+    tokenStore.saveUser(user)
+    currentUser = user
+  }
+
   /// Clear the stored session and return to the signed-out state.
   func signOut() {
     tokenStore.clear()
