@@ -290,8 +290,6 @@
     },
     "action": {
       "tryAgain": "Try this ayah again",
-      "saveAttempt": "Save attempt",
-      "saved": "Saved to history",
       "continue": "Continue to ayah {next}",
       "finish": "Finish surah"
     },
