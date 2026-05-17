@@ -60,6 +60,7 @@
 "practice.teacher.loop.off" = "Loop ayah — off";
 "practice.nav.prev" = "Previous ayah";
 "practice.nav.next" = "Next ayah";
+"practice.progress.a11y %lld %lld" = "Ayah %1$lld of %2$lld";
 "practice.record.idleTitle" = "Ready to record";
 "practice.record.idleSubtitle" = "Tap to start";
 "practice.record.recordingTitle" = "Recording…";
