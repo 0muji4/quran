@@ -62,14 +62,14 @@ type Alignment struct {
 
 // ASRResult stores inference output from the worker keyed by session ID.
 type ASRResult struct {
-	SessionID         string         `json:"session_id"`
-	AyahID            int64          `json:"ayah_id"`
-	AudioKey          string         `json:"audio_key"`
-	ExpectedTextAR    string         `json:"expected_text_ar,omitempty"`
-	Transcript        string         `json:"transcript"`
-	WordTimestamps    map[string]any `json:"word_timestamps"`
-	WER               float64        `json:"wer,omitempty"`
-	AlignmentObjectID string         `json:"alignment_object_key,omitempty"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+	SessionID          string         `json:"session_id"`
+	AyahID             int64          `json:"ayah_id"`
+	AudioKey           string         `json:"audio_key"`
+	ExpectedTextAR     string         `json:"expected_text_ar,omitempty"`
+	Transcript         string         `json:"transcript"`
+	WordTimestamps     map[string]any `json:"word_timestamps"`
+	WER                float64        `json:"wer,omitempty"`
+	AlignmentObjectKey string         `json:"alignment_object_key,omitempty"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
 }
