@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Modal sheet that drives `POST /auth/me/email`. Two fields:
 /// current password (to re-verify intent) and the new address. The
-/// 401 → "current password is incorrect" overload is handled by
-/// `ChangeEmailViewModel`; AuthHTTPClient leaves the response alone
-/// because `ProfileService.updateEmail` uses `retryOn401: false`.
+/// BFF returns 422 (not 401) on a wrong current password so a
+/// re-verification failure can't be mistaken for an expired access
+/// token; `ProfileService.updateEmail` maps the 422 to
+/// `AppError.invalidCredentials` for the banner.
 struct ChangeEmailSheet: View {
   @ObservedObject var viewModel: ChangeEmailViewModel
   let onDismiss: () -> Void
