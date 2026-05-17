@@ -10,6 +10,7 @@ struct AppRoot: View {
   private let authService: AuthService
   private let referenceClient: ReferenceAudioClient
   private let meClient: MeClient?
+  private let profileService: ProfileService?
   private let telemetry: Telemetry
   private let historyStore: HistoryStore
   @ObservedObject private var session: SessionStore
@@ -23,7 +24,8 @@ struct AppRoot: View {
     telemetry: Telemetry,
     historyStore: HistoryStore = UserDefaultsHistoryStore(),
     referenceClient: ReferenceAudioClient? = nil,
-    meClient: MeClient? = nil
+    meClient: MeClient? = nil,
+    profileService: ProfileService? = nil
   ) {
     self._session = ObservedObject(wrappedValue: session)
     self.backend = backend
@@ -32,6 +34,7 @@ struct AppRoot: View {
     self.historyStore = historyStore
     self.referenceClient = referenceClient ?? HTTPReferenceAudioClient()
     self.meClient = meClient
+    self.profileService = profileService
     // Default Practice opens at Al-Fatihah ayah 1. The Library Continue
     // card overrides via `practiceContext` when the user resumes.
     self._practiceContext = State(initialValue: PracticeContext(surahId: "1", ayahNumber: 1))
@@ -122,7 +125,8 @@ struct AppRoot: View {
     ProfileView(
       session: session,
       authService: authService,
-      telemetry: telemetry
+      telemetry: telemetry,
+      profileService: profileService
     )
     .tabItem { Label("Profile", systemImage: "person.crop.circle") }
     .tag(AppTab.profile)
