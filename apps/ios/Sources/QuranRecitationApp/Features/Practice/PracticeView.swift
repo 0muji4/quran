@@ -28,8 +28,10 @@ struct PracticeView: View {
             reciterName: viewModel.reciterName,
             state: viewModel.teacherState,
             availableRates: PracticeViewModel.supportedReferenceRates,
+            isLoopEnabled: viewModel.isLoopEnabled,
             onTogglePlayback: { viewModel.toggleReferencePlayback() },
-            onSelectRate: { viewModel.setReferenceRate($0) }
+            onSelectRate: { viewModel.setReferenceRate($0) },
+            onToggleLoop: { viewModel.toggleLoop() }
           )
           .padding(.horizontal, Spacing.screenHorizontal)
           activePanel
