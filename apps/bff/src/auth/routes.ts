@@ -9,6 +9,7 @@ import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  updateUserPassword,
   updateUserProfile,
   VALID_LEVELS,
   type UserLevel,
@@ -108,6 +109,17 @@ authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
   }
 });
 
+const changePasswordSchema = z.object({
+  body: z.object({
+    // `currentPassword` is verified before we touch anything; its length
+    // constraint matches the login path (1..128) rather than the
+    // signup path's `min(8)` so legacy accounts created before the
+    // 8-char rule can still rotate their password.
+    currentPassword: z.string().min(1).max(128),
+    newPassword: z.string().min(8).max(128)
+  })
+});
+
 const patchMeSchema = z.object({
   body: z
     .object({
@@ -185,6 +197,47 @@ authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('PATCH /auth/me failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to update profile' });
+  }
+});
+
+/// Password change for a signed-in user. Verifies the current password
+/// before rotating so a hijacked access cookie can't change the
+/// password by itself (the attacker would still need the old one). The
+/// `newPassword` length rule matches the sign-up zod schema so the two
+/// stay in lockstep. Returns 401 on a wrong current password —
+/// deliberately the same status as a failed sign-in to give the same
+/// signal across both flows.
+///
+/// Refresh-token revocation for other devices is intentionally NOT
+/// done here — that's a follow-up tracked in the password-change
+/// brief — so a user can rotate without being booted off every
+/// signed-in device.
+authRouter.post('/auth/me/password', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  const validation = changePasswordSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { currentPassword, newPassword } = validation.data.body;
+  try {
+    const user = await findUserById(session.id);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'current password is incorrect' });
+    }
+    const ok = await verifyPassword(currentPassword, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'current password is incorrect' });
+    }
+    const newHash = await hashPassword(newPassword);
+    const updated = await updateUserPassword(session.id, newHash);
+    if (!updated) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+    res.status(204).end();
+  } catch (error) {
+    logger.error('POST /auth/me/password failed', { userId: session.id, error });
+    res.status(502).json({ error: 'Failed to update password' });
   }
 });
 
