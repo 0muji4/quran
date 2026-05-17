@@ -87,6 +87,20 @@ export const updateUserProfile = async (
   return mapRow(result.rows[0]);
 };
 
+// Targeted password rotation. Kept separate from `updateUserProfile`
+// because the caller will always have done a `verifyPassword` round
+// trip before reaching here, and bundling password into the generic
+// partial update would invite the same caller to skip the verify.
+export const updateUserPassword = async (id: string, passwordHash: string): Promise<boolean> => {
+  const pool = getDatabasePool();
+  if (!pool) return false;
+  const result = await pool.query(
+    `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+    [passwordHash, id]
+  );
+  return (result.rowCount ?? 0) > 0;
+};
+
 export const createUserWithPassword = async (input: {
   email: string;
   displayName: string | null;
