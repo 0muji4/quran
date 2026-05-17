@@ -66,6 +66,27 @@ type redisConn struct {
 	writer *bufio.Writer
 }
 
+// prepareTLSConfig returns a tls.Config suitable for the queue's
+// rediss:// connections. When base is nil the system trust store is
+// used; when base.ServerName is empty we populate it from addr so SNI
+// and certificate verification work out of the box. base is never
+// mutated — callers retain ownership.
+func prepareTLSConfig(addr string, base *tls.Config) *tls.Config {
+	if base == nil {
+		base = &tls.Config{}
+	}
+	if base.ServerName != "" {
+		return base
+	}
+	host, _, splitErr := net.SplitHostPort(addr)
+	if splitErr != nil {
+		host = addr
+	}
+	cfg := base.Clone()
+	cfg.ServerName = host
+	return cfg
+}
+
 func newRedisConn(u *url.URL, useTLS bool, tlsCfg *tls.Config) (*redisConn, error) {
 	addr := u.Host
 	if !strings.Contains(addr, ":") {
@@ -75,22 +96,7 @@ func newRedisConn(u *url.URL, useTLS bool, tlsCfg *tls.Config) (*redisConn, erro
 	var conn net.Conn
 	var err error
 	if useTLS {
-		cfg := tlsCfg
-		if cfg == nil {
-			cfg = &tls.Config{}
-		}
-		// Populate ServerName from the URL host when the caller did
-		// not pre-fill it, so SNI and certificate verification work
-		// even with default config.
-		if cfg.ServerName == "" {
-			host, _, splitErr := net.SplitHostPort(addr)
-			if splitErr != nil {
-				host = addr
-			}
-			cfg = cfg.Clone()
-			cfg.ServerName = host
-		}
-		conn, err = tls.Dial("tcp", addr, cfg)
+		conn, err = tls.Dial("tcp", addr, prepareTLSConfig(addr, tlsCfg))
 	} else {
 		conn, err = net.Dial("tcp", addr)
 	}
