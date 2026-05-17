@@ -19,10 +19,10 @@ export function AyahProgressBar({ total, current }: Props) {
       <span
         className={styles.progressTrack}
         role="progressbar"
+        aria-label={`Ayah ${clampedCurrent} of ${total}`}
         aria-valuemin={1}
         aria-valuemax={total}
         aria-valuenow={clampedCurrent}
-        aria-valuetext={`Ayah ${clampedCurrent} of ${total}`}
       >
         <span
           className={styles.progressIndicator}
