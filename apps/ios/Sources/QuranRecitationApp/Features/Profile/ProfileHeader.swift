@@ -84,7 +84,14 @@ struct ProfileHeader: View {
   // MARK: - Helpers
 
   static func initial(displayName: String?, email: String) -> String {
-    let source = (displayName ?? email).trimmingCharacters(in: .whitespacesAndNewlines)
+    // displayName "   " is a degenerate but valid persisted value
+    // (the BFF zod schema for sign-up only requires "non-empty before
+    // trim"). Treat it as no-name and fall back to email rather than
+    // rendering an empty avatar.
+    let trimmedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let source = trimmedName.isEmpty
+      ? email.trimmingCharacters(in: .whitespacesAndNewlines)
+      : trimmedName
     guard let first = source.first else { return "·" }
     return String(first).uppercased()
   }
