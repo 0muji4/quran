@@ -160,16 +160,15 @@ final class ProfileServiceTests: XCTestCase {
     XCTAssertTrue(payload.contains(#""newEmail":"new@example.com""#))
   }
 
-  func test_updateEmail_401_throwsInvalidCredentialsWithoutSigningOut() async {
-    // 401 on /auth/me/email means "current password is incorrect".
-    // The service must reject without going through the refresh-retry
-    // dance — otherwise a wrong-password guess would force-sign-out the
-    // user. The TransportSpy is primed with a single response: if
-    // AuthHTTPClient tried to refresh, the spy would XCTFail on
-    // exhaustion.
+  func test_updateEmail_422_throwsInvalidCredentialsWithoutSigningOut() async {
+    // 422 on /auth/me/email means "current password is incorrect".
+    // The BFF chose 422 (not 401) so AuthHTTPClient doesn't try to
+    // refresh and sign the user out for mistyping their password.
+    // The spy is primed with a single response; if a refresh fired,
+    // the spy would XCTFail on exhaustion.
     var signOutFired = false
     let spy = TransportSpy(responses: [
-      { (Data(), httpResponse(status: 401)) }
+      { (Data(), httpResponse(status: 422)) }
     ])
     let service = makeService(transport: spy.transport(), onSignOut: { signOutFired = true })
 
@@ -178,8 +177,8 @@ final class ProfileServiceTests: XCTestCase {
     ) { error in
       XCTAssertEqual((error as? AppError)?.telemetryCode, "invalid_credentials")
     }
-    XCTAssertEqual(spy.requests.count, 1, "expected no refresh round-trip on overloaded 401")
-    XCTAssertFalse(signOutFired, "401 from /auth/me/email must not evict the session")
+    XCTAssertEqual(spy.requests.count, 1, "no refresh round-trip on 422")
+    XCTAssertFalse(signOutFired, "422 from /auth/me/email must not evict the session")
   }
 
   func test_updateEmail_409_throwsEmailInUse() async {
@@ -226,15 +225,16 @@ final class ProfileServiceTests: XCTestCase {
     XCTAssertTrue(payload.contains(#""newPassword":"new-strong-pw""#))
   }
 
-  func test_updatePassword_401_throwsInvalidCredentialsWithoutSigningOut() async {
+  func test_updatePassword_422_throwsInvalidCredentialsWithoutSigningOut() async {
+    // Same 401-vs-422 split as updateEmail above — see that test.
     var signOutFired = false
     let spy = TransportSpy(responses: [
-      { (Data(), httpResponse(status: 401)) }
+      { (Data(), httpResponse(status: 422)) }
     ])
     let service = makeService(transport: spy.transport(), onSignOut: { signOutFired = true })
 
     await XCTAssertThrowsErrorAsync(
-      try await service.updatePassword(currentPassword: "wrong", newPassword: "new-pw")
+      try await service.updatePassword(currentPassword: "wrong", newPassword: "new-strong-pw")
     ) { error in
       XCTAssertEqual((error as? AppError)?.telemetryCode, "invalid_credentials")
     }
