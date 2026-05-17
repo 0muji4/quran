@@ -114,7 +114,8 @@ describe('POST /auth/signup and /auth/login', () => {
         displayName: null,
         passwordHash: 'x',
         createdAt: TEST_CREATED_AT,
-        level: null
+        level: null,
+        deletedAt: null
       });
 
       const res = await request(app)
@@ -122,6 +123,31 @@ describe('POST /auth/signup and /auth/login', () => {
         .send({ email: 'a@b.com', password: 'long-enough-pw' });
 
       expect(res.status).toBe(409);
+      expect(res.body.error).toBe('email already in use');
+      expect(createUserWithPassword).not.toHaveBeenCalled();
+    });
+
+    it('points soft-deleted emails to sign-in instead of "in use" (ADR-0024 §7)', async () => {
+      vi.mocked(findUserByEmail).mockResolvedValue({
+        id: 'u',
+        email: 'comeback@example.com',
+        displayName: null,
+        passwordHash: 'x',
+        createdAt: TEST_CREATED_AT,
+        level: null,
+        // Account is sitting in the 30-day grace window.
+        deletedAt: new Date('2026-05-01T00:00:00Z')
+      });
+
+      const res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'comeback@example.com', password: 'long-enough-pw' });
+
+      expect(res.status).toBe(409);
+      // The error must mention restoration via sign-in so the client
+      // can route the user to /sign-in instead of giving up with a
+      // "email already in use" dead end.
+      expect(String(res.body.error)).toMatch(/sign in/i);
       expect(createUserWithPassword).not.toHaveBeenCalled();
     });
 
