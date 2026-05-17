@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 import type { HistoryStats } from './historyStats';
@@ -53,45 +56,47 @@ const smallOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
 // Average tile uses the dark "continue" surface to call out the running
 // average, matching the iOS design's inverse BrandCard treatment).
 export function HistoryStatsGrid({ stats }: Props) {
+  const t = useTranslations('history.stats');
   // `panel(...)` is a slot recipe: it returns an object with one class
   // per slot (root / body / title / …). We only need the outer surface
   // here, so pluck `.root` for each variant up front.
   const paperPanel = panel({ surface: 'paper' }).root;
   const continuePanel = panel({ surface: 'continue' }).root;
+  const unknown = t('bestUnknown');
 
   return (
-    <section className={gridClass} aria-label="Practice summary">
+    <section className={gridClass} aria-label={t('ariaLabel')}>
       <Tile
-        eyebrow="This week"
+        eyebrow={t('thisWeek')}
         big={String(stats.thisWeekCount)}
-        small="attempts"
+        small={t('thisWeekUnit')}
         panelClass={paperPanel}
         eyebrowClassName={eyebrowOnPaperClass}
         bigClassName={bigOnPaperClass}
         smallClassName={smallOnPaperClass}
       />
       <Tile
-        eyebrow="Average"
-        big={stats.averageScore === null ? '—' : String(Math.round(stats.averageScore))}
-        small="of 100"
+        eyebrow={t('average')}
+        big={stats.averageScore === null ? unknown : String(Math.round(stats.averageScore))}
+        small={t('averageUnit')}
         panelClass={continuePanel}
         eyebrowClassName={eyebrowOnContinueClass}
         bigClassName={bigOnContinueClass}
         smallClassName={smallOnContinueClass}
       />
       <Tile
-        eyebrow="Best"
-        big={stats.bestScore === null ? '—' : String(Math.round(stats.bestScore))}
-        small={stats.bestSurah ?? '—'}
+        eyebrow={t('best')}
+        big={stats.bestScore === null ? unknown : String(Math.round(stats.bestScore))}
+        small={stats.bestSurah ?? unknown}
         panelClass={paperPanel}
         eyebrowClassName={eyebrowOnPaperClass}
         bigClassName={bigOnPaperClass}
         smallClassName={smallOnPaperClass}
       />
       <Tile
-        eyebrow="Streak"
+        eyebrow={t('streak')}
         big={String(stats.streakDays)}
-        small="days"
+        small={t('streakUnit')}
         panelClass={paperPanel}
         eyebrowClassName={eyebrowOnPaperClass}
         bigClassName={bigOnPaperClass}

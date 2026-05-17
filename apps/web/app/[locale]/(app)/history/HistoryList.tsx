@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
 import { getRecentAttempts, type Attempt } from '../../../lib/storage';
 import { formatPracticedAt } from '../../../lib/classify';
@@ -129,6 +130,7 @@ type Props = {
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
   const [filter, setFilter] = useState<HistoryFilter>(ALL_FILTER);
+  const t = useTranslations('history');
 
   // Re-read on mount and whenever the sign-in state flips. iOS does the
   // same via `task(id: session.currentUser?.id)` so the gated history
@@ -159,13 +161,10 @@ export function HistoryList({ signedIn }: Props) {
   if (!signedIn) {
     return (
       <div className={emptyClass}>
-        <p className={emptyTitleClass}>Sign in to track your practice</p>
-        <p>
-          Your attempts, best scores and continue-from progress sync across devices when you have an
-          account.
-        </p>
+        <p className={emptyTitleClass}>{t('signedOut.title')}</p>
+        <p>{t('signedOut.body')}</p>
         <Link href="/sign-in" className={cx(statusPill({ tone: 'completed' }), emptyCtaClass)}>
-          Sign in <ArrowRightIcon size={14} />
+          {t('signedOut.cta')} <ArrowRightIcon size={14} />
         </Link>
       </div>
     );
@@ -178,10 +177,10 @@ export function HistoryList({ signedIn }: Props) {
   if (attempts.length === 0) {
     return (
       <div className={emptyClass}>
-        <p className={emptyTitleClass}>No attempts yet</p>
-        <p>Your recent recitation scores will appear here once you start practicing.</p>
+        <p className={emptyTitleClass}>{t('empty.title')}</p>
+        <p>{t('empty.body')}</p>
         <Link href="/" className={cx(statusPill({ tone: 'completed' }), emptyCtaClass)}>
-          Browse the surah library <ArrowRightIcon size={14} />
+          {t('empty.cta')} <ArrowRightIcon size={14} />
         </Link>
       </div>
     );
@@ -192,7 +191,7 @@ export function HistoryList({ signedIn }: Props) {
       {stats && <HistoryStatsGrid stats={stats} />}
       <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
       {visibleAttempts.length === 0 ? (
-        <p className={filteredEmptyClass}>No attempts for the selected surah yet.</p>
+        <p className={filteredEmptyClass}>{t('filteredEmpty')}</p>
       ) : (
         <ul className={listClass}>
           {visibleAttempts.map((a) => {
@@ -202,13 +201,17 @@ export function HistoryList({ signedIn }: Props) {
                 <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
                   <span
                     className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
-                    aria-label={completed ? `Score ${a.score}` : 'Failed attempt'}
+                    aria-label={
+                      completed
+                        ? t('row.scoreAriaLabel', { score: a.score ?? 0 })
+                        : t('row.failedAriaLabel')
+                    }
                   >
                     {completed && a.score !== null ? a.score : '—'}
                   </span>
                   <div className={infoClass}>
                     <p className={titleClass}>
-                      {a.surahNameEn} · ayah {a.ayahNumber}
+                      {t('row.title', { name: a.surahNameEn, ayah: a.ayahNumber })}
                     </p>
                     <p className={metaClass}>
                       {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
@@ -220,7 +223,7 @@ export function HistoryList({ signedIn }: Props) {
                       statusPillMobileClass
                     )}
                   >
-                    {completed ? 'Completed' : 'Failed'}
+                    {completed ? t('row.statusCompleted') : t('row.statusFailed')}
                   </span>
                   <ArrowRightIcon size={14} />
                 </Link>
