@@ -124,27 +124,38 @@ final class PracticeViewModel: ObservableObject {
     )
   }
 
-  /// Cycle 1.00× → 0.75× → 1.25× → 1.00×.
-  func cycleReferenceRate() {
-    let next: Float = {
-      switch playbackRate {
-      case 1.0: return 0.75
-      case 0.75: return 1.25
-      default: return 1.0
-      }
-    }()
-    playbackRate = next
+  /// Set the teacher-audio playback rate explicitly. Mirrors the web
+  /// `TeacherPanel` 0.75× / 1× / 1.25× pill row. Values outside the
+  /// supported set are clamped to the nearest neighbour so a future
+  /// caller (e.g. accessibility settings) can't drift the rate into
+  /// territory the player doesn't handle gracefully.
+  func setReferenceRate(_ rate: Float) {
+    let clamped = Self.snapToSupportedRate(rate)
+    if clamped == playbackRate { return }
+    playbackRate = clamped
     if case let .ready(duration, isPlaying, currentTime, _) = teacherState {
       teacherState = .ready(
         duration: duration,
         isPlaying: isPlaying,
         currentTime: currentTime,
-        rate: next
+        rate: clamped
       )
       if isPlaying {
-        player.play(rate: next)
+        player.play(rate: clamped)
       }
     }
+    telemetry.event(
+      TelemetryEvent.practiceRateChanged,
+      attributes: ["rate": String(format: "%.2f", clamped)]
+    )
+  }
+
+  /// Supported teacher-audio playback rates. Centralised so the pill
+  /// row, telemetry, and the snap-to-nearest helper all stay in sync.
+  static let supportedReferenceRates: [Float] = [0.75, 1.0, 1.25]
+
+  private static func snapToSupportedRate(_ rate: Float) -> Float {
+    supportedReferenceRates.min(by: { abs($0 - rate) < abs($1 - rate) }) ?? 1.0
   }
 
   // MARK: - Recording (PR 14)

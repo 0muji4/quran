@@ -90,6 +90,58 @@ final class PracticeViewModelTests: XCTestCase {
     XCTAssertTrue(telemetry.eventNames().contains("practice.scoring.failed"))
   }
 
+  // MARK: - Playback-speed pill
+
+  func test_setReferenceRate_emitsTelemetryAndUpdatesState() async {
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(telemetry: telemetry)
+    await viewModel.load()
+
+    viewModel.setReferenceRate(0.75)
+
+    XCTAssertTrue(
+      telemetry.records.contains { record in
+        if case let .event(name, attributes) = record {
+          return name == "practice.rate.changed" && attributes["rate"] == "0.75"
+        }
+        return false
+      },
+      "expected practice.rate.changed event with the new rate"
+    )
+  }
+
+  func test_setReferenceRate_sameValue_doesNotEmitTelemetry() async {
+    // No-op rate change shouldn't generate noise on the events
+    // dashboard. The default rate is 1.0, so set it to 1.0 again.
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(telemetry: telemetry)
+    await viewModel.load()
+
+    viewModel.setReferenceRate(1.0)
+
+    XCTAssertFalse(
+      telemetry.eventNames().contains("practice.rate.changed"),
+      "no-op rate set must not emit a change event"
+    )
+  }
+
+  func test_setReferenceRate_unsupportedValueSnapsToNearest() async {
+    // Off-pill values (e.g. 0.6) must clamp to the nearest supported
+    // rate rather than reaching the player and producing undefined
+    // behaviour. 0.6 is closest to 0.75.
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(telemetry: telemetry)
+    await viewModel.load()
+
+    viewModel.setReferenceRate(0.6)
+
+    let attributes = telemetry.records.compactMap { record -> [String: String]? in
+      if case let .event(name, attrs) = record, name == "practice.rate.changed" { return attrs }
+      return nil
+    }
+    XCTAssertEqual(attributes.first?["rate"], "0.75", "0.6 should snap to the nearest supported rate (0.75)")
+  }
+
   // MARK: - Helpers
 
   private func makeViewModel(
