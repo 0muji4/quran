@@ -127,7 +127,7 @@ func TestRESTHandleGetSurahRepoError(t *testing.T) {
 	handler.handleGetSurah(recorder, req)
 
 	require.Equal(t, http.StatusNotFound, recorder.Code)
-	require.Equal(t, "db failure\n", recorder.Body.String())
+	require.Equal(t, "surah not found\n", recorder.Body.String())
 }
 
 func TestRESTHandleGetSurahNotFound(t *testing.T) {
@@ -211,7 +211,7 @@ func TestRESTHandleGetSurahAyahsRepoError(t *testing.T) {
 	handler.handleGetSurah(recorder, req)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
-	require.Equal(t, "list failed\n", recorder.Body.String())
+	require.Equal(t, "failed to list ayahs\n", recorder.Body.String())
 }
 
 func TestGraphQLHandlerServeHTTP(t *testing.T) {
