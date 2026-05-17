@@ -1,3 +1,4 @@
+import { UpdatePasswordButton } from './UpdatePasswordButton';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
@@ -100,16 +101,9 @@ export function AccountDataCard({ email }: Props) {
         <div className={labelStackClass}>
           <span className={eyebrowClass}>Password</span>
           <span className={primaryClass}>•••••••••••</span>
-          <span className={helperClass}>Last changed — unknown</span>
+          <span className={helperClass}>Rotate when you suspect a leak or every few months.</span>
         </div>
-        <button
-          type="button"
-          className={linkClass}
-          disabled
-          aria-label="Update password — coming soon"
-        >
-          Update
-        </button>
+        <UpdatePasswordButton />
       </div>
     </section>
   );

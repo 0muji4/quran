@@ -610,6 +610,51 @@ export const signOutAction = async (): Promise<void> => {
   );
 };
 
+// Server-action wrapper around `POST /auth/me/password`. Returns
+// void on success (BFF returns 204) and throws on non-2xx so the
+// modal can surface the BFF error inline. The current-password is
+// re-verified server-side; this client check exists only to keep
+// the request body well-formed.
+export const updatePasswordAction = async (input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> => {
+  return tracer.startActiveSpan(
+    'ServerAction: updatePasswordAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'updatePasswordAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/me/password`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(input)
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as unknown;
+          const message =
+            typeof payload === 'object' &&
+            payload &&
+            'error' in (payload as Record<string, unknown>)
+              ? (payload as Record<string, unknown>).error
+              : response.statusText;
+          throw new Error(typeof message === 'string' ? message : 'Failed to update password');
+        }
+        logger.info('updatePasswordAction completed');
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('updatePasswordAction failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 // Server-action wrapper around `PATCH /auth/me`. Throws on non-2xx
 // so the modal can show the BFF's error message without separately
 // having to inspect a status code; the only caller today is the web
