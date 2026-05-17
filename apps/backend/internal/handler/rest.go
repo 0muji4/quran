@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"quran-project/apps/backend/internal/enqueue"
@@ -21,12 +20,16 @@ type REST struct {
 	Enqueuer     *enqueue.Enqueuer
 }
 
-// Register wires endpoints onto provided mux under /api.
+// Register wires endpoints onto provided mux under /api using Go 1.22+
+// method+wildcard patterns. The {id} / {sessionID} segments are read
+// back inside each handler via r.PathValue, replacing the previous
+// hand-rolled path parser in handleGetSurah.
 func (h REST) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/api/surahs", h.handleListSurahs)
-	mux.HandleFunc("/api/surahs/", h.handleGetSurah)
-	mux.HandleFunc("/api/scoring-jobs", h.handleScoringJobs)
-	mux.HandleFunc("/api/scoring-jobs/", h.handleScoringJob)
+	mux.HandleFunc("GET /api/surahs", h.handleListSurahs)
+	mux.HandleFunc("GET /api/surahs/{id}", h.handleGetSurah)
+	mux.HandleFunc("GET /api/surahs/{id}/ayahs", h.handleListSurahAyahs)
+	mux.HandleFunc("POST /api/scoring-jobs", h.handleCreateScoringJob)
+	mux.HandleFunc("GET /api/scoring-jobs/{sessionID}", h.handleGetScoringJob)
 }
 
 func (h REST) handleListSurahs(w http.ResponseWriter, r *http.Request) {
@@ -40,51 +43,46 @@ func (h REST) handleListSurahs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
-	// Expected pattern: /api/surahs/{id}/ayahs?
-	path := r.URL.Path[len("/api/surahs/"):]
-	// Split optional suffix
-	if path == "" {
-		http.NotFound(w, r)
+	surahID, ok := parseSurahID(w, r)
+	if !ok {
 		return
 	}
 
-	var surahIDPart, suffix string
-	if idx := len(path); idx > 0 {
-		for i := 0; i < len(path); i++ {
-			if path[i] == '/' {
-				surahIDPart = path[:i]
-				suffix = path[i:]
-				break
-			}
-		}
-	}
-	if surahIDPart == "" {
-		surahIDPart = path
-	}
-
-	surahID, err := strconv.Atoi(surahIDPart)
-	if err != nil {
-		http.Error(w, "invalid surah id", http.StatusBadRequest)
-		return
-	}
-
-	if suffix == "/ayahs" {
-		ayahs, err := h.SurahService.ListAyahs(r.Context(), int32(surahID))
-		if err != nil {
-			writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
-			return
-		}
-		writeJSON(w, ayahs)
-		return
-	}
-
-	surah, err := h.SurahService.GetSurah(r.Context(), int32(surahID))
+	surah, err := h.SurahService.GetSurah(r.Context(), surahID)
 	if err != nil {
 		writeError(w, r, http.StatusNotFound, "surah not found", err)
 		return
 	}
 
 	writeJSON(w, surah)
+}
+
+func (h REST) handleListSurahAyahs(w http.ResponseWriter, r *http.Request) {
+	surahID, ok := parseSurahID(w, r)
+	if !ok {
+		return
+	}
+
+	ayahs, err := h.SurahService.ListAyahs(r.Context(), surahID)
+	if err != nil {
+		writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
+		return
+	}
+
+	writeJSON(w, ayahs)
+}
+
+// parseSurahID extracts and validates the {id} path value. It writes
+// a 400 response and returns ok=false when the segment cannot be
+// parsed as an int32; handlers should return early in that case.
+func parseSurahID(w http.ResponseWriter, r *http.Request) (int32, bool) {
+	raw := r.PathValue("id")
+	id, err := strconv.Atoi(raw)
+	if err != nil {
+		http.Error(w, "invalid surah id", http.StatusBadRequest)
+		return 0, false
+	}
+	return int32(id), true
 }
 
 type scoringJobRequest struct {
@@ -111,24 +109,6 @@ type scoringJobResponse struct {
 	Verdict    *string        `json:"verdict,omitempty"`
 	Evaluation map[string]any `json:"evaluation,omitempty"`
 	CreatedAt  time.Time      `json:"createdAt"`
-}
-
-func (h REST) handleScoringJobs(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.handleCreateScoringJob(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
-}
-
-func (h REST) handleScoringJob(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		h.handleGetScoringJob(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
 }
 
 func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
@@ -243,8 +223,8 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := strings.TrimPrefix(r.URL.Path, "/api/scoring-jobs/")
-	if sessionID == "" || strings.Contains(sessionID, "/") {
+	sessionID := r.PathValue("sessionID")
+	if sessionID == "" {
 		http.NotFound(w, r)
 		return
 	}
