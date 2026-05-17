@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { MicIcon } from '../../../components/icons/MediaIcons';
 import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 import styles from '../../../styles/practice.module.css';
@@ -12,19 +13,14 @@ type Props = {
   onRecordAgain: () => void;
 };
 
-const DEFAULT_HINT = 'Move closer to the microphone and try again';
-
 // Inset body of the "could not score" panel (docs/4b. Practice _ error
 // _could not score_.png). The surrounding panel head (red mic icon, title,
 // "COULDN'T PROCESS" badge) lives in RecorderPanel; this component owns
 // only the dashed mic, reasons list, hint copy, and the two CTAs.
-export function ScoringErrorCard({
-  reasons,
-  hint = DEFAULT_HINT,
-  canReplay,
-  onReplay,
-  onRecordAgain
-}: Props) {
+export function ScoringErrorCard({ reasons, hint, canReplay, onReplay, onRecordAgain }: Props) {
+  const t = useTranslations('practice.scoringError');
+  const resolvedHint = hint ?? t('defaultHint');
+
   return (
     <div className={styles.scoringErrorCard} role="alert">
       <span className={styles.scoringErrorMic} aria-hidden="true">
@@ -41,7 +37,7 @@ export function ScoringErrorCard({
         </ul>
       ) : null}
 
-      <p className={styles.scoringErrorHint}>{hint}</p>
+      <p className={styles.scoringErrorHint}>{resolvedHint}</p>
 
       <div className={styles.scoringErrorActions}>
         {canReplay ? (
@@ -50,7 +46,7 @@ export function ScoringErrorCard({
             className={`${styles.btnGhost} ${styles.scoringErrorReplay}`}
             onClick={onReplay}
           >
-            <PlayGlyph /> Replay your recording
+            <PlayGlyph /> {t('replay')}
           </button>
         ) : null}
         <button
@@ -58,7 +54,7 @@ export function ScoringErrorCard({
           className={`${styles.btnTeal} ${styles.scoringErrorPrimary}`}
           onClick={onRecordAgain}
         >
-          <ArrowRightIcon size={14} /> Record again
+          <ArrowRightIcon size={14} /> {t('recordAgain')}
         </button>
       </div>
     </div>

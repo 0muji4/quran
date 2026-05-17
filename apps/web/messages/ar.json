@@ -137,5 +137,69 @@
       "body": "Beautifully done — pick another surah whenever you're ready.",
       "dismiss": "Dismiss"
     }
+  },
+  "practice": {
+    "page": {
+      "h1": "Practice {surahName} ayah {ayah} of {total}",
+      "breadcrumbAriaLabel": "Breadcrumb",
+      "breadcrumbLibrary": "Surah library",
+      "breadcrumbThe": "The {meaning}",
+      "prev": "Previous ayah",
+      "next": "Next ayah",
+      "tip": "Tip: tap the mic to record, tap again to stop and submit."
+    },
+    "recorder": {
+      "headerIdleTitle": "Now you recite",
+      "headerIdleSubtitle": "Press the button when ready",
+      "headerRecordingTitle": "Recording…",
+      "headerRecordingSubtitle": "Speak clearly into your microphone",
+      "headerAnalysingTitle": "Analysing your recitation…",
+      "headerAnalysingSubtitle": "Comparing against the teacher reference",
+      "headerAnalysingStuckSubtitle": "Taking longer than usual",
+      "headerErrorTitle": "We couldn't hear that clearly",
+      "headerErrorSubtitle": "Your recording was too quiet or too short",
+      "badgeScoring": "Scoring",
+      "badgeCouldntProcess": "Couldn't process",
+      "captionIdle": "Tap the mic to begin",
+      "captionRecording": "Tap to stop and submit for scoring",
+      "lastAttempt": "Last attempt: {score} / 100",
+      "cancel": "Cancel and try again",
+      "tooShort": "Recording was {seconds} s — too short to score",
+      "ariaStart": "Start recording",
+      "ariaStop": "Stop recording",
+      "device": {
+        "unsupported": "Recording is not supported in this browser.",
+        "denied": "Microphone access was denied. Please grant permission and try again.",
+        "failed": "Could not start the recorder. Please try again."
+      },
+      "liveStatus": {
+        "idle": "The recorder is ready. Press the microphone button to start recording.",
+        "recording": "Recording in progress. Press the stop button to submit your recitation.",
+        "analysing": "Analysing your recitation. Please wait.",
+        "stuck": "Analysis is taking longer than usual.",
+        "scoringErrorGeneric": "Could not score that recording. Try recording again.",
+        "scoringErrorWithReasons": "Could not score that recording. {reasons}."
+      }
+    },
+    "analysing": {
+      "transcribing": "Transcribing audio",
+      "comparing": "Comparing to reference",
+      "calculating": "Calculating your score",
+      "footer": "This usually takes a few seconds"
+    },
+    "scoringError": {
+      "defaultHint": "Move closer to the microphone and try again",
+      "replay": "Replay your recording",
+      "recordAgain": "Record again"
+    },
+    "teacher": {
+      "title": "Listen to the teacher",
+      "subtitle": "Husary Mu'allim · slow reference",
+      "play": "Play teacher audio",
+      "pause": "Pause teacher audio",
+      "speedAriaLabel": "Playback speed",
+      "loop": "Loop ayah",
+      "unavailable": "Reference audio unavailable: {message}"
+    }
   }
 }
