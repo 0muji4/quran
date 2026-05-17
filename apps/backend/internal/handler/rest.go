@@ -32,7 +32,7 @@ func (h REST) Register(mux *http.ServeMux) {
 func (h REST) handleListSurahs(w http.ResponseWriter, r *http.Request) {
 	surahs, err := h.SurahService.ListSurahs(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeError(w, r, http.StatusInternalServerError, "failed to list surahs", err)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
 	if suffix == "/ayahs" {
 		ayahs, err := h.SurahService.ListAyahs(r.Context(), int32(surahID))
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
 			return
 		}
 		writeJSON(w, ayahs)
@@ -80,7 +80,7 @@ func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
 
 	surah, err := h.SurahService.GetSurah(r.Context(), int32(surahID))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		writeError(w, r, http.StatusNotFound, "surah not found", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 
 	ayahs, err := h.SurahService.ListAyahs(r.Context(), int32(surahIDInt))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
 		return
 	}
 
@@ -324,4 +324,19 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeError sends a sanitised message to the client and logs the
+// underlying error with request context. Internal error text must not
+// leak into the response body, per Google Best Practices "Errors at
+// the API boundary".
+func writeError(w http.ResponseWriter, r *http.Request, status int, msg string, err error) {
+	if err != nil {
+		telemetry.Logger().ErrorContext(r.Context(), msg,
+			"status", status,
+			"path", r.URL.Path,
+			"error", err,
+		)
+	}
+	http.Error(w, msg, status)
 }

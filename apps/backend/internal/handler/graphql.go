@@ -27,7 +27,7 @@ func (h GraphQLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case payload.Query == "{ surahs }":
 		surahs, err := h.SurahService.ListSurahs(r.Context())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writeError(w, r, http.StatusInternalServerError, "failed to list surahs", err)
 			return
 		}
 		writeJSON(w, map[string]any{"data": map[string]any{"surahs": surahs}})
@@ -41,7 +41,7 @@ func (h GraphQLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		ayahs, err := h.SurahService.ListAyahs(r.Context(), surahID)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
 			return
 		}
 		writeJSON(w, map[string]any{"data": map[string]any{"ayahs": ayahs}})
