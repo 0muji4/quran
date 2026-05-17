@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"bufio"
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -146,4 +148,63 @@ func TestResponseWriter(t *testing.T) {
 	if rw.written != 4 {
 		t.Errorf("expected written=4, got %d", rw.written)
 	}
+}
+
+// TestResponseWriterFlushForwards confirms Flush proxies to the
+// underlying ResponseWriter when it implements http.Flusher.
+// httptest.ResponseRecorder is one such writer.
+func TestResponseWriterFlushForwards(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rw := &responseWriter{ResponseWriter: rec, statusCode: http.StatusOK}
+
+	// Calling Flush() on the wrapper must not panic and must propagate
+	// to the recorder (which exposes a Flushed bool).
+	rw.Flush()
+	if !rec.Flushed {
+		t.Error("expected underlying ResponseRecorder.Flushed = true")
+	}
+}
+
+// TestResponseWriterFlushNoop verifies Flush is a no-op when the
+// underlying writer does not implement http.Flusher (no panic).
+func TestResponseWriterFlushNoop(t *testing.T) {
+	rw := &responseWriter{ResponseWriter: nonFlusher{}, statusCode: http.StatusOK}
+	rw.Flush() // must not panic
+}
+
+// TestResponseWriterHijackForwards verifies Hijack returns
+// ErrNotSupported when the underlying writer does not implement
+// http.Hijacker — the path taken by httptest.ResponseRecorder.
+func TestResponseWriterHijackReturnsErrNotSupported(t *testing.T) {
+	rw := &responseWriter{ResponseWriter: httptest.NewRecorder(), statusCode: http.StatusOK}
+	_, _, err := rw.Hijack()
+	if err != http.ErrNotSupported {
+		t.Errorf("Hijack err = %v, want http.ErrNotSupported", err)
+	}
+}
+
+// TestResponseWriterHijackForwardsToHijacker exercises the forwarding
+// path against a stub that does implement http.Hijacker.
+func TestResponseWriterHijackForwardsToHijacker(t *testing.T) {
+	stub := &hijackableRecorder{ResponseRecorder: httptest.NewRecorder()}
+	rw := &responseWriter{ResponseWriter: stub, statusCode: http.StatusOK}
+	_, _, err := rw.Hijack()
+	if err != nil {
+		t.Fatalf("Hijack returned error: %v", err)
+	}
+	if !stub.hijacked {
+		t.Error("expected stub.Hijack to be called")
+	}
+}
+
+type nonFlusher struct{ http.ResponseWriter }
+
+type hijackableRecorder struct {
+	*httptest.ResponseRecorder
+	hijacked bool
+}
+
+func (h *hijackableRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h.hijacked = true
+	return nil, nil, nil
 }
