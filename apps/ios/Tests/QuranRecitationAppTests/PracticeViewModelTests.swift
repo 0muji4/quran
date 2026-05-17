@@ -125,6 +125,38 @@ final class PracticeViewModelTests: XCTestCase {
     )
   }
 
+  // MARK: - Loop ayah
+
+  func test_toggleLoop_flipsFlagAndEmitsTelemetry() async {
+    let telemetry = TelemetrySpy()
+    let viewModel = makeViewModel(telemetry: telemetry)
+    XCTAssertFalse(viewModel.isLoopEnabled, "loop starts off")
+
+    viewModel.toggleLoop()
+    XCTAssertTrue(viewModel.isLoopEnabled)
+    XCTAssertTrue(
+      telemetry.records.contains { record in
+        if case let .event(name, attributes) = record {
+          return name == "practice.loop.toggled" && attributes["enabled"] == "true"
+        }
+        return false
+      },
+      "expected practice.loop.toggled event with enabled=true"
+    )
+
+    viewModel.toggleLoop()
+    XCTAssertFalse(viewModel.isLoopEnabled)
+    XCTAssertTrue(
+      telemetry.records.contains { record in
+        if case let .event(name, attributes) = record {
+          return name == "practice.loop.toggled" && attributes["enabled"] == "false"
+        }
+        return false
+      },
+      "expected a second event with enabled=false on toggle-off"
+    )
+  }
+
   func test_setReferenceRate_unsupportedValueSnapsToNearest() async {
     // Off-pill values (e.g. 0.6) must clamp to the nearest supported
     // rate rather than reaching the player and producing undefined
