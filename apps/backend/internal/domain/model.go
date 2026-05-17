@@ -5,8 +5,8 @@ import "time"
 // Surah captures high-level metadata about a chapter of the Quran.
 type Surah struct {
 	ID              int32          `json:"id"`
-	NameAR          string         `json:"name_ar"`
-	NameEN          string         `json:"name_en"`
+	NameAr          string         `json:"name_ar"`
+	NameEn          string         `json:"name_en"`
 	RevelationPlace string         `json:"revelation_place"`
 	AyahCount       int32          `json:"ayah_count"`
 	Metadata        map[string]any `json:"metadata,omitempty"`
@@ -19,8 +19,8 @@ type Ayah struct {
 	ID              int64          `json:"id"`
 	SurahID         int32          `json:"surah_id"`
 	AyahNumber      int32          `json:"ayah_number"`
-	TextAR          string         `json:"text_ar"`
-	TextEN          string         `json:"text_en,omitempty"`
+	TextAr          string         `json:"text_ar"`
+	TextEn          string         `json:"text_en,omitempty"`
 	Transliteration string         `json:"transliteration,omitempty"`
 	Metadata        map[string]any `json:"metadata,omitempty"`
 	CreatedAt       time.Time      `json:"created_at"`
@@ -71,7 +71,7 @@ type ASRResult struct {
 	SessionID          string         `json:"session_id"`
 	AyahID             int64          `json:"ayah_id"`
 	AudioKey           string         `json:"audio_key"`
-	ExpectedTextAR     string         `json:"expected_text_ar,omitempty"`
+	ExpectedTextAr     string         `json:"expected_text_ar,omitempty"`
 	Transcript         string         `json:"transcript"`
 	WordTimestamps     map[string]any `json:"word_timestamps"`
 	WER                float64        `json:"wer,omitempty"`
