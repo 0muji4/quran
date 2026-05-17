@@ -303,5 +303,43 @@
       "title": "Something went wrong",
       "tryAgain": "Try again"
     }
+  },
+  "history": {
+    "eyebrow": "+ Your tilawah journey",
+    "title": "Recent attempts",
+    "description": "A log of your recent recitations and scores. Synced across your devices when you are signed in.",
+    "signedOut": {
+      "title": "Sign in to track your practice",
+      "body": "Your attempts, best scores and continue-from progress sync across devices when you have an account.",
+      "cta": "Sign in"
+    },
+    "empty": {
+      "title": "No attempts yet",
+      "body": "Your recent recitation scores will appear here once you start practicing.",
+      "cta": "Browse the surah library"
+    },
+    "filteredEmpty": "No attempts for the selected surah yet.",
+    "filter": {
+      "ariaLabel": "Filter attempts by surah",
+      "all": "All"
+    },
+    "row": {
+      "title": "{name} · ayah {ayah}",
+      "scoreAriaLabel": "Score {score}",
+      "failedAriaLabel": "Failed attempt",
+      "statusCompleted": "Completed",
+      "statusFailed": "Failed"
+    },
+    "stats": {
+      "ariaLabel": "Practice summary",
+      "thisWeek": "This week",
+      "thisWeekUnit": "attempts",
+      "average": "Average",
+      "averageUnit": "of 100",
+      "best": "Best",
+      "bestUnknown": "—",
+      "streak": "Streak",
+      "streakUnit": "days"
+    }
   }
 }
