@@ -17,7 +17,10 @@ type MigrationLoader interface {
 
 // Migration represents a single SQL migration file.
 type Migration struct {
-	Name    string
+	// Name is the filename of the migration (e.g. "20260102_init.up.sql").
+	// Migrations are applied in lexicographic order by Name.
+	Name string
+	// Content is the raw SQL body executed inside the apply transaction.
 	Content string
 }
 
@@ -100,9 +103,10 @@ func MustApplyMigrations(ctx context.Context, conn *sql.DB, loader MigrationLoad
 
 // StaticLoader builds a MigrationLoader from an fs.FS, enabling embedding via go:embed.
 type StaticLoader struct {
-	FS     fs.FS
-	Root   string
-	filter func(string) bool
+	// FS holds the migration source, typically constructed via go:embed.
+	FS fs.FS
+	// Root scopes the walk to this subdirectory of FS.
+	Root string
 }
 
 // List walks the provided fs and loads SQL files relative to Root.
@@ -121,9 +125,6 @@ func (l StaticLoader) List(ctx context.Context) ([]Migration, error) {
 		}
 
 		if d.IsDir() || filepath.Ext(d.Name()) != ".sql" {
-			return nil
-		}
-		if l.filter != nil && !l.filter(path) {
 			return nil
 		}
 
