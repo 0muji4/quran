@@ -15,6 +15,11 @@
  * and "tap to stop and submit" caption phrases, so e2e locators that
  * target those captions via getByText() do not match the hidden
  * status region in addition to the visible <p> caption.
+ *
+ * Strings are resolved via the `t` callback so callers (RecorderPanel,
+ * tests) can plug in `useTranslations('practice.recorder.liveStatus')`
+ * or a stub that returns keys verbatim. Keeping the function pure means
+ * it stays testable without a React provider tree.
  */
 
 export type RecorderStatusState = {
@@ -26,16 +31,26 @@ export type RecorderStatusState = {
   isRecording: boolean;
 };
 
-export function recorderStatusMessage(s: RecorderStatusState): string {
+export type RecorderStatusTranslator = (
+  key:
+    | 'idle'
+    | 'recording'
+    | 'analysing'
+    | 'stuck'
+    | 'scoringErrorGeneric'
+    | 'scoringErrorWithReasons',
+  values?: { reasons: string }
+) => string;
+
+export function recorderStatusMessage(s: RecorderStatusState, t: RecorderStatusTranslator): string {
   if (s.recordingError) return s.recordingError;
   if (s.isScoringError) {
     return s.errorReasons.length > 0
-      ? `Could not score that recording. ${s.errorReasons.join('. ')}.`
-      : 'Could not score that recording. Try recording again.';
+      ? t('scoringErrorWithReasons', { reasons: s.errorReasons.join('. ') })
+      : t('scoringErrorGeneric');
   }
-  if (s.isStuck) return 'Analysis is taking longer than usual.';
-  if (s.isAnalysing) return 'Analysing your recitation. Please wait.';
-  if (s.isRecording)
-    return 'Recording in progress. Press the stop button to submit your recitation.';
-  return 'The recorder is ready. Press the microphone button to start recording.';
+  if (s.isStuck) return t('stuck');
+  if (s.isAnalysing) return t('analysing');
+  if (s.isRecording) return t('recording');
+  return t('idle');
 }
