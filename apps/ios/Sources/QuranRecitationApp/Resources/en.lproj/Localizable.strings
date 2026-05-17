@@ -213,3 +213,13 @@
 "profile.updatePassword.field.confirm" = "Confirm new password";
 "profile.updatePassword.field.confirm.placeholder" = "Re-enter new password";
 "profile.updatePassword.helper" = "Use 8+ characters with a mix of letters and numbers.";
+
+/* Profile tab — change email sheet */
+"profile.changeEmail.title" = "Change email";
+"profile.changeEmail.cancel" = "Cancel";
+"profile.changeEmail.save" = "Save";
+"profile.changeEmail.field.current" = "Current password";
+"profile.changeEmail.field.current.placeholder" = "Enter current password";
+"profile.changeEmail.field.new" = "New email";
+"profile.changeEmail.field.new.placeholder" = "you@example.com";
+"profile.changeEmail.helper" = "We'll use this address for sign-in next time.";
