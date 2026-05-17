@@ -192,3 +192,13 @@
 "profile.dangerZone.helper" = "Soft delete with a 30-day grace window. Sign back in within 30 days to restore your account.";
 "profile.dangerZone.cta" = "Delete account";
 "profile.dangerZone.cta.a11yDisabled" = "Delete account — coming soon";
+
+/* Profile tab — edit sheet */
+"profile.edit.title" = "Edit profile";
+"profile.edit.cancel" = "Cancel";
+"profile.edit.save" = "Save";
+"profile.edit.displayName.label" = "Display name";
+"profile.edit.displayName.placeholder" = "Your name";
+"profile.edit.displayName.helper" = "How your name appears across the app.";
+"profile.edit.level.label" = "Skill level";
+"profile.edit.level.unset" = "—";
