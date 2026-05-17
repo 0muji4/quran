@@ -3,6 +3,7 @@ import type { Session } from '../lib/session';
 import { initialFor } from '../lib/session';
 import { StorageSessionBridge } from './StorageSessionBridge';
 import { TopNav } from './TopNav';
+import { WelcomeBackToast } from './WelcomeBackToast';
 
 type Props = {
   children: ReactNode;
@@ -34,6 +35,10 @@ export function AppShell({ children, session, skipLinkLabel }: Props) {
       <main id="main-content" tabIndex={-1} className="page-content" role="main">
         {children}
       </main>
+      {/* Read `?welcome-back=1` and surface the ADR-0024 §4
+       * reactivation toast. Mounted at the shell rather than per-page
+       * so a user who lands on any route after sign-in sees it. */}
+      <WelcomeBackToast />
     </div>
   );
 }

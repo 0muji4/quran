@@ -9,6 +9,11 @@
       "footerPrompt": "New to Tilawah?",
       "footerAction": "Create an account"
     },
+    "welcomeBack": {
+      "title": "Welcome back",
+      "body": "Your account has been restored. Everything is exactly where you left it.",
+      "dismiss": "Dismiss"
+    },
     "signup": {
       "eyebrow": "Begin your journey",
       "title": "Create your Tilawah account",
