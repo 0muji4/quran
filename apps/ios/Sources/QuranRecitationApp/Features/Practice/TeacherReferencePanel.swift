@@ -16,8 +16,10 @@ struct TeacherReferencePanel: View {
   let reciterName: String
   let state: State
   let availableRates: [Float]
+  let isLoopEnabled: Bool
   let onTogglePlayback: () -> Void
   let onSelectRate: (Float) -> Void
+  let onToggleLoop: () -> Void
 
   var body: some View {
     BrandCard {
@@ -33,8 +35,7 @@ struct TeacherReferencePanel: View {
               .foregroundColor(Color.brand.textSecondary)
           }
           Spacer()
-          Image(systemName: state == .unavailable ? "speaker.slash" : "speaker.wave.2")
-            .foregroundColor(Color.brand.textSecondary)
+          loopButton
         }
 
         if case let .ready(_, _, _, rate) = state {
@@ -42,6 +43,29 @@ struct TeacherReferencePanel: View {
         }
       }
     }
+  }
+
+  /// Loop-ayah toggle on the right side of the player header.
+  /// Replaces the decorative speaker icon: same anchor, but now a
+  /// real control. Visual state is "filled when on" so the user can
+  /// glance and tell.
+  private var loopButton: some View {
+    Button(action: onToggleLoop) {
+      Image(systemName: isLoopEnabled ? "repeat.1" : "repeat")
+        .font(.system(size: 18, weight: .semibold))
+        .foregroundColor(isLoopEnabled ? Color.brand.primary : Color.brand.textSecondary)
+        .frame(width: Spacing.minTapTarget, height: Spacing.minTapTarget)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(
+      Text(
+        isLoopEnabled
+          ? LocalizedStringKey("practice.teacher.loop.on")
+          : LocalizedStringKey("practice.teacher.loop.off"),
+        bundle: .module
+      )
+    )
+    .accessibilityAddTraits(isLoopEnabled ? [.isSelected] : [])
   }
 
   /// Pill row that mirrors the web `TeacherPanel` 0.75× / 1× / 1.25×
