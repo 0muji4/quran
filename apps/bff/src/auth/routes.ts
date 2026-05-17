@@ -4,11 +4,16 @@ import { z } from 'zod';
 import { requireAuth, type AuthedRequest } from './auth';
 import { logger } from '../telemetry';
 import { hashPassword, issueAccessToken, issueRefreshToken, verifyPassword } from './credentials';
-import { hashRefreshToken, recordIssuedRefreshToken } from './refresh-tokens';
+import {
+  hashRefreshToken,
+  recordIssuedRefreshToken,
+  revokeAllRefreshTokensForUser
+} from './refresh-tokens';
 import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  softDeleteUser,
   updateUserPassword,
   updateUserProfile,
   VALID_LEVELS,
@@ -238,6 +243,35 @@ authRouter.post('/auth/me/password', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('POST /auth/me/password failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to update password' });
+  }
+});
+
+/// Soft-deletes the signed-in user per ADR-0024. Sets `deleted_at`,
+/// revokes every refresh token issued to the user, returns 204. The
+/// HttpOnly auth cookies are cleared by the caller (Web Server
+/// Action) — this BFF route runs over Authorization: Bearer and has
+/// no cookie context of its own.
+///
+/// Idempotent in the sense that a second call on an already-deleted
+/// row is a 404 (the read gating in PR-E3 hides it). A user inside
+/// the 30-day grace window can recover by signing in (PR-E5).
+authRouter.delete('/auth/me', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  try {
+    const deleted = await softDeleteUser(session.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+    // Revoke after the soft-delete so a race that re-issues a token
+    // between the two queries still ends up revoked — the deleted
+    // user can't sign back in with the now-stale refresh token; only
+    // a fresh /auth/login (which reactivates) works.
+    await revokeAllRefreshTokensForUser(session.id);
+    res.status(204).end();
+  } catch (error) {
+    logger.error('DELETE /auth/me failed', { userId: session.id, error });
+    res.status(502).json({ error: 'Failed to delete account' });
   }
 });
 
