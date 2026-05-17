@@ -40,8 +40,8 @@ func (r *PostgresRepository) ListSurahs(ctx context.Context) ([]domain.Surah, er
 
 		err := rows.Scan(
 			&s.ID,
-			&s.NameAR,
-			&s.NameEN,
+			&s.NameAr,
+			&s.NameEn,
 			&s.RevelationPlace,
 			&s.AyahCount,
 			&metadataJSON,
@@ -82,8 +82,8 @@ func (r *PostgresRepository) GetSurah(ctx context.Context, id int32) (domain.Sur
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&s.ID,
-		&s.NameAR,
-		&s.NameEN,
+		&s.NameAr,
+		&s.NameEn,
 		&s.RevelationPlace,
 		&s.AyahCount,
 		&metadataJSON,
@@ -133,7 +133,7 @@ func (r *PostgresRepository) ListBySurah(ctx context.Context, surahID int32) ([]
 			&a.ID,
 			&a.SurahID,
 			&a.AyahNumber,
-			&a.TextAR,
+			&a.TextAr,
 			&textEN,
 			&transliteration,
 			&metadataJSON,
@@ -146,7 +146,7 @@ func (r *PostgresRepository) ListBySurah(ctx context.Context, surahID int32) ([]
 
 		// Handle nullable fields
 		if textEN.Valid {
-			a.TextEN = textEN.String
+			a.TextEn = textEN.String
 		}
 		if transliteration.Valid {
 			a.Transliteration = transliteration.String
@@ -185,7 +185,7 @@ func (r *PostgresRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah
 		&a.ID,
 		&a.SurahID,
 		&a.AyahNumber,
-		&a.TextAR,
+		&a.TextAr,
 		&textEN,
 		&transliteration,
 		&metadataJSON,
@@ -202,7 +202,7 @@ func (r *PostgresRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah
 
 	// Handle nullable fields
 	if textEN.Valid {
-		a.TextEN = textEN.String
+		a.TextEn = textEN.String
 	}
 	if transliteration.Valid {
 		a.Transliteration = transliteration.String
