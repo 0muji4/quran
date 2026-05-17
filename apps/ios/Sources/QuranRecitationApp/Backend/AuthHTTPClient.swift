@@ -42,14 +42,22 @@ final class AuthHTTPClient {
   /// `AppError.invalidCredentials` and signs the user out when the
   /// auth path is confirmed dead — either no token, refresh rejected,
   /// or even the rotated token is refused.
-  func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+  ///
+  /// `retryOn401`: when `false`, a 401 is returned to the caller
+  /// unchanged (no refresh, no sign-out). This is the escape hatch for
+  /// endpoints where 401 is semantically overloaded — `/auth/me/email`
+  /// and `/auth/me/password` reuse 401 for "current password
+  /// incorrect", and we must not let that response evict a still-valid
+  /// session. The default `true` preserves the standard rotate-and-
+  /// retry behaviour for plain Bearer-authenticated endpoints.
+  func send(_ request: URLRequest, retryOn401: Bool = true) async throws -> (Data, HTTPURLResponse) {
     guard let tokens = tokenStore.loadTokens() else {
       onSignOut()
       throw AppError.invalidCredentials
     }
 
     let first = try await attempt(request, accessToken: tokens.accessToken)
-    if first.1.statusCode != 401 {
+    if first.1.statusCode != 401 || !retryOn401 {
       return first
     }
 
