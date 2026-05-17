@@ -46,7 +46,7 @@ func TestRESTHandleGetSurah(t *testing.T) {
 	svc := service.SurahService{
 		SurahRepo: fakeSurahRepo{
 			getFn: func(ctx context.Context, id int32) (domain.Surah, error) {
-				return domain.Surah{ID: id, NameEN: "Al-Fatiha"}, nil
+				return domain.Surah{ID: id, NameEn: "Al-Fatiha"}, nil
 			},
 		},
 		AyahRepo: fakeAyahRepo{},
@@ -64,7 +64,7 @@ func TestRESTHandleGetSurah(t *testing.T) {
 	var result domain.Surah
 	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
 	require.Equal(t, int32(1), result.ID)
-	require.Equal(t, "Al-Fatiha", result.NameEN)
+	require.Equal(t, "Al-Fatiha", result.NameEn)
 }
 
 func TestRESTHandleGetSurahInvalidID(t *testing.T) {
@@ -218,7 +218,7 @@ func TestGraphQLHandlerServeHTTP(t *testing.T) {
 	svc := service.SurahService{
 		SurahRepo: fakeSurahRepo{
 			listFn: func(ctx context.Context) ([]domain.Surah, error) {
-				return []domain.Surah{{ID: 1, NameEN: "Al-Fatiha"}}, nil
+				return []domain.Surah{{ID: 1, NameEn: "Al-Fatiha"}}, nil
 			},
 		},
 		AyahRepo: fakeAyahRepo{},

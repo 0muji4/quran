@@ -164,7 +164,7 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 	for _, ayah := range ayahs {
 		if ayah.AyahNumber == *req.AyahNumber {
 			ayahID = ayah.ID
-			expectedText = ayah.TextAR
+			expectedText = ayah.TextAr
 			break
 		}
 	}

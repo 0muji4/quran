@@ -25,7 +25,7 @@ type Job struct {
 	SessionID         string            `json:"session_id"`
 	AudioKey          string            `json:"audio_key"`
 	AyahID            int64             `json:"ayah_id"`
-	ExpectedTextAR    string            `json:"expected_text_ar"`
+	ExpectedTextAr    string            `json:"expected_text_ar"`
 	ReferenceAudioKey string            `json:"reference_audio_key,omitempty"`
 	EnqueuedAt        time.Time         `json:"enqueued_at"`
 	AuthToken         string            `json:"auth_token,omitempty"`
