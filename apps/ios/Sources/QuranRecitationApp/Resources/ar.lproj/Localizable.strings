@@ -202,3 +202,15 @@
 "profile.edit.displayName.helper" = "How your name appears across the app.";
 "profile.edit.level.label" = "Skill level";
 "profile.edit.level.unset" = "—";
+
+/* Profile tab — update password sheet */
+"profile.updatePassword.title" = "Update password";
+"profile.updatePassword.cancel" = "Cancel";
+"profile.updatePassword.save" = "Update";
+"profile.updatePassword.field.current" = "Current password";
+"profile.updatePassword.field.current.placeholder" = "Enter current password";
+"profile.updatePassword.field.new" = "New password";
+"profile.updatePassword.field.new.placeholder" = "Enter new password";
+"profile.updatePassword.field.confirm" = "Confirm new password";
+"profile.updatePassword.field.confirm.placeholder" = "Re-enter new password";
+"profile.updatePassword.helper" = "Use 8+ characters with a mix of letters and numbers.";
