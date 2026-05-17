@@ -420,15 +420,29 @@ describe('Server Actions', () => {
         json: async () => mockAuthSuccess
       } as Response);
 
-      const user = await signInAction({ email: 'a@b.co', password: 'pw' });
+      const result = await signInAction({ email: 'a@b.co', password: 'pw' });
 
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('/auth/login'),
         expect.objectContaining({ method: 'POST' })
       );
-      expect(user.id).toBe('user-1');
+      expect(result.user.id).toBe('user-1');
+      // BFF did not include a `reactivated` flag here, so the action
+      // normalises to `false` for the AuthForm consumer.
+      expect(result.reactivated).toBe(false);
       const store = await cookies();
       expect(store.get(ACCESS_COOKIE)?.value).toBe('access-token-abc');
+    });
+
+    it('signInAction propagates the reactivated flag from the BFF', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ ...mockAuthSuccess, reactivated: true })
+      } as Response);
+
+      const result = await signInAction({ email: 'a@b.co', password: 'pw' });
+
+      expect(result.reactivated).toBe(true);
     });
 
     it('signInAction surfaces BFF errors and leaves cookies untouched', async () => {
