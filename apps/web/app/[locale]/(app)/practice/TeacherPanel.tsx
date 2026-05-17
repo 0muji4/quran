@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useTeacherAudio, type PlaybackRate } from '../../../hooks/useTeacherAudio';
 import { LoopIcon, PauseIcon, PlayIcon, SpeakerIcon } from '../../../components/icons/MediaIcons';
 import { Waveform } from './Waveform';
@@ -24,6 +25,7 @@ type Props = {
 
 export function TeacherPanel({ surahId, ayahNumber }: Props) {
   const audio = useTeacherAudio(surahId, ayahNumber);
+  const t = useTranslations('practice.teacher');
 
   useEffect(() => onRecordingStarted(() => audio.pause()), [audio]);
 
@@ -38,8 +40,8 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
             <SpeakerIcon size={18} />
           </span>
           <div>
-            <h2 className={styles.panelTitle}>Listen to the teacher</h2>
-            <p className={styles.panelSubtitle}>Husary Mu&apos;allim · slow reference</p>
+            <h2 className={styles.panelTitle}>{t('title')}</h2>
+            <p className={styles.panelSubtitle}>{t('subtitle')}</p>
           </div>
         </div>
         <span className={styles.panelDuration}>{formatTime(audio.duration)}</span>
@@ -58,7 +60,7 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
           className={styles.playButton}
           onClick={audio.togglePlay}
           disabled={!audio.url}
-          aria-label={audio.isPlaying ? 'Pause teacher audio' : 'Play teacher audio'}
+          aria-label={audio.isPlaying ? t('pause') : t('play')}
         >
           {audio.isPlaying ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
         </button>
@@ -69,7 +71,7 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
       </div>
 
       <div className={styles.teacherControls}>
-        <div className={styles.speedPills} role="group" aria-label="Playback speed">
+        <div className={styles.speedPills} role="group" aria-label={t('speedAriaLabel')}>
           {RATES.map((r) => {
             const active = audio.rate === r;
             return (
@@ -107,11 +109,11 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
           }}
           aria-pressed={audio.loop}
         >
-          Loop ayah <LoopIcon />
+          {t('loop')} <LoopIcon />
         </button>
       </div>
 
-      {audio.error && <p className="status error">Reference audio unavailable: {audio.error}</p>}
+      {audio.error && <p className="status error">{t('unavailable', { message: audio.error })}</p>}
     </div>
   );
 }

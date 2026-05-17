@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import styles from '../../../styles/practice.module.css';
 import { RecorderBars } from './RecorderBars';
 
@@ -29,17 +30,18 @@ type Props = {
 };
 
 export function AnalysingCard({ elapsedMs }: Props) {
+  const t = useTranslations('practice.analysing');
   return (
     <div className={styles.analysingCard} aria-live="polite" aria-busy="true">
       <div className={styles.analysingWaveform}>
         <RecorderBars mode="analysing" />
       </div>
       <ul className={styles.analysingChecklist}>
-        <ChecklistItem status={transcribingStatus(elapsedMs)} label="Transcribing audio" />
-        <ChecklistItem status={comparingStatus(elapsedMs)} label="Comparing to reference" />
-        <ChecklistItem status={calculatingStatus(elapsedMs)} label="Calculating your score" />
+        <ChecklistItem status={transcribingStatus(elapsedMs)} label={t('transcribing')} />
+        <ChecklistItem status={comparingStatus(elapsedMs)} label={t('comparing')} />
+        <ChecklistItem status={calculatingStatus(elapsedMs)} label={t('calculating')} />
       </ul>
-      <p className={styles.analysingFooter}>This usually takes a few seconds</p>
+      <p className={styles.analysingFooter}>{t('footer')}</p>
     </div>
   );
 }
