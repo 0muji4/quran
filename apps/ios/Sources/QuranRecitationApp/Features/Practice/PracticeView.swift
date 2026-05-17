@@ -106,19 +106,75 @@ struct PracticeView: View {
     .padding(.horizontal, Spacing.screenHorizontal)
   }
 
+  /// Bar + "currentAyah / total" indicator (see
+  /// `docs/design/iOS _ Practice _ long surah.png`). Replaces the
+  /// older 10-dot row, which silently went all-grey for any surah
+  /// with more than 10 ayahs because no dot index ever matched a
+  /// `currentAyahNumber ≥ 11`. The bar scales linearly across the
+  /// surah so the indicator works for both Al-Fatihah (7 ayahs)
+  /// and Al-Baqarah (286).
+  @ViewBuilder
   private var progressDots: some View {
-    HStack(spacing: Spacing.xs) {
-      ForEach(0..<dotCount, id: \.self) { index in
-        Capsule()
-          .fill(index + 1 == viewModel.currentAyahNumber ? Color.brand.primary : Color.brand.tile)
-          .frame(width: index + 1 == viewModel.currentAyahNumber ? 24 : 16, height: 4)
+    if let count = viewModel.surah?.ayahCount, count > 0 {
+      HStack(spacing: Spacing.md) {
+        GeometryReader { geo in
+          ZStack(alignment: .leading) {
+            Capsule()
+              .fill(Color.brand.tile)
+              .frame(height: 4)
+              .frame(maxHeight: .infinity, alignment: .center)
+            Circle()
+              .fill(Color.brand.primary)
+              .frame(width: Self.indicatorDiameter, height: Self.indicatorDiameter)
+              .offset(
+                x: Self.indicatorOffset(
+                  currentAyahNumber: viewModel.currentAyahNumber,
+                  ayahCount: count,
+                  trackWidth: geo.size.width
+                )
+              )
+          }
+        }
+        .frame(height: Self.indicatorDiameter)
+
+        VStack(alignment: .trailing, spacing: -2) {
+          Text("\(viewModel.currentAyahNumber) /")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(Color.brand.textPrimary)
+          Text("\(count)")
+            .font(.system(size: 13))
+            .foregroundColor(Color.brand.textSecondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+          Text(
+            "practice.progress.a11y \(viewModel.currentAyahNumber) \(count)",
+            bundle: .module
+          )
+        )
       }
+      .padding(.horizontal, Spacing.screenHorizontal)
     }
-    .padding(.horizontal, Spacing.screenHorizontal)
   }
 
-  private var dotCount: Int {
-    min(viewModel.surah?.ayahCount ?? 0, 10)
+  /// Diameter of the teal indicator on the progress bar. Kept in
+  /// one place so the offset math doesn't drift from the rendered
+  /// circle size.
+  private static let indicatorDiameter: CGFloat = 10
+
+  /// Where to put the indicator's leading edge along the track.
+  /// Ayah 1 sits at 0; the final ayah sits at `trackWidth -
+  /// indicatorDiameter` so the circle stays flush inside the bar.
+  /// Single-ayah surahs (count == 1) pin to the left.
+  static func indicatorOffset(
+    currentAyahNumber: Int,
+    ayahCount: Int,
+    trackWidth: CGFloat
+  ) -> CGFloat {
+    guard ayahCount > 1, trackWidth > indicatorDiameter else { return 0 }
+    let clampedAyah = max(1, min(currentAyahNumber, ayahCount))
+    let progress = CGFloat(clampedAyah - 1) / CGFloat(ayahCount - 1)
+    return progress * (trackWidth - indicatorDiameter)
   }
 
   /// Two-button nav row at the bottom of the Practice page, mirroring
