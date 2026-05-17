@@ -33,18 +33,41 @@ const mapRow = (row: Record<string, unknown>): UserRow => ({
 const isUserLevel = (value: unknown): value is UserLevel =>
   typeof value === 'string' && (VALID_LEVELS as readonly string[]).includes(value);
 
-export const findUserByEmail = async (email: string): Promise<UserRow | null> => {
+// ADR-0024 read gating. `deleted_at IS NOT NULL` is treated as
+// "user not found" by every authenticated path so a soft-deleted
+// account behaves identically to a never-existed one until the
+// purge job removes the row. The sign-in path passes
+// `{ includeDeleted: true }` to find the row anyway and reactivate
+// it on a correct password (PR-E5).
+type LookupOptions = { includeDeleted?: boolean };
+
+const deletedAtClause = (opts: LookupOptions | undefined): string =>
+  opts?.includeDeleted ? '' : ' AND deleted_at IS NULL';
+
+export const findUserByEmail = async (
+  email: string,
+  options?: LookupOptions
+): Promise<UserRow | null> => {
   const pool = getDatabasePool();
   if (!pool) return null;
-  const result = await pool.query(`SELECT ${USER_COLUMNS} FROM users WHERE email = $1`, [email]);
+  const result = await pool.query(
+    `SELECT ${USER_COLUMNS} FROM users WHERE email = $1${deletedAtClause(options)}`,
+    [email]
+  );
   if (!result.rowCount) return null;
   return mapRow(result.rows[0]);
 };
 
-export const findUserById = async (id: string): Promise<UserRow | null> => {
+export const findUserById = async (
+  id: string,
+  options?: LookupOptions
+): Promise<UserRow | null> => {
   const pool = getDatabasePool();
   if (!pool) return null;
-  const result = await pool.query(`SELECT ${USER_COLUMNS} FROM users WHERE id = $1`, [id]);
+  const result = await pool.query(
+    `SELECT ${USER_COLUMNS} FROM users WHERE id = $1${deletedAtClause(options)}`,
+    [id]
+  );
   if (!result.rowCount) return null;
   return mapRow(result.rows[0]);
 };
@@ -79,8 +102,12 @@ export const updateUserProfile = async (
     return findUserById(id);
   }
   values.push(id);
+  // `deleted_at IS NULL` is defense-in-depth: the read gating in
+  // findUserById already returns 404 for soft-deleted accounts, but
+  // adding the filter here means an UPDATE racing with a soft delete
+  // can't resurrect column values onto a deleted row.
   const result = await pool.query(
-    `UPDATE users SET ${sets.join(', ')} WHERE id = $${values.length} RETURNING ${USER_COLUMNS}`,
+    `UPDATE users SET ${sets.join(', ')} WHERE id = $${values.length} AND deleted_at IS NULL RETURNING ${USER_COLUMNS}`,
     values
   );
   if (!result.rowCount) return null;
@@ -94,8 +121,12 @@ export const updateUserProfile = async (
 export const updateUserPassword = async (id: string, passwordHash: string): Promise<boolean> => {
   const pool = getDatabasePool();
   if (!pool) return false;
+  // Soft-deleted accounts cannot have their password rotated; the
+  // sign-in flow reactivates them with the existing hash. The
+  // `deleted_at IS NULL` filter is the safety net in case the
+  // upstream read gating is bypassed.
   const result = await pool.query(
-    `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+    `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL`,
     [passwordHash, id]
   );
   return (result.rowCount ?? 0) > 0;
