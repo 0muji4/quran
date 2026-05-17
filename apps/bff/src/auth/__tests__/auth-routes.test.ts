@@ -8,11 +8,12 @@ import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  softDeleteUser,
   updateUserPassword,
   updateUserProfile
 } from '../users';
 import { hashPassword, verifyPassword } from '../credentials';
-import { recordIssuedRefreshToken } from '../refresh-tokens';
+import { recordIssuedRefreshToken, revokeAllRefreshTokensForUser } from '../refresh-tokens';
 
 vi.mock('../users', () => ({
   findUserByEmail: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('../users', () => ({
   createUserWithPassword: vi.fn(),
   updateUserProfile: vi.fn(),
   updateUserPassword: vi.fn(),
+  softDeleteUser: vi.fn(),
   VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
 
@@ -32,7 +34,8 @@ vi.mock('../refresh-tokens', async () => {
   const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
   return {
     ...actual,
-    recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined)
+    recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined),
+    revokeAllRefreshTokensForUser: vi.fn().mockResolvedValue(undefined)
   };
 });
 
@@ -499,6 +502,39 @@ describe('POST /auth/signup and /auth/login', () => {
         .send({ currentPassword: '', newPassword: 'something-much-stronger' });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('DELETE /auth/me', () => {
+    const token = jwt.sign({ sub: 'user-8' }, 'test-access-secret');
+
+    it('returns 401 without an access token', async () => {
+      const res = await request(app).delete('/auth/me');
+      expect(res.status).toBe(401);
+      expect(softDeleteUser).not.toHaveBeenCalled();
+      expect(revokeAllRefreshTokensForUser).not.toHaveBeenCalled();
+    });
+
+    it('soft-deletes the row and revokes every refresh token', async () => {
+      vi.mocked(softDeleteUser).mockResolvedValue(true);
+
+      const res = await request(app).delete('/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(204);
+      expect(softDeleteUser).toHaveBeenCalledWith('user-8');
+      expect(revokeAllRefreshTokensForUser).toHaveBeenCalledWith('user-8');
+    });
+
+    it('returns 404 if the row was already soft-deleted', async () => {
+      vi.mocked(softDeleteUser).mockResolvedValue(false);
+
+      const res = await request(app).delete('/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+      // Don't double-revoke on an already-deleted account — the
+      // earlier delete already revoked, and a second pass would
+      // mask a logic error.
+      expect(revokeAllRefreshTokensForUser).not.toHaveBeenCalled();
     });
   });
 });
