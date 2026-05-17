@@ -8,7 +8,7 @@ import (
 
 // SurahRepository defines storage operations for surah metadata.
 type SurahRepository interface {
-	List(ctx context.Context) ([]domain.Surah, error)
+	ListSurahs(ctx context.Context) ([]domain.Surah, error)
 	GetSurah(ctx context.Context, id int32) (domain.Surah, error)
 }
 

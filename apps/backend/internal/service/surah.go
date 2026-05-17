@@ -15,7 +15,7 @@ type SurahService struct {
 
 // ListSurahs returns all available surahs.
 func (s SurahService) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
-	return s.SurahRepo.List(ctx)
+	return s.SurahRepo.ListSurahs(ctx)
 }
 
 // GetSurah fetches a single surah.
