@@ -528,7 +528,10 @@ describe('POST /auth/signup and /auth/login', () => {
       expect(await verifyPassword('something-much-stronger', newHash)).toBe(true);
     });
 
-    it('returns 401 when the current password is wrong', async () => {
+    it('returns 422 when the current password is wrong', async () => {
+      // 422 (not 401) so the iOS / web client doesn't mistake a
+      // re-verification failure for an expired access token and sign
+      // the user out for mistyping their password.
       const currentHash = await hashPassword('correct-horse-battery-staple');
       vi.mocked(findUserById).mockResolvedValue({
         id: 'user-7',
@@ -547,11 +550,11 @@ describe('POST /auth/signup and /auth/login', () => {
           newPassword: 'something-much-stronger'
         });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(422);
       expect(updateUserPassword).not.toHaveBeenCalled();
     });
 
-    it('returns 401 when the user row has no password set', async () => {
+    it('returns 422 when the user row has no password set', async () => {
       vi.mocked(findUserById).mockResolvedValue({
         id: 'user-7',
         email: 'oauth-only@example.com',
@@ -566,7 +569,7 @@ describe('POST /auth/signup and /auth/login', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ currentPassword: 'whatever', newPassword: 'something-much-stronger' });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(422);
     });
 
     it('rejects a too-short new password with 400', async () => {
@@ -631,7 +634,10 @@ describe('POST /auth/signup and /auth/login', () => {
       expect(updateUserEmail).toHaveBeenCalledWith('user-11', 'new@example.com');
     });
 
-    it('returns 401 on a wrong current password', async () => {
+    it('returns 422 on a wrong current password', async () => {
+      // 422 (not 401) — same reasoning as the /auth/me/password
+      // test above. A re-verification failure must not look like an
+      // expired access token to the client.
       const hash = await hashPassword('correct-horse');
       vi.mocked(findUserById).mockResolvedValue({
         id: 'user-11',
@@ -648,7 +654,7 @@ describe('POST /auth/signup and /auth/login', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ currentPassword: 'wrong', newEmail: 'new@example.com' });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(422);
       expect(updateUserEmail).not.toHaveBeenCalled();
     });
 
