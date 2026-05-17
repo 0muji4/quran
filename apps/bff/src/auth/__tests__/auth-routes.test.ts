@@ -8,6 +8,7 @@ import {
   createUserWithPassword,
   findUserByEmail,
   findUserById,
+  reactivateUser,
   softDeleteUser,
   updateUserPassword,
   updateUserProfile
@@ -22,6 +23,9 @@ vi.mock('../users', () => ({
   updateUserProfile: vi.fn(),
   updateUserPassword: vi.fn(),
   softDeleteUser: vi.fn(),
+  // Default to "row was already live" so the existing login tests
+  // — which never simulate a soft-deleted account — keep passing.
+  reactivateUser: vi.fn().mockResolvedValue(false),
   VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
 
@@ -202,6 +206,58 @@ describe('POST /auth/signup and /auth/login', () => {
         .send({ email: 'a@b.com', password: 'whatever' });
 
       expect(res.status).toBe(401);
+    });
+
+    it('reactivates a soft-deleted account on a correct password (ADR-0024 §4)', async () => {
+      const hash = await hashPassword('still-knows-the-password');
+      vi.mocked(findUserByEmail).mockResolvedValue({
+        id: 'user-9',
+        email: 'comeback@example.com',
+        displayName: 'Noor',
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate'
+      });
+      vi.mocked(reactivateUser).mockResolvedValue(true);
+
+      const res = await request(app)
+        .post('/auth/login')
+        .send({ email: 'comeback@example.com', password: 'still-knows-the-password' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.reactivated).toBe(true);
+      // `findUserByEmail` must be invoked with includeDeleted so the
+      // soft-deleted row is found in the first place. The mocked
+      // implementation does not enforce this, but we can assert the
+      // call shape.
+      expect(findUserByEmail).toHaveBeenCalledWith(
+        'comeback@example.com',
+        expect.objectContaining({ includeDeleted: true })
+      );
+      expect(reactivateUser).toHaveBeenCalledWith('user-9');
+    });
+
+    it('omits the reactivated flag on a normal sign-in', async () => {
+      const hash = await hashPassword('normal-pw');
+      vi.mocked(findUserByEmail).mockResolvedValue({
+        id: 'user-10',
+        email: 'live@example.com',
+        displayName: null,
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null
+      });
+      // `clearAllMocks` does not reset implementations, so the earlier
+      // test's mockResolvedValue(true) would carry over. Pin it back to
+      // false to model "this row was already live."
+      vi.mocked(reactivateUser).mockResolvedValue(false);
+
+      const res = await request(app)
+        .post('/auth/login')
+        .send({ email: 'live@example.com', password: 'normal-pw' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.reactivated).toBeUndefined();
     });
   });
 
