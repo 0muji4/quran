@@ -36,6 +36,8 @@ struct PracticeView: View {
           .padding(.horizontal, Spacing.screenHorizontal)
           activePanel
             .padding(.horizontal, Spacing.screenHorizontal)
+          ayahNavRow
+            .padding(.horizontal, Spacing.screenHorizontal)
         } else if case .error(let error) = viewModel.state {
           Text(error.errorDescription ?? "")
             .font(Font.brand.body)
@@ -117,6 +119,52 @@ struct PracticeView: View {
 
   private var dotCount: Int {
     min(viewModel.surah?.ayahCount ?? 0, 10)
+  }
+
+  /// Two-button nav row at the bottom of the Practice page, mirroring
+  /// the web "Prev / Next ayah" controls. Disables the corresponding
+  /// button at the surah boundaries so the user can't tap into a
+  /// non-existent ayah.
+  private var ayahNavRow: some View {
+    HStack(spacing: Spacing.md) {
+      Button {
+        Task { await viewModel.goToPreviousAyah() }
+      } label: {
+        Label {
+          Text("practice.nav.prev", bundle: .module)
+        } icon: {
+          Image(systemName: "chevron.left")
+        }
+        .font(Font.brand.body.weight(.semibold))
+        .foregroundColor(Color.brand.textPrimary)
+        .frame(maxWidth: .infinity, minHeight: Spacing.minTapTarget)
+        .background(Color.brand.card)
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+      }
+      .buttonStyle(.plain)
+      .disabled(!viewModel.canGoToPreviousAyah)
+      .opacity(viewModel.canGoToPreviousAyah ? 1 : 0.4)
+
+      Button {
+        Task { await viewModel.goToNextAyah() }
+      } label: {
+        Label {
+          Text("practice.nav.next", bundle: .module)
+        } icon: {
+          Image(systemName: "chevron.right")
+        }
+        .labelStyle(.titleAndIcon)
+        .environment(\.layoutDirection, .rightToLeft)  // icon trailing
+        .font(Font.brand.body.weight(.semibold))
+        .foregroundColor(Color.brand.textOnPrimary)
+        .frame(maxWidth: .infinity, minHeight: Spacing.minTapTarget)
+        .background(Color.brand.primary)
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+      }
+      .buttonStyle(.plain)
+      .disabled(!viewModel.canGoToNextAyah)
+      .opacity(viewModel.canGoToNextAyah ? 1 : 0.4)
+    }
   }
 
   private var title: String {
