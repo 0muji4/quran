@@ -14,14 +14,12 @@ type MemoryRepository struct {
 }
 
 // List returns all surahs stored in memory.
-func (m MemoryRepository) List(ctx context.Context) ([]domain.Surah, error) {
-	_ = ctx
+func (m *MemoryRepository) List(_ context.Context) ([]domain.Surah, error) {
 	return append([]domain.Surah{}, m.Surahs...), nil
 }
 
 // GetSurah returns a surah by ID.
-func (m MemoryRepository) GetSurah(ctx context.Context, id int32) (domain.Surah, error) {
-	_ = ctx
+func (m *MemoryRepository) GetSurah(_ context.Context, id int32) (domain.Surah, error) {
 	for _, surah := range m.Surahs {
 		if surah.ID == id {
 			return surah, nil
@@ -31,8 +29,7 @@ func (m MemoryRepository) GetSurah(ctx context.Context, id int32) (domain.Surah,
 }
 
 // ListBySurah returns all ayahs for a given surah.
-func (m MemoryRepository) ListBySurah(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
-	_ = ctx
+func (m *MemoryRepository) ListBySurah(_ context.Context, surahID int32) ([]domain.Ayah, error) {
 	var results []domain.Ayah
 	for _, ayah := range m.Ayahs {
 		if ayah.SurahID == surahID {
@@ -43,8 +40,7 @@ func (m MemoryRepository) ListBySurah(ctx context.Context, surahID int32) ([]dom
 }
 
 // GetAyah returns an ayah by ID.
-func (m MemoryRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
-	_ = ctx
+func (m *MemoryRepository) GetAyah(_ context.Context, id int64) (domain.Ayah, error) {
 	for _, ayah := range m.Ayahs {
 		if ayah.ID == id {
 			return ayah, nil
@@ -53,5 +49,7 @@ func (m MemoryRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah, e
 	return domain.Ayah{}, errors.New("ayah not found")
 }
 
-var _ SurahRepository = MemoryRepository{}
-var _ AyahRepository = MemoryRepository{}
+var (
+	_ SurahRepository = (*MemoryRepository)(nil)
+	_ AyahRepository  = (*MemoryRepository)(nil)
+)
