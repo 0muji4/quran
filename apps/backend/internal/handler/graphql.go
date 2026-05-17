@@ -8,7 +8,15 @@ import (
 	"quran-project/apps/backend/internal/service"
 )
 
-// GraphQLHandler is a lightweight placeholder for future schema-first GraphQL implementation.
+// GraphQLHandler is a lightweight placeholder for future schema-first
+// GraphQL implementation.
+//
+// It is NOT a GraphQL server: the request parser below recognises only
+// two literal query strings and uses fmt.Sscanf for the one with an
+// argument. Before exposing this externally, swap in a real GraphQL
+// library (gqlgen / graphql-go) and a proper schema. The placeholder
+// exists so the route shape (`POST /graphql` returning
+// `{"data": {...}}`) can be wired through middleware and tests today.
 type GraphQLHandler struct {
 	SurahService service.SurahService
 }

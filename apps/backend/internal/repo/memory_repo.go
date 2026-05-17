@@ -13,8 +13,8 @@ type MemoryRepository struct {
 	Ayahs  []domain.Ayah
 }
 
-// List returns all surahs stored in memory.
-func (m *MemoryRepository) List(_ context.Context) ([]domain.Surah, error) {
+// ListSurahs returns all surahs stored in memory.
+func (m *MemoryRepository) ListSurahs(_ context.Context) ([]domain.Surah, error) {
 	return append([]domain.Surah{}, m.Surahs...), nil
 }
 

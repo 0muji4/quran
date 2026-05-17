@@ -10,7 +10,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
-// RedisClient is a minimal interface for Redis operations needed in tests
+// RedisClient is a minimal interface for Redis operations needed in tests.
 type RedisClient interface {
 	Do(ctx context.Context, args ...string) (interface{}, error)
 	Close() error
@@ -22,7 +22,7 @@ type simpleRedisClient struct {
 	port string
 }
 
-// SetupTestRedis starts a Redis testcontainer and returns connection info
+// SetupTestRedis starts a Redis testcontainer and returns connection info.
 func SetupTestRedis(t *testing.T) (string, func()) {
 	t.Helper()
 
@@ -62,7 +62,7 @@ func SetupTestRedis(t *testing.T) (string, func()) {
 	return redisURL, cleanup
 }
 
-// MinIOClient represents a minimal MinIO client interface for testing
+// MinIOClient represents a minimal MinIO client interface for testing.
 type MinIOClient interface {
 	PutObject(ctx context.Context, bucketName, objectName string, data []byte) error
 	GetObject(ctx context.Context, bucketName, objectName string) ([]byte, error)
@@ -71,7 +71,7 @@ type MinIOClient interface {
 	MakeBucket(ctx context.Context, bucketName string) error
 }
 
-// SetupTestMinIO starts a MinIO testcontainer and returns connection info
+// SetupTestMinIO starts a MinIO testcontainer and returns connection info.
 func SetupTestMinIO(t *testing.T) (endpoint, accessKey, secretKey string, cleanup func()) {
 	t.Helper()
 
@@ -118,7 +118,7 @@ func SetupTestMinIO(t *testing.T) (endpoint, accessKey, secretKey string, cleanu
 	return endpoint, accessKey, secretKey, cleanupFunc
 }
 
-// SkipIfShort skips the test if running in short mode
+// SkipIfShort skips the test if running in short mode.
 func SkipIfShort(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
