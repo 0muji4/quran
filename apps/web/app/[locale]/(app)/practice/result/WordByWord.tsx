@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import type { WordAlignment } from '@quran-project/shared-ts';
 import styles from '../../../../styles/practice.module.css';
 
@@ -39,6 +42,7 @@ const formatWer = (wer: number | null | undefined): string => {
 };
 
 export function WordByWord({ wordAlignments, wer }: Props) {
+  const t = useTranslations('result.words');
   const hasAlignments = wordAlignments.length > 0;
   const expectedRow = wordAlignments.map((a, i) => ({
     key: `exp-${i}`,
@@ -58,37 +62,34 @@ export function WordByWord({ wordAlignments, wer }: Props) {
       <header className={styles.wordCompareHead}>
         <div>
           <h2 id="word-compare-heading" className={styles.wordCompareTitle}>
-            Word-by-word comparison
+            {t('title')}
           </h2>
           <p className={styles.wordCompareSubtitle}>
-            Word Error Rate (WER) <span className={styles.wordCompareWer}>{formatWer(wer)}</span>
+            {t('werLabel')} <span className={styles.wordCompareWer}>{formatWer(wer)}</span>
           </p>
         </div>
-        <ul className={styles.wordCompareLegend} aria-label="Legend">
+        <ul className={styles.wordCompareLegend} aria-label={t('legendAriaLabel')}>
           <li>
             <span className={`${styles.legendDot} ${styles.legendDotMatch}`} aria-hidden="true" />
-            Match
+            {t('legend.match')}
           </li>
           <li>
             <span className={`${styles.legendDot} ${styles.legendDotSub}`} aria-hidden="true" />
-            Substitution
+            {t('legend.substitution')}
           </li>
           <li>
             <span className={`${styles.legendDot} ${styles.legendDotMissing}`} aria-hidden="true" />
-            Missing
+            {t('legend.missing')}
           </li>
         </ul>
       </header>
 
       {!hasAlignments ? (
-        <p className={styles.wordCompareEmpty}>
-          Word-level alignment is not available for this attempt yet. Try recording again to surface
-          a word-by-word breakdown.
-        </p>
+        <p className={styles.wordCompareEmpty}>{t('empty')}</p>
       ) : (
         <>
           <div className={styles.wordCompareRow}>
-            <span className={styles.wordCompareRowLabel}>EXPECTED (TEACHER)</span>
+            <span className={styles.wordCompareRowLabel}>{t('rowExpected')}</span>
             <div className={styles.wordCompareTiles} dir="rtl">
               {expectedRow.map((tile) => (
                 <span
@@ -104,7 +105,7 @@ export function WordByWord({ wordAlignments, wer }: Props) {
           </div>
 
           <div className={styles.wordCompareRow}>
-            <span className={styles.wordCompareRowLabel}>WHAT WE HEARD</span>
+            <span className={styles.wordCompareRowLabel}>{t('rowHeard')}</span>
             <div className={styles.wordCompareTiles} dir="rtl">
               {heardRow.map((tile) => (
                 <span
