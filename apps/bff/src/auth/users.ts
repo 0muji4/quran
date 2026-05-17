@@ -132,6 +132,22 @@ export const updateUserPassword = async (id: string, passwordHash: string): Prom
   return (result.rowCount ?? 0) > 0;
 };
 
+// Flip a soft-deleted row back to live per ADR-0024 §4. Called by
+// the sign-in path when the user authenticates against a row whose
+// `deleted_at` is non-NULL within the grace window. Returns `true`
+// if the row was actually reactivated, `false` if it was already
+// live (in which case the caller should not log a reactivation
+// event).
+export const reactivateUser = async (id: string): Promise<boolean> => {
+  const pool = getDatabasePool();
+  if (!pool) return false;
+  const result = await pool.query(
+    `UPDATE users SET deleted_at = NULL, updated_at = NOW() WHERE id = $1 AND deleted_at IS NOT NULL`,
+    [id]
+  );
+  return (result.rowCount ?? 0) > 0;
+};
+
 // Flip a live row into the soft-deleted state per ADR-0024. Returns
 // false if the row was already soft-deleted (so the caller can
 // short-circuit a redundant token-revocation pass), `true` on the
