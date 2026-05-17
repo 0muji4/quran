@@ -53,6 +53,8 @@
 /* Practice tab */
 "practice.teacher.label" = "Teacher reference";
 "practice.teacher.unavailable" = "Reference audio not available";
+"practice.teacher.rate.legend" = "Playback speed";
+"practice.teacher.rate.a11y %@" = "Playback speed %@";
 "practice.record.idleTitle" = "Ready to record";
 "practice.record.idleSubtitle" = "Tap to start";
 "practice.record.recordingTitle" = "Recording…";
