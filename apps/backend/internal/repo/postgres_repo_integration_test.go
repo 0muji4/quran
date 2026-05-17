@@ -23,7 +23,7 @@ func TestPostgresRepository_List(t *testing.T) {
 	t.Run("returns empty list when no surahs exist", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
 
-		surahs, err := repository.List(context.Background())
+		surahs, err := repository.ListSurahs(context.Background())
 
 		require.NoError(t, err)
 		require.Empty(t, surahs)
@@ -33,7 +33,7 @@ func TestPostgresRepository_List(t *testing.T) {
 		testutil.CleanupTables(t, db)
 		testutil.SeedMultipleSurahs(t, db, 5)
 
-		surahs, err := repository.List(context.Background())
+		surahs, err := repository.ListSurahs(context.Background())
 
 		require.NoError(t, err)
 		require.Len(t, surahs, 5)
@@ -49,7 +49,7 @@ func TestPostgresRepository_List(t *testing.T) {
 		testutil.CleanupTables(t, db)
 		testutil.SeedStandardData(t, db)
 
-		surahs, err := repository.List(context.Background())
+		surahs, err := repository.ListSurahs(context.Background())
 
 		require.NoError(t, err)
 		require.Len(t, surahs, 1)
@@ -70,7 +70,7 @@ func TestPostgresRepository_List(t *testing.T) {
 		`, 1, "الفاتحة", "Al-Fatiha", "Mecca", 7)
 		require.NoError(t, err)
 
-		surahs, err := repository.List(context.Background())
+		surahs, err := repository.ListSurahs(context.Background())
 
 		require.NoError(t, err)
 		require.Len(t, surahs, 1)
@@ -277,7 +277,7 @@ func TestPostgresRepository_ConcurrentAccess(t *testing.T) {
 		done := make(chan bool, 10)
 		for i := 0; i < 10; i++ {
 			go func() {
-				surahs, err := repository.List(context.Background())
+				surahs, err := repository.ListSurahs(context.Background())
 				require.NoError(t, err)
 				require.Len(t, surahs, 1)
 				done <- true
@@ -306,7 +306,7 @@ func TestPostgresRepository_ContextCancellation(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // Cancel immediately
 
-		_, err := repository.List(ctx)
+		_, err := repository.ListSurahs(ctx)
 
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "context canceled")

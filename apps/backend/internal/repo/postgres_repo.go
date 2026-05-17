@@ -19,8 +19,8 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
-// List returns all surahs ordered by ID.
-func (r *PostgresRepository) List(ctx context.Context) ([]domain.Surah, error) {
+// ListSurahs returns all surahs ordered by ID.
+func (r *PostgresRepository) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 	query := `
 		SELECT id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at
 		FROM surahs
