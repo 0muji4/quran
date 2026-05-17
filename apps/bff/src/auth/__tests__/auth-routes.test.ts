@@ -10,6 +10,7 @@ import {
   findUserById,
   reactivateUser,
   softDeleteUser,
+  updateUserEmail,
   updateUserPassword,
   updateUserProfile
 } from '../users';
@@ -22,6 +23,7 @@ vi.mock('../users', () => ({
   createUserWithPassword: vi.fn(),
   updateUserProfile: vi.fn(),
   updateUserPassword: vi.fn(),
+  updateUserEmail: vi.fn(),
   softDeleteUser: vi.fn(),
   // Default to "row was already live" so the existing login tests
   // — which never simulate a soft-deleted account — keep passing.
@@ -584,6 +586,125 @@ describe('POST /auth/signup and /auth/login', () => {
         .send({ currentPassword: '', newPassword: 'something-much-stronger' });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /auth/me/email', () => {
+    const token = jwt.sign({ sub: 'user-11' }, 'test-access-secret');
+
+    it('returns 401 without an access token', async () => {
+      const res = await request(app)
+        .post('/auth/me/email')
+        .send({ currentPassword: 'whatever', newEmail: 'new@example.com' });
+      expect(res.status).toBe(401);
+      expect(updateUserEmail).not.toHaveBeenCalled();
+    });
+
+    it('updates the email when the current password verifies', async () => {
+      const hash = await hashPassword('correct-horse');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-11',
+        email: 'old@example.com',
+        displayName: 'Noor',
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate',
+        deletedAt: null
+      });
+      vi.mocked(updateUserEmail).mockResolvedValue({
+        id: 'user-11',
+        email: 'new@example.com',
+        displayName: 'Noor',
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: 'intermediate',
+        deletedAt: null
+      });
+
+      const res = await request(app)
+        .post('/auth/me/email')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'correct-horse', newEmail: 'new@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe('new@example.com');
+      expect(updateUserEmail).toHaveBeenCalledWith('user-11', 'new@example.com');
+    });
+
+    it('returns 401 on a wrong current password', async () => {
+      const hash = await hashPassword('correct-horse');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-11',
+        email: 'old@example.com',
+        displayName: null,
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null,
+        deletedAt: null
+      });
+
+      const res = await request(app)
+        .post('/auth/me/email')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'wrong', newEmail: 'new@example.com' });
+
+      expect(res.status).toBe(401);
+      expect(updateUserEmail).not.toHaveBeenCalled();
+    });
+
+    it('returns 409 when the new email is already in use', async () => {
+      const hash = await hashPassword('correct-horse');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-11',
+        email: 'old@example.com',
+        displayName: null,
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null,
+        deletedAt: null
+      });
+      vi.mocked(updateUserEmail).mockResolvedValue('conflict');
+
+      const res = await request(app)
+        .post('/auth/me/email')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'correct-horse', newEmail: 'taken@example.com' });
+
+      expect(res.status).toBe(409);
+    });
+
+    it('short-circuits a no-op rotation without touching the DB write', async () => {
+      const hash = await hashPassword('correct-horse');
+      vi.mocked(findUserById).mockResolvedValue({
+        id: 'user-11',
+        email: 'same@example.com',
+        displayName: null,
+        passwordHash: hash,
+        createdAt: TEST_CREATED_AT,
+        level: null,
+        deletedAt: null
+      });
+
+      const res = await request(app)
+        .post('/auth/me/email')
+        .set('Authorization', `Bearer ${token}`)
+        // Different case to confirm we treat email comparison case-
+        // insensitively (CITEXT in PG, but we keep parity here).
+        .send({ currentPassword: 'correct-horse', newEmail: 'SAME@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe('same@example.com');
+      expect(updateUserEmail).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed new email with 400', async () => {
+      const res = await request(app)
+        .post('/auth/me/email')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'whatever', newEmail: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+      expect(findUserById).not.toHaveBeenCalled();
     });
   });
 
