@@ -11,13 +11,22 @@ import Foundation
 /// AppRoot on sign-in to seed the cache from the server before any
 /// view consumes it; per-call refresh-throttling can layer on later
 /// if reads-from-stale-cache become a problem.
+///
+/// BFF write failures are logged through `Telemetry`. The cache write
+/// has already succeeded by the time we know — the call is
+/// fire-and-forget — so we don't surface anything to the user, but the
+/// failure is no longer invisible. Dashboards can group by
+/// `AppError.telemetryCode` to spot a sustained desync between the
+/// device cache and the server-of-record.
 final class RemoteSyncedHistoryStore: HistoryStore {
   private let cache: HistoryStore
   private let me: MeClient
+  private let telemetry: Telemetry
 
-  init(cache: HistoryStore, me: MeClient) {
+  init(cache: HistoryStore, me: MeClient, telemetry: Telemetry) {
     self.cache = cache
     self.me = me
+    self.telemetry = telemetry
   }
 
   // MARK: - LastPracticed
@@ -28,8 +37,33 @@ final class RemoteSyncedHistoryStore: HistoryStore {
 
   func setLastPracticed(_ entry: LastPracticed) {
     cache.setLastPracticed(entry)
-    Task { [me] in
-      _ = try? await me.putLastPracticed(entry)
+    Task { [me, telemetry] in
+      do {
+        _ = try await me.putLastPracticed(entry)
+      } catch let error as AppError {
+        telemetry.error(
+          error,
+          context: [
+            "operation": "history.write",
+            "kind": "lastPracticed",
+            "surah_id": entry.surahId
+          ]
+        )
+      } catch {
+        // Non-AppError shouldn't happen on this path — MeClient is
+        // contracted to throw AppError — but a generic error must
+        // not crash the task. Surface it with the closest match so
+        // dashboards still see it.
+        telemetry.error(
+          AppError.backendUnavailable(operation: "me.last-practiced.put"),
+          context: [
+            "operation": "history.write",
+            "kind": "lastPracticed",
+            "surah_id": entry.surahId,
+            "raw_error": String(describing: error)
+          ]
+        )
+      }
     }
   }
 
@@ -51,8 +85,31 @@ final class RemoteSyncedHistoryStore: HistoryStore {
       achievedAt: achievedAt
     )
     let entry = BestScoreEntry(score: score, achievedAt: achievedAt)
-    Task { [me] in
-      _ = try? await me.putBestScore(surahId: surahId, ayahNumber: ayahNumber, entry: entry)
+    Task { [me, telemetry] in
+      do {
+        _ = try await me.putBestScore(surahId: surahId, ayahNumber: ayahNumber, entry: entry)
+      } catch let error as AppError {
+        telemetry.error(
+          error,
+          context: [
+            "operation": "history.write",
+            "kind": "bestScore",
+            "surah_id": surahId,
+            "ayah_number": String(ayahNumber)
+          ]
+        )
+      } catch {
+        telemetry.error(
+          AppError.backendUnavailable(operation: "me.best-scores.put"),
+          context: [
+            "operation": "history.write",
+            "kind": "bestScore",
+            "surah_id": surahId,
+            "ayah_number": String(ayahNumber),
+            "raw_error": String(describing: error)
+          ]
+        )
+      }
     }
   }
 
@@ -64,8 +121,31 @@ final class RemoteSyncedHistoryStore: HistoryStore {
 
   func recordAttempt(_ attempt: Attempt) {
     cache.recordAttempt(attempt)
-    Task { [me] in
-      _ = try? await me.recordAttempt(attempt)
+    Task { [me, telemetry] in
+      do {
+        _ = try await me.recordAttempt(attempt)
+      } catch let error as AppError {
+        telemetry.error(
+          error,
+          context: [
+            "operation": "history.write",
+            "kind": "attempt",
+            "surah_id": attempt.surahId,
+            "ayah_number": String(attempt.ayahNumber),
+            "attempt_id": attempt.id
+          ]
+        )
+      } catch {
+        telemetry.error(
+          AppError.backendUnavailable(operation: "me.attempts.post"),
+          context: [
+            "operation": "history.write",
+            "kind": "attempt",
+            "attempt_id": attempt.id,
+            "raw_error": String(describing: error)
+          ]
+        )
+      }
     }
   }
 
@@ -83,9 +163,10 @@ final class RemoteSyncedHistoryStore: HistoryStore {
   /// previous identity (`AppRoot` also clears on sign-out, but
   /// belt-and-braces here keeps the contract local to one place).
   ///
-  /// Failures are swallowed: a transient network blip leaves the
-  /// cache as-is. The next refresh attempt — or the next per-write
-  /// fire-and-forget — converges.
+  /// Failures are reported through telemetry but otherwise swallowed:
+  /// a transient network blip leaves the cache as-is, and the next
+  /// refresh attempt — or the next per-write fire-and-forget —
+  /// converges.
   @MainActor
   func refreshFromRemote() async {
     async let remoteLast = me.lastPracticed()
@@ -111,8 +192,16 @@ final class RemoteSyncedHistoryStore: HistoryStore {
       for attempt in attempts.reversed() {
         cache.recordAttempt(attempt)
       }
+    } catch let error as AppError {
+      telemetry.error(error, context: ["operation": "history.refresh"])
     } catch {
-      // intentional: see method doc
+      telemetry.error(
+        AppError.backendUnavailable(operation: "me.refresh"),
+        context: [
+          "operation": "history.refresh",
+          "raw_error": String(describing: error)
+        ]
+      )
     }
   }
 

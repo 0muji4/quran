@@ -27,7 +27,8 @@ struct QuranRecitationApp: App {
     let historyStore = SignInGatedHistoryStore(
       base: RemoteSyncedHistoryStore(
         cache: UserDefaultsHistoryStore(),
-        me: meClient
+        me: meClient,
+        telemetry: telemetry
       ),
       isSignedIn: { session.isSignedIn }
     )
