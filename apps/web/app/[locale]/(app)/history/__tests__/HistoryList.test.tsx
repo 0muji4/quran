@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { HistoryList } from '../HistoryList';
 import type { Attempt } from '../../../../lib/storage';
+import messages from '../../../../../messages/en.json';
 
 vi.mock('../../../../../i18n/navigation', () => ({
   Link: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) =>
@@ -14,6 +16,21 @@ const getRecentAttemptsMock = vi.fn<() => Attempt[]>();
 vi.mock('../../../../lib/storage', () => ({
   getRecentAttempts: () => getRecentAttemptsMock()
 }));
+
+const renderList = (signedIn: boolean) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <HistoryList signedIn={signedIn} />
+    </NextIntlClientProvider>
+  );
+
+const rerenderList = (result: ReturnType<typeof renderList>, signedIn: boolean): void => {
+  result.rerender(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <HistoryList signedIn={signedIn} />
+    </NextIntlClientProvider>
+  );
+};
 
 const attemptFixture = (id: string): Attempt => ({
   id,
@@ -37,15 +54,15 @@ describe('HistoryList refresh behaviour', () => {
   });
 
   it('re-reads attempts when signedIn flips from false to true', () => {
-    const { rerender } = render(<HistoryList signedIn={false} />);
+    const result = renderList(false);
     expect(getRecentAttemptsMock).toHaveBeenCalledTimes(1);
 
-    rerender(<HistoryList signedIn={true} />);
+    rerenderList(result, true);
     expect(getRecentAttemptsMock).toHaveBeenCalledTimes(2);
   });
 
   it('re-reads attempts when the page becomes visible again', () => {
-    render(<HistoryList signedIn={true} />);
+    renderList(true);
     const initialCalls = getRecentAttemptsMock.mock.calls.length;
 
     // Simulate a tab-blur → tab-return without changing any props.
@@ -61,7 +78,7 @@ describe('HistoryList refresh behaviour', () => {
   });
 
   it('does NOT re-read when visibilitychange fires while hidden', () => {
-    render(<HistoryList signedIn={true} />);
+    renderList(true);
     const initialCalls = getRecentAttemptsMock.mock.calls.length;
 
     Object.defineProperty(document, 'visibilityState', {
@@ -79,10 +96,10 @@ describe('HistoryList refresh behaviour', () => {
     // First read returns nothing; the second returns one attempt.
     getRecentAttemptsMock.mockReturnValueOnce([]).mockReturnValueOnce([attemptFixture('a1')]);
 
-    const { rerender } = render(<HistoryList signedIn={false} />);
+    const result = renderList(false);
     expect(screen.queryByText('Al-Fatihah · ayah 1')).not.toBeInTheDocument();
 
-    rerender(<HistoryList signedIn={true} />);
+    rerenderList(result, true);
     expect(screen.getByText('Al-Fatihah · ayah 1')).toBeInTheDocument();
   });
 });
