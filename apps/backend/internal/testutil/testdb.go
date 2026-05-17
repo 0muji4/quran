@@ -130,7 +130,7 @@ func runMigrations(db *sql.DB) error {
 	return nil
 }
 
-// CleanupTables truncates all tables for test isolation
+// CleanupTables truncates all tables for test isolation.
 func CleanupTables(t *testing.T, db *sql.DB) {
 	t.Helper()
 

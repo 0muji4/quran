@@ -15,7 +15,7 @@ type stubSurahRepo struct {
 	err   error
 }
 
-func (s stubSurahRepo) List(ctx context.Context) ([]domain.Surah, error) {
+func (s stubSurahRepo) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 	if s.err != nil {
 		return nil, s.err
 	}
