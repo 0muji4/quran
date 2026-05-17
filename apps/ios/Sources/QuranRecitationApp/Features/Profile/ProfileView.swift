@@ -126,6 +126,7 @@ private struct ProfileSignedInContent: View {
   @State private var editViewModel: EditProfileViewModel?
   @State private var updatePasswordViewModel: UpdatePasswordViewModel?
   @State private var changeEmailViewModel: ChangeEmailViewModel?
+  @State private var deleteAccountViewModel: DeleteAccountViewModel?
 
   var body: some View {
     ScrollView {
@@ -136,7 +137,7 @@ private struct ProfileSignedInContent: View {
           onChangeEmail: changeEmailAction,
           onUpdatePassword: updatePasswordAction
         )
-        DangerZoneCard()
+        DangerZoneCard(onDelete: deleteAccountAction)
         SignOutSection(onSignOut: onSignOut)
           .padding(.top, Spacing.sm)
       }
@@ -152,6 +153,9 @@ private struct ProfileSignedInContent: View {
     }
     .sheet(item: $changeEmailViewModel) { viewModel in
       ChangeEmailSheet(viewModel: viewModel, onDismiss: { changeEmailViewModel = nil })
+    }
+    .sheet(item: $deleteAccountViewModel) { viewModel in
+      DeleteAccountSheet(viewModel: viewModel, onDismiss: { deleteAccountViewModel = nil })
     }
   }
 
@@ -178,6 +182,16 @@ private struct ProfileSignedInContent: View {
     return {
       changeEmailViewModel = ChangeEmailViewModel(
         currentEmail: user.email,
+        profileService: profileService,
+        session: session
+      )
+    }
+  }
+
+  private var deleteAccountAction: (() -> Void)? {
+    guard let profileService else { return nil }
+    return {
+      deleteAccountViewModel = DeleteAccountViewModel(
         profileService: profileService,
         session: session
       )
