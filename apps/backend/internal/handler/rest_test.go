@@ -42,6 +42,19 @@ func (f fakeAyahRepo) GetAyah(ctx context.Context, id int64) (domain.Ayah, error
 	return f.getFn(ctx, id)
 }
 
+// serveREST routes a single request through a freshly-registered mux so
+// tests exercise the same pattern-matching logic the production server
+// uses (PathValue, method dispatch, 405 / 404 fallbacks).
+func serveREST(t *testing.T, svc service.SurahService, method, path string) *httptest.ResponseRecorder {
+	t.Helper()
+	mux := http.NewServeMux()
+	REST{SurahService: svc}.Register(mux)
+	req := httptest.NewRequest(method, path, nil)
+	recorder := httptest.NewRecorder()
+	mux.ServeHTTP(recorder, req)
+	return recorder
+}
+
 func TestRESTHandleGetSurah(t *testing.T) {
 	svc := service.SurahService{
 		SurahRepo: fakeSurahRepo{
@@ -52,12 +65,7 @@ func TestRESTHandleGetSurah(t *testing.T) {
 		AyahRepo: fakeAyahRepo{},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/1", nil)
-	req.URL.Path = "/api/surahs/1"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/1")
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 
@@ -72,7 +80,6 @@ func TestRESTHandleGetSurahInvalidID(t *testing.T) {
 		SurahRepo: fakeSurahRepo{},
 		AyahRepo:  fakeAyahRepo{},
 	}
-	handler := REST{SurahService: svc}
 
 	tests := []struct {
 		name           string
@@ -96,12 +103,7 @@ func TestRESTHandleGetSurahInvalidID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, test.path, nil)
-			req.URL.Path = test.path
-			recorder := httptest.NewRecorder()
-
-			handler.handleGetSurah(recorder, req)
-
+			recorder := serveREST(t, svc, http.MethodGet, test.path)
 			require.Equal(t, test.expectedStatus, recorder.Code)
 			require.Equal(t, test.expectedBody, recorder.Body.String())
 		})
@@ -119,12 +121,7 @@ func TestRESTHandleGetSurahRepoError(t *testing.T) {
 		AyahRepo: fakeAyahRepo{},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/1", nil)
-	req.URL.Path = "/api/surahs/1"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/1")
 
 	require.Equal(t, http.StatusNotFound, recorder.Code)
 	require.Equal(t, "surah not found\n", recorder.Body.String())
@@ -140,12 +137,7 @@ func TestRESTHandleGetSurahNotFound(t *testing.T) {
 		AyahRepo: fakeAyahRepo{},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/99", nil)
-	req.URL.Path = "/api/surahs/99"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/99")
 
 	require.Equal(t, http.StatusNotFound, recorder.Code)
 	require.Equal(t, "surah not found\n", recorder.Body.String())
@@ -161,12 +153,7 @@ func TestRESTHandleGetSurahAyahs(t *testing.T) {
 		},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/2/ayahs", nil)
-	req.URL.Path = "/api/surahs/2/ayahs"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/2/ayahs")
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 
@@ -182,12 +169,7 @@ func TestRESTHandleGetSurahAyahsInvalidID(t *testing.T) {
 		AyahRepo:  fakeAyahRepo{},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/abc/ayahs", nil)
-	req.URL.Path = "/api/surahs/abc/ayahs"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/abc/ayahs")
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Equal(t, "invalid surah id\n", recorder.Body.String())
@@ -203,12 +185,7 @@ func TestRESTHandleGetSurahAyahsRepoError(t *testing.T) {
 		},
 	}
 
-	handler := REST{SurahService: svc}
-	req := httptest.NewRequest(http.MethodGet, "/api/surahs/2/ayahs", nil)
-	req.URL.Path = "/api/surahs/2/ayahs"
-	recorder := httptest.NewRecorder()
-
-	handler.handleGetSurah(recorder, req)
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs/2/ayahs")
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "failed to list ayahs\n", recorder.Body.String())
