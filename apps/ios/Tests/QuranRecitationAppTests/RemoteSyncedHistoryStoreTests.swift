@@ -40,7 +40,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
 
   func test_lastPracticed_returnsCacheValue() {
     let cache = InMemoryHistoryStore(lastPracticed: entry)
-    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient())
+    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient(), telemetry: NoOpTelemetry())
 
     XCTAssertEqual(store.lastPracticed(), entry)
   }
@@ -49,7 +49,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     let cache = InMemoryHistoryStore(bestScores: [
       "1:1": BestScoreEntry(score: 88, achievedAt: Date(timeIntervalSince1970: 1_700_000_000))
     ])
-    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient())
+    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient(), telemetry: NoOpTelemetry())
 
     XCTAssertEqual(store.bestScore(surahId: "1", ayahNumber: 1)?.score, 88)
     XCTAssertEqual(store.bestScore(forSurah: "1"), 88)
@@ -57,7 +57,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
 
   func test_recentAttempts_returnsCacheValue() {
     let cache = InMemoryHistoryStore(attempts: [attemptTwo, attemptOne])
-    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient())
+    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient(), telemetry: NoOpTelemetry())
 
     XCTAssertEqual(store.recentAttempts(limit: 50), [attemptTwo, attemptOne])
   }
@@ -67,7 +67,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
   func test_setLastPracticed_updatesCacheAndCallsRemote() async {
     let me = MockMeClient(putLastPracticedResult: .success(entry))
     let cache = InMemoryHistoryStore()
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     store.setLastPracticed(entry)
     XCTAssertEqual(cache.lastPracticed(), entry, "cache update is synchronous")
@@ -83,7 +83,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       putBestScoreResult: .success(BestScoreEntry(score: 88, achievedAt: achievedAt))
     )
     let cache = InMemoryHistoryStore()
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     store.recordBestScore(surahId: "1", ayahNumber: 1, score: 88, achievedAt: achievedAt)
     XCTAssertEqual(cache.bestScore(surahId: "1", ayahNumber: 1)?.score, 88)
@@ -97,7 +97,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
   func test_recordAttempt_updatesCacheAndCallsRemote() async {
     let me = MockMeClient(recordAttemptResult: .success(attemptOne))
     let cache = InMemoryHistoryStore()
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     store.recordAttempt(attemptOne)
     XCTAssertEqual(cache.recentAttempts(limit: 1), [attemptOne])
@@ -110,12 +110,126 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
   func test_write_whenRemoteFails_leavesCacheIntact() async {
     let me = MockMeClient(putLastPracticedResult: .failure(.backendUnavailable(operation: "test")))
     let cache = InMemoryHistoryStore()
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     store.setLastPracticed(entry)
     await Self.drainBackgroundTasks()
 
     XCTAssertEqual(cache.lastPracticed(), entry, "local cache is the user-facing record; remote failure must not roll it back")
+  }
+
+  // MARK: - Telemetry on BFF write failure
+
+  func test_setLastPracticed_remoteFailure_reportsTelemetry() async {
+    let me = MockMeClient(
+      putLastPracticedResult: .failure(.network(underlying: URLError(.notConnectedToInternet)))
+    )
+    let telemetry = TelemetrySpy()
+    let store = RemoteSyncedHistoryStore(
+      cache: InMemoryHistoryStore(),
+      me: me,
+      telemetry: telemetry
+    )
+
+    store.setLastPracticed(entry)
+    await Self.drainBackgroundTasks()
+
+    let errorRecords = telemetry.records.compactMap { record -> (String, [String: String])? in
+      if case let .error(code, context) = record { return (code, context) } else { return nil }
+    }
+    XCTAssertEqual(errorRecords.count, 1)
+    XCTAssertEqual(errorRecords.first?.0, "network")
+    XCTAssertEqual(errorRecords.first?.1["operation"], "history.write")
+    XCTAssertEqual(errorRecords.first?.1["kind"], "lastPracticed")
+    XCTAssertEqual(errorRecords.first?.1["surah_id"], entry.surahId)
+  }
+
+  func test_recordBestScore_remoteFailure_reportsTelemetryWithSurahAndAyah() async {
+    let me = MockMeClient(
+      putBestScoreResult: .failure(.backendUnavailable(operation: "me.best-scores.put"))
+    )
+    let telemetry = TelemetrySpy()
+    let store = RemoteSyncedHistoryStore(
+      cache: InMemoryHistoryStore(),
+      me: me,
+      telemetry: telemetry
+    )
+
+    store.recordBestScore(
+      surahId: "1",
+      ayahNumber: 4,
+      score: 88,
+      achievedAt: Date(timeIntervalSince1970: 1_700_000_000)
+    )
+    await Self.drainBackgroundTasks()
+
+    if case let .error(code, context) = telemetry.records.first {
+      XCTAssertEqual(code, "backend_unavailable")
+      XCTAssertEqual(context["operation"], "history.write")
+      XCTAssertEqual(context["kind"], "bestScore")
+      XCTAssertEqual(context["surah_id"], "1")
+      XCTAssertEqual(context["ayah_number"], "4")
+    } else {
+      XCTFail("expected an .error record")
+    }
+  }
+
+  func test_recordAttempt_remoteFailure_reportsTelemetryWithAttemptId() async {
+    let me = MockMeClient(
+      recordAttemptResult: .failure(.backendUnavailable(operation: "me.attempts.post"))
+    )
+    let telemetry = TelemetrySpy()
+    let store = RemoteSyncedHistoryStore(
+      cache: InMemoryHistoryStore(),
+      me: me,
+      telemetry: telemetry
+    )
+
+    store.recordAttempt(attemptOne)
+    await Self.drainBackgroundTasks()
+
+    if case let .error(_, context) = telemetry.records.first {
+      XCTAssertEqual(context["kind"], "attempt")
+      XCTAssertEqual(context["attempt_id"], attemptOne.id)
+    } else {
+      XCTFail("expected an .error record")
+    }
+  }
+
+  func test_refreshFromRemote_remoteFailure_reportsTelemetry() async {
+    let me = MockMeClient(
+      lastPracticedResult: .failure(.network(underlying: URLError(.notConnectedToInternet)))
+    )
+    let telemetry = TelemetrySpy()
+    let store = RemoteSyncedHistoryStore(
+      cache: InMemoryHistoryStore(),
+      me: me,
+      telemetry: telemetry
+    )
+
+    await store.refreshFromRemote()
+
+    if case let .error(code, context) = telemetry.records.first {
+      XCTAssertEqual(code, "network")
+      XCTAssertEqual(context["operation"], "history.refresh")
+    } else {
+      XCTFail("expected an .error record")
+    }
+  }
+
+  func test_setLastPracticed_remoteSuccess_emitsNoTelemetry() async {
+    let me = MockMeClient(putLastPracticedResult: .success(entry))
+    let telemetry = TelemetrySpy()
+    let store = RemoteSyncedHistoryStore(
+      cache: InMemoryHistoryStore(),
+      me: me,
+      telemetry: telemetry
+    )
+
+    store.setLastPracticed(entry)
+    await Self.drainBackgroundTasks()
+
+    XCTAssertTrue(telemetry.records.isEmpty, "success path must not generate noise on the failure dashboard")
   }
 
   // MARK: - clear() delegates
@@ -126,7 +240,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       bestScores: ["1:1": BestScoreEntry(score: 88, achievedAt: Date())],
       attempts: [attemptOne]
     )
-    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient())
+    let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient(), telemetry: NoOpTelemetry())
 
     store.clear()
 
@@ -158,7 +272,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       practicedAt: Date(timeIntervalSince1970: 1_600_000_000)
     )
     let cache = InMemoryHistoryStore(lastPracticed: stale)
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     await store.refreshFromRemote()
 
@@ -178,7 +292,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       lastPracticedResult: .failure(.network(underlying: URLError(.notConnectedToInternet)))
     )
     let cache = InMemoryHistoryStore(lastPracticed: entry)
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     await store.refreshFromRemote()
 
@@ -198,7 +312,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       attemptsResult: .success([])
     )
     let cache = InMemoryHistoryStore()
-    let store = RemoteSyncedHistoryStore(cache: cache, me: me)
+    let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     await store.refreshFromRemote()
 
