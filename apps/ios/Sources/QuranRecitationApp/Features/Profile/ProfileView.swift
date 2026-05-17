@@ -98,33 +98,26 @@ private struct ProfileSignedOutContent: View {
   }
 }
 
-/// Signed-in summary: the user's display name (falling back to email)
-/// and a "Sign out" action.
+/// Signed-in shell: header card + Account & data card + danger zone +
+/// Sign out. The action CTAs inside the cards are disabled placeholders
+/// in PR-H2 — Edit (H3), Update password (H4), Change email (H5), and
+/// Delete account (H6) wire them up over subsequent stacked PRs.
 private struct ProfileSignedInContent: View {
   let user: AuthenticatedUser
   let onSignOut: () -> Void
 
   var body: some View {
-    VStack(spacing: Spacing.lg) {
-      Spacer()
-      VStack(spacing: Spacing.sm) {
-        Text(user.displayName ?? user.email)
-          .font(Font.brand.pageTitle)
-          .foregroundColor(Color.brand.textPrimary)
-        Text(user.email)
-          .font(Font.brand.body)
-          .foregroundColor(Color.brand.textSecondary)
+    ScrollView {
+      VStack(spacing: Spacing.lg) {
+        ProfileHeader(user: user)
+        AccountDataCard(email: user.email)
+        DangerZoneCard()
+        SignOutSection(onSignOut: onSignOut)
+          .padding(.top, Spacing.sm)
       }
-      .multilineTextAlignment(.center)
-
-      Button(action: onSignOut) {
-        Text("profile.action.signOut", bundle: .module)
-      }
-      .buttonStyle(.brandAccent)
-      Spacer()
+      .padding(.horizontal, Spacing.screenHorizontal)
+      .padding(.vertical, Spacing.lg)
     }
-    .frame(maxWidth: .infinity)
-    .padding(.horizontal, Spacing.screenHorizontal)
     .background(Color.brand.surface.ignoresSafeArea())
   }
 }
