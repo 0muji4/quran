@@ -185,6 +185,7 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
 
     startTransition(async () => {
       try {
+        let reactivated = false;
         if (mode === 'signup') {
           await signUpAction({
             email,
@@ -193,7 +194,8 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
             level
           });
         } else {
-          await signInAction({ email, password });
+          const result = await signInAction({ email, password });
+          reactivated = result.reactivated;
         }
         // Drop any pre-rollout anonymous data before pulling the
         // freshly authenticated view from the BFF.
@@ -203,7 +205,14 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         // server already locale-prefixed; strip any leading /en or /ar so
         // the locale-aware router doesn't double-prefix.
         const unlocalized = redirectTo.replace(/^\/(en|ar)(?=\/|$)/, '') || '/';
-        router.replace(unlocalized);
+        // ADR-0024 §4: surface the welcome-back toast when sign-in just
+        // resurrected a soft-deleted account. The destination layout
+        // picks `?welcome-back=1` up via WelcomeBackToast and strips it
+        // off the URL after the toast disappears.
+        const destination = reactivated
+          ? `${unlocalized}${unlocalized.includes('?') ? '&' : '?'}welcome-back=1`
+          : unlocalized;
+        router.replace(destination);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : t('error.unknown'));
