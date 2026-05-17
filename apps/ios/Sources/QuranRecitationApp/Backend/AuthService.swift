@@ -3,9 +3,20 @@ import Foundation
 /// Result of a successful sign-in / sign-up: the JWT pair plus the
 /// user's public profile. Handed to `SessionStore` which persists it
 /// via `TokenStore` and flips the app into its signed-in state.
+///
+/// `reactivated` is `true` only when the BFF resurrected a
+/// soft-deleted account during sign-in (ADR-0024 §4). Sign-up never
+/// sets it. The UI uses the flag to surface a "Welcome back" toast.
 struct AuthSuccess: Equatable {
   let tokens: AuthTokens
   let user: AuthenticatedUser
+  let reactivated: Bool
+
+  init(tokens: AuthTokens, user: AuthenticatedUser, reactivated: Bool = false) {
+    self.tokens = tokens
+    self.user = user
+    self.reactivated = reactivated
+  }
 }
 
 /// Email + password authentication against the BFF's REST `/auth`
@@ -151,7 +162,8 @@ final class URLSessionAuthService: AuthService {
         displayName: payload.user.displayName,
         createdAt: payload.user.createdAt,
         level: payload.user.level
-      )
+      ),
+      reactivated: payload.reactivated == true
     )
   }
 }
@@ -180,6 +192,10 @@ private struct AuthSuccessResponse: Decodable {
   let accessToken: String
   let refreshToken: String
   let user: UserBody
+  // Present and `true` only when /auth/login resurrected a
+  // soft-deleted row (ADR-0024 §4). Optional so this client decodes
+  // against a BFF that pre-dates the profile work.
+  let reactivated: Bool?
 
   struct UserBody: Decodable {
     let id: String
