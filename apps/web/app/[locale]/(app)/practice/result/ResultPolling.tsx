@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/navigation';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import type { AyahRecord, SurahSummary } from '../../../../lib/types';
@@ -30,6 +31,7 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
   const [job, setJob] = useState<ScoringResult>(initialJob);
   const [error, setError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const t = useTranslations('result.polling');
 
   useEffect(() => {
     if (job.status === 'COMPLETED' || job.status === 'FAILED') return;
@@ -42,7 +44,7 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
         setJob(next);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Polling failed');
+        setError(err instanceof Error ? err.message : t('pollFailed'));
       }
     };
 
@@ -57,7 +59,7 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
       clearInterval(id);
       clearInterval(elapsedTimer);
     };
-  }, [job.jobId, job.status]);
+  }, [job.jobId, job.status, t]);
 
   if (error) {
     return <ResultError surah={surah} ayah={ayah} message={error} />;
@@ -76,34 +78,24 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
   }
 
   if (job.status === 'FAILED') {
-    return (
-      <ResultError
-        surah={surah}
-        ayah={ayah}
-        message={job.verdict ?? 'Scoring failed. Please try again.'}
-      />
-    );
+    return <ResultError surah={surah} ayah={ayah} message={job.verdict ?? t('scoringFailed')} />;
   }
 
   const isStuck = elapsedMs >= STUCK_HINT_AT_MS;
   const isSlow = !isStuck && elapsedMs >= SLOW_HINT_AT_MS;
-  const subtitle = isStuck
-    ? 'Scoring is taking longer than usual. You can wait — or cancel and try again.'
-    : isSlow
-      ? 'Still working — almost there.'
-      : 'Hang tight — your detailed feedback will appear shortly.';
+  const subtitle = isStuck ? t('subtitleStuck') : isSlow ? t('subtitleSlow') : t('subtitleInitial');
 
   return (
     <section className={styles.resultPending} aria-live="polite" aria-busy="true">
       <div className={styles.resultPendingSpinner} aria-hidden="true" />
-      <h1 className={styles.resultPendingTitle}>Scoring your recitation…</h1>
+      <h1 className={styles.resultPendingTitle}>{t('title')}</h1>
       <p className={styles.resultPendingSubtitle}>{subtitle}</p>
       {isStuck ? (
         <Link
           href={`/practice/${surah.id}/${ayah.ayahNumber}`}
           className={styles.resultPendingCancel}
         >
-          Cancel and try again
+          {t('cancel')}
         </Link>
       ) : null}
     </section>

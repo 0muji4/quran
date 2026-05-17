@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Link } from '../../../../../i18n/navigation';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import type { AyahRecord, SurahSummary } from '../../../../lib/types';
@@ -26,7 +27,18 @@ const toScoreOutOf100 = (raw: number | null | undefined): number | null => {
   return Math.round(raw * 100);
 };
 
-export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacherAudioUrl }: Props) {
+export async function ResultDetail({
+  job,
+  surah,
+  ayah,
+  totalAyahs,
+  durationMs,
+  teacherAudioUrl
+}: Props) {
+  const [t, navT] = await Promise.all([
+    getTranslations('result'),
+    getTranslations('practice.page')
+  ]);
   const score = toScoreOutOf100(job.score ?? job.feedback?.overall);
   const verdict = verdictForScore(score);
   const feedback = job.feedback;
@@ -41,9 +53,9 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
     <>
       <ResultViewedTracker surahId={surah.id} ayahNumber={ayah.ayahNumber} score={score} />
       <div className={styles.topRow}>
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <nav className={styles.breadcrumb} aria-label={navT('breadcrumbAriaLabel')}>
           <Link href="/" className={styles.breadcrumbLink}>
-            Surah library
+            {navT('breadcrumbLibrary')}
           </Link>
           <span className={styles.breadcrumbSep} aria-hidden="true">
             ›
@@ -55,12 +67,12 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
             ›
           </span>
           <span className={styles.breadcrumbCurrent} aria-current="page">
-            Result · ayah {ayah.ayahNumber}
+            {t('breadcrumb', { ayah: ayah.ayahNumber })}
           </span>
         </nav>
       </div>
 
-      <section className={styles.resultHero} aria-label="Score summary">
+      <section className={styles.resultHero} aria-label={t('heroAriaLabel')}>
         <div className={styles.resultHeroDial}>
           <ScoreDial score={score} />
         </div>
@@ -70,22 +82,10 @@ export function ResultDetail({ job, surah, ayah, totalAyahs, durationMs, teacher
         </div>
       </section>
 
-      <section className={styles.metricsRow} aria-label="Detailed score breakdown">
-        <MetricCard
-          label="Accuracy"
-          value={feedback?.accuracy}
-          description="How closely each phoneme matched"
-        />
-        <MetricCard
-          label="Fluency"
-          value={feedback?.fluency}
-          description="Smoothness and rhythm of recitation"
-        />
-        <MetricCard
-          label="Completeness"
-          value={feedback?.completeness}
-          description="How much of the ayah you recited"
-        />
+      <section className={styles.metricsRow} aria-label={t('metricsAriaLabel')}>
+        <MetricCard kind="accuracy" value={feedback?.accuracy} />
+        <MetricCard kind="fluency" value={feedback?.fluency} />
+        <MetricCard kind="completeness" value={feedback?.completeness} />
       </section>
 
       <WordByWord wordAlignments={feedback?.wordAlignments ?? []} wer={feedback?.wer ?? null} />

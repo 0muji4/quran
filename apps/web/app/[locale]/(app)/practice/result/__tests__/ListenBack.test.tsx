@@ -1,8 +1,18 @@
 import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { ListenBack } from '../ListenBack';
+import messages from '../../../../../../messages/en.json';
 
 afterEach(() => cleanup());
+
+const renderBack = (props: React.ComponentProps<typeof ListenBack>) =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ListenBack {...props} />
+    </NextIntlClientProvider>
+  );
 
 // jsdom does not implement HTMLMediaElement.play / pause; stub them so the
 // "Play both" handler can drive the audio elements without throwing.
@@ -19,9 +29,10 @@ beforeAll(() => {
 
 describe('ListenBack', () => {
   it('renders both teacher and user players when both URLs are provided', () => {
-    const { container } = render(
-      <ListenBack teacherUrl="https://t/audio.mp3" userRecordingUrl="https://u/audio.webm" />
-    );
+    const { container } = renderBack({
+      teacherUrl: 'https://t/audio.mp3',
+      userRecordingUrl: 'https://u/audio.webm'
+    });
     expect(screen.getByText('Listen back')).toBeInTheDocument();
     expect(screen.getByText('Teacher')).toBeInTheDocument();
     expect(screen.getByText('Your recitation')).toBeInTheDocument();
@@ -32,9 +43,10 @@ describe('ListenBack', () => {
   });
 
   it('shows the teacher player and a muted "not available" tile when user URL is null', () => {
-    const { container } = render(
-      <ListenBack teacherUrl="https://t/audio.mp3" userRecordingUrl={null} />
-    );
+    const { container } = renderBack({
+      teacherUrl: 'https://t/audio.mp3',
+      userRecordingUrl: null
+    });
     expect(screen.getByText('Teacher')).toBeInTheDocument();
     expect(screen.getByText(/no longer accessible/)).toBeInTheDocument();
     const audios = container.querySelectorAll('audio');
@@ -43,9 +55,10 @@ describe('ListenBack', () => {
   });
 
   it('hides the teacher tile when teacher URL is null but keeps the user tile', () => {
-    const { container } = render(
-      <ListenBack teacherUrl={null} userRecordingUrl="https://u/audio.webm" />
-    );
+    const { container } = renderBack({
+      teacherUrl: null,
+      userRecordingUrl: 'https://u/audio.webm'
+    });
     expect(screen.queryByText('Teacher')).not.toBeInTheDocument();
     expect(screen.getByText('Your recitation')).toBeInTheDocument();
     const audios = container.querySelectorAll('audio');
@@ -53,23 +66,23 @@ describe('ListenBack', () => {
   });
 
   it('renders nothing when both URLs are null', () => {
-    const { container } = render(<ListenBack teacherUrl={null} userRecordingUrl={null} />);
+    const { container } = renderBack({ teacherUrl: null, userRecordingUrl: null });
     expect(container).toBeEmptyDOMElement();
   });
 
   describe('Play both', () => {
     it('shows the Play both button only when both URLs are present', () => {
-      render(<ListenBack teacherUrl="https://t" userRecordingUrl="https://u" />);
+      renderBack({ teacherUrl: 'https://t', userRecordingUrl: 'https://u' });
       expect(screen.getByRole('button', { name: /play both/i })).toBeInTheDocument();
     });
 
     it('hides Play both when only teacher is available', () => {
-      render(<ListenBack teacherUrl="https://t" userRecordingUrl={null} />);
+      renderBack({ teacherUrl: 'https://t', userRecordingUrl: null });
       expect(screen.queryByRole('button', { name: /play both/i })).not.toBeInTheDocument();
     });
 
     it('hides Play both when only user is available', () => {
-      render(<ListenBack teacherUrl={null} userRecordingUrl="https://u" />);
+      renderBack({ teacherUrl: null, userRecordingUrl: 'https://u' });
       expect(screen.queryByRole('button', { name: /play both/i })).not.toBeInTheDocument();
     });
 
@@ -77,9 +90,10 @@ describe('ListenBack', () => {
       const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play');
       playSpy.mockClear();
 
-      const { container } = render(
-        <ListenBack teacherUrl="https://t" userRecordingUrl="https://u" />
-      );
+      const { container } = renderBack({
+        teacherUrl: 'https://t',
+        userRecordingUrl: 'https://u'
+      });
       const [teacher, user] = Array.from(container.querySelectorAll('audio')) as HTMLAudioElement[];
 
       fireEvent.click(screen.getByRole('button', { name: /play both/i }));
