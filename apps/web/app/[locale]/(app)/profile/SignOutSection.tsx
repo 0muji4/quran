@@ -4,6 +4,7 @@ import { useTransition } from 'react';
 import { useRouter } from '../../../../i18n/navigation';
 import { signOutAction } from '../../../actions';
 import { clearLocalCache } from '../../../lib/storage';
+import { DeleteAccountButton } from './DeleteAccountButton';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
@@ -39,21 +40,6 @@ const actionsClass = css({
   display: 'flex',
   gap: '3',
   flexWrap: 'wrap'
-});
-
-const deleteButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'red',
-  backgroundColor: 'bg.paper',
-  color: 'red',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'not-allowed',
-  _disabled: { opacity: 0.55 }
 });
 
 const signOutButtonClass = css({
@@ -92,14 +78,7 @@ export function SignOutSection() {
         <span className={helperClass}>You can sign back in any time — your progress is saved.</span>
       </div>
       <div className={actionsClass}>
-        <button
-          type="button"
-          className={deleteButtonClass}
-          disabled
-          aria-label="Delete account — coming soon"
-        >
-          Delete account
-        </button>
+        <DeleteAccountButton />
         <button type="button" className={signOutButtonClass} onClick={onSignOut} disabled={pending}>
           {pending ? 'Signing out…' : 'Sign out'}
         </button>
