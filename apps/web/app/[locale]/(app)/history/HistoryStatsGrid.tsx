@@ -11,7 +11,7 @@ type Props = {
 
 const gridClass = css({
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
+  gridTemplateColumns: 'repeat(4, 1fr)',
   gap: '3',
   marginBottom: '6'
 });
@@ -51,10 +51,9 @@ const smallClass = css({
 const smallOnPaperClass = css({ color: 'ink.muted' });
 const smallOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
 
-// 2×2 summary tiles. Mirrors iOS `StatsGrid` (`Features/History/StatsGrid.swift`)
-// in layout (this-week / average / best / streak) and emphasis (the
-// Average tile uses the dark "continue" surface to call out the running
-// average, matching the iOS design's inverse BrandCard treatment).
+// 1×4 summary tiles (this-week / average / best / streak). The Average
+// tile uses the dark "continue" surface to call out the running average,
+// matching iOS `StatsGrid`'s inverse BrandCard treatment.
 export function HistoryStatsGrid({ stats }: Props) {
   const t = useTranslations('history.stats');
   // `panel(...)` is a slot recipe: it returns an object with one class
