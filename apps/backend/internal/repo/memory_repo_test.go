@@ -11,7 +11,7 @@ import (
 
 func TestMemoryRepositorySurahs(t *testing.T) {
 	repo := MemoryRepository{
-		Surahs: []domain.Surah{{ID: 1, NameEN: "Al-Fatiha"}},
+		Surahs: []domain.Surah{{ID: 1, NameEn: "Al-Fatiha"}},
 	}
 
 	surahs, err := repo.ListSurahs(context.Background())
@@ -21,7 +21,7 @@ func TestMemoryRepositorySurahs(t *testing.T) {
 
 	surah, err := repo.GetSurah(context.Background(), 1)
 	require.NoError(t, err)
-	require.Equal(t, "Al-Fatiha", surah.NameEN)
+	require.Equal(t, "Al-Fatiha", surah.NameEn)
 
 	missingSurah, err := repo.GetSurah(context.Background(), 99)
 	require.EqualError(t, err, "surah not found")

@@ -133,7 +133,7 @@ func TestClient_Enqueue(t *testing.T) {
 			SessionID:      "test-session-1",
 			AudioKey:       "uploads/test.opus",
 			AyahID:         1,
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -145,7 +145,7 @@ func TestClient_Enqueue(t *testing.T) {
 		job := queue.Job{
 			AudioKey:       "uploads/test.opus",
 			AyahID:         1,
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -158,7 +158,7 @@ func TestClient_Enqueue(t *testing.T) {
 		job := queue.Job{
 			SessionID:      "test-session-2",
 			AyahID:         1,
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -171,7 +171,7 @@ func TestClient_Enqueue(t *testing.T) {
 		job := queue.Job{
 			SessionID:      "test-session-3",
 			AudioKey:       "uploads/test.opus",
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -185,7 +185,7 @@ func TestClient_Enqueue(t *testing.T) {
 			SessionID:      "test-session-4",
 			AudioKey:       "uploads/test.opus",
 			AyahID:         1,
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 			// EnqueuedAt not set
 		}
 
@@ -222,7 +222,7 @@ func TestClient_EnqueueDequeue(t *testing.T) {
 			SessionID:      "test-session-5",
 			AudioKey:       "uploads/session5.opus",
 			AyahID:         42,
-			ExpectedTextAR: "الحمد لله",
+			ExpectedTextAr: "الحمد لله",
 			AuthToken:      "test-token-123",
 		}
 
@@ -250,7 +250,7 @@ func TestClient_EnqueueDequeue(t *testing.T) {
 			require.Equal(t, expectedJob.SessionID, job.SessionID)
 			require.Equal(t, expectedJob.AudioKey, job.AudioKey)
 			require.Equal(t, expectedJob.AyahID, job.AyahID)
-			require.Equal(t, expectedJob.ExpectedTextAR, job.ExpectedTextAR)
+			require.Equal(t, expectedJob.ExpectedTextAr, job.ExpectedTextAr)
 			require.Equal(t, expectedJob.AuthToken, job.AuthToken)
 		case <-time.After(5 * time.Second):
 			t.Fatal("timeout waiting for job")
@@ -281,7 +281,7 @@ func TestClient_Consume_HandlerError(t *testing.T) {
 			SessionID:      "test-session-6",
 			AudioKey:       "uploads/session6.opus",
 			AyahID:         1,
-			ExpectedTextAR: "بسم الله",
+			ExpectedTextAr: "بسم الله",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -322,7 +322,7 @@ func TestClient_Consume_HandlerError(t *testing.T) {
 			SessionID:      "test-session-dlq",
 			AudioKey:       "uploads/dlq.opus",
 			AyahID:         1,
-			ExpectedTextAR: "الرحمن الرحيم",
+			ExpectedTextAr: "الرحمن الرحيم",
 		}
 
 		err = client2.Enqueue(context.Background(), job)
@@ -417,7 +417,7 @@ func TestClient_Consume_ConcurrentConsumers(t *testing.T) {
 				SessionID:      fmt.Sprintf("session-%d", i),
 				AudioKey:       fmt.Sprintf("uploads/%d.opus", i),
 				AyahID:         int64(i + 1),
-				ExpectedTextAR: "test",
+				ExpectedTextAr: "test",
 			}
 			err := producer.Enqueue(context.Background(), job)
 			require.NoError(t, err)
@@ -480,7 +480,7 @@ func TestClient_Consume_VisibilityTimeout(t *testing.T) {
 			SessionID:      "test-session-timeout",
 			AudioKey:       "uploads/timeout.opus",
 			AyahID:         1,
-			ExpectedTextAR: "test",
+			ExpectedTextAr: "test",
 		}
 
 		err := client.Enqueue(context.Background(), job)
@@ -534,7 +534,7 @@ func TestClient_AuthToken(t *testing.T) {
 			SessionID:      "test-session-auth",
 			AudioKey:       "uploads/auth.opus",
 			AyahID:         1,
-			ExpectedTextAR: "test",
+			ExpectedTextAr: "test",
 			AuthToken:      "secret-token-123",
 		}
 

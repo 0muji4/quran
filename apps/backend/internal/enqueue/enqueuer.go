@@ -63,7 +63,7 @@ func newEnqueuerWithClient(client Client, authToken string) *Enqueuer {
 // PublishASRJob pushes a single job for the given session/audio/ayah combination.
 // referenceAudioKey is optional and points to the cached teacher recitation in object storage;
 // the worker uses it for per-word pronunciation alignment in Phase 2 and silently ignores it today.
-func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string, ayahID int64, expectedTextAR, referenceAudioKey string) error {
+func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string, ayahID int64, expectedTextAr, referenceAudioKey string) error {
 	startedAt := time.Now()
 	ctx, span := telemetry.Tracer().Start(ctx, "queue.enqueue")
 	span.SetAttributes(
@@ -81,7 +81,7 @@ func (e *Enqueuer) PublishASRJob(ctx context.Context, sessionID, audioKey string
 		SessionID:         sessionID,
 		AudioKey:          audioKey,
 		AyahID:            ayahID,
-		ExpectedTextAR:    expectedTextAR,
+		ExpectedTextAr:    expectedTextAr,
 		ReferenceAudioKey: referenceAudioKey,
 		EnqueuedAt:        startedAt.UTC(),
 		AuthToken:         e.authToken,
