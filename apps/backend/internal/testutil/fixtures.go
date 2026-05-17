@@ -18,8 +18,8 @@ type SurahOption func(*domain.Surah)
 func BuildSurah(opts ...SurahOption) domain.Surah {
 	s := domain.Surah{
 		ID:              1,
-		NameAR:          "الفاتحة",
-		NameEN:          "Al-Fatiha",
+		NameAr:          "الفاتحة",
+		NameEn:          "Al-Fatiha",
 		RevelationPlace: "Mecca",
 		AyahCount:       7,
 		Metadata: map[string]any{
@@ -47,8 +47,8 @@ func WithSurahID(id int32) SurahOption {
 // WithSurahName sets both Arabic and English names.
 func WithSurahName(ar, en string) SurahOption {
 	return func(s *domain.Surah) {
-		s.NameAR = ar
-		s.NameEN = en
+		s.NameAr = ar
+		s.NameEn = en
 	}
 }
 
@@ -75,8 +75,8 @@ func BuildAyah(opts ...AyahOption) domain.Ayah {
 		ID:              1,
 		SurahID:         1,
 		AyahNumber:      1,
-		TextAR:          "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
-		TextEN:          "In the name of Allah, the Entirely Merciful, the Especially Merciful",
+		TextAr:          "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
+		TextEn:          "In the name of Allah, the Entirely Merciful, the Especially Merciful",
 		Transliteration: "Bismillah ir-Rahman ir-Raheem",
 		Metadata: map[string]any{
 			"juz":    1,
@@ -115,17 +115,17 @@ func WithAyahNumber(num int32) AyahOption {
 	}
 }
 
-// WithTextAR sets the Arabic text.
-func WithTextAR(text string) AyahOption {
+// WithTextAr sets the Arabic text.
+func WithTextAr(text string) AyahOption {
 	return func(a *domain.Ayah) {
-		a.TextAR = text
+		a.TextAr = text
 	}
 }
 
-// WithTextEN sets the English translation.
-func WithTextEN(text string) AyahOption {
+// WithTextEn sets the English translation.
+func WithTextEn(text string) AyahOption {
 	return func(a *domain.Ayah) {
-		a.TextEN = text
+		a.TextEn = text
 	}
 }
 
@@ -145,7 +145,7 @@ func BuildASRResult(opts ...ASRResultOption) domain.ASRResult {
 		SessionID:      "test-session-123",
 		AyahID:         1,
 		AudioKey:       "uploads/test-session-123.opus",
-		ExpectedTextAR: "بسم الله الرحمن الرحيم",
+		ExpectedTextAr: "بسم الله الرحمن الرحيم",
 		Transcript:     "بسم الله الرحمن الرحيم",
 		WordTimestamps: map[string]any{
 			"words": []map[string]any{
@@ -220,7 +220,7 @@ func SeedStandardData(t *testing.T, db *sql.DB) {
 	_, err := db.Exec(`
 		INSERT INTO surahs (id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, surah.ID, surah.NameAR, surah.NameEN, surah.RevelationPlace, surah.AyahCount, metadataJSON, surah.CreatedAt, surah.UpdatedAt)
+	`, surah.ID, surah.NameAr, surah.NameEn, surah.RevelationPlace, surah.AyahCount, metadataJSON, surah.CreatedAt, surah.UpdatedAt)
 	if err != nil {
 		t.Fatalf("failed to seed surah: %v", err)
 	}
@@ -242,8 +242,8 @@ func SeedStandardData(t *testing.T, db *sql.DB) {
 		ayah := BuildAyah(
 			WithAyahID(int64(i+1)),
 			WithAyahNumber(int32(i+1)),
-			WithTextAR(text.ar),
-			WithTextEN(text.en),
+			WithTextAr(text.ar),
+			WithTextEn(text.en),
 			WithTransliteration(text.trans),
 		)
 
@@ -252,7 +252,7 @@ func SeedStandardData(t *testing.T, db *sql.DB) {
 		_, err := db.Exec(`
 			INSERT INTO ayahs (id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		`, ayah.ID, ayah.SurahID, ayah.AyahNumber, ayah.TextAR, ayah.TextEN, ayah.Transliteration, metadataJSON, ayah.CreatedAt, ayah.UpdatedAt)
+		`, ayah.ID, ayah.SurahID, ayah.AyahNumber, ayah.TextAr, ayah.TextEn, ayah.Transliteration, metadataJSON, ayah.CreatedAt, ayah.UpdatedAt)
 		if err != nil {
 			t.Fatalf("failed to seed ayah %d: %v", i+1, err)
 		}
@@ -290,7 +290,7 @@ func SeedMultipleSurahs(t *testing.T, db *sql.DB, count int) {
 		_, err := db.Exec(`
 			INSERT INTO surahs (id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		`, surah.ID, surah.NameAR, surah.NameEN, surah.RevelationPlace, surah.AyahCount, metadataJSON, surah.CreatedAt, surah.UpdatedAt)
+		`, surah.ID, surah.NameAr, surah.NameEn, surah.RevelationPlace, surah.AyahCount, metadataJSON, surah.CreatedAt, surah.UpdatedAt)
 		if err != nil {
 			t.Fatalf("failed to seed surah %d: %v", s.id, err)
 		}

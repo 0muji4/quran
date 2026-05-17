@@ -11,8 +11,8 @@ import (
 func TestSurahJSONOmitsEmptyMetadata(t *testing.T) {
 	surah := Surah{
 		ID:              1,
-		NameAR:          "الفاتحة",
-		NameEN:          "Al-Fatiha",
+		NameAr:          "الفاتحة",
+		NameEn:          "Al-Fatiha",
 		RevelationPlace: "Mecca",
 		AyahCount:       7,
 	}

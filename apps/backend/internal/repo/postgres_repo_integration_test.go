@@ -40,9 +40,9 @@ func TestPostgresRepository_List(t *testing.T) {
 
 		// Verify ordering
 		require.Equal(t, int32(1), surahs[0].ID)
-		require.Equal(t, "Al-Fatiha", surahs[0].NameEN)
+		require.Equal(t, "Al-Fatiha", surahs[0].NameEn)
 		require.Equal(t, int32(2), surahs[1].ID)
-		require.Equal(t, "Al-Baqarah", surahs[1].NameEN)
+		require.Equal(t, "Al-Baqarah", surahs[1].NameEn)
 	})
 
 	t.Run("correctly parses JSONB metadata", func(t *testing.T) {
@@ -94,8 +94,8 @@ func TestPostgresRepository_GetSurah(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, int32(1), surah.ID)
-		require.Equal(t, "الفاتحة", surah.NameAR)
-		require.Equal(t, "Al-Fatiha", surah.NameEN)
+		require.Equal(t, "الفاتحة", surah.NameAr)
+		require.Equal(t, "Al-Fatiha", surah.NameEn)
 		require.Equal(t, "Mecca", surah.RevelationPlace)
 		require.Equal(t, int32(7), surah.AyahCount)
 		require.NotNil(t, surah.Metadata)
@@ -179,11 +179,11 @@ func TestPostgresRepository_ListBySurah(t *testing.T) {
 		require.Len(t, ayahs, 7)
 
 		// First ayah should have empty strings for NULL fields
-		require.Empty(t, ayahs[0].TextEN)
+		require.Empty(t, ayahs[0].TextEn)
 		require.Empty(t, ayahs[0].Transliteration)
 
 		// Other ayahs should have values
-		require.NotEmpty(t, ayahs[1].TextEN)
+		require.NotEmpty(t, ayahs[1].TextEn)
 		require.NotEmpty(t, ayahs[1].Transliteration)
 	})
 
@@ -220,8 +220,8 @@ func TestPostgresRepository_GetAyah(t *testing.T) {
 		require.Equal(t, int64(1), ayah.ID)
 		require.Equal(t, int32(1), ayah.SurahID)
 		require.Equal(t, int32(1), ayah.AyahNumber)
-		require.NotEmpty(t, ayah.TextAR)
-		require.NotEmpty(t, ayah.TextEN)
+		require.NotEmpty(t, ayah.TextAr)
+		require.NotEmpty(t, ayah.TextEn)
 		require.NotEmpty(t, ayah.Transliteration)
 	})
 
@@ -245,8 +245,8 @@ func TestPostgresRepository_GetAyah(t *testing.T) {
 		ayah, err := repository.GetAyah(context.Background(), 1)
 
 		require.NoError(t, err)
-		require.Empty(t, ayah.TextEN)
-		require.NotEmpty(t, ayah.TextAR) // Arabic text should still exist
+		require.Empty(t, ayah.TextEn)
+		require.NotEmpty(t, ayah.TextAr) // Arabic text should still exist
 	})
 
 	t.Run("correctly unmarshals JSONB metadata", func(t *testing.T) {
