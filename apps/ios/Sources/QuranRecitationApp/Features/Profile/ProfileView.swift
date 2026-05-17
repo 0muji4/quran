@@ -13,8 +13,18 @@ struct ProfileView: View {
   @ObservedObject private var session: SessionStore
   @StateObject private var authViewModel: AuthViewModel
   @State private var path: [AuthRoute] = []
+  private let profileService: ProfileService?
 
-  init(session: SessionStore, authService: AuthService, telemetry: Telemetry) {
+  /// `profileService: nil` keeps the Profile tab in read-only mode
+  /// (every CTA in the cards stays disabled). Previews and the
+  /// signed-out flow can pass `nil`; production passes the live
+  /// service so the Edit / Change / Update / Delete sheets work.
+  init(
+    session: SessionStore,
+    authService: AuthService,
+    telemetry: Telemetry,
+    profileService: ProfileService? = nil
+  ) {
     self._session = ObservedObject(wrappedValue: session)
     self._authViewModel = StateObject(
       wrappedValue: AuthViewModel(
@@ -23,6 +33,7 @@ struct ProfileView: View {
         telemetry: telemetry
       )
     )
+    self.profileService = profileService
   }
 
   var body: some View {
@@ -50,7 +61,12 @@ struct ProfileView: View {
   @ViewBuilder
   private var content: some View {
     if let user = session.currentUser {
-      ProfileSignedInContent(user: user, onSignOut: { session.signOut() })
+      ProfileSignedInContent(
+        user: user,
+        session: session,
+        profileService: profileService,
+        onSignOut: { session.signOut() }
+      )
     } else {
       ProfileSignedOutContent(
         onSignIn: { path = [.signIn] },
@@ -104,12 +120,15 @@ private struct ProfileSignedOutContent: View {
 /// Delete account (H6) wire them up over subsequent stacked PRs.
 private struct ProfileSignedInContent: View {
   let user: AuthenticatedUser
+  let session: SessionStore
+  let profileService: ProfileService?
   let onSignOut: () -> Void
+  @State private var editViewModel: EditProfileViewModel?
 
   var body: some View {
     ScrollView {
       VStack(spacing: Spacing.lg) {
-        ProfileHeader(user: user)
+        ProfileHeader(user: user, onEdit: editAction)
         AccountDataCard(email: user.email)
         DangerZoneCard()
         SignOutSection(onSignOut: onSignOut)
@@ -119,5 +138,19 @@ private struct ProfileSignedInContent: View {
       .padding(.vertical, Spacing.lg)
     }
     .background(Color.brand.surface.ignoresSafeArea())
+    .sheet(item: $editViewModel) { viewModel in
+      EditProfileSheet(viewModel: viewModel, onDismiss: { editViewModel = nil })
+    }
+  }
+
+  private var editAction: (() -> Void)? {
+    guard let profileService else { return nil }
+    return {
+      editViewModel = EditProfileViewModel(
+        user: user,
+        profileService: profileService,
+        session: session
+      )
+    }
   }
 }
