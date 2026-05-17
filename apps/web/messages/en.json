@@ -201,5 +201,107 @@
       "loop": "Loop ayah",
       "unavailable": "Reference audio unavailable: {message}"
     }
+  },
+  "result": {
+    "breadcrumb": "Result · ayah {ayah}",
+    "heroAriaLabel": "Score summary",
+    "metricsAriaLabel": "Detailed score breakdown",
+    "verdict": {
+      "awaiting": {
+        "badge": "AWAITING SCORE",
+        "headline": "No score yet",
+        "subhead": "Try recording the ayah to receive your pronunciation feedback."
+      },
+      "mastered": {
+        "badge": "MASTERED",
+        "headline": "Excellent recitation",
+        "subhead": "Your pronunciation closely matches the teacher reference. Move on whenever ready."
+      },
+      "great": {
+        "badge": "GREAT WORK",
+        "headline": "Great progress",
+        "subhead": "A few subtle differences remain. Listen back and refine your delivery."
+      },
+      "midway": {
+        "badge": "KEEP PRACTISING",
+        "headline": "Some work to do — that's okay",
+        "subhead": "Several words came through differently than expected. Try listening to the teacher slowly and reciting along before recording again."
+      },
+      "beginner": {
+        "badge": "KEEP PRACTISING",
+        "headline": "Not quite there yet",
+        "subhead": "Slow down with the teacher reference and focus on the sounds before retrying. Small, repeated passes work best."
+      }
+    },
+    "metric": {
+      "noScore": "No score yet",
+      "accuracy": {
+        "label": "Accuracy",
+        "description": "How closely each phoneme matched"
+      },
+      "fluency": {
+        "label": "Fluency",
+        "description": "Smoothness and rhythm of recitation"
+      },
+      "completeness": {
+        "label": "Completeness",
+        "description": "How much of the ayah you recited"
+      }
+    },
+    "words": {
+      "title": "Word-by-word comparison",
+      "werLabel": "Word Error Rate (WER)",
+      "legendAriaLabel": "Legend",
+      "legend": {
+        "match": "Match",
+        "substitution": "Substitution",
+        "missing": "Missing"
+      },
+      "rowExpected": "EXPECTED (TEACHER)",
+      "rowHeard": "WHAT WE HEARD",
+      "empty": "Word-level alignment is not available for this attempt yet. Try recording again to surface a word-by-word breakdown."
+    },
+    "listenBack": {
+      "title": "Listen back",
+      "subtitle": "Compare your recitation with the teacher's reference.",
+      "playBoth": "Play both",
+      "teacher": "Teacher",
+      "teacherDefault": "Husary Mu'allim · slow reference",
+      "you": "Your recitation",
+      "youJustNow": "just now",
+      "youNotAvailable": "not available",
+      "youEmpty": "The recording is no longer accessible. Try recording again to get a fresh comparison.",
+      "audioFallback": "Your browser does not support the audio element."
+    },
+    "sideStats": {
+      "personalBest": "PERSONAL BEST",
+      "attemptsToday": "ATTEMPTS TODAY",
+      "duration": "DURATION"
+    },
+    "score": {
+      "withScore": "Score: {score} out of 100",
+      "noScore": "Score not yet available",
+      "outOf100": "OUT OF 100"
+    },
+    "action": {
+      "tryAgain": "Try this ayah again",
+      "saveAttempt": "Save attempt",
+      "saved": "Saved to history",
+      "continue": "Continue to ayah {next}",
+      "finish": "Finish surah"
+    },
+    "polling": {
+      "title": "Scoring your recitation…",
+      "subtitleInitial": "Hang tight — your detailed feedback will appear shortly.",
+      "subtitleSlow": "Still working — almost there.",
+      "subtitleStuck": "Scoring is taking longer than usual. You can wait — or cancel and try again.",
+      "cancel": "Cancel and try again",
+      "pollFailed": "Polling failed",
+      "scoringFailed": "Scoring failed. Please try again."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "tryAgain": "Try again"
+    }
   }
 }

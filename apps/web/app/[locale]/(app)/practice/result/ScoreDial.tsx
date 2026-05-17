@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
 type Props = {
@@ -6,9 +9,11 @@ type Props = {
   strokeWidth?: number;
 };
 
-// Circular score dial. Server-renderable (no state).
-// 0–100 maps to a 0–360 deg arc starting from 12 o'clock, sweeping clockwise.
+// Circular score dial. 0–100 maps to a 0–360 deg arc starting from 12
+// o'clock, sweeping clockwise. `'use client'` only because
+// `useTranslations` is a client hook; the component itself has no state.
 export function ScoreDial({ score, size = 156, strokeWidth = 12 }: Props) {
+  const t = useTranslations('result.score');
   const display = score === null || Number.isNaN(score) ? '—' : Math.round(score).toString();
   const safe = score === null || Number.isNaN(score) ? 0 : Math.max(0, Math.min(100, score));
   const radius = (size - strokeWidth) / 2;
@@ -17,8 +22,8 @@ export function ScoreDial({ score, size = 156, strokeWidth = 12 }: Props) {
 
   const ariaLabel =
     score === null || Number.isNaN(score)
-      ? 'Score not yet available'
-      : `Score: ${Math.round(score)} out of 100`;
+      ? t('noScore')
+      : t('withScore', { score: Math.round(score) });
 
   return (
     <div
@@ -57,7 +62,7 @@ export function ScoreDial({ score, size = 156, strokeWidth = 12 }: Props) {
       </svg>
       <div className={styles.scoreDialCenter} aria-hidden="true">
         <span className={styles.scoreDialNumber}>{display}</span>
-        <span className={styles.scoreDialUnit}>OUT OF 100</span>
+        <span className={styles.scoreDialUnit}>{t('outOf100')}</span>
       </div>
     </div>
   );
