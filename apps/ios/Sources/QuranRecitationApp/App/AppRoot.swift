@@ -6,6 +6,11 @@ import SwiftUI
 /// inside the Profile tab, there is no launch gate (see ADR 0005, ADR
 /// 0010, and the Android `AppRoot` it mirrors).
 struct AppRoot: View {
+  /// Mirrors the web client's `REFRESH_INTERVAL_MS`
+  /// (`apps/web/app/lib/storage.ts`) so the two surfaces converge at the
+  /// same rate when the user flips between them.
+  private static let foregroundRefreshThrottle: TimeInterval = 30
+
   private let backend: QuranBackend
   private let authService: AuthService
   private let referenceClient: ReferenceAudioClient
@@ -14,8 +19,10 @@ struct AppRoot: View {
   private let telemetry: Telemetry
   private let historyStore: HistoryStore
   @ObservedObject private var session: SessionStore
+  @Environment(\.scenePhase) private var scenePhase
   @State private var selectedTab: AppTab = .library
   @State private var practiceContext: PracticeContext
+  @State private var lastHistoryRefreshAt: Date?
 
   init(
     session: SessionStore,
@@ -64,8 +71,27 @@ struct AppRoot: View {
       //      instant once data has landed.
       if session.isSignedIn {
         await historyStore.refreshFromRemote()
+        lastHistoryRefreshAt = Date()
       } else {
         historyStore.clear()
+        lastHistoryRefreshAt = nil
+      }
+    }
+    .onChange(of: scenePhase) { newPhase in
+      // Foreground-return refresh: when the user returns to the app
+      // after recording on another device (e.g. web), pull the
+      // authoritative state so the History tab and Continue card are
+      // not stuck on yesterday's cache. `task(id:)` already covers
+      // cold launch / sign-in transitions, so we only fire here once
+      // we have an anchor timestamp from that path.
+      guard newPhase == .active, session.isSignedIn else { return }
+      guard
+        let last = lastHistoryRefreshAt,
+        Date().timeIntervalSince(last) >= Self.foregroundRefreshThrottle
+      else { return }
+      Task { @MainActor in
+        await historyStore.refreshFromRemote()
+        lastHistoryRefreshAt = Date()
       }
     }
   }
