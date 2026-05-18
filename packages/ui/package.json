@@ -44,7 +44,7 @@
     "@quran-project/eslint-config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
-    "@types/node": "^20.11.30",
+    "@types/node": "^25.9.0",
     "@types/react": "^18.3.11",
     "eslint": "^9.11.1",
     "jsdom": "^25.0.1",
