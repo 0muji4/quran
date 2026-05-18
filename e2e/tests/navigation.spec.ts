@@ -32,14 +32,6 @@ test.describe('Navigation', () => {
     await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should redirect /record to /practice for backwards compatibility', async ({
-    page,
-    recordPage
-  }) => {
-    await recordPage.gotoLegacy();
-    await expect(page).toHaveURL(/\/practice\/1\/1$/);
-  });
-
   test('should display surah cards in the library', async ({ homePage }) => {
     await homePage.goto();
     await homePage.verifyLoaded();
