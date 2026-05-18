@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- deps: install all workspace deps with the frozen lockfile ----
-FROM node:20-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 RUN corepack enable
 
