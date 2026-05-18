@@ -50,13 +50,6 @@ export class RecordPage extends BasePage {
   }
 
   /**
-   * Navigate to the legacy /record route (which now redirects to /practice).
-   */
-  async gotoLegacy() {
-    await this.navigate('/record');
-  }
-
-  /**
    * Click the mic button to begin recording.
    */
   async startRecording() {
