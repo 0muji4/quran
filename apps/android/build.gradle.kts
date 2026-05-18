@@ -82,7 +82,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("androidx.tracing:tracing-ktx:1.2.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("com.apollographql.apollo:apollo-runtime:4.0.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -90,5 +90,5 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("app.cash.turbine:turbine:1.1.0")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
 }
