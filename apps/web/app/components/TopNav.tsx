@@ -19,7 +19,7 @@ const TABS: Tab[] = [
   {
     href: '/practice',
     labelKey: 'practice',
-    match: (p) => p.startsWith('/practice') || p.startsWith('/record')
+    match: (p) => p.startsWith('/practice')
   },
   { href: '/history', labelKey: 'history', match: (p) => p.startsWith('/history') }
 ];
