@@ -67,7 +67,10 @@
       "error": "Please accept the Terms of Service and Privacy Policy to continue."
     },
     "error": {
-      "unknown": "Something went wrong"
+      "unknown": "Something went wrong",
+      "invalid_credentials": "Invalid email or password.",
+      "email_in_use": "An account with this email already exists.",
+      "pending_deletion": "This account is scheduled for deletion. Sign in to restore it."
     },
     "brand": {
       "wordmark": "Tilawah",
