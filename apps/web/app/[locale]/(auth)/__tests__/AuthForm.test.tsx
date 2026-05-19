@@ -58,8 +58,18 @@ describe('AuthForm', () => {
     refreshAllFromBffMock.mockClear();
   });
 
+  const signInOk = (overrides: { reactivated?: boolean } = {}) => ({
+    ok: true as const,
+    user: { id: 'u1', email: 'a@b.co', displayName: null },
+    reactivated: overrides.reactivated ?? false
+  });
+  const signUpOk = (user: { id: string; email: string; displayName: string | null }) => ({
+    ok: true as const,
+    user
+  });
+
   it('signs in with the entered credentials and routes home on success', async () => {
-    signInActionMock.mockResolvedValueOnce({ id: 'u1', email: 'a@b.co', displayName: null });
+    signInActionMock.mockResolvedValueOnce(signInOk());
     renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
@@ -78,8 +88,8 @@ describe('AuthForm', () => {
     expect(refreshAllFromBffMock).toHaveBeenCalled();
   });
 
-  it('shows the BFF error when sign-in fails and stays on the form', async () => {
-    signInActionMock.mockRejectedValueOnce(new Error('invalid email or password'));
+  it('shows the localized error when sign-in returns invalid_credentials', async () => {
+    signInActionMock.mockResolvedValueOnce({ ok: false, error: 'invalid_credentials' });
     renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
@@ -87,7 +97,35 @@ describe('AuthForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     await screen.findByRole('alert');
-    expect(screen.getByRole('alert')).toHaveTextContent('invalid email or password');
+    expect(screen.getByRole('alert')).toHaveTextContent('Invalid email or password.');
+    expect(replace).not.toHaveBeenCalled();
+    expect(clearLocalCacheMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the unknown-error fallback when sign-in throws (system failure)', async () => {
+    signInActionMock.mockRejectedValueOnce(new Error('bff connection refused'));
+    renderForm({ mode: 'signin' });
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await screen.findByRole('alert');
+    expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('shows the localized error when sign-up returns email_in_use', async () => {
+    signUpActionMock.mockResolvedValueOnce({ ok: false, error: 'email_in_use' });
+    renderForm({ mode: 'signup' });
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
+    acceptTerms();
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+
+    await screen.findByRole('alert');
+    expect(screen.getByRole('alert')).toHaveTextContent(/already exists/i);
     expect(replace).not.toHaveBeenCalled();
   });
 
@@ -95,7 +133,7 @@ describe('AuthForm', () => {
     const order: string[] = [];
     signUpActionMock.mockImplementationOnce(async () => {
       order.push('signUp');
-      return { id: 'u4', email: 'a@b.co', displayName: null };
+      return signUpOk({ id: 'u4', email: 'a@b.co', displayName: null });
     });
     clearLocalCacheMock.mockImplementationOnce(() => {
       order.push('clear');
@@ -115,11 +153,9 @@ describe('AuthForm', () => {
   });
 
   it('passes the optional display name through on sign-up', async () => {
-    signUpActionMock.mockResolvedValueOnce({
-      id: 'u2',
-      email: 'a@b.co',
-      displayName: 'Aisha'
-    });
+    signUpActionMock.mockResolvedValueOnce(
+      signUpOk({ id: 'u2', email: 'a@b.co', displayName: 'Aisha' })
+    );
     renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
@@ -143,7 +179,9 @@ describe('AuthForm', () => {
   });
 
   it('omits an empty display name on sign-up', async () => {
-    signUpActionMock.mockResolvedValueOnce({ id: 'u3', email: 'a@b.co', displayName: null });
+    signUpActionMock.mockResolvedValueOnce(
+      signUpOk({ id: 'u3', email: 'a@b.co', displayName: null })
+    );
     renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
@@ -176,7 +214,7 @@ describe('AuthForm', () => {
   it('allows sign-in with any non-empty password regardless of length', async () => {
     // Existing accounts may have been created before the 8-char rule landed,
     // so sign-in must not enforce it client-side. The BFF lets them through.
-    signInActionMock.mockResolvedValueOnce({ id: 'legacy', email: 'a@b.co', displayName: null });
+    signInActionMock.mockResolvedValueOnce(signInOk());
     renderForm({ mode: 'signin' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
@@ -187,7 +225,7 @@ describe('AuthForm', () => {
   });
 
   it('blocks sign-up until the terms checkbox is accepted', async () => {
-    signUpActionMock.mockResolvedValue({ id: 'u5', email: 'a@b.co', displayName: null });
+    signUpActionMock.mockResolvedValue(signUpOk({ id: 'u5', email: 'a@b.co', displayName: null }));
     renderForm({ mode: 'signup' });
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
