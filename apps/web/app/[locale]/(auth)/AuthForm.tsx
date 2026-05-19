@@ -187,14 +187,22 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
       try {
         let reactivated = false;
         if (mode === 'signup') {
-          await signUpAction({
+          const result = await signUpAction({
             email,
             password,
             displayName: displayName ? displayName : undefined,
             level
           });
+          if (!result.ok) {
+            setError(t(`error.${result.error}`));
+            return;
+          }
         } else {
           const result = await signInAction({ email, password });
+          if (!result.ok) {
+            setError(t(`error.${result.error}`));
+            return;
+          }
           reactivated = result.reactivated;
         }
         // Drop any pre-rollout anonymous data before pulling the
@@ -214,8 +222,10 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
           : unlocalized;
         router.replace(destination);
         router.refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('error.unknown'));
+      } catch {
+        // Reached only on genuine system failures; business errors are
+        // surfaced via the `{ ok: false }` branches above.
+        setError(t('error.unknown'));
       }
     });
   };
