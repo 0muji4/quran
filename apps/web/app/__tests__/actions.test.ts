@@ -392,10 +392,11 @@ describe('Server Actions', () => {
     it('signUpAction posts credentials and persists session cookies', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
+        status: 201,
         json: async () => mockAuthSuccess
       } as Response);
 
-      const user = await signUpAction({
+      const result = await signUpAction({
         email: 'a@b.co',
         password: 'hunter2hunter2',
         displayName: 'A'
@@ -408,15 +409,44 @@ describe('Server Actions', () => {
           body: JSON.stringify({ email: 'a@b.co', password: 'hunter2hunter2', displayName: 'A' })
         })
       );
-      expect(user).toEqual(mockAuthSuccess.user);
+      expect(result).toEqual({ ok: true, user: mockAuthSuccess.user });
       const store = await cookies();
       expect(store.get(ACCESS_COOKIE)?.value).toBe('access-token-abc');
       expect(store.get(REFRESH_COOKIE)?.value).toBe('refresh-token-xyz');
     });
 
+    it('signUpAction returns email_in_use on 409 collision', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: 'email already in use' })
+      } as Response);
+
+      const result = await signUpAction({ email: 'a@b.co', password: 'hunter2hunter2' });
+
+      expect(result).toEqual({ ok: false, error: 'email_in_use' });
+      const store = await cookies();
+      expect(store.get(ACCESS_COOKIE)).toBeUndefined();
+    });
+
+    it('signUpAction returns pending_deletion when the row is in the grace window', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          error: 'this account is scheduled for deletion — sign in to restore it'
+        })
+      } as Response);
+
+      const result = await signUpAction({ email: 'a@b.co', password: 'hunter2hunter2' });
+
+      expect(result).toEqual({ ok: false, error: 'pending_deletion' });
+    });
+
     it('signInAction persists cookies on success', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
+        status: 200,
         json: async () => mockAuthSuccess
       } as Response);
 
@@ -426,10 +456,7 @@ describe('Server Actions', () => {
         expect.stringContaining('/auth/login'),
         expect.objectContaining({ method: 'POST' })
       );
-      expect(result.user.id).toBe('user-1');
-      // BFF did not include a `reactivated` flag here, so the action
-      // normalises to `false` for the AuthForm consumer.
-      expect(result.reactivated).toBe(false);
+      expect(result).toEqual({ ok: true, user: mockAuthSuccess.user, reactivated: false });
       const store = await cookies();
       expect(store.get(ACCESS_COOKIE)?.value).toBe('access-token-abc');
     });
@@ -437,25 +464,40 @@ describe('Server Actions', () => {
     it('signInAction propagates the reactivated flag from the BFF', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
+        status: 200,
         json: async () => ({ ...mockAuthSuccess, reactivated: true })
       } as Response);
 
       const result = await signInAction({ email: 'a@b.co', password: 'pw' });
 
-      expect(result.reactivated).toBe(true);
+      expect(result).toEqual({ ok: true, user: mockAuthSuccess.user, reactivated: true });
     });
 
-    it('signInAction surfaces BFF errors and leaves cookies untouched', async () => {
+    it('signInAction returns invalid_credentials on 401 without throwing', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
+        status: 401,
         json: async () => ({ error: 'invalid email or password' })
       } as Response);
 
-      await expect(signInAction({ email: 'a@b.co', password: 'wrong' })).rejects.toThrow(
-        'invalid email or password'
-      );
+      const result = await signInAction({ email: 'a@b.co', password: 'wrong' });
+
+      expect(result).toEqual({ ok: false, error: 'invalid_credentials' });
       const store = await cookies();
       expect(store.get(ACCESS_COOKIE)).toBeUndefined();
+    });
+
+    it('signInAction throws on non-401 BFF failures', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        json: async () => ({ error: 'upstream timeout' })
+      } as Response);
+
+      await expect(signInAction({ email: 'a@b.co', password: 'pw' })).rejects.toThrow(
+        'upstream timeout'
+      );
     });
 
     it('signOutAction clears the auth cookies', async () => {
