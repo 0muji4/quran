@@ -48,8 +48,11 @@ class TraceContextFilter(logging.Filter):
 
 # Configure logging with trace context
 trace_filter = TraceContextFilter()
+# Python's logging accepts only upper-case level names. Compose files
+# pass `LOG_LEVEL=info` (lowercase) to stay consistent with the Go and
+# Node services, so normalize here at the boundary.
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s | trace_id=%(trace_id)s span_id=%(span_id)s",
 )
 # Add TraceContextFilter to all handlers to ensure trace context is available
