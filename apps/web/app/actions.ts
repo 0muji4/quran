@@ -516,14 +516,18 @@ type AuthSuccessPayload = {
   reactivated?: boolean;
 };
 
-// What the sign-in / sign-up Server Actions return to their callers.
-// The user record is the primary payload; `reactivated` rides along
-// so the AuthForm can branch the redirect URL without a second
-// round-trip.
-export type SignInResult = {
-  user: AuthSessionUser;
-  reactivated: boolean;
-};
+// Auth actions return a discriminated union for expected business
+// errors; only genuine system failures still throw.
+export type SignInErrorCode = 'invalid_credentials';
+export type SignUpErrorCode = 'email_in_use' | 'pending_deletion';
+
+export type SignInResult =
+  | { ok: true; user: AuthSessionUser; reactivated: boolean }
+  | { ok: false; error: SignInErrorCode };
+
+export type SignUpResult =
+  | { ok: true; user: AuthSessionUser }
+  | { ok: false; error: SignUpErrorCode };
 
 const persistAuthSession = async (payload: AuthSuccessPayload): Promise<AuthSessionUser> => {
   await setAuthCookies({
@@ -533,13 +537,22 @@ const persistAuthSession = async (payload: AuthSuccessPayload): Promise<AuthSess
   return payload.user;
 };
 
+const readErrorMessage = async (response: Response): Promise<string> => {
+  const payload = (await response.json().catch(() => null)) as unknown;
+  if (payload && typeof payload === 'object' && 'error' in (payload as Record<string, unknown>)) {
+    const message = (payload as Record<string, unknown>).error;
+    if (typeof message === 'string') return message;
+  }
+  return response.statusText;
+};
+
 export const signUpAction = async (input: {
   email: string;
   password: string;
   displayName?: string;
   // BFF zod accepts the same enum; we forward the value as-is.
   level?: UserLevel;
-}): Promise<AuthSessionUser> => {
+}): Promise<SignUpResult> => {
   return tracer.startActiveSpan(
     'ServerAction: signUpAction',
     { kind: SpanKind.CLIENT },
@@ -552,11 +565,25 @@ export const signUpAction = async (input: {
           headers: jsonHeaders,
           body: JSON.stringify(input)
         });
+
+        // 409 has two flavours (plain collision vs. soft-deleted row in
+        // the ADR-0024 §4 grace window); the form branches on the code
+        // to steer the user to sign-in for the latter.
+        if (response.status === 409) {
+          const message = await readErrorMessage(response);
+          const code: SignUpErrorCode = message.includes('scheduled for deletion')
+            ? 'pending_deletion'
+            : 'email_in_use';
+          logger.warn('signUpAction: conflict', { code });
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: code };
+        }
+
         const payload = await parseJson<AuthSuccessPayload>(response);
         const user = await persistAuthSession(payload);
         logger.info('signUpAction completed', { userId: user.id });
         span.setStatus({ code: SpanStatusCode.OK });
-        return user;
+        return { ok: true as const, user };
       } catch (error) {
         span.recordException(error as Error);
         span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
@@ -585,12 +612,19 @@ export const signInAction = async (input: {
           headers: jsonHeaders,
           body: JSON.stringify(input)
         });
+
+        if (response.status === 401) {
+          logger.warn('signInAction: invalid credentials');
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: 'invalid_credentials' as const };
+        }
+
         const payload = await parseJson<AuthSuccessPayload>(response);
         const user = await persistAuthSession(payload);
         const reactivated = payload.reactivated === true;
         logger.info('signInAction completed', { userId: user.id, reactivated });
         span.setStatus({ code: SpanStatusCode.OK });
-        return { user, reactivated };
+        return { ok: true as const, user, reactivated };
       } catch (error) {
         span.recordException(error as Error);
         span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
