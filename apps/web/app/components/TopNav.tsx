@@ -4,7 +4,8 @@ import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '../../i18n/navigation';
 import { signOutAction } from '../actions';
-import { clearLocalCache } from '../lib/storage';
+import { clearLocalCache, getLastPracticed } from '../lib/storage';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import { BookIcon } from './icons/BookIcon';
 import { css } from '../../styled-system/css';
 
@@ -14,10 +15,15 @@ type Tab = {
   match: (pathname: string) => boolean;
 };
 
+// Al-Fatihah 1:1 is the default Practice tab destination, mirroring
+// iOS (AppRoot.swift PracticeContext init). Returning users get the
+// last-practiced ayah resolved at render time below.
+const DEFAULT_PRACTICE_HREF = '/practice/1/1';
+
 const TABS: Tab[] = [
   { href: '/', labelKey: 'library', match: (p) => p === '/' || p.startsWith('/library') },
   {
-    href: '/practice',
+    href: DEFAULT_PRACTICE_HREF,
     labelKey: 'practice',
     match: (p) => p.startsWith('/practice')
   },
@@ -190,6 +196,10 @@ export function TopNav({ session }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations('nav');
+  const [lastPracticed] = useLocalStorageState(getLastPracticed, null);
+  const practiceHref = lastPracticed
+    ? `/practice/${lastPracticed.surahId}/${lastPracticed.ayahNumber}`
+    : DEFAULT_PRACTICE_HREF;
 
   const onSignOut = (): void => {
     startTransition(async () => {
@@ -215,10 +225,11 @@ export function TopNav({ session }: Props) {
       <div className={tabsClass}>
         {TABS.map((tab) => {
           const active = tab.match(pathname);
+          const href = tab.labelKey === 'practice' ? practiceHref : tab.href;
           return (
             <Link
-              key={tab.href}
-              href={tab.href}
+              key={tab.labelKey}
+              href={href}
               className={active ? `${tabClass} ${tabActiveClass}` : tabClass}
               aria-current={active ? 'page' : undefined}
             >

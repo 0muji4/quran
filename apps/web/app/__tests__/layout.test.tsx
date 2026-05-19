@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 
 import { AppShell } from '../components/AppShell';
@@ -25,8 +25,11 @@ vi.mock('next/navigation', () => ({
 // storage module's signed-in gate. Stub the call so the layout test
 // stays focused on TopNav rendering and doesn't pull the Server
 // Actions module in for nothing.
+const getLastPracticedMock = vi.fn(() => null as null | { surahId: string; ayahNumber: number });
 vi.mock('../lib/storage', () => ({
-  setSignedInGate: vi.fn()
+  setSignedInGate: vi.fn(),
+  clearLocalCache: vi.fn(),
+  getLastPracticed: () => getLastPracticedMock()
 }));
 
 const renderShell = (props: React.ComponentProps<typeof AppShell>) =>
@@ -39,6 +42,8 @@ const renderShell = (props: React.ComponentProps<typeof AppShell>) =>
 describe('AppShell', () => {
   afterEach(() => {
     cleanup();
+    getLastPracticedMock.mockReset();
+    getLastPracticedMock.mockReturnValue(null);
   });
 
   it('renders the Tilawah brand and primary tabs', () => {
@@ -112,5 +117,29 @@ describe('AppShell', () => {
     });
 
     expect(screen.getByLabelText('Signed in as b@c.co')).toHaveTextContent('B');
+  });
+
+  it('points the Practice tab at Al-Fatihah 1:1 when no last-practiced ayah is cached', () => {
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
+
+    expect(screen.getByRole('link', { name: 'Practice' })).toHaveAttribute('href', '/practice/1/1');
+  });
+
+  it('points the Practice tab at the last-practiced ayah after hydration', async () => {
+    getLastPracticedMock.mockReturnValue({ surahId: '36', ayahNumber: 12 });
+    renderShell({
+      session: null,
+      skipLinkLabel: messages.nav.skipToContent,
+      children: <div>Test Content</div>
+    });
+
+    const tab = screen.getByRole('link', { name: 'Practice' });
+    // useLocalStorageState hydrates in useEffect, so wait for the
+    // post-mount href update.
+    await waitFor(() => expect(tab).toHaveAttribute('href', '/practice/36/12'));
   });
 });
