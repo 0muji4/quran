@@ -64,6 +64,7 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
   もしくは型ガードへの置換を別タスクで検討する。
 - ~~**`e2e/` の lint 未カバー**~~ — 対応済み。root に `eslint.config.js` / `prettier.config.cjs` を追加し、
   `pnpm lint` が `lint:e2e`（`eslint e2e`）も実行するようにした。
-- **GraphQL codegen の `declarationKind`** — `packages/shared-ts/codegen.ts` に
-  `declarationKind: 'interface'` を設定すると、再生成される GraphQL 型も `interface` になる。
-  生成ファイルは lint 対象外のため必須ではない。
+- ~~**GraphQL codegen の `declarationKind`**~~ — 対応済み。`packages/shared-ts/codegen.ts` に
+  `declarationKind: 'interface'` を設定し、GraphQL の object / input 型も `interface` で生成されるようにした。
+  あわせて、不要かつ破損していた `documents` グロブを削除して codegen を復旧させた（再生成時に
+  codegen v4 の出力フォーマットも取り込まれている）。
