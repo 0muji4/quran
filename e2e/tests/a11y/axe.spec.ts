@@ -27,14 +27,12 @@ const KNOWN = new Set<string>(KNOWN_VIOLATIONS);
 const ROUTES = [
   { name: 'library', path: '/' },
   { name: 'practice', path: '/practice/1/1' },
-  { name: 'history', path: '/history' },
+  { name: 'history', path: '/history' }
 ];
 
 test.describe('axe a11y baseline', () => {
   for (const route of ROUTES) {
-    test(`${route.name} (${route.path}) has no unexpected a11y violations`, async ({
-      page,
-    }) => {
+    test(`${route.name} (${route.path}) has no unexpected a11y violations`, async ({ page }) => {
       await page.goto(route.path);
       // Wait for the route's main heading so axe scans a hydrated DOM.
       await page.getByRole('heading').first().waitFor({ state: 'visible' });
