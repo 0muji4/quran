@@ -9,9 +9,9 @@ import { ArrowRightIcon, BookmarkIcon } from '../../../components/icons/ArrowRig
 import { css, cx } from '../../../../styled-system/css';
 import { button, panel } from '../../../../styled-system/recipes';
 
-type Props = {
+interface Props {
   surahs: SurahSummary[];
-};
+}
 
 const COMPASS_SVG = (
   <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="0.8">

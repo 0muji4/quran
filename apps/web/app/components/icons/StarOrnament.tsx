@@ -1,8 +1,8 @@
-type Props = {
+interface Props {
   size?: number;
   number?: number;
   className?: string;
-};
+}
 
 // 8-pointed star ayah marker, with the ayah number embedded.
 export function StarOrnament({ size = 56, number, className }: Props) {

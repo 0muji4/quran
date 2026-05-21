@@ -5,14 +5,14 @@ import { StorageSessionBridge } from './StorageSessionBridge';
 import { TopNav } from './TopNav';
 import { WelcomeBackToast } from './WelcomeBackToast';
 
-type Props = {
+interface Props {
   children: ReactNode;
   session: Session | null;
   // Translated label for the skip link. Passed in by the async layout
   // owner via `getTranslations` so AppShell stays a sync component and
   // can still be unit-tested with @testing-library.
   skipLinkLabel: string;
-};
+}
 
 export function AppShell({ children, session, skipLinkLabel }: Props) {
   const sessionView = session

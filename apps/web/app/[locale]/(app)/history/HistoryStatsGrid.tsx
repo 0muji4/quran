@@ -5,9 +5,9 @@ import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 import type { HistoryStats } from './historyStats';
 
-type Props = {
+interface Props {
   stats: HistoryStats;
-};
+}
 
 const gridClass = css({
   display: 'grid',
@@ -105,7 +105,7 @@ export function HistoryStatsGrid({ stats }: Props) {
   );
 }
 
-type TileProps = {
+interface TileProps {
   eyebrow: string;
   big: string;
   small: string;
@@ -113,7 +113,7 @@ type TileProps = {
   eyebrowClassName: string;
   bigClassName: string;
   smallClassName: string;
-};
+}
 
 function Tile({
   eyebrow,

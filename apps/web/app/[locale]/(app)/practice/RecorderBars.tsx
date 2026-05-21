@@ -9,14 +9,14 @@ const IDLE_HEIGHTS = [
 ];
 const BAR_COUNT = IDLE_HEIGHTS.length;
 
-type Props = {
+interface Props {
   // 'recording' (default): live mic levels when `live`, otherwise a static
   // idle silhouette.
   // 'analysing': sin-wave shimmer driven by an internal ticker, no mic input.
   mode?: 'recording' | 'analysing';
   live?: boolean;
   levels?: number[];
-};
+}
 
 const shimmer = (tick: number): number[] =>
   Array.from({ length: BAR_COUNT }, (_, i) => {

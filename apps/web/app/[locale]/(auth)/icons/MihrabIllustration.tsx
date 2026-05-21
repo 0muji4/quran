@@ -1,6 +1,6 @@
-type Props = {
+interface Props {
   className?: string;
-};
+}
 
 // Decorative line-art mihrab (prayer-niche arch) with an 8-pointed star at
 // the apex and a hanging lamp — the centrepiece of the auth brand panel.

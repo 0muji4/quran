@@ -7,7 +7,7 @@ import { telemetry } from '../telemetry/telemetry';
 
 const tracer = telemetry.tracer;
 
-type BackendSurah = {
+interface BackendSurah {
   id: number;
   name_ar: string;
   name_en: string;
@@ -16,9 +16,9 @@ type BackendSurah = {
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-};
+}
 
-type BackendAyah = {
+interface BackendAyah {
   id: number;
   surah_id: number;
   ayah_number: number;
@@ -28,7 +28,7 @@ type BackendAyah = {
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-};
+}
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
@@ -69,7 +69,7 @@ export const fetchWithTracing = async (
   });
 };
 
-export type SurahRecord = {
+export interface SurahRecord {
   id: string;
   nameAr: string;
   nameEn: string;
@@ -77,9 +77,9 @@ export type SurahRecord = {
   ayahCount: number;
   metadata?: Record<string, unknown>;
   ayahs: AyahRecord[];
-};
+}
 
-export type AyahRecord = {
+export interface AyahRecord {
   id: string;
   surahId: string;
   ayahNumber: number;
@@ -87,7 +87,7 @@ export type AyahRecord = {
   textEn?: string;
   transliteration?: string;
   metadata?: Record<string, unknown>;
-};
+}
 
 /**
  * Fetch all surahs from the backend API

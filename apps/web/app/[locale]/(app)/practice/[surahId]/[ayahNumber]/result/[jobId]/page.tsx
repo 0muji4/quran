@@ -12,11 +12,11 @@ import { ResultDetail } from '../../../../result/ResultDetail';
 import { ResultError } from '../../../../result/ResultError';
 import { ResultPolling } from '../../../../result/ResultPolling';
 
-type RouteParams = {
+interface RouteParams {
   surahId: string;
   ayahNumber: string;
   jobId: string;
-};
+}
 
 export default async function PracticeResultPage({ params }: { params: Promise<RouteParams> }) {
   const locale = await getLocale();

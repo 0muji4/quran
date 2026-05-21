@@ -4,10 +4,10 @@ import { useTranslations } from 'next-intl';
 import type { WordAlignment } from '@quran-project/shared-ts';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   wordAlignments: WordAlignment[];
   wer: number | null | undefined;
-};
+}
 
 type TileCategory = 'match' | 'substitution' | 'missing' | 'inserted';
 

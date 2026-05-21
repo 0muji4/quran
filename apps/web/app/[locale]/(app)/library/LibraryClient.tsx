@@ -13,7 +13,7 @@ import { SurahGrid } from './SurahGrid';
 import { css, cx } from '../../../../styled-system/css';
 import { button } from '../../../../styled-system/recipes';
 
-type Props = {
+interface Props {
   surahs: SurahSummary[];
   // Personalised payload from the BFF (ADR 0015). `null` for guests and
   // BFF-failure modes; SuggestedCard falls back to the local heuristic.
@@ -23,7 +23,7 @@ type Props = {
   // state instead of rendering an empty grid (which would be
   // indistinguishable from a filter mismatch).
   loadError?: boolean;
-};
+}
 
 const SEARCH_MOBILE_MQ = '@media (max-width: 600px)';
 const HERO_CARDS_MOBILE_MQ = '@media (max-width: 900px)';

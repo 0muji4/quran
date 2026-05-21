@@ -18,10 +18,10 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-type Props = {
+interface Props {
   surahId: number;
   ayahNumber: number;
-};
+}
 
 export function TeacherPanel({ surahId, ayahNumber }: Props) {
   const audio = useTeacherAudio(surahId, ayahNumber);

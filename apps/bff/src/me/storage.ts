@@ -4,23 +4,23 @@ import { getDatabasePool } from '../infra/storage';
 // apps/web/app/lib/storage.ts so the Server Action wrapper in PR
 // 3.1-D can pass values through unchanged.
 
-export type LastPracticedRow = {
+export interface LastPracticedRow {
   surahId: string;
   ayahNumber: number;
   surahNameEn: string;
   surahNameAr: string;
   ayahCount: number;
   practicedAt: string;
-};
+}
 
-export type BestScoreEntry = {
+export interface BestScoreEntry {
   score: number;
   achievedAt: string;
-};
+}
 
 export type BestScoresMap = Record<string, BestScoreEntry>;
 
-export type PracticeAttemptRow = {
+export interface PracticeAttemptRow {
   id: string;
   surahId: string;
   surahNameEn: string;
@@ -30,7 +30,7 @@ export type PracticeAttemptRow = {
   status: 'COMPLETED' | 'FAILED';
   durationMs: number | null;
   createdAt: string;
-};
+}
 
 export const getLastPracticed = async (userId: string): Promise<LastPracticedRow | null> => {
   const pool = getDatabasePool();

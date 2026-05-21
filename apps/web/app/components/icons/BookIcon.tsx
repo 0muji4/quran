@@ -1,7 +1,7 @@
-type Props = {
+interface Props {
   size?: number;
   className?: string;
-};
+}
 
 export function BookIcon({ size = 22, className }: Props) {
   return (

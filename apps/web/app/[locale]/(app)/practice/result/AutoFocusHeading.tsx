@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 
-type Props = {
+interface Props {
   id?: string;
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
-};
+}
 
 // h1 with one-shot programmatic focus on mount. Used at the top of the result
 // page so that when RecorderPanel auto-redirects from /practice the screen
