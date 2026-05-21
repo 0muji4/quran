@@ -112,7 +112,7 @@ class RemoteSyncedHistoryStore(
      * a transient network blip leaves the cache as-is, and the next
      * per-write fire-and-forget converges.
      */
-    suspend fun refreshFromRemote() {
+    override suspend fun refreshFromRemote() {
         try {
             val (last, scores, attempts) = coroutineScope {
                 val lastDef = async { remote.lastPracticed() }
