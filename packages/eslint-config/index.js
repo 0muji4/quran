@@ -49,6 +49,17 @@ export default [
       eqeqeq: ['error', 'smart'],
       'no-var': 'error',
       'prefer-const': 'error',
+      // Forbid default exports (Google TypeScript Style Guide). Framework- or
+      // tool-mandated default exports (Next.js route files, Playwright global
+      // setup, codegen config) are re-enabled per-path in each package config.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportDefaultDeclaration',
+          message:
+            'Default exports are forbidden (Google TypeScript Style Guide). Use a named export.',
+        },
+      ],
     },
   },
 
