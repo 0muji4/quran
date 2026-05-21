@@ -39,6 +39,27 @@ internal data class AuthUserDto(
 )
 
 @Serializable
+internal data class RefreshTokenRequest(
+    val refreshToken: String,
+)
+
+@Serializable
+internal data class RefreshResponseDto(
+    val accessToken: String,
+    val refreshToken: String,
+)
+
+/**
+ * Result of a successful `POST /auth/refresh`. Just the rotated token
+ * pair — the BFF doesn't return the user shape on refresh, so the
+ * existing in-memory session still holds it.
+ */
+data class RefreshedTokens(
+    val accessToken: String,
+    val refreshToken: String,
+)
+
+@Serializable
 internal data class AuthErrorDto(
     val error: String? = null,
 )
