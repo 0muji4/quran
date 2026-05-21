@@ -10,7 +10,7 @@ const attempt = (overrides: Partial<Attempt> & { createdAt: string }): Attempt =
   surahId: overrides.surahId ?? '1',
   surahNameEn: overrides.surahNameEn ?? 'Al-Fatihah',
   ayahNumber: overrides.ayahNumber ?? 1,
-  score: 'score' in overrides ? overrides.score! : 80,
+  score: 'score' in overrides ? (overrides.score ?? null) : 80,
   jobId: overrides.jobId ?? 'job-1',
   createdAt: overrides.createdAt,
   status: overrides.status ?? 'COMPLETED'

@@ -27,7 +27,7 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 | `require()` | 適合（0 件） | 変更なし |
 | `enum` | 適合（手書きコードに `enum` なし。リテラルユニオンを使用） | 変更なし |
 | `any` | 限定的に使用（すべて文書化済み or 生成コード） | 受け入れ（下記参照） |
-| non-null assertion (`!`) | テストコードに集中（66 件） | `no-non-null-assertion: warn` で可視化 |
+| non-null assertion (`!`) | **修正済み** — 66 件を排除 | `no-non-null-assertion: error` で強制 |
 | default export | Next.js / ツール必須のもののみ | 受け入れ（下記参照） |
 | エラーハンドリング / 可視性修飾子 / JSDoc | 適合 | 変更なし |
 
@@ -57,11 +57,11 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 - **文書化済みの `any`** — OpenTelemetry SDK のバージョン不整合、GraphQL Helix、Express middleware の
   型ギャップに起因。いずれも `eslint-disable` コメントに理由が明記されている。
 
-## フォローアップ推奨（本対応では未実施）
+## フォローアップ推奨
 
-- **テストコードの non-null assertion**（`!`）— 66 件の warning が残る。大半は
-  `apps/bff/src/graphql/__tests__/resolvers.test.ts` の生成リゾルバへの連鎖アクセス。optional chaining
-  もしくは型ガードへの置換を別タスクで検討する。
+- ~~**テストコードの non-null assertion**（`!`）~~ — 対応済み。66 件を排除した。大半は
+  `apps/bff/src/graphql/__tests__/resolvers.test.ts` の生成リゾルバへの連鎖アクセスで、実行時チェック付きの
+  型付きヘルパー `getResolver` を導入。`no-non-null-assertion` を `error` に昇格して再発を防止。
 - ~~**`e2e/` の lint 未カバー**~~ — 対応済み。root に `eslint.config.js` / `prettier.config.cjs` を追加し、
   `pnpm lint` が `lint:e2e`（`eslint e2e`）も実行するようにした。
 - ~~**GraphQL codegen の `declarationKind`**~~ — 対応済み。`packages/shared-ts/codegen.ts` に
