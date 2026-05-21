@@ -5,12 +5,12 @@ import { Link } from '../../../../../i18n/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../../components/icons/ArrowRightIcon';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   surahId: string;
   surahName: string;
   ayahNumber: number;
   totalAyahs: number;
-};
+}
 
 export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props) {
   const t = useTranslations('result.action');

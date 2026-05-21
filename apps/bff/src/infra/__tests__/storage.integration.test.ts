@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
-import { Client as MinioClient } from 'minio';
+import type { Client as MinioClient } from 'minio';
 import {
   getDatabasePool,
   getMinioClient,

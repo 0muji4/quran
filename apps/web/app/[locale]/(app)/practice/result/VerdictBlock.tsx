@@ -3,9 +3,9 @@ import styles from '../../../../styles/practice.module.css';
 import { AutoFocusHeading } from './AutoFocusHeading';
 import type { VerdictKind } from './verdict';
 
-type Props = {
+interface Props {
   verdict: VerdictKind;
-};
+}
 
 export async function VerdictBlock({ verdict }: Props) {
   const t = await getTranslations(`result.verdict.${verdict}`);

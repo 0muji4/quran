@@ -1,7 +1,7 @@
-type Props = {
+interface Props {
   size?: number;
   className?: string;
-};
+}
 
 // Google "G" brand mark. Brand colours are fixed (not themable) per
 // Google's brand guidelines. Decorative — the button label carries the

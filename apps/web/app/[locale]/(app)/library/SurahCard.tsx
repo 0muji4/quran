@@ -6,11 +6,11 @@ import type { SurahSummary } from '../../../lib/types';
 import { ChevronRightIcon } from '../../../components/icons/ArrowRightIcon';
 import { css, cx } from '../../../../styled-system/css';
 
-type Props = {
+interface Props {
   surah: SurahSummary;
   bestScore: number | null;
   isLastPracticed: boolean;
-};
+}
 
 // SurahCard is a flat list-row, not a stacked card. The panel slot
 // recipe doesn't fit (it assumes the title/subtitle/footer column

@@ -43,7 +43,7 @@ const loginSchema = z.object({
   })
 });
 
-type AuthSuccess = {
+interface AuthSuccess {
   accessToken: string;
   refreshToken: string;
   user: {
@@ -63,7 +63,7 @@ type AuthSuccess = {
   // sign-in resurrected a soft-deleted row. Clients use it to surface
   // a "Welcome back — your account has been restored" toast.
   reactivated?: boolean;
-};
+}
 
 const issueAuthSuccess = async (
   user: UserRow,

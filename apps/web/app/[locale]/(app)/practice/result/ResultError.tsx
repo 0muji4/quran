@@ -5,11 +5,11 @@ import { Link } from '../../../../../i18n/navigation';
 import type { AyahRecord, SurahSummary } from '../../../../lib/types';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   surah: SurahSummary;
   ayah: AyahRecord;
   message: string;
-};
+}
 
 export function ResultError({ surah, ayah, message }: Props) {
   const t = useTranslations('result.error');

@@ -9,11 +9,11 @@ import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import { BookIcon } from './icons/BookIcon';
 import { css } from '../../styled-system/css';
 
-type Tab = {
+interface Tab {
   href: string;
   labelKey: 'library' | 'practice' | 'history';
   match: (pathname: string) => boolean;
-};
+}
 
 // Al-Fatihah 1:1 is the default Practice tab destination, mirroring
 // iOS (AppRoot.swift PracticeContext init). Returning users get the
@@ -30,14 +30,14 @@ const TABS: Tab[] = [
   { href: '/history', labelKey: 'history', match: (p) => p.startsWith('/history') }
 ];
 
-type SessionView = {
+interface SessionView {
   initial: string;
   label: string;
-};
+}
 
-type Props = {
+interface Props {
   session: SessionView | null;
-};
+}
 
 // max-width:720px keeps the legacy CSS Module's @media breakpoint
 // exactly. Panda's lg condition is min-width:720, so for the inverse

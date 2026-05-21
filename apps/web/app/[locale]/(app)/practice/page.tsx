@@ -1,10 +1,10 @@
 import { getLocale } from 'next-intl/server';
 import { redirect } from '../../../../i18n/navigation';
 
-type SearchParams = {
+interface SearchParams {
   surah?: string;
   ayah?: string;
-};
+}
 
 // Backwards-compat shim. Old links / bookmarks of the form
 // `/practice?surah=1&ayah=2` are 308-redirected to the canonical

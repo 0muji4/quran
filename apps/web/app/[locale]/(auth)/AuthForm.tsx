@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useRef, useState, useTransition } from 'react';
+import type { FormEvent } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '../../../i18n/navigation';
 import { signInAction, signUpAction } from '../../actions';
@@ -12,10 +13,10 @@ import { OAuthButtons } from './OAuthButtons';
 import { PasswordField } from './PasswordField';
 import { css } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   mode: AuthMode;
   redirectTo?: string;
-};
+}
 
 const formClass = css({
   display: 'flex',

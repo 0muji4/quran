@@ -5,12 +5,12 @@ import styles from '../../../../styles/practice.module.css';
 
 type MetricKind = 'accuracy' | 'fluency' | 'completeness';
 
-type Props = {
+interface Props {
   kind: MetricKind;
   // 0..1 fraction (matches PronunciationFeedback.accuracy etc).
   value: number | null | undefined;
   tone?: 'amber' | 'red' | 'teal';
-};
+}
 
 const toPercent = (
   v: number | null | undefined

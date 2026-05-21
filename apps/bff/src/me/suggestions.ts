@@ -16,15 +16,15 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export type SuggestionReason = 'short_unpracticed' | 'short_low_score' | 'fallback';
 
-export type SuggestedSurah = {
+export interface SuggestedSurah {
   surahId: string;
   reason: SuggestionReason;
-};
+}
 
-export type SuggestionResponse = {
+export interface SuggestionResponse {
   suggested: SuggestedSurah;
   difficulties: Record<string, Difficulty>;
-};
+}
 
 // Difficulty thresholds (closed intervals on the lower bound). Easy /
 // medium / hard buckets are calibrated against MVP scoring distribution
@@ -46,27 +46,27 @@ export const RECENT_ATTEMPT_WINDOW_DAYS = 7;
 // a safe default.
 export const FALLBACK_SURAH_ID = '112';
 
-export type AvgScoreRow = {
+export interface AvgScoreRow {
   surahId: string;
   avgScore: number;
-};
+}
 
-export type LastAttemptRow = {
+export interface LastAttemptRow {
   surahId: string;
   latestAt: Date;
-};
+}
 
-export type CandidateSurahRow = {
+export interface CandidateSurahRow {
   surahId: string;
   ayahCount: number;
-};
+}
 
-export type SuggestionInputs = {
+export interface SuggestionInputs {
   avgScores: AvgScoreRow[];
   lastAttempts: LastAttemptRow[];
   shortMeccan: CandidateSurahRow[];
   now: Date;
-};
+}
 
 const bucketDifficulty = (avg: number): Difficulty => {
   if (avg >= EASY_AVG_THRESHOLD) return 'easy';

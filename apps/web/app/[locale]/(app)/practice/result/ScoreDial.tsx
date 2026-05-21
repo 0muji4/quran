@@ -3,11 +3,11 @@
 import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   score: number | null;
   size?: number;
   strokeWidth?: number;
-};
+}
 
 // Circular score dial. 0–100 maps to a 0–360 deg arc starting from 12
 // o'clock, sweeping clockwise. `'use client'` only because

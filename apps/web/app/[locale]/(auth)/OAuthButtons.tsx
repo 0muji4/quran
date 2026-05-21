@@ -5,11 +5,11 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { AppleIcon } from './icons/AppleIcon';
 import { css } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   // 'full' → "Continue with Google" (sign-up, primary placement);
   // 'compact' → "Google" (sign-in, below the email path).
   variant: 'compact' | 'full';
-};
+}
 
 const rowClass = css({
   display: 'grid',
