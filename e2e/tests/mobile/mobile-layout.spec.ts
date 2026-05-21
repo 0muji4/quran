@@ -41,6 +41,6 @@ test.describe('mobile layout regression', () => {
 
     const box = await mic.boundingBox();
     expect(box, 'mic button must report a bounding box').not.toBeNull();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
   });
 });
