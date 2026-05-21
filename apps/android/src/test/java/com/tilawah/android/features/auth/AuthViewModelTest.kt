@@ -4,6 +4,7 @@ import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.AuthSessionPayload
 import com.tilawah.android.backend.AuthUser
+import com.tilawah.android.backend.RefreshedTokens
 import com.tilawah.android.storage.InMemoryAuthSession
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -156,6 +157,10 @@ class AuthViewModelTest {
             lastSignUpEmail = email
             lastSignUpDisplayName = displayName
             return signUpResult(email, password, displayName)
+        }
+
+        override suspend fun refresh(refreshToken: String): RefreshedTokens {
+            error("refresh not configured")
         }
     }
 }
