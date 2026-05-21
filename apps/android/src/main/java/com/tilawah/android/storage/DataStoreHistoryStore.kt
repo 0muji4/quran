@@ -86,6 +86,14 @@ class DataStoreHistoryStore(
         }
     }
 
+    override suspend fun clear() {
+        write { prefs ->
+            prefs.remove(lastKey)
+            prefs.remove(bestKey)
+            prefs.remove(attemptsKey)
+        }
+    }
+
     private fun bestScoresFlow(): Flow<Map<String, BestScoreEntry>> = readPref(bestKey)
         .map { raw -> raw?.let { decodeOrNull<Map<String, BestScoreEntry>>(it) } ?: emptyMap() }
 
