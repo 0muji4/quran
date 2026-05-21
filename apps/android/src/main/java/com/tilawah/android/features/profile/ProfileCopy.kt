@@ -8,6 +8,7 @@ package com.tilawah.android.features.profile
  */
 object ProfileCopy {
     const val editEntryLabel: String = "Edit profile"
+    const val changeEmailEntryLabel: String = "Change email"
 
     const val editTitle: String = "Edit profile"
     const val editDisplayNameLabel: String = "DISPLAY NAME"
@@ -15,6 +16,14 @@ object ProfileCopy {
     const val editCancel: String = "Cancel"
     const val editSave: String = "Save"
     const val editSavePending: String = "Saving…"
+
+    const val changeEmailTitle: String = "Change email"
+    const val changeEmailNewLabel: String = "NEW EMAIL"
+    const val changeEmailCurrentPasswordLabel: String = "CURRENT PASSWORD"
+    const val changeEmailCurrentPasswordHelper: String =
+        "We re-verify your current password before rotating your email."
+    const val changeEmailSave: String = "Update email"
+    const val changeEmailSavePending: String = "Updating…"
 
     fun levelLabel(raw: String): String = when (raw) {
         "beginner" -> "Beginner"
