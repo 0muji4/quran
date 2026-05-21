@@ -16,5 +16,13 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'off'
     }
+  },
+  {
+    // Playwright requires `globalSetup`/`globalTeardown` modules to default-
+    // export the setup/teardown function.
+    files: ['e2e/global-setup.ts', 'e2e/global-teardown.ts'],
+    rules: {
+      'no-restricted-syntax': 'off'
+    }
   }
 ];
