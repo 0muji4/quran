@@ -9,6 +9,8 @@ import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.AuthSessionPayload
 import com.tilawah.android.backend.AuthUser
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
@@ -30,6 +32,11 @@ class DataStoreAuthSession(
 ) : AuthSession {
 
     private val sessionKey = stringPreferencesKey(SESSION_KEY)
+    // Notice is intentionally process-lifetime: ADR 0024 §4 says the
+    // banner is a one-shot UI hint, not a durable account state, so
+    // persisting it would re-show it after an app restart and a tab
+    // switch — exactly the spam we want to avoid.
+    private val notice = MutableStateFlow(false)
 
     override fun sessionFlow(): Flow<StoredSession?> = dataStore.data
         .catch { cause ->
@@ -45,6 +52,8 @@ class DataStoreAuthSession(
             }
         }
 
+    override fun reactivationNotice(): Flow<Boolean> = notice.asStateFlow()
+
     override suspend fun save(payload: AuthSessionPayload) {
         try {
             dataStore.edit { prefs ->
@@ -53,9 +62,14 @@ class DataStoreAuthSession(
                     payload.toStored(),
                 )
             }
+            if (payload.reactivated) notice.value = true
         } catch (_: IOException) {
             throw AppError.StorageUnavailable
         }
+    }
+
+    override suspend fun acknowledgeReactivationNotice() {
+        notice.value = false
     }
 
     override suspend fun updateUser(user: AuthUser) {
@@ -86,6 +100,7 @@ class DataStoreAuthSession(
     override suspend fun clear() {
         try {
             dataStore.edit { prefs -> prefs.remove(sessionKey) }
+            notice.value = false
         } catch (_: IOException) {
             throw AppError.StorageUnavailable
         }
