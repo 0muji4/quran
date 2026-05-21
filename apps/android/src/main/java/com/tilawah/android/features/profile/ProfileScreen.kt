@@ -34,6 +34,7 @@ fun ProfileScreen(
     onSignUpTapped: () -> Unit,
     onSignOutTapped: () -> Unit,
     onEditProfileTapped: () -> Unit,
+    onChangeEmailTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = BrandTheme.colors
@@ -80,6 +81,13 @@ fun ProfileScreen(
             TextButton(onClick = onEditProfileTapped) {
                 Text(
                     text = ProfileCopy.editEntryLabel,
+                    color = colors.primary,
+                    style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                )
+            }
+            TextButton(onClick = onChangeEmailTapped) {
+                Text(
+                    text = ProfileCopy.changeEmailEntryLabel,
                     color = colors.primary,
                     style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
                 )
