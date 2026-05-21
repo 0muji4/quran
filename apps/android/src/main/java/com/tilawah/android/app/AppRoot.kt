@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,6 +43,8 @@ import com.tilawah.android.audio.Recorder
 import com.tilawah.android.backend.ApolloQuranBackend
 import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.DefaultAuthedHttpClient
+import com.tilawah.android.backend.HistoryRemoteClient
+import com.tilawah.android.backend.HttpHistoryRemoteClient
 import com.tilawah.android.backend.HttpProfileService
 import com.tilawah.android.backend.OkHttpAuthApi
 import com.tilawah.android.backend.ProfileService
@@ -64,6 +67,12 @@ import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.InMemoryAuthSession
 import com.tilawah.android.storage.InMemoryHistoryStore
 import com.tilawah.android.storage.LastPracticed
+import com.tilawah.android.storage.RemoteSyncedHistoryStore
+import com.tilawah.android.storage.SignInGatedHistoryStore
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import com.tilawah.android.telemetry.NoOpTelemetry
 import com.tilawah.android.telemetry.Telemetry
 import com.tilawah.android.telemetry.TelemetryEvent
@@ -95,20 +104,65 @@ private val DefaultPractice = LastPracticed(
 fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
     backend: QuranBackend = remember { ApolloQuranBackend() },
-    historyStore: HistoryStore = defaultHistoryStore(),
+    baseHistoryStore: HistoryStore = defaultHistoryStore(),
     authApi: AuthApi = remember { OkHttpAuthApi() },
     authSession: AuthSession = remember { InMemoryAuthSession() },
-    profileService: ProfileService = remember(authApi, authSession) {
-        val refresher = TokenRefresher(authApi = authApi, authSession = authSession)
-        HttpProfileService(
-            http = DefaultAuthedHttpClient(authSession, tokenRefresher = refresher),
+    authedHttp: DefaultAuthedHttpClient = remember(authApi, authSession) {
+        DefaultAuthedHttpClient(
+            authSession = authSession,
+            tokenRefresher = TokenRefresher(authApi = authApi, authSession = authSession),
         )
+    },
+    profileService: ProfileService = remember(authedHttp) { HttpProfileService(http = authedHttp) },
+    historyRemote: HistoryRemoteClient = remember(authedHttp) {
+        HttpHistoryRemoteClient(http = authedHttp)
     },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
     var practiceTarget by remember { mutableStateOf(DefaultPractice) }
     var resultJobId: String? by remember { mutableStateOf(null) }
     var resultRecordingPath: String? by remember { mutableStateOf(null) }
+
+    // Compose the history-store chain:
+    //   DataStoreHistoryStore (or InMemoryHistoryStore in dev/test)
+    //     wrapped by RemoteSyncedHistoryStore (writes-through + refresh)
+    //     wrapped by SignInGatedHistoryStore (anonymous reads → empty)
+    // Sign-in / sign-out trigger refresh and clear respectively via the
+    // LaunchedEffect below.
+    val syncScope = rememberCoroutineScope()
+    val signedIn = remember(authSession) {
+        authSession.sessionFlow()
+            .map { it != null }
+            .stateIn(syncScope, SharingStarted.Eagerly, false)
+    }
+    val remoteSynced = remember(baseHistoryStore, historyRemote, telemetry) {
+        RemoteSyncedHistoryStore(
+            cache = baseHistoryStore,
+            remote = historyRemote,
+            telemetry = telemetry,
+            scope = syncScope,
+        )
+    }
+    val historyStore: HistoryStore = remember(remoteSynced, signedIn) {
+        SignInGatedHistoryStore(base = remoteSynced, isSignedIn = { signedIn.value })
+    }
+
+    LaunchedEffect(signedIn) {
+        var wasSignedIn = false
+        signedIn.collect { now ->
+            if (now && !wasSignedIn) {
+                // Transition: signed-out → signed-in. Pull the server
+                // view before any view binds to the cache flows.
+                historyStore.refreshFromRemote()
+            } else if (!now && wasSignedIn) {
+                // Transition: signed-in → signed-out. Wipe the cache so
+                // the next sign-in starts clean and a different identity
+                // doesn't see the previous user's records mid-refresh.
+                historyStore.clear()
+            }
+            wasSignedIn = now
+        }
+    }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == TopLevelTab.Library) {
