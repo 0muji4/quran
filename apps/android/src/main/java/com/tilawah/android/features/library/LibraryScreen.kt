@@ -42,6 +42,7 @@ fun LibraryScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val lastPracticed by viewModel.lastPracticed.collectAsStateWithLifecycle()
+    val suggestion by viewModel.suggestion.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
@@ -64,6 +65,20 @@ fun LibraryScreen(
                 },
                 modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
             )
+        }
+        val loaded = state as? LibraryUiState.Loaded
+        if (loaded != null) {
+            suggestion?.let { picked ->
+                SuggestedCard(
+                    suggestion = picked,
+                    surahs = loaded.surahs,
+                    onBegin = { surah ->
+                        viewModel.suggestedTapped(surah, picked.reason.wire)
+                        onSurahOpened(surah.id)
+                    },
+                    modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
+                )
+            }
         }
         SearchField(
             query = query,
