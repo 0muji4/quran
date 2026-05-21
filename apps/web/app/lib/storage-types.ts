@@ -5,20 +5,23 @@
 // Kept in a separate module so actions.ts can be 'use server' and
 // storage.ts can be 'use client' without import cycles.
 
-export type LastPracticed = {
+export interface LastPracticed {
   surahId: string;
   ayahNumber: number;
   surahNameEn: string;
   surahNameAr: string;
   ayahCount: number;
   practicedAt: string;
-};
+}
 
-export type BestScoreEntry = { score: number; achievedAt: string };
+export interface BestScoreEntry {
+  score: number;
+  achievedAt: string;
+}
 
 export type BestScores = Record<string, BestScoreEntry>;
 
-export type Attempt = {
+export interface Attempt {
   id: string;
   surahId: string;
   surahNameEn: string;
@@ -28,4 +31,4 @@ export type Attempt = {
   createdAt: string;
   status: 'COMPLETED' | 'FAILED';
   durationMs?: number | null;
-};
+}

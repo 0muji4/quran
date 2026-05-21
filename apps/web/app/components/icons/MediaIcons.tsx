@@ -1,4 +1,7 @@
-type Props = { size?: number; className?: string };
+interface Props {
+  size?: number;
+  className?: string;
+}
 
 export function PlayIcon({ size = 16, className }: Props) {
   return (

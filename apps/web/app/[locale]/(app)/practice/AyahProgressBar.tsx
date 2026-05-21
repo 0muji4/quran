@@ -1,9 +1,9 @@
 import styles from '../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   total: number;
   current: number;
-};
+}
 
 export function AyahProgressBar({ total, current }: Props) {
   if (total <= 0) return null;

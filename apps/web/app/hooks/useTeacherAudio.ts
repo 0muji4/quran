@@ -5,7 +5,7 @@ import { fetchReferenceAudioUrl } from '../actions';
 
 export type PlaybackRate = 0.75 | 1 | 1.25;
 
-type State = {
+interface State {
   url: string | null;
   loading: boolean;
   error: string | null;
@@ -14,7 +14,7 @@ type State = {
   duration: number;
   rate: PlaybackRate;
   loop: boolean;
-};
+}
 
 type UseTeacherAudioApi = State & {
   audioRef: RefObject<HTMLAudioElement>;

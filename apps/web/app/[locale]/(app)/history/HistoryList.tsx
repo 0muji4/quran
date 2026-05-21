@@ -123,9 +123,9 @@ const formatDate = (iso: string): string => {
   return d.toLocaleString();
 };
 
-type Props = {
+interface Props {
   signedIn: boolean;
-};
+}
 
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
