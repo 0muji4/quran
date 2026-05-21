@@ -42,12 +42,14 @@ fun ProfileAuthHost(
     val session by profileViewModel.session.collectAsStateWithLifecycle()
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
     var editingUser: AuthUser? by remember { mutableStateOf(null) }
+    var changeEmailFor: String? by remember { mutableStateOf(null) }
 
-    // Drop the edit sheet automatically if the session disappears
-    // under us (sign-out from another path, token eviction, etc.).
+    // Drop open sheets automatically if the session disappears under
+    // us (sign-out from another path, token eviction, etc.).
     LaunchedEffect(session) {
         if (session == null) {
             editingUser = null
+            changeEmailFor = null
         }
     }
 
@@ -68,6 +70,7 @@ fun ProfileAuthHost(
                 onSignUpTapped = { pendingMode = AuthMode.SignUp },
                 onSignOutTapped = profileViewModel::signOut,
                 onEditProfileTapped = { editingUser = session?.toAuthUser() },
+                onChangeEmailTapped = { changeEmailFor = session?.user?.email },
                 modifier = modifier,
             )
 
@@ -89,6 +92,25 @@ fun ProfileAuthHost(
                     initialDisplayName = (user.displayName ?: "").trim(),
                     initialLevel = user.level,
                     onDismiss = { editingUser = null },
+                )
+            }
+
+            changeEmailFor?.let { currentEmail ->
+                val changeEmailViewModel: ChangeEmailViewModel = viewModel(
+                    key = "change-email-$currentEmail",
+                    factory = viewModelFactory {
+                        initializer {
+                            ChangeEmailViewModel(
+                                currentEmail = currentEmail,
+                                profileService = profileService,
+                                authSession = authSession,
+                            )
+                        }
+                    },
+                )
+                ChangeEmailSheet(
+                    viewModel = changeEmailViewModel,
+                    onDismiss = { changeEmailFor = null },
                 )
             }
         }
@@ -113,6 +135,7 @@ fun ProfileAuthHost(
             onSignUpTapped = { pendingMode = AuthMode.SignUp },
             onSignOutTapped = {},
             onEditProfileTapped = {},
+            onChangeEmailTapped = {},
             modifier = modifier,
         )
     }
