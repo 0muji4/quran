@@ -21,6 +21,17 @@ interface AuthSession {
 
     suspend fun save(payload: AuthSessionPayload)
 
+    /**
+     * Swap the user portion of the current session without touching the
+     * tokens — used by Edit profile / Change email so the UI repaints
+     * with the refreshed `displayName` / `email` / `level` returned by
+     * `/auth/me*` without forcing a re-sign-in.
+     *
+     * No-op when there is no current session. Mirrors the iOS
+     * `SessionStore.updateUser` seam.
+     */
+    suspend fun updateUser(user: AuthUser)
+
     suspend fun clear()
 }
 

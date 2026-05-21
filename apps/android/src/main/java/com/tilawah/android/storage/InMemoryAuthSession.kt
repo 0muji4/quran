@@ -20,6 +20,19 @@ class InMemoryAuthSession : AuthSession {
         state.value = payload.toStored()
     }
 
+    override suspend fun updateUser(user: com.tilawah.android.backend.AuthUser) {
+        val current = state.value ?: return
+        state.value = current.copy(
+            user = StoredAuthUser(
+                id = user.id,
+                email = user.email,
+                displayName = user.displayName,
+                createdAt = user.createdAt,
+                level = user.level,
+            ),
+        )
+    }
+
     override suspend fun clear() {
         state.value = null
     }
