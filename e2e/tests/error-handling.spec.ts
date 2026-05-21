@@ -22,10 +22,7 @@ test.describe('Error Handling', () => {
     await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should redirect to home when an unknown surah is requested', async ({
-    page,
-    homePage
-  }) => {
+  test('should redirect to home when an unknown surah is requested', async ({ page, homePage }) => {
     await page.goto('/practice/999/1');
     // The server action throws; the page falls back to '/' which the
     // tolerant home renders even before BFF is ready. After ADR 0023 the

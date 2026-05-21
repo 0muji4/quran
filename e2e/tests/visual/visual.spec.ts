@@ -113,16 +113,10 @@ test.describe('visual regression — desktop 1280x720', () => {
     });
   });
 
-  test.skip('history with three seeded attempts (signed-in path)', async ({
-    page,
-    context
-  }) => {
+  test.skip('history with three seeded attempts (signed-in path)', async ({ page, context }) => {
     // Re-enable when the signed-in Playwright fixture lands.
     await context.addInitScript((attempts) => {
-      window.localStorage.setItem(
-        'tilawah:recent-attempts',
-        JSON.stringify({ attempts })
-      );
+      window.localStorage.setItem('tilawah:recent-attempts', JSON.stringify({ attempts }));
     }, SEEDED_ATTEMPTS);
 
     // History rows render a relative-time fragment ("Just now", "5h
@@ -202,10 +196,7 @@ test.describe('visual regression — desktop 1280x720', () => {
     await expect(page).toHaveScreenshot('practice-recording.png', {
       fullPage: true,
       maxDiffPixels: 300,
-      mask: [
-        page.locator('[class*="recordingTimer"]'),
-        page.locator('[class*="recorderBars"]')
-      ]
+      mask: [page.locator('[class*="recordingTimer"]'), page.locator('[class*="recorderBars"]')]
     });
   });
 });
