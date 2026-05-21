@@ -40,10 +40,12 @@ fun ProfileAuthHost(
     modifier: Modifier = Modifier,
 ) {
     val session by profileViewModel.session.collectAsStateWithLifecycle()
+    val reactivationNotice by profileViewModel.reactivationNotice.collectAsStateWithLifecycle()
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
     var editingUser: AuthUser? by remember { mutableStateOf(null) }
     var changeEmailFor: String? by remember { mutableStateOf(null) }
     var updatingPassword by remember { mutableStateOf(false) }
+    var deletingAccount by remember { mutableStateOf(false) }
 
     // Drop open sheets automatically if the session disappears under
     // us (sign-out from another path, token eviction, etc.).
@@ -52,6 +54,7 @@ fun ProfileAuthHost(
             editingUser = null
             changeEmailFor = null
             updatingPassword = false
+            deletingAccount = false
         }
     }
 
@@ -74,6 +77,9 @@ fun ProfileAuthHost(
                 onEditProfileTapped = { editingUser = session?.toAuthUser() },
                 onChangeEmailTapped = { changeEmailFor = session?.user?.email },
                 onUpdatePasswordTapped = { updatingPassword = true },
+                onDeleteAccountTapped = { deletingAccount = true },
+                showReactivationBanner = reactivationNotice,
+                onAcknowledgeReactivation = profileViewModel::acknowledgeReactivationNotice,
                 modifier = modifier,
             )
 
@@ -131,6 +137,24 @@ fun ProfileAuthHost(
                     onDismiss = { updatingPassword = false },
                 )
             }
+
+            if (deletingAccount) {
+                val deleteAccountViewModel: DeleteAccountViewModel = viewModel(
+                    key = "delete-account-${session?.user?.id}",
+                    factory = viewModelFactory {
+                        initializer {
+                            DeleteAccountViewModel(
+                                profileService = profileService,
+                                authSession = authSession,
+                            )
+                        }
+                    },
+                )
+                DeleteAccountSheet(
+                    viewModel = deleteAccountViewModel,
+                    onDismiss = { deletingAccount = false },
+                )
+            }
         }
 
         pendingMode == AuthMode.SignIn -> SignInScreen(
@@ -155,6 +179,7 @@ fun ProfileAuthHost(
             onEditProfileTapped = {},
             onChangeEmailTapped = {},
             onUpdatePasswordTapped = {},
+            onDeleteAccountTapped = {},
             modifier = modifier,
         )
     }

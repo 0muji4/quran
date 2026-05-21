@@ -10,6 +10,7 @@ object ProfileCopy {
     const val editEntryLabel: String = "Edit profile"
     const val changeEmailEntryLabel: String = "Change email"
     const val updatePasswordEntryLabel: String = "Update password"
+    const val deleteAccountEntryLabel: String = "Delete account"
 
     const val editTitle: String = "Edit profile"
     const val editDisplayNameLabel: String = "DISPLAY NAME"
@@ -33,6 +34,18 @@ object ProfileCopy {
     const val updatePasswordConfirmLabel: String = "CONFIRM NEW PASSWORD"
     const val updatePasswordSave: String = "Update password"
     const val updatePasswordSavePending: String = "Updating…"
+
+    const val deleteAccountTitle: String = "Delete account"
+    const val deleteAccountBody: String =
+        "Your account will be soft-deleted. You have 30 days to recover it by signing in; after that the row is removed permanently."
+    const val deleteAccountConfirmLabel: String = "TYPE DELETE TO CONFIRM"
+    const val deleteAccountSave: String = "Delete account"
+    const val deleteAccountSavePending: String = "Deleting…"
+
+    const val reactivationTitle: String = "Welcome back"
+    const val reactivationBody: String =
+        "We restored your account. Your practice history is back where you left it."
+    const val reactivationDismissA11y: String = "Dismiss"
 
     fun levelLabel(raw: String): String = when (raw) {
         "beginner" -> "Beginner"
