@@ -40,13 +40,26 @@ data class StoredAuthUser(
     val id: String,
     val email: String,
     val displayName: String? = null,
+    val createdAt: String? = null,
+    val level: String? = null,
 )
 
 fun AuthSessionPayload.toStored(): StoredSession = StoredSession(
     accessToken = accessToken,
     refreshToken = refreshToken,
-    user = StoredAuthUser(id = user.id, email = user.email, displayName = user.displayName),
+    user = StoredAuthUser(
+        id = user.id,
+        email = user.email,
+        displayName = user.displayName,
+        createdAt = user.createdAt,
+        level = user.level,
+    ),
 )
 
-fun StoredSession.toAuthUser(): AuthUser =
-    AuthUser(id = user.id, email = user.email, displayName = user.displayName)
+fun StoredSession.toAuthUser(): AuthUser = AuthUser(
+    id = user.id,
+    email = user.email,
+    displayName = user.displayName,
+    createdAt = user.createdAt,
+    level = user.level,
+)
