@@ -8,11 +8,11 @@ import { trackUiEvent } from '../../../../telemetry/use-ui-event';
 // this tiny mounted-once tracker fires `web.ui.result_viewed` from a
 // client effect. Returns null so the DOM stays unchanged.
 
-type Props = {
+interface Props {
   surahId: string;
   ayahNumber: number;
   score: number | null;
-};
+}
 
 export function ResultViewedTracker({ surahId, ayahNumber, score }: Props): null {
   useEffect(() => {

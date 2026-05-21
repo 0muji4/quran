@@ -24,12 +24,12 @@ export const recordIssuedRefreshToken = async (input: {
   );
 };
 
-export type RefreshTokenRow = {
+export interface RefreshTokenRow {
   userId: string;
   expiresAt: Date;
   usedAt: Date | null;
   revokedAt: Date | null;
-};
+}
 
 export const findRefreshToken = async (tokenHash: string): Promise<RefreshTokenRow | null> => {
   const pool = getDatabasePool();

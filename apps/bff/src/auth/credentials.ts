@@ -15,11 +15,11 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 };
 
-export type TokenPayload = {
+export interface TokenPayload {
   sub: string;
   email?: string;
   name?: string;
-};
+}
 
 const requireSecret = (envVar: string): string => {
   const value = process.env[envVar];

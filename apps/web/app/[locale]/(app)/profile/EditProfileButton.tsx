@@ -5,11 +5,11 @@ import { useRouter } from '../../../../i18n/navigation';
 import { updateProfileAction, type UserLevel } from '../../../actions';
 import { css, cx } from '../../../../styled-system/css';
 
-type Props = {
+interface Props {
   displayName: string | null;
   email: string;
   level: UserLevel | null;
-};
+}
 
 const buttonClass = css({
   paddingBlock: '2',

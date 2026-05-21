@@ -5,13 +5,13 @@ import { MicIcon } from '../../../components/icons/MediaIcons';
 import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 import styles from '../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   reasons: string[];
   hint?: string;
   canReplay: boolean;
   onReplay?: () => void;
   onRecordAgain: () => void;
-};
+}
 
 // Inset body of the "could not score" panel (docs/4b. Practice _ error
 // _could not score_.png). The surrounding panel head (red mic icon, title,

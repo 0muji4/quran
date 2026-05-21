@@ -1,11 +1,11 @@
 import 'server-only';
 import { readAccessToken } from './auth-cookies';
 
-export type Session = {
+export interface Session {
   id: string;
   email: string;
   displayName: string | null;
-};
+}
 
 const decodePayload = (token: string): Record<string, unknown> | null => {
   try {

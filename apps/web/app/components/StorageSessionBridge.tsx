@@ -2,9 +2,9 @@
 
 import { setSignedInGate } from '../lib/storage';
 
-type Props = {
+interface Props {
   signedIn: boolean;
-};
+}
 
 /**
  * Pushes the server-rendered session state into the module-level

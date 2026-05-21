@@ -21,11 +21,11 @@ const pillActiveClass = css({
   color: 'bg.paper'
 });
 
-type Props = {
+interface Props {
   options: HistoryFilter[];
   selected: HistoryFilter;
   onSelect: (filter: HistoryFilter) => void;
-};
+}
 
 export function HistoryFilterChips({ options, selected, onSelect }: Props) {
   const t = useTranslations('history.filter');

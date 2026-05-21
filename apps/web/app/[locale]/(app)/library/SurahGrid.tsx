@@ -6,14 +6,14 @@ import { getBestScores, getLastPracticed } from '../../../lib/storage';
 import { SurahCard } from './SurahCard';
 import { css } from '../../../../styled-system/css';
 
-type Props = {
+interface Props {
   surahs: SurahSummary[];
-};
+}
 
-type Snapshot = {
+interface Snapshot {
   bestScores: Record<string, number>; // surahId → max best across ayahs (rounded to int)
   lastPracticedSurahId: string | null;
-};
+}
 
 const GRID_MOBILE_MQ = '@media (max-width: 760px)';
 

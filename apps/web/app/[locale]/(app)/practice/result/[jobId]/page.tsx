@@ -1,14 +1,14 @@
 import { getLocale } from 'next-intl/server';
 import { redirect } from '../../../../../../i18n/navigation';
 
-type SearchParams = {
+interface SearchParams {
   surah?: string;
   ayah?: string;
-};
+}
 
-type RouteParams = {
+interface RouteParams {
   jobId: string;
-};
+}
 
 // Backwards-compat shim for the old query-string format
 // `/practice/result/<jobId>?surah=1&ayah=2`. Anything else (no
