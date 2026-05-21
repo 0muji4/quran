@@ -7,18 +7,18 @@ import { RECORDING_MIME_TYPE } from './useRecorder';
 
 export type ScoringStage = 'idle' | 'uploading' | 'scoring' | 'done' | 'error';
 
-type State = {
+interface State {
   stage: ScoringStage;
   job: ScoringResult | null;
   segments: ScoreSegment[];
   error: string | null;
-};
+}
 
-type SubmitInput = {
+interface SubmitInput {
   blob: Blob;
   surahId: string;
   ayahNumber: number;
-};
+}
 
 const POLL_INTERVAL_MS = 2000;
 

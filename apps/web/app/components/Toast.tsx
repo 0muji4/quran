@@ -11,7 +11,7 @@ import { css, cx } from '../../styled-system/css';
 export type ToastTone = 'success' | 'info';
 export type ToastUrgency = 'polite' | 'assertive';
 
-type Props = {
+interface Props {
   // Stable identity used to reset the dismiss timer when the same
   // toast surface re-fires with new content.
   id?: string;
@@ -28,7 +28,7 @@ type Props = {
   // dismissal. Default is 6 seconds, matching the existing
   // CompletionToast behaviour we extracted this primitive from.
   autoDismissMs?: number;
-};
+}
 
 const TOAST_MOBILE_MQ = '@media (max-width: 600px)';
 

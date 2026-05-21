@@ -9,10 +9,10 @@ import { TeacherPanel } from '../../TeacherPanel';
 import { ArrowLeftIcon, ArrowRightIcon } from '../../../../../components/icons/ArrowRightIcon';
 import styles from '../../../../../styles/practice.module.css';
 
-type RouteParams = {
+interface RouteParams {
   surahId: string;
   ayahNumber: string;
-};
+}
 
 export default async function PracticePage({ params }: { params: Promise<RouteParams> }) {
   const [locale, t] = await Promise.all([getLocale(), getTranslations('practice.page')]);

@@ -10,13 +10,13 @@ import { ResultDetail } from './ResultDetail';
 import { ResultError } from './ResultError';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   initialJob: ScoringResult;
   surah: SurahSummary;
   ayah: AyahRecord;
   totalAyahs: number;
   teacherAudioUrl?: string | null;
-};
+}
 
 const POLL_INTERVAL_MS = 2000;
 // Soft thresholds drive only what copy/CTA the user sees while we keep

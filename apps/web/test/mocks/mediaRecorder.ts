@@ -2,9 +2,9 @@ import { vi } from 'vitest';
 
 type RecordingState = 'inactive' | 'recording' | 'paused';
 
-type MediaRecorderOptions = {
+interface MediaRecorderOptions {
   mimeType?: string;
-};
+}
 
 export class MockMediaRecorder {
   stream: MediaStream;

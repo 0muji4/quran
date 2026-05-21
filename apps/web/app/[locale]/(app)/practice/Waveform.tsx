@@ -16,10 +16,10 @@ const mulberry32 = (seed: number) => {
   };
 };
 
-type Props = {
+interface Props {
   seed: number;
   progress: number; // 0..1
-};
+}
 
 export function Waveform({ seed, progress }: Props) {
   const heights = useMemo(() => {
