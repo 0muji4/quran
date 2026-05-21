@@ -1,7 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GraphQLContext } from '@quran-project/shared-ts';
+import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
 import { resolvers } from '../resolvers';
 import type { SurahRecord, AyahRecord } from '../../infra/backendClient';
+
+/**
+ * Returns a defined resolver entry, throwing if it is absent. Replaces
+ * non-null assertions on the optional `Resolvers` map (Google Style Guide).
+ */
+function getResolver<T extends keyof Resolvers, F extends keyof NonNullable<Resolvers[T]>>(
+  type: T,
+  field: F
+): NonNullable<NonNullable<Resolvers[T]>[F]> {
+  const group = resolvers[type];
+  if (group == null) {
+    throw new Error(`Resolver group not defined: ${String(type)}`);
+  }
+  const entry = (group as NonNullable<Resolvers[T]>)[field];
+  if (entry == null) {
+    throw new Error(`Resolver not defined: ${String(type)}.${String(field)}`);
+  }
+  return entry as NonNullable<NonNullable<Resolvers[T]>[F]>;
+}
 
 // Mock the infra module
 vi.mock('../../infra', () => ({
@@ -88,7 +107,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
-      const result = await resolvers.Query!.surahs!(null, {}, mockContext);
+      const result = await getResolver('Query', 'surahs')(null, {}, mockContext);
 
       expect(fetchSurahsFromBackend).toHaveBeenCalledOnce();
       expect(result).toHaveLength(3);
@@ -99,7 +118,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
-      const result = await resolvers.Query!.surahs!(null, { limit: 2 }, mockContext);
+      const result = await getResolver('Query', 'surahs')(null, { limit: 2 }, mockContext);
 
       expect(result).toHaveLength(2);
       expect(result[0].nameEn).toBe('Al-Fatiha');
@@ -110,7 +129,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
-      const result = await resolvers.Query!.surahs!(null, { offset: 1 }, mockContext);
+      const result = await getResolver('Query', 'surahs')(null, { offset: 1 }, mockContext);
 
       expect(result).toHaveLength(2);
       expect(result[0].nameEn).toBe('Al-Baqarah');
@@ -121,7 +140,11 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
-      const result = await resolvers.Query!.surahs!(null, { limit: 1, offset: 1 }, mockContext);
+      const result = await getResolver('Query', 'surahs')(
+        null,
+        { limit: 1, offset: 1 },
+        mockContext
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].nameEn).toBe('Al-Baqarah');
@@ -131,7 +154,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
-      const result = await resolvers.Query!.surahs!(null, { offset: 10 }, mockContext);
+      const result = await getResolver('Query', 'surahs')(null, { offset: 10 }, mockContext);
 
       expect(result).toHaveLength(0);
     });
@@ -140,7 +163,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahsFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahsFromBackend).mockRejectedValue(new Error('Backend error'));
 
-      await expect(resolvers.Query!.surahs!(null, {}, mockContext)).rejects.toThrow(
+      await expect(getResolver('Query', 'surahs')(null, {}, mockContext)).rejects.toThrow(
         'Backend error'
       );
     });
@@ -152,7 +175,7 @@ describe('GraphQL Resolvers', () => {
       const surahWithAyahs = { ...mockSurahs[0], ayahs: mockAyahs };
       vi.mocked(fetchSurahFromBackend).mockResolvedValue(surahWithAyahs);
 
-      const result = await resolvers.Query!.surah!(null, { id: '1' }, mockContext);
+      const result = await getResolver('Query', 'surah')(null, { id: '1' }, mockContext);
 
       expect(fetchSurahFromBackend).toHaveBeenCalledWith('1');
       expect(result).toEqual(surahWithAyahs);
@@ -164,7 +187,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahFromBackend).mockResolvedValue(null);
 
-      const result = await resolvers.Query!.surah!(null, { id: '999' }, mockContext);
+      const result = await getResolver('Query', 'surah')(null, { id: '999' }, mockContext);
 
       expect(result).toBeNull();
     });
@@ -173,7 +196,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchSurahFromBackend } = await import('../../infra');
       vi.mocked(fetchSurahFromBackend).mockRejectedValue(new Error('Backend error'));
 
-      await expect(resolvers.Query!.surah!(null, { id: '1' }, mockContext)).rejects.toThrow(
+      await expect(getResolver('Query', 'surah')(null, { id: '1' }, mockContext)).rejects.toThrow(
         'Backend error'
       );
     });
@@ -184,7 +207,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchAyahFromBackend } = await import('../../infra');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(mockAyahs[0]);
 
-      const result = await resolvers.Query!.ayah!(
+      const result = await getResolver('Query', 'ayah')(
         null,
         { surahId: '1', ayahNumber: 1 },
         mockContext
@@ -199,7 +222,7 @@ describe('GraphQL Resolvers', () => {
       const { fetchAyahFromBackend } = await import('../../infra');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(null);
 
-      const result = await resolvers.Query!.ayah!(
+      const result = await getResolver('Query', 'ayah')(
         null,
         { surahId: '1', ayahNumber: 999 },
         mockContext
@@ -213,7 +236,7 @@ describe('GraphQL Resolvers', () => {
       vi.mocked(fetchAyahFromBackend).mockRejectedValue(new Error('Backend error'));
 
       await expect(
-        resolvers.Query!.ayah!(null, { surahId: '1', ayahNumber: 1 }, mockContext)
+        getResolver('Query', 'ayah')(null, { surahId: '1', ayahNumber: 1 }, mockContext)
       ).rejects.toThrow('Backend error');
     });
   });
@@ -237,7 +260,11 @@ describe('GraphQL Resolvers', () => {
       };
       vi.mocked(getScoringJob).mockResolvedValue(mockJob);
 
-      const result = await resolvers.Query!.scoringJob!(null, { jobId: 'job-123' }, mockContext);
+      const result = await getResolver('Query', 'scoringJob')(
+        null,
+        { jobId: 'job-123' },
+        mockContext
+      );
 
       expect(getScoringJob).toHaveBeenCalledWith('job-123');
       expect(result).toEqual(mockJob);
@@ -247,7 +274,7 @@ describe('GraphQL Resolvers', () => {
       const { getScoringJob } = await import('../../jobs');
       vi.mocked(getScoringJob).mockResolvedValue(null);
 
-      const result = await resolvers.Query!.scoringJob!(
+      const result = await getResolver('Query', 'scoringJob')(
         null,
         { jobId: 'nonexistent' },
         mockContext
@@ -274,7 +301,11 @@ describe('GraphQL Resolvers', () => {
         contentType: 'audio/opus'
       };
 
-      const result = await resolvers.Mutation!.getSignedUploadUrl!(null, { input }, mockContext);
+      const result = await getResolver('Mutation', 'getSignedUploadUrl')(
+        null,
+        { input },
+        mockContext
+      );
 
       expect(createSignedUploadUrl).toHaveBeenCalledWith({
         ...input,
@@ -304,7 +335,7 @@ describe('GraphQL Resolvers', () => {
         requestId: 'test-request'
       };
 
-      const result = await resolvers.Mutation!.getSignedUploadUrl!(
+      const result = await getResolver('Mutation', 'getSignedUploadUrl')(
         null,
         { input },
         contextWithoutSession
@@ -335,7 +366,11 @@ describe('GraphQL Resolvers', () => {
         ayahNumber: 1
       };
 
-      const result = await resolvers.Mutation!.createScoringJob!(null, { input }, mockContext);
+      const result = await getResolver('Mutation', 'createScoringJob')(
+        null,
+        { input },
+        mockContext
+      );
 
       expect(createScoringJob).toHaveBeenCalledWith({
         uploadKey: 'uploads/test.opus',
@@ -361,7 +396,11 @@ describe('GraphQL Resolvers', () => {
         surahId: '1'
       };
 
-      const result = await resolvers.Mutation!.createScoringJob!(null, { input }, mockContext);
+      const result = await getResolver('Mutation', 'createScoringJob')(
+        null,
+        { input },
+        mockContext
+      );
 
       expect(createScoringJob).toHaveBeenCalledWith({
         uploadKey: 'uploads/test.opus',
@@ -393,7 +432,7 @@ describe('GraphQL Resolvers', () => {
         requestId: 'test-request'
       };
 
-      const result = await resolvers.Mutation!.createScoringJob!(
+      const result = await getResolver('Mutation', 'createScoringJob')(
         null,
         { input },
         contextWithoutSession
@@ -413,7 +452,7 @@ describe('GraphQL Resolvers', () => {
     it('returns all ayahs without pagination', () => {
       const parent = { ...mockSurahs[0], ayahs: mockAyahs };
 
-      const result = resolvers.Surah!.ayahs!(parent, {}, mockContext);
+      const result = getResolver('Surah', 'ayahs')(parent, {}, mockContext);
 
       expect(result).toHaveLength(2);
       expect(result[0].ayahNumber).toBe(1);
@@ -422,7 +461,7 @@ describe('GraphQL Resolvers', () => {
     it('applies limit when provided', () => {
       const parent = { ...mockSurahs[0], ayahs: mockAyahs };
 
-      const result = resolvers.Surah!.ayahs!(parent, { limit: 1 }, mockContext);
+      const result = getResolver('Surah', 'ayahs')(parent, { limit: 1 }, mockContext);
 
       expect(result).toHaveLength(1);
       expect(result[0].ayahNumber).toBe(1);
@@ -431,7 +470,7 @@ describe('GraphQL Resolvers', () => {
     it('applies offset when provided', () => {
       const parent = { ...mockSurahs[0], ayahs: mockAyahs };
 
-      const result = resolvers.Surah!.ayahs!(parent, { offset: 1 }, mockContext);
+      const result = getResolver('Surah', 'ayahs')(parent, { offset: 1 }, mockContext);
 
       expect(result).toHaveLength(1);
       expect(result[0].ayahNumber).toBe(2);
@@ -445,7 +484,7 @@ describe('GraphQL Resolvers', () => {
       ];
       const parent = { ...mockSurahs[0], ayahs };
 
-      const result = resolvers.Surah!.ayahs!(parent, { limit: 2, offset: 1 }, mockContext);
+      const result = getResolver('Surah', 'ayahs')(parent, { limit: 2, offset: 1 }, mockContext);
 
       expect(result).toHaveLength(2);
       expect(result[0].ayahNumber).toBe(2);
@@ -455,7 +494,7 @@ describe('GraphQL Resolvers', () => {
     it('returns empty array when offset exceeds array length', () => {
       const parent = { ...mockSurahs[0], ayahs: mockAyahs };
 
-      const result = resolvers.Surah!.ayahs!(parent, { offset: 10 }, mockContext);
+      const result = getResolver('Surah', 'ayahs')(parent, { offset: 10 }, mockContext);
 
       expect(result).toHaveLength(0);
     });
@@ -465,13 +504,13 @@ describe('GraphQL Resolvers', () => {
     it('JSONObject serializes objects', () => {
       const value = { test: 'value', nested: { key: 123 } };
 
-      const result = resolvers.JSONObject!.serialize!(value);
+      const result = getResolver('JSONObject', 'serialize')(value);
 
       expect(result).toEqual(value);
     });
 
     it('JSONObject serializes null', () => {
-      const result = resolvers.JSONObject!.serialize!(null);
+      const result = getResolver('JSONObject', 'serialize')(null);
 
       expect(result).toBeNull();
     });
@@ -479,13 +518,13 @@ describe('GraphQL Resolvers', () => {
     it('JSONObject parseValue accepts objects', () => {
       const value = { test: 'value' };
 
-      const result = resolvers.JSONObject!.parseValue!(value);
+      const result = getResolver('JSONObject', 'parseValue')(value);
 
       expect(result).toEqual(value);
     });
 
     it('JSONObject parseValue rejects non-objects', () => {
-      const result = resolvers.JSONObject!.parseValue!('string');
+      const result = getResolver('JSONObject', 'parseValue')('string');
 
       expect(result).toBeNull();
     });
@@ -493,7 +532,7 @@ describe('GraphQL Resolvers', () => {
     it('DateTime serializes dates to ISO string', () => {
       const date = new Date('2024-01-01T00:00:00.000Z');
 
-      const result = resolvers.DateTime!.serialize!(date);
+      const result = getResolver('DateTime', 'serialize')(date);
 
       expect(result).toBe('2024-01-01T00:00:00.000Z');
     });
@@ -501,7 +540,7 @@ describe('GraphQL Resolvers', () => {
     it('DateTime serializes string dates', () => {
       const dateString = '2024-01-01T00:00:00.000Z';
 
-      const result = resolvers.DateTime!.serialize!(dateString);
+      const result = getResolver('DateTime', 'serialize')(dateString);
 
       expect(result).toBe('2024-01-01T00:00:00.000Z');
     });
@@ -509,13 +548,13 @@ describe('GraphQL Resolvers', () => {
     it('DateTime parseValue accepts strings', () => {
       const dateString = '2024-01-01T00:00:00.000Z';
 
-      const result = resolvers.DateTime!.parseValue!(dateString);
+      const result = getResolver('DateTime', 'parseValue')(dateString);
 
       expect(result).toBe(dateString);
     });
 
     it('DateTime parseValue rejects non-strings', () => {
-      const result = resolvers.DateTime!.parseValue!(123);
+      const result = getResolver('DateTime', 'parseValue')(123);
 
       expect(result).toBeNull();
     });
