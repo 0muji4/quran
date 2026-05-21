@@ -43,6 +43,7 @@ fun ProfileAuthHost(
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
     var editingUser: AuthUser? by remember { mutableStateOf(null) }
     var changeEmailFor: String? by remember { mutableStateOf(null) }
+    var updatingPassword by remember { mutableStateOf(false) }
 
     // Drop open sheets automatically if the session disappears under
     // us (sign-out from another path, token eviction, etc.).
@@ -50,6 +51,7 @@ fun ProfileAuthHost(
         if (session == null) {
             editingUser = null
             changeEmailFor = null
+            updatingPassword = false
         }
     }
 
@@ -71,6 +73,7 @@ fun ProfileAuthHost(
                 onSignOutTapped = profileViewModel::signOut,
                 onEditProfileTapped = { editingUser = session?.toAuthUser() },
                 onChangeEmailTapped = { changeEmailFor = session?.user?.email },
+                onUpdatePasswordTapped = { updatingPassword = true },
                 modifier = modifier,
             )
 
@@ -113,6 +116,21 @@ fun ProfileAuthHost(
                     onDismiss = { changeEmailFor = null },
                 )
             }
+
+            if (updatingPassword) {
+                val updatePasswordViewModel: UpdatePasswordViewModel = viewModel(
+                    key = "update-password-${session?.user?.id}",
+                    factory = viewModelFactory {
+                        initializer {
+                            UpdatePasswordViewModel(profileService = profileService)
+                        }
+                    },
+                )
+                UpdatePasswordSheet(
+                    viewModel = updatePasswordViewModel,
+                    onDismiss = { updatingPassword = false },
+                )
+            }
         }
 
         pendingMode == AuthMode.SignIn -> SignInScreen(
@@ -136,6 +154,7 @@ fun ProfileAuthHost(
             onSignOutTapped = {},
             onEditProfileTapped = {},
             onChangeEmailTapped = {},
+            onUpdatePasswordTapped = {},
             modifier = modifier,
         )
     }
