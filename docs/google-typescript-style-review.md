@@ -62,8 +62,8 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 - **テストコードの non-null assertion**（`!`）— 66 件の warning が残る。大半は
   `apps/bff/src/graphql/__tests__/resolvers.test.ts` の生成リゾルバへの連鎖アクセス。optional chaining
   もしくは型ガードへの置換を別タスクで検討する。
-- **`e2e/` の lint 未カバー** — リポジトリ root 配下で `package.json` / ESLint 設定が無いため lint されない。
-  必要なら専用の lint セットアップを別タスクで追加する。
+- ~~**`e2e/` の lint 未カバー**~~ — 対応済み。root に `eslint.config.js` / `prettier.config.cjs` を追加し、
+  `pnpm lint` が `lint:e2e`（`eslint e2e`）も実行するようにした。
 - **GraphQL codegen の `declarationKind`** — `packages/shared-ts/codegen.ts` に
   `declarationKind: 'interface'` を設定すると、再生成される GraphQL 型も `interface` になる。
   生成ファイルは lint 対象外のため必須ではない。

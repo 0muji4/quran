@@ -8,7 +8,8 @@
   },
   "scripts": {
     "format:check": "pnpm -r --if-present format:check",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm -r lint && pnpm run lint:e2e",
+    "lint:e2e": "eslint e2e",
     "test": "pnpm -r test",
     "test:coverage": "pnpm -r --if-present run test:coverage",
     "test:go": "go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...",
@@ -25,6 +26,8 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.57.0",
+    "@quran-project/eslint-config": "workspace:*",
+    "eslint": "^9.11.1",
     "tsx": "^4.19.2"
   }
 }

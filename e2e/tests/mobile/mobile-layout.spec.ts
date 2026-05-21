@@ -22,9 +22,7 @@ const horizontalOverflow = (page: import('@playwright/test').Page) =>
 test.describe('mobile layout regression', () => {
   test('library page does not overflow horizontally', async ({ page }) => {
     await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: /choose a surah to recite/i })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /choose a surah to recite/i })).toBeVisible();
 
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
   });

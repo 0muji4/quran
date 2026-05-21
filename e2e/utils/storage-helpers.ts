@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * Helpers for seeding the Tilawah localStorage namespace before navigation.
@@ -6,16 +6,16 @@ import { Page } from '@playwright/test';
  * Each helper installs an `addInitScript`, so call it BEFORE `page.goto`.
  */
 
-export type LastPracticedSeed = {
+export interface LastPracticedSeed {
   surahId: string;
   ayahNumber: number;
   surahNameEn: string;
   surahNameAr: string;
   ayahCount: number;
   practicedAt: string;
-};
+}
 
-export type AttemptSeed = {
+export interface AttemptSeed {
   id: string;
   surahId: string;
   surahNameEn: string;
@@ -24,7 +24,7 @@ export type AttemptSeed = {
   jobId: string;
   createdAt: string;
   status: 'COMPLETED' | 'FAILED';
-};
+}
 
 export async function seedLastPracticed(page: Page, seed: LastPracticedSeed): Promise<void> {
   await page.addInitScript((data) => {

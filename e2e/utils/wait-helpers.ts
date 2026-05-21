@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * Wait for a specific network response
@@ -41,7 +41,7 @@ export async function waitWithRetry<T>(
       if (result) {
         return result;
       }
-    } catch (error) {
+    } catch {
       // Continue retrying
     }
 
