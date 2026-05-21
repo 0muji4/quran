@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.QuranBackend
+import com.tilawah.android.backend.SuggestionClient
+import com.tilawah.android.backend.SurahSuggestion
 import com.tilawah.android.backend.SurahSummary
 import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.LastPracticed
@@ -28,6 +30,8 @@ class LibraryViewModel(
     private val backend: QuranBackend,
     private val telemetry: Telemetry,
     historyStore: HistoryStore? = null,
+    private val suggestionClient: SuggestionClient? = null,
+    private val isSignedIn: () -> Boolean = { false },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LibraryUiState>(LibraryUiState.Idle)
@@ -44,6 +48,9 @@ class LibraryViewModel(
         ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
         ?: MutableStateFlow<LastPracticed?>(null).asStateFlow()
 
+    private val _suggestion = MutableStateFlow<SurahSuggestion?>(null)
+    val suggestion: StateFlow<SurahSuggestion?> = _suggestion.asStateFlow()
+
     fun load() {
         viewModelScope.launch { loadInternal() }
     }
@@ -56,10 +63,43 @@ class LibraryViewModel(
                 backend.surahs()
             }
             _state.value = LibraryUiState.Loaded(surahs)
+            loadSuggestion()
         } catch (cause: AppError) {
             telemetry.error(cause, mapOf("screen" to "library"))
             _state.value = LibraryUiState.Failed(cause)
         }
+    }
+
+    /**
+     * Pull a fresh personalised suggestion for the signed-in user.
+     * Anonymous users get null — the BFF requires auth, and the card
+     * stays hidden rather than leak a guest-flavoured surface. Errors
+     * surface to telemetry and leave the suggestion null so the view
+     * just hides the card.
+     */
+    private suspend fun loadSuggestion() {
+        if (suggestionClient == null || !isSignedIn()) {
+            _suggestion.value = null
+            return
+        }
+        try {
+            _suggestion.value = telemetry.measure("library.suggestion") {
+                suggestionClient.suggestions()
+            }
+        } catch (cause: AppError) {
+            telemetry.error(cause, mapOf("screen" to "library.suggestion"))
+            _suggestion.value = null
+        }
+    }
+
+    fun suggestedTapped(surah: SurahSummary, reason: String) {
+        telemetry.event(
+            TelemetryEvent.LIBRARY_SUGGESTED_TAPPED,
+            mapOf(
+                TelemetryAttribute.SURAH_ID to surah.id,
+                TelemetryAttribute.SUGGESTION_REASON to reason,
+            ),
+        )
     }
 
     fun setQuery(value: String) {
