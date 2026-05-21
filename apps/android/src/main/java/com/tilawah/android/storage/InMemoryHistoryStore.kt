@@ -54,4 +54,10 @@ class InMemoryHistoryStore : HistoryStore {
         _attempts.value = (listOf(attempt) + _attempts.value)
             .take(HistoryStoreConstants.HISTORY_LIMIT)
     }
+
+    override suspend fun clear() {
+        _last.value = null
+        _best.value = emptyMap()
+        _attempts.value = emptyList()
+    }
 }
