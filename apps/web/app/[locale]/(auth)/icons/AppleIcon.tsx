@@ -1,7 +1,7 @@
-type Props = {
+interface Props {
   size?: number;
   className?: string;
-};
+}
 
 // Apple logomark. Uses currentColor so it inherits the button's text
 // colour. Decorative — the button label carries the accessible name.

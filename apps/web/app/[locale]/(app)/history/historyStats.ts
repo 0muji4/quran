@@ -1,12 +1,12 @@
 import type { Attempt } from '../../../lib/storage';
 
-export type HistoryStats = {
+export interface HistoryStats {
   thisWeekCount: number;
   averageScore: number | null;
   bestScore: number | null;
   bestSurah: string | null;
   streakDays: number;
-};
+}
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

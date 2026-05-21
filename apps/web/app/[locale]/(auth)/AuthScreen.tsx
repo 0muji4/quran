@@ -4,10 +4,10 @@ import { AuthForm } from './AuthForm';
 import type { AuthMode } from './copy';
 import { css, cx } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   mode: AuthMode;
   redirectTo?: string;
-};
+}
 
 const formPanelClass = css({
   display: 'flex',

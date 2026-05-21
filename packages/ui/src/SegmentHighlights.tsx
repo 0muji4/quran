@@ -1,9 +1,9 @@
 import type { ScoreSegment } from '@quran-project/shared-ts';
 
-type SegmentHighlightsProps = {
+interface SegmentHighlightsProps {
   segments: ScoreSegment[];
   threshold?: number;
-};
+}
 
 // Maps to score.pass/warn/fail semantic tokens (packages/ui/src/theme/
 // tokens.ts). References the Panda-emitted CSS variables directly so

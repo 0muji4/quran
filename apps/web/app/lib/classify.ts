@@ -12,10 +12,10 @@ export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 // duplicating it is cheaper than threading another workspace dep.
 export type BffDifficulty = 'easy' | 'medium' | 'hard';
 export type BffSuggestionReason = 'short_unpracticed' | 'short_low_score' | 'fallback';
-export type BffSuggestionResponse = {
+export interface BffSuggestionResponse {
   suggested: { surahId: string; reason: BffSuggestionReason };
   difficulties: Record<string, BffDifficulty>;
-};
+}
 
 const SUGGESTED_FALLBACK_ID = '112'; // Al-Ikhlas
 

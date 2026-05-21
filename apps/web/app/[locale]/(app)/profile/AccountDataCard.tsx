@@ -3,9 +3,9 @@ import { UpdatePasswordButton } from './UpdatePasswordButton';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
-type Props = {
+interface Props {
   email: string;
-};
+}
 
 const cardClass = css({
   padding: '6',

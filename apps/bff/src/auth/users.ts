@@ -6,7 +6,7 @@ import { getDatabasePool } from '../infra/storage';
 export const VALID_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 export type UserLevel = (typeof VALID_LEVELS)[number];
 
-export type UserRow = {
+export interface UserRow {
   id: string;
   email: string;
   displayName: string | null;
@@ -22,7 +22,7 @@ export type UserRow = {
   // out at the SQL layer; the only callers that see a non-null
   // value are the ones that opt in via `{ includeDeleted: true }`.
   deletedAt: Date | null;
-};
+}
 
 const USER_COLUMNS = `id, email, display_name, password_hash, created_at, level, deleted_at`;
 
@@ -50,7 +50,9 @@ const isUserLevel = (value: unknown): value is UserLevel =>
 // purge job removes the row. The sign-in path passes
 // `{ includeDeleted: true }` to find the row anyway and reactivate
 // it on a correct password (PR-E5).
-type LookupOptions = { includeDeleted?: boolean };
+interface LookupOptions {
+  includeDeleted?: boolean;
+}
 
 const deletedAtClause = (opts: LookupOptions | undefined): string =>
   opts?.includeDeleted ? '' : ' AND deleted_at IS NULL';

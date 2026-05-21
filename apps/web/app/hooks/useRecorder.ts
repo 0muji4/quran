@@ -8,12 +8,12 @@ const TIMER_INTERVAL_MS = 200;
 
 export type RecorderError = 'unsupported' | 'denied' | 'failed';
 
-type State = {
+interface State {
   isRecording: boolean;
   elapsedMs: number;
   levels: number[];
   error: RecorderError | null;
-};
+}
 
 type UseRecorderApi = State & {
   start: () => Promise<void>;

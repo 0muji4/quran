@@ -13,14 +13,14 @@ import { ActionRow } from './ActionRow';
 import { ResultViewedTracker } from './ResultViewedTracker';
 import { verdictForScore } from './verdict';
 
-type Props = {
+interface Props {
   job: ScoringResult;
   surah: SurahSummary;
   ayah: AyahRecord;
   totalAyahs: number;
   durationMs?: number | null;
   teacherAudioUrl?: string | null;
-};
+}
 
 const toScoreOutOf100 = (raw: number | null | undefined): number | null => {
   if (typeof raw !== 'number' || Number.isNaN(raw)) return null;
