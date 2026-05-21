@@ -26,32 +26,34 @@ test.describe('History', () => {
     await expect(main.getByRole('link', { name: /^sign in$/i })).toBeVisible();
   });
 
-  test.skip(
-    'renders seeded attempts and links back to /practice (signed-in path)',
-    async ({ page }) => {
-      // Re-enable when the signed-in Playwright fixture lands with the
-      // RemoteHistoryStore swap — anonymous localStorage seeding no
-      // longer surfaces because the gated cache returns empty for
-      // anonymous users.
-      const attempt = {
-        id: 'job-test-1',
-        surahId: testSurahs.alFatihah.id,
-        surahNameEn: testSurahs.alFatihah.nameEn,
-        ayahNumber: 1,
-        score: 87,
-        jobId: 'job-test-1',
-        createdAt: new Date().toISOString(),
-        status: 'COMPLETED' as const
-      };
-      await seedAttempts(page, [attempt]);
+  test.skip('renders seeded attempts and links back to /practice (signed-in path)', async ({
+    page
+  }) => {
+    // Re-enable when the signed-in Playwright fixture lands with the
+    // RemoteHistoryStore swap — anonymous localStorage seeding no
+    // longer surfaces because the gated cache returns empty for
+    // anonymous users.
+    const attempt = {
+      id: 'job-test-1',
+      surahId: testSurahs.alFatihah.id,
+      surahNameEn: testSurahs.alFatihah.nameEn,
+      ayahNumber: 1,
+      score: 87,
+      jobId: 'job-test-1',
+      createdAt: new Date().toISOString(),
+      status: 'COMPLETED' as const
+    };
+    await seedAttempts(page, [attempt]);
 
-      await page.goto('/history');
+    await page.goto('/history');
 
-      await expect(page.getByText(/al-fatihah · ayah 1/i)).toBeVisible();
-      await expect(page.getByText(/^87$/)).toBeVisible();
+    await expect(page.getByText(/al-fatihah · ayah 1/i)).toBeVisible();
+    await expect(page.getByText(/^87$/)).toBeVisible();
 
-      await page.getByRole('link', { name: /al-fatihah/i }).first().click();
-      await expect(page).toHaveURL(/\/practice\/1\/1$/);
-    }
-  );
+    await page
+      .getByRole('link', { name: /al-fatihah/i })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/practice\/1\/1$/);
+  });
 });
