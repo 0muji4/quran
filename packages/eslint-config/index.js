@@ -45,7 +45,7 @@ export default [
         // type expressions (used by the `vi.importActual<typeof import('...')>` pattern).
         { prefer: 'type-imports', disallowTypeAnnotations: false },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       eqeqeq: ['error', 'smart'],
       'no-var': 'error',
       'prefer-const': 'error',
