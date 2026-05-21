@@ -23,9 +23,7 @@ test.describe('keyboard-only flow', () => {
     await page.goto('/');
     await page.keyboard.press('Tab');
 
-    const firstFocusText = await page.evaluate(
-      () => document.activeElement?.textContent ?? ''
-    );
+    const firstFocusText = await page.evaluate(() => document.activeElement?.textContent ?? '');
     expect(firstFocusText.trim()).toMatch(/skip to main content/i);
 
     await page.keyboard.press('Enter');

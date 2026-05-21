@@ -16,7 +16,7 @@ async function globalSetup() {
         console.log('✅ Web service is ready!\n');
         return;
       }
-    } catch (error) {
+    } catch {
       // Service not ready yet, continue waiting
     }
 
