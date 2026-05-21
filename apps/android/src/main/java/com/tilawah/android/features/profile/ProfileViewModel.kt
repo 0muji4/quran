@@ -26,7 +26,14 @@ class ProfileViewModel(
     val session: StateFlow<StoredSession?> = authSession.sessionFlow()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    val reactivationNotice: StateFlow<Boolean> = authSession.reactivationNotice()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     fun signOut() {
         viewModelScope.launch { authSession.clear() }
+    }
+
+    fun acknowledgeReactivationNotice() {
+        viewModelScope.launch { authSession.acknowledgeReactivationNotice() }
     }
 }
