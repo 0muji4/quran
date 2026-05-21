@@ -72,6 +72,26 @@ class DataStoreAuthSession(
         notice.value = false
     }
 
+    override suspend fun updateTokens(accessToken: String, refreshToken: String) {
+        try {
+            dataStore.edit { prefs ->
+                val raw = prefs[sessionKey] ?: return@edit
+                val current = try {
+                    json.decodeFromString(StoredSession.serializer(), raw)
+                } catch (_: SerializationException) {
+                    return@edit
+                }
+                val updated = current.copy(
+                    accessToken = accessToken,
+                    refreshToken = refreshToken,
+                )
+                prefs[sessionKey] = json.encodeToString(StoredSession.serializer(), updated)
+            }
+        } catch (_: IOException) {
+            throw AppError.StorageUnavailable
+        }
+    }
+
     override suspend fun updateUser(user: AuthUser) {
         try {
             dataStore.edit { prefs ->
