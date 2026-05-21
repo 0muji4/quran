@@ -28,6 +28,15 @@ interface AuthApi {
         password: String,
         displayName: String?,
     ): AuthSessionPayload
+
+    /**
+     * `POST /auth/refresh`. Trades [refreshToken] for a rotated pair.
+     *
+     * Throws [AppError.InvalidCredentials] on 401 — the refresh token
+     * was revoked, replayed, or expired. The caller is expected to
+     * drop the session and route the user back to sign-in.
+     */
+    suspend fun refresh(refreshToken: String): RefreshedTokens
 }
 
 /**
@@ -60,6 +69,47 @@ class OkHttpAuthApi(
         ),
         operation = "signUp",
     )
+
+    override suspend fun refresh(refreshToken: String): RefreshedTokens {
+        val request = Request.Builder()
+            .url("${baseUrl}auth/refresh")
+            .post(
+                json.encodeToString(
+                    RefreshTokenRequest.serializer(),
+                    RefreshTokenRequest(refreshToken),
+                ).toRequestBody(JSON_MEDIA),
+            )
+            .build()
+        return withContext(Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { response ->
+                    val payload = response.body?.string().orEmpty()
+                    when (response.code) {
+                        in 200..299 -> parseRefresh(payload)
+                        400 -> throw AppError.ValidationFailed(parseErrorMessage(payload) ?: "invalid input")
+                        401 -> throw AppError.InvalidCredentials
+                        in 500..599 -> throw AppError.BackendUnavailable("refresh")
+                        else -> throw AppError.BackendUnavailable("refresh")
+                    }
+                }
+            } catch (cause: AppError) {
+                throw cause
+            } catch (cause: IOException) {
+                throw AppError.Network(cause)
+            } catch (cause: Throwable) {
+                throw AppError.BackendUnavailable("refresh", cause)
+            }
+        }
+    }
+
+    private fun parseRefresh(payload: String): RefreshedTokens =
+        try {
+            json.decodeFromString(RefreshResponseDto.serializer(), payload).let {
+                RefreshedTokens(accessToken = it.accessToken, refreshToken = it.refreshToken)
+            }
+        } catch (_: SerializationException) {
+            throw AppError.BackendUnavailable("refresh")
+        }
 
     private suspend fun post(path: String, body: String, operation: String): AuthSessionPayload {
         val request = Request.Builder()
