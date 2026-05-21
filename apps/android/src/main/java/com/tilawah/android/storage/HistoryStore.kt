@@ -43,6 +43,16 @@ interface HistoryStore {
      * replaying server state.
      */
     suspend fun clear()
+
+    /**
+     * Pull the entire history from the BFF and rebuild the local cache.
+     * Default is a no-op — only `RemoteSyncedHistoryStore` actually
+     * talks to the BFF; the plain in-memory / DataStore implementations
+     * have no remote to refresh from. Kept on the interface so the
+     * `SignInGatedHistoryStore` decorator can delegate without knowing
+     * which concrete store sits underneath.
+     */
+    suspend fun refreshFromRemote() = Unit
 }
 
 /** Composite key matching the web `${surahId}:${ayahNumber}` convention. */
