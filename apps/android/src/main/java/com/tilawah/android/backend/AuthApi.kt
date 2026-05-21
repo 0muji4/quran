@@ -105,7 +105,13 @@ class OkHttpAuthApi(
     private fun AuthResponseDto.toFacade(): AuthSessionPayload = AuthSessionPayload(
         accessToken = accessToken,
         refreshToken = refreshToken,
-        user = AuthUser(id = user.id, email = user.email, displayName = user.displayName),
+        user = AuthUser(
+            id = user.id,
+            email = user.email,
+            displayName = user.displayName,
+            createdAt = user.createdAt,
+            level = user.level,
+        ),
     )
 
     private companion object {
