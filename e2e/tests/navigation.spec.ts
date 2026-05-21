@@ -40,10 +40,7 @@ test.describe('Navigation', () => {
     await expect(homePage.surahCard(testSurahs.alFatihah.nameEn)).toBeVisible();
   });
 
-  test('should support previous/next ayah navigation via the URL', async ({
-    page,
-    recordPage
-  }) => {
+  test('should support previous/next ayah navigation via the URL', async ({ page, recordPage }) => {
     await recordPage.goto(testSurahs.alFatihah.id, 2);
 
     await expect(recordPage.previousAyahLink).toBeVisible();

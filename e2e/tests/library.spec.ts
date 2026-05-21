@@ -40,10 +40,7 @@ test.describe('Surah library', () => {
     await expect(homePage.surahCard(testSurahs.alBaqarah.nameEn)).toBeVisible();
   });
 
-  test('should show an empty state when nothing matches the query', async ({
-    page,
-    homePage
-  }) => {
+  test('should show an empty state when nothing matches the query', async ({ page, homePage }) => {
     await homePage.goto();
     await homePage.verifyLoaded();
 
@@ -52,32 +49,32 @@ test.describe('Surah library', () => {
     await expect(page.getByText(/no surahs match/i)).toBeVisible();
   });
 
-  test.skip(
-    'hydrates the Continue card from a seeded practice history (signed-in path)',
-    async ({ page, homePage }) => {
-      // Re-enable when the signed-in Playwright fixture lands. Continue
-      // card is account-scoped — anonymous users see the "Get started"
-      // empty prompt regardless of localStorage seeding.
-      await seedLastPracticed(page, {
-        surahId: testSurahs.alFatihah.id,
-        ayahNumber: 3,
-        surahNameEn: testSurahs.alFatihah.nameEn,
-        surahNameAr: testSurahs.alFatihah.nameAr,
-        ayahCount: testSurahs.alFatihah.ayahCount,
-        practicedAt: new Date().toISOString()
-      });
+  test.skip('hydrates the Continue card from a seeded practice history (signed-in path)', async ({
+    page,
+    homePage
+  }) => {
+    // Re-enable when the signed-in Playwright fixture lands. Continue
+    // card is account-scoped — anonymous users see the "Get started"
+    // empty prompt regardless of localStorage seeding.
+    await seedLastPracticed(page, {
+      surahId: testSurahs.alFatihah.id,
+      ayahNumber: 3,
+      surahNameEn: testSurahs.alFatihah.nameEn,
+      surahNameAr: testSurahs.alFatihah.nameAr,
+      ayahCount: testSurahs.alFatihah.ayahCount,
+      practicedAt: new Date().toISOString()
+    });
 
-      await homePage.goto();
+    await homePage.goto();
 
-      const resumeLink = page.getByRole('link', { name: /resume ayah 3/i });
-      await expect(resumeLink).toBeVisible();
-      // ADR 0023: hrefs are locale-prefixed (default `en`).
-      await expect(resumeLink).toHaveAttribute(
-        'href',
-        new RegExp(`^/(en|ar)/practice/${testSurahs.alFatihah.id}/3$`)
-      );
-    }
-  );
+    const resumeLink = page.getByRole('link', { name: /resume ayah 3/i });
+    await expect(resumeLink).toBeVisible();
+    // ADR 0023: hrefs are locale-prefixed (default `en`).
+    await expect(resumeLink).toHaveAttribute(
+      'href',
+      new RegExp(`^/(en|ar)/practice/${testSurahs.alFatihah.id}/3$`)
+    );
+  });
 
   test('should show the Continue empty prompt when no practice history exists', async ({
     page,

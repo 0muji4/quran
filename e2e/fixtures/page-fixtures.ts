@@ -7,10 +7,10 @@ import { RecordPage } from '../pages/RecordPage';
  * Extends base test with page object model instances
  */
 
-type PageFixtures = {
+interface PageFixtures {
   homePage: HomePage;
   recordPage: RecordPage;
-};
+}
 
 export const test = base.extend<PageFixtures>({
   homePage: async ({ page }, use) => {
@@ -21,7 +21,7 @@ export const test = base.extend<PageFixtures>({
   recordPage: async ({ page }, use) => {
     const recordPage = new RecordPage(page);
     await use(recordPage);
-  },
+  }
 });
 
 // Re-export expect from Playwright

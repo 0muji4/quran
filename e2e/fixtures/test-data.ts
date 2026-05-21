@@ -7,35 +7,35 @@ export const testSurahs = {
     id: '1',
     nameEn: 'Al-Fatihah',
     nameAr: 'الفاتحة',
-    ayahCount: 7,
+    ayahCount: 7
   },
   alBaqarah: {
     id: '2',
     nameEn: 'Al-Baqarah',
     nameAr: 'البقرة',
-    ayahCount: 286,
+    ayahCount: 286
   },
   anNas: {
     id: '114',
     nameEn: 'An-Nas',
     nameAr: 'الناس',
-    ayahCount: 6,
-  },
+    ayahCount: 6
+  }
 } as const;
 
 export const testAyahs = {
   fatihah1: {
     surahId: '1',
-    ayahNumber: 1,
+    ayahNumber: 1
   },
   fatihah2: {
     surahId: '1',
-    ayahNumber: 2,
+    ayahNumber: 2
   },
   nas1: {
     surahId: '114',
-    ayahNumber: 1,
-  },
+    ayahNumber: 1
+  }
 } as const;
 
 /**
