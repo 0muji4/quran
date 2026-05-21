@@ -44,6 +44,11 @@ class InMemoryAuthSession : AuthSession {
         notice.value = false
     }
 
+    override suspend fun updateTokens(accessToken: String, refreshToken: String) {
+        val current = state.value ?: return
+        state.value = current.copy(accessToken = accessToken, refreshToken = refreshToken)
+    }
+
     override suspend fun clear() {
         state.value = null
         notice.value = false
