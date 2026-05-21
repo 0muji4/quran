@@ -46,9 +46,11 @@ import com.tilawah.android.backend.DefaultAuthedHttpClient
 import com.tilawah.android.backend.HistoryRemoteClient
 import com.tilawah.android.backend.HttpHistoryRemoteClient
 import com.tilawah.android.backend.HttpProfileService
+import com.tilawah.android.backend.HttpSuggestionClient
 import com.tilawah.android.backend.OkHttpAuthApi
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
+import com.tilawah.android.backend.SuggestionClient
 import com.tilawah.android.backend.TokenRefresher
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.library.LibraryScreen
@@ -116,6 +118,9 @@ fun AppRoot(
     profileService: ProfileService = remember(authedHttp) { HttpProfileService(http = authedHttp) },
     historyRemote: HistoryRemoteClient = remember(authedHttp) {
         HttpHistoryRemoteClient(http = authedHttp)
+    },
+    suggestionClient: SuggestionClient = remember(authedHttp) {
+        HttpSuggestionClient(http = authedHttp)
     },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
@@ -203,6 +208,8 @@ fun AppRoot(
                     backend = backend,
                     telemetry = telemetry,
                     historyStore = historyStore,
+                    suggestionClient = suggestionClient,
+                    signedInState = signedIn,
                     onResume = { entry ->
                         practiceTarget = entry
                         selectedTab = TopLevelTab.Practice
@@ -276,11 +283,21 @@ private fun LibraryTabHost(
     backend: QuranBackend,
     telemetry: Telemetry,
     historyStore: HistoryStore,
+    suggestionClient: SuggestionClient,
+    signedInState: kotlinx.coroutines.flow.StateFlow<Boolean>,
     onResume: (LastPracticed) -> Unit,
 ) {
     val viewModel: LibraryViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { LibraryViewModel(backend, telemetry, historyStore) }
+            initializer {
+                LibraryViewModel(
+                    backend = backend,
+                    telemetry = telemetry,
+                    historyStore = historyStore,
+                    suggestionClient = suggestionClient,
+                    isSignedIn = { signedInState.value },
+                )
+            }
         },
     )
     LibraryScreen(
