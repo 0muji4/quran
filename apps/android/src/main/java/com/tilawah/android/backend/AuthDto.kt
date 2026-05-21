@@ -33,6 +33,8 @@ internal data class AuthUserDto(
     val id: String,
     val email: String,
     val displayName: String? = null,
+    val createdAt: String? = null,
+    val level: String? = null,
 )
 
 @Serializable
@@ -40,11 +42,20 @@ internal data class AuthErrorDto(
     val error: String? = null,
 )
 
-/** ViewModel-facing user record. Strips wire-only fields. */
+/**
+ * ViewModel-facing user record. Strips wire-only fields.
+ *
+ * `createdAt` and `level` are populated by `GET /auth/me` and round-trip
+ * through `/auth/login` and `/auth/signup` when the BFF includes them;
+ * both stay nullable so older persisted sessions (saved before this
+ * shape landed) decode cleanly.
+ */
 data class AuthUser(
     val id: String,
     val email: String,
     val displayName: String?,
+    val createdAt: String? = null,
+    val level: String? = null,
 )
 
 /** ViewModel-facing auth result. */
