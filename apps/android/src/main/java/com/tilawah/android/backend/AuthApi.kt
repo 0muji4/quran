@@ -112,6 +112,7 @@ class OkHttpAuthApi(
             createdAt = user.createdAt,
             level = user.level,
         ),
+        reactivated = reactivated == true,
     )
 
     private companion object {

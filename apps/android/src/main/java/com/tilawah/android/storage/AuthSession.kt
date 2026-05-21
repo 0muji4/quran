@@ -19,6 +19,19 @@ interface AuthSession {
     /** Latest stored session, or `null` when signed out. Hot stream. */
     fun sessionFlow(): Flow<StoredSession?>
 
+    /**
+     * Process-lifetime flag for the one-shot "Welcome back" banner shown
+     * after a sign-in that resurrected a soft-deleted account (ADR-0024
+     * §4). `true` only between [save] receiving a payload with
+     * `reactivated = true` and the UI calling
+     * [acknowledgeReactivationNotice].
+     *
+     * Not persisted — a fresh launch never re-shows the banner; the
+     * BFF only re-sets `reactivated` on the next actual reactivating
+     * sign-in.
+     */
+    fun reactivationNotice(): Flow<Boolean>
+
     suspend fun save(payload: AuthSessionPayload)
 
     /**
@@ -31,6 +44,9 @@ interface AuthSession {
      * `SessionStore.updateUser` seam.
      */
     suspend fun updateUser(user: AuthUser)
+
+    /** Mark the reactivation banner as seen so it doesn't re-appear. */
+    suspend fun acknowledgeReactivationNotice()
 
     suspend fun clear()
 }
