@@ -36,6 +36,9 @@ fun ProfileScreen(
     onEditProfileTapped: () -> Unit,
     onChangeEmailTapped: () -> Unit,
     onUpdatePasswordTapped: () -> Unit,
+    onDeleteAccountTapped: () -> Unit,
+    showReactivationBanner: Boolean = false,
+    onAcknowledgeReactivation: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = BrandTheme.colors
@@ -69,6 +72,9 @@ fun ProfileScreen(
                 )
             }
         } else {
+            if (showReactivationBanner) {
+                ReactivationBanner(onDismiss = onAcknowledgeReactivation)
+            }
             Text(
                 text = session.user.displayName ?: session.user.email,
                 style = BrandTheme.typography.pageTitle,
@@ -97,6 +103,13 @@ fun ProfileScreen(
                 Text(
                     text = ProfileCopy.updatePasswordEntryLabel,
                     color = colors.primary,
+                    style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                )
+            }
+            TextButton(onClick = onDeleteAccountTapped) {
+                Text(
+                    text = ProfileCopy.deleteAccountEntryLabel,
+                    color = colors.recording,
                     style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
                 )
             }
