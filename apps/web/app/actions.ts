@@ -493,7 +493,7 @@ export const postAttemptToBff = async (attempt: Attempt): Promise<Attempt> => {
 
 export type UserLevel = 'beginner' | 'intermediate' | 'advanced';
 
-export type AuthSessionUser = {
+export interface AuthSessionUser {
   id: string;
   email: string;
   displayName: string | null;
@@ -504,9 +504,9 @@ export type AuthSessionUser = {
   // because clients that don't gather the field on sign-up (iOS today)
   // produce a `null` here.
   level?: UserLevel | null;
-};
+}
 
-type AuthSuccessPayload = {
+interface AuthSuccessPayload {
   accessToken: string;
   refreshToken: string;
   user: AuthSessionUser;
@@ -514,7 +514,7 @@ type AuthSuccessPayload = {
   // row (ADR-0024 §4). Forwarded verbatim to clients so they can
   // surface the "Welcome back — your account has been restored" toast.
   reactivated?: boolean;
-};
+}
 
 // Auth actions return a discriminated union for expected business
 // errors; only genuine system failures still throw.

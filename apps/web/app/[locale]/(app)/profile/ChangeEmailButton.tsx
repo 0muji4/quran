@@ -5,9 +5,9 @@ import { useRouter } from '../../../../i18n/navigation';
 import { updateEmailAction } from '../../../actions';
 import { css, cx } from '../../../../styled-system/css';
 
-type Props = {
+interface Props {
   currentEmail: string;
-};
+}
 
 const triggerClass = css({
   font: '[inherit]',

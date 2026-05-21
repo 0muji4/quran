@@ -1,4 +1,7 @@
-type CookieValue = { name: string; value: string };
+interface CookieValue {
+  name: string;
+  value: string;
+}
 
 const store = new Map<string, string>();
 

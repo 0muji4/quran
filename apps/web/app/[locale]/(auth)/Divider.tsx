@@ -1,8 +1,8 @@
 import { css } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   label: string;
-};
+}
 
 const dividerClass = css({
   display: 'flex',

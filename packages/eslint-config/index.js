@@ -37,6 +37,18 @@ export default [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
+      // Google TypeScript Style Guide alignment
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        // Enforce `import type` for type-only imports, but allow inline `import()`
+        // type expressions (used by the `vi.importActual<typeof import('...')>` pattern).
+        { prefer: 'type-imports', disallowTypeAnnotations: false },
+      ],
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      eqeqeq: ['error', 'smart'],
+      'no-var': 'error',
+      'prefer-const': 'error',
     },
   },
 

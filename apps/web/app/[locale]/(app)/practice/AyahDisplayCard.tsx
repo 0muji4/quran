@@ -3,10 +3,10 @@ import { CornerOrnament } from '../../../components/icons/CornerOrnament';
 import { StarOrnament } from '../../../components/icons/StarOrnament';
 import styles from '../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   ayah: AyahRecord;
   surahNameEn: string;
-};
+}
 
 export function AyahDisplayCard({ ayah, surahNameEn }: Props) {
   return (

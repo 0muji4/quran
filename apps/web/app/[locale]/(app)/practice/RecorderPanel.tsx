@@ -22,10 +22,10 @@ import {
 import type { AyahRecord, SurahSummary } from '../../../lib/types';
 import styles from '../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   surah: SurahSummary;
   ayah: AyahRecord;
-};
+}
 
 const formatElapsed = (ms: number): string => {
   const total = Math.floor(ms / 1000);

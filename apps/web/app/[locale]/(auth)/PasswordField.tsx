@@ -4,7 +4,7 @@ import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { css, cx } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   id: string;
   name: string;
   label: string;
@@ -13,7 +13,7 @@ type Props = {
   required?: boolean;
   disabled?: boolean;
   helperText?: string;
-};
+}
 
 // Duplicates AuthForm's field/label/input shapes so PasswordField stays
 // self-contained. When the same shape shows up in a third auth component
