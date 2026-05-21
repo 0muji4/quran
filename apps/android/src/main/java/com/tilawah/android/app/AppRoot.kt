@@ -46,6 +46,7 @@ import com.tilawah.android.backend.HttpProfileService
 import com.tilawah.android.backend.OkHttpAuthApi
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
+import com.tilawah.android.backend.TokenRefresher
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.library.LibraryScreen
 import com.tilawah.android.features.library.LibraryViewModel
@@ -97,8 +98,11 @@ fun AppRoot(
     historyStore: HistoryStore = defaultHistoryStore(),
     authApi: AuthApi = remember { OkHttpAuthApi() },
     authSession: AuthSession = remember { InMemoryAuthSession() },
-    profileService: ProfileService = remember(authSession) {
-        HttpProfileService(http = DefaultAuthedHttpClient(authSession))
+    profileService: ProfileService = remember(authApi, authSession) {
+        val refresher = TokenRefresher(authApi = authApi, authSession = authSession)
+        HttpProfileService(
+            http = DefaultAuthedHttpClient(authSession, tokenRefresher = refresher),
+        )
     },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }

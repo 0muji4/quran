@@ -48,6 +48,14 @@ interface AuthSession {
     /** Mark the reactivation banner as seen so it doesn't re-appear. */
     suspend fun acknowledgeReactivationNotice()
 
+    /**
+     * Rotate the access + refresh token pair without touching the user
+     * portion of the stored session. Used by `TokenRefresher` after a
+     * successful `POST /auth/refresh`. No-op when there is no current
+     * session.
+     */
+    suspend fun updateTokens(accessToken: String, refreshToken: String)
+
     suspend fun clear()
 }
 
