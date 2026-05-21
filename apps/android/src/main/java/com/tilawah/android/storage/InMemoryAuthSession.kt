@@ -13,11 +13,18 @@ import kotlinx.coroutines.flow.asStateFlow
 class InMemoryAuthSession : AuthSession {
 
     private val state = MutableStateFlow<StoredSession?>(null)
+    private val notice = MutableStateFlow(false)
 
     override fun sessionFlow(): Flow<StoredSession?> = state.asStateFlow()
 
+    override fun reactivationNotice(): Flow<Boolean> = notice.asStateFlow()
+
     override suspend fun save(payload: AuthSessionPayload) {
         state.value = payload.toStored()
+        // Only flip the notice ON when a reactivating sign-in arrives;
+        // a non-reactivating one must not clear a still-pending notice
+        // from a prior sign-in (the UI is expected to acknowledge it).
+        if (payload.reactivated) notice.value = true
     }
 
     override suspend fun updateUser(user: com.tilawah.android.backend.AuthUser) {
@@ -33,7 +40,12 @@ class InMemoryAuthSession : AuthSession {
         )
     }
 
+    override suspend fun acknowledgeReactivationNotice() {
+        notice.value = false
+    }
+
     override suspend fun clear() {
         state.value = null
+        notice.value = false
     }
 }
