@@ -11,5 +11,13 @@ export default [
       'dist/**',
       'src/graphql/types.generated.ts'
     ]
+  },
+  {
+    // graphql-codegen loads `codegen.ts` via `--config` and requires it to
+    // default-export the config object.
+    files: ['codegen.ts'],
+    rules: {
+      'no-restricted-syntax': 'off'
+    }
   }
 ];

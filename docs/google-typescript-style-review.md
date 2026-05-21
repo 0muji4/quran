@@ -28,7 +28,7 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 | `enum` | 適合（手書きコードに `enum` なし。リテラルユニオンを使用） | 変更なし |
 | `any` | 限定的に使用（すべて文書化済み or 生成コード） | 受け入れ（下記参照） |
 | non-null assertion (`!`) | **修正済み** — 66 件を排除 | `no-non-null-assertion: error` で強制 |
-| default export | Next.js / ツール必須のもののみ | 受け入れ（下記参照） |
+| default export | **修正済み** — 原則禁止。フレームワーク必須パスのみ許可 | `no-restricted-syntax` で強制 |
 | エラーハンドリング / 可視性修飾子 / JSDoc | 適合 | 変更なし |
 
 ## 実施した変更
@@ -48,8 +48,10 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 
 ## 受け入れた逸脱（修正しない）
 
-- **default export** — Next.js の page / layout / route handler、および Vitest / Playwright / codegen
-  の設定ファイルはいずれもツール側が default export を要求する。変換不可。
+- **default export（フレームワーク必須パスのみ）** — Next.js の App Router ルートファイル
+  （`page` / `layout` / `route` 等）・`middleware.ts`・next-intl の `i18n/request.ts`、Playwright の
+  `global-setup` / `global-teardown`、graphql-codegen の `codegen.ts` はツール側が default export を
+  要求する。これらは `no-restricted-syntax` の override で明示的に許可し、それ以外は禁止に固定した。
 - **生成コードの `any` / `enum` / `type`** — `packages/shared-ts/src/graphql/types.generated.ts` は
   GraphQL codegen の出力。手修正せず、lint 対象からも除外。
 - **`== null`** — null と undefined の同時判定。Google Style Guide が明示的に許可する例外であり、
