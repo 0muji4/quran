@@ -1,6 +1,7 @@
 package com.tilawah.android.features.profile
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,11 +12,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.tilawah.android.backend.AuthApi
+import com.tilawah.android.backend.AuthUser
+import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.features.auth.AuthMode
 import com.tilawah.android.features.auth.AuthViewModel
 import com.tilawah.android.features.auth.SignInScreen
 import com.tilawah.android.features.auth.SignUpScreen
 import com.tilawah.android.storage.AuthSession
+import com.tilawah.android.storage.toAuthUser
 
 /**
  * Stateful host that switches between [ProfileScreen] (signed-out
@@ -31,11 +35,21 @@ import com.tilawah.android.storage.AuthSession
 fun ProfileAuthHost(
     authApi: AuthApi,
     authSession: AuthSession,
+    profileService: ProfileService,
     profileViewModel: ProfileViewModel,
     modifier: Modifier = Modifier,
 ) {
     val session by profileViewModel.session.collectAsStateWithLifecycle()
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
+    var editingUser: AuthUser? by remember { mutableStateOf(null) }
+
+    // Drop the edit sheet automatically if the session disappears
+    // under us (sign-out from another path, token eviction, etc.).
+    LaunchedEffect(session) {
+        if (session == null) {
+            editingUser = null
+        }
+    }
 
     val authViewModel: AuthViewModel = viewModel(
         factory = viewModelFactory {
@@ -53,8 +67,30 @@ fun ProfileAuthHost(
                 onSignInTapped = { pendingMode = AuthMode.SignIn },
                 onSignUpTapped = { pendingMode = AuthMode.SignUp },
                 onSignOutTapped = profileViewModel::signOut,
+                onEditProfileTapped = { editingUser = session?.toAuthUser() },
                 modifier = modifier,
             )
+
+            editingUser?.let { user ->
+                val editViewModel: EditProfileViewModel = viewModel(
+                    key = "edit-profile-${user.id}",
+                    factory = viewModelFactory {
+                        initializer {
+                            EditProfileViewModel(
+                                initialUser = user,
+                                profileService = profileService,
+                                authSession = authSession,
+                            )
+                        }
+                    },
+                )
+                EditProfileSheet(
+                    viewModel = editViewModel,
+                    initialDisplayName = (user.displayName ?: "").trim(),
+                    initialLevel = user.level,
+                    onDismiss = { editingUser = null },
+                )
+            }
         }
 
         pendingMode == AuthMode.SignIn -> SignInScreen(
@@ -76,8 +112,8 @@ fun ProfileAuthHost(
             onSignInTapped = { pendingMode = AuthMode.SignIn },
             onSignUpTapped = { pendingMode = AuthMode.SignUp },
             onSignOutTapped = {},
+            onEditProfileTapped = {},
             modifier = modifier,
         )
     }
 }
-
