@@ -1,5 +1,5 @@
-import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
-import { GraphQLContext } from '../types';
+import type { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
+import type { GraphQLContext } from '../types';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -27,15 +27,15 @@ export interface Ayah {
   __typename?: 'Ayah';
   ayahNumber: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
-  metadata: Maybe<Scalars['JSONObject']['output']>;
+  metadata?: Maybe<Scalars['JSONObject']['output']>;
   surahId: Scalars['ID']['output'];
   textAr: Scalars['String']['output'];
-  textEn: Maybe<Scalars['String']['output']>;
-  transliteration: Maybe<Scalars['String']['output']>;
+  textEn?: Maybe<Scalars['String']['output']>;
+  transliteration?: Maybe<Scalars['String']['output']>;
 }
 
 export interface CreateScoringJobInput {
-  ayahNumber: InputMaybe<Scalars['Int']['input']>;
+  ayahNumber?: InputMaybe<Scalars['Int']['input']>;
   surahId: Scalars['ID']['input'];
   uploadKey: Scalars['String']['input'];
 }
@@ -60,17 +60,17 @@ export interface PronunciationFeedback {
   completeness: Scalars['Float']['output'];
   fluency: Scalars['Float']['output'];
   overall: Scalars['Float']['output'];
-  referenceAudioUrl: Maybe<Scalars['String']['output']>;
-  transcript: Maybe<Scalars['String']['output']>;
-  wer: Maybe<Scalars['Float']['output']>;
+  referenceAudioUrl?: Maybe<Scalars['String']['output']>;
+  transcript?: Maybe<Scalars['String']['output']>;
+  wer?: Maybe<Scalars['Float']['output']>;
   wordAlignments: Array<WordAlignment>;
 }
 
 export interface Query {
   __typename?: 'Query';
-  ayah: Maybe<Ayah>;
-  scoringJob: Maybe<ScoringResult>;
-  surah: Maybe<Surah>;
+  ayah?: Maybe<Ayah>;
+  scoringJob?: Maybe<ScoringResult>;
+  surah?: Maybe<Surah>;
   surahs: Array<Surah>;
 }
 
@@ -88,29 +88,29 @@ export interface QuerySurahArgs {
 }
 
 export interface QuerySurahsArgs {
-  limit: InputMaybe<Scalars['Int']['input']>;
-  offset: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 export interface ScoreSegment {
   __typename?: 'ScoreSegment';
   label: Scalars['String']['output'];
-  metrics: Maybe<Scalars['JSONObject']['output']>;
+  metrics?: Maybe<Scalars['JSONObject']['output']>;
   score: Scalars['Float']['output'];
 }
 
 export interface ScoringResult {
   __typename?: 'ScoringResult';
   createdAt: Scalars['DateTime']['output'];
-  evaluation: Maybe<Scalars['JSONObject']['output']>;
-  feedback: Maybe<PronunciationFeedback>;
+  evaluation?: Maybe<Scalars['JSONObject']['output']>;
+  feedback?: Maybe<PronunciationFeedback>;
   jobId: Scalars['ID']['output'];
-  recordingUrl: Maybe<Scalars['String']['output']>;
-  score: Maybe<Scalars['Float']['output']>;
+  recordingUrl?: Maybe<Scalars['String']['output']>;
+  score?: Maybe<Scalars['Float']['output']>;
   segments: Array<ScoreSegment>;
   status: ScoringStatus;
   uploadKey: Scalars['String']['output'];
-  verdict: Maybe<Scalars['String']['output']>;
+  verdict?: Maybe<Scalars['String']['output']>;
 }
 
 export enum ScoringStatus {
@@ -128,7 +128,7 @@ export interface SignedUploadInput {
 export interface SignedUploadUrl {
   __typename?: 'SignedUploadUrl';
   expiresAt: Scalars['DateTime']['output'];
-  fields: Maybe<Scalars['JSONObject']['output']>;
+  fields?: Maybe<Scalars['JSONObject']['output']>;
   url: Scalars['String']['output'];
 }
 
@@ -137,22 +137,22 @@ export interface Surah {
   ayahCount: Scalars['Int']['output'];
   ayahs: Array<Ayah>;
   id: Scalars['ID']['output'];
-  metadata: Maybe<Scalars['JSONObject']['output']>;
+  metadata?: Maybe<Scalars['JSONObject']['output']>;
   nameAr: Scalars['String']['output'];
   nameEn: Scalars['String']['output'];
   revelationPlace: Scalars['String']['output'];
 }
 
 export interface SurahAyahsArgs {
-  limit: InputMaybe<Scalars['Int']['input']>;
-  offset: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 export interface WordAlignment {
   __typename?: 'WordAlignment';
-  hypWord: Maybe<Scalars['String']['output']>;
+  hypWord?: Maybe<Scalars['String']['output']>;
   op: Scalars['String']['output'];
-  refWord: Maybe<Scalars['String']['output']>;
+  refWord?: Maybe<Scalars['String']['output']>;
 }
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
@@ -286,13 +286,13 @@ export type AyahResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['Ayah'] = ResolversParentTypes['Ayah']
 > = {
-  ayahNumber: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  id: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  metadata: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  surahId: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  textAr: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  textEn: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  transliteration: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  ayahNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
+  surahId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  textAr?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  textEn?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  transliteration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -314,13 +314,13 @@ export type MutationResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']
 > = {
-  createScoringJob: Resolver<
+  createScoringJob?: Resolver<
     ResolversTypes['ScoringResult'],
     ParentType,
     ContextType,
     RequireFields<MutationCreateScoringJobArgs, 'input'>
   >;
-  getSignedUploadUrl: Resolver<
+  getSignedUploadUrl?: Resolver<
     ResolversTypes['SignedUploadUrl'],
     ParentType,
     ContextType,
@@ -333,14 +333,14 @@ export type PronunciationFeedbackResolvers<
   ParentType extends ResolversParentTypes['PronunciationFeedback'] =
     ResolversParentTypes['PronunciationFeedback']
 > = {
-  accuracy: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  completeness: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  fluency: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  overall: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  referenceAudioUrl: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  transcript: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  wer: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  wordAlignments: Resolver<Array<ResolversTypes['WordAlignment']>, ParentType, ContextType>;
+  accuracy?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  completeness?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  fluency?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  overall?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  referenceAudioUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  transcript?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  wer?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  wordAlignments?: Resolver<Array<ResolversTypes['WordAlignment']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -348,34 +348,39 @@ export type QueryResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']
 > = {
-  ayah: Resolver<
+  ayah?: Resolver<
     Maybe<ResolversTypes['Ayah']>,
     ParentType,
     ContextType,
     RequireFields<QueryAyahArgs, 'ayahNumber' | 'surahId'>
   >;
-  scoringJob: Resolver<
+  scoringJob?: Resolver<
     Maybe<ResolversTypes['ScoringResult']>,
     ParentType,
     ContextType,
     RequireFields<QueryScoringJobArgs, 'jobId'>
   >;
-  surah: Resolver<
+  surah?: Resolver<
     Maybe<ResolversTypes['Surah']>,
     ParentType,
     ContextType,
     RequireFields<QuerySurahArgs, 'id'>
   >;
-  surahs: Resolver<Array<ResolversTypes['Surah']>, ParentType, ContextType, QuerySurahsArgs>;
+  surahs?: Resolver<
+    Array<ResolversTypes['Surah']>,
+    ParentType,
+    ContextType,
+    Partial<QuerySurahsArgs>
+  >;
 };
 
 export type ScoreSegmentResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['ScoreSegment'] = ResolversParentTypes['ScoreSegment']
 > = {
-  label: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  metrics: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  score: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  label?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  metrics?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
+  score?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -383,16 +388,16 @@ export type ScoringResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['ScoringResult'] = ResolversParentTypes['ScoringResult']
 > = {
-  createdAt: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  evaluation: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  feedback: Resolver<Maybe<ResolversTypes['PronunciationFeedback']>, ParentType, ContextType>;
-  jobId: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  recordingUrl: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  score: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  segments: Resolver<Array<ResolversTypes['ScoreSegment']>, ParentType, ContextType>;
-  status: Resolver<ResolversTypes['ScoringStatus'], ParentType, ContextType>;
-  uploadKey: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  verdict: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  evaluation?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
+  feedback?: Resolver<Maybe<ResolversTypes['PronunciationFeedback']>, ParentType, ContextType>;
+  jobId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  recordingUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  score?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  segments?: Resolver<Array<ResolversTypes['ScoreSegment']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['ScoringStatus'], ParentType, ContextType>;
+  uploadKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  verdict?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -401,9 +406,9 @@ export type SignedUploadUrlResolvers<
   ParentType extends ResolversParentTypes['SignedUploadUrl'] =
     ResolversParentTypes['SignedUploadUrl']
 > = {
-  expiresAt: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  fields: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  url: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  expiresAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  fields?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
+  url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -411,13 +416,13 @@ export type SurahResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['Surah'] = ResolversParentTypes['Surah']
 > = {
-  ayahCount: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  ayahs: Resolver<Array<ResolversTypes['Ayah']>, ParentType, ContextType, SurahAyahsArgs>;
-  id: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  metadata: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  nameAr: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  nameEn: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  revelationPlace: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  ayahCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  ayahs?: Resolver<Array<ResolversTypes['Ayah']>, ParentType, ContextType, Partial<SurahAyahsArgs>>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
+  nameAr?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  nameEn?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  revelationPlace?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -425,22 +430,22 @@ export type WordAlignmentResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['WordAlignment'] = ResolversParentTypes['WordAlignment']
 > = {
-  hypWord: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  op: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  refWord: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hypWord?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  op?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  refWord?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type Resolvers<ContextType = GraphQLContext> = {
-  Ayah: AyahResolvers<ContextType>;
-  DateTime: GraphQLScalarType;
-  JSONObject: GraphQLScalarType;
-  Mutation: MutationResolvers<ContextType>;
-  PronunciationFeedback: PronunciationFeedbackResolvers<ContextType>;
-  Query: QueryResolvers<ContextType>;
-  ScoreSegment: ScoreSegmentResolvers<ContextType>;
-  ScoringResult: ScoringResultResolvers<ContextType>;
-  SignedUploadUrl: SignedUploadUrlResolvers<ContextType>;
-  Surah: SurahResolvers<ContextType>;
-  WordAlignment: WordAlignmentResolvers<ContextType>;
+  Ayah?: AyahResolvers<ContextType>;
+  DateTime?: GraphQLScalarType;
+  JSONObject?: GraphQLScalarType;
+  Mutation?: MutationResolvers<ContextType>;
+  PronunciationFeedback?: PronunciationFeedbackResolvers<ContextType>;
+  Query?: QueryResolvers<ContextType>;
+  ScoreSegment?: ScoreSegmentResolvers<ContextType>;
+  ScoringResult?: ScoringResultResolvers<ContextType>;
+  SignedUploadUrl?: SignedUploadUrlResolvers<ContextType>;
+  Surah?: SurahResolvers<ContextType>;
+  WordAlignment?: WordAlignmentResolvers<ContextType>;
 };
