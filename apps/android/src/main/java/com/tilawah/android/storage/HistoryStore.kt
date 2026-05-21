@@ -35,6 +35,14 @@ interface HistoryStore {
     fun recentAttempts(limit: Int = HistoryStoreConstants.HISTORY_LIMIT): Flow<List<Attempt>>
 
     suspend fun recordAttempt(attempt: Attempt)
+
+    /**
+     * Drop every locally cached entry — last-practiced, best-scores,
+     * attempts. Called on sign-out (so the next sign-in starts clean)
+     * and by `RemoteSyncedHistoryStore.refreshFromRemote()` before
+     * replaying server state.
+     */
+    suspend fun clear()
 }
 
 /** Composite key matching the web `${surahId}:${ayahNumber}` convention. */
