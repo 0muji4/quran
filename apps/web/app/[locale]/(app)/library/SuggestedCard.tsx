@@ -13,12 +13,12 @@ import { trackUiEvent } from '../../../telemetry/use-ui-event';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
-type Props = {
+interface Props {
   surahs: SurahSummary[];
   // BFF-served personalisation (ADR 0015). `null` for guests; the
   // component falls back to the local heuristic in that case.
   suggestion?: BffSuggestionResponse | null;
-};
+}
 
 // panel(surface:'paper') already covers the white bg + card shadow +
 // mint badge + ink.strong title + ink.muted 15px subtitle. SuggestedCard

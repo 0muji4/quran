@@ -4,12 +4,12 @@ import type { UserLevel } from '../../../actions';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
 
-type Props = {
+interface Props {
   displayName: string | null;
   email: string;
   level: UserLevel | null;
   createdAt: string | null;
-};
+}
 
 const cardClass = css({
   padding: '6',

@@ -1,10 +1,10 @@
 type Position = 'tl' | 'tr' | 'bl' | 'br';
 
-type Props = {
+interface Props {
   position: Position;
   size?: number;
   className?: string;
-};
+}
 
 const ROTATION: Record<Position, number> = {
   tl: 0,

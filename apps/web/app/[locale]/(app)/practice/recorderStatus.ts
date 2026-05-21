@@ -22,14 +22,14 @@
  * it stays testable without a React provider tree.
  */
 
-export type RecorderStatusState = {
+export interface RecorderStatusState {
   recordingError: string | null;
   isScoringError: boolean;
   errorReasons: string[];
   isStuck: boolean;
   isAnalysing: boolean;
   isRecording: boolean;
-};
+}
 
 export type RecorderStatusTranslator = (
   key:

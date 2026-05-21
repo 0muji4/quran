@@ -25,9 +25,9 @@ const comparingStatus = (elapsedMs: number): StepStatus => {
 const calculatingStatus = (elapsedMs: number): StepStatus =>
   elapsedMs < CALCULATING_THRESHOLD_MS ? 'pending' : 'active';
 
-type Props = {
+interface Props {
   elapsedMs: number;
-};
+}
 
 export function AnalysingCard({ elapsedMs }: Props) {
   const t = useTranslations('practice.analysing');

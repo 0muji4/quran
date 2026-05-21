@@ -1,16 +1,16 @@
-export type SurahSummary = {
+export interface SurahSummary {
   id: string;
   nameAr: string;
   nameEn: string;
   ayahCount: number;
   revelationPlace: string;
-};
+}
 
-export type AyahRecord = {
+export interface AyahRecord {
   id: string;
   surahId: string;
   ayahNumber: number;
   textAr: string;
   textEn?: string;
   transliteration?: string;
-};
+}

@@ -4,9 +4,9 @@ import { useTranslations } from 'next-intl';
 import { LEVEL_VALUES } from './copy';
 import { css } from '../../../styled-system/css';
 
-type Props = {
+interface Props {
   disabled?: boolean;
-};
+}
 
 const groupClass = css({
   display: 'flex',

@@ -52,15 +52,15 @@ const numberOrNull = (value: unknown): number | null => {
   return null;
 };
 
-type RawAlignment = {
+interface RawAlignment {
   ref_word?: string | null;
   hyp_word?: string | null;
   op?: string | null;
-};
+}
 
-type RawTimestamp = {
+interface RawTimestamp {
   probability?: number | null;
-};
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const buildPronunciationFeedback = (

@@ -4,11 +4,11 @@ import { useRef, type Ref } from 'react';
 import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
-type Props = {
+interface Props {
   teacherUrl: string | null;
   userRecordingUrl: string | null;
   teacherLabel?: string;
-};
+}
 
 // Side-by-side playback so the user can compare their recitation against the
 // teacher's reference. Both URLs are presigned and short-lived (~1h); if one

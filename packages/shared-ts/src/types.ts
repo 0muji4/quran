@@ -1,10 +1,10 @@
-export type UserSession = {
+export interface UserSession {
   id: string;
   email?: string;
   displayName?: string;
-};
+}
 
-export type GraphQLContext = {
+export interface GraphQLContext {
   session: UserSession | null;
   requestId: string;
-};
+}

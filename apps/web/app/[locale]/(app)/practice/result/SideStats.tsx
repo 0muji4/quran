@@ -5,11 +5,11 @@ import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 import { getAttemptsForToday, getBestScore } from '../../../../lib/storage';
 
-type Props = {
+interface Props {
   surahId: string;
   ayahNumber: number;
   durationMs?: number | null;
-};
+}
 
 const formatDuration = (ms: number | null | undefined): string => {
   if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) return '—';
