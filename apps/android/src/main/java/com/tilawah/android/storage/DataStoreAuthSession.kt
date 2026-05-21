@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.AuthSessionPayload
+import com.tilawah.android.backend.AuthUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -51,6 +52,31 @@ class DataStoreAuthSession(
                     StoredSession.serializer(),
                     payload.toStored(),
                 )
+            }
+        } catch (_: IOException) {
+            throw AppError.StorageUnavailable
+        }
+    }
+
+    override suspend fun updateUser(user: AuthUser) {
+        try {
+            dataStore.edit { prefs ->
+                val raw = prefs[sessionKey] ?: return@edit
+                val current = try {
+                    json.decodeFromString(StoredSession.serializer(), raw)
+                } catch (_: SerializationException) {
+                    return@edit
+                }
+                val updated = current.copy(
+                    user = StoredAuthUser(
+                        id = user.id,
+                        email = user.email,
+                        displayName = user.displayName,
+                        createdAt = user.createdAt,
+                        level = user.level,
+                    ),
+                )
+                prefs[sessionKey] = json.encodeToString(StoredSession.serializer(), updated)
             }
         } catch (_: IOException) {
             throw AppError.StorageUnavailable

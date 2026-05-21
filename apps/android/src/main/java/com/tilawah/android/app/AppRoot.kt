@@ -41,7 +41,10 @@ import com.tilawah.android.audio.Player
 import com.tilawah.android.audio.Recorder
 import com.tilawah.android.backend.ApolloQuranBackend
 import com.tilawah.android.backend.AuthApi
+import com.tilawah.android.backend.DefaultAuthedHttpClient
+import com.tilawah.android.backend.HttpProfileService
 import com.tilawah.android.backend.OkHttpAuthApi
+import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.library.LibraryScreen
@@ -94,6 +97,9 @@ fun AppRoot(
     historyStore: HistoryStore = defaultHistoryStore(),
     authApi: AuthApi = remember { OkHttpAuthApi() },
     authSession: AuthSession = remember { InMemoryAuthSession() },
+    profileService: ProfileService = remember(authSession) {
+        HttpProfileService(http = DefaultAuthedHttpClient(authSession))
+    },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
     var practiceTarget by remember { mutableStateOf(DefaultPractice) }
@@ -178,20 +184,33 @@ fun AppRoot(
                     }
                 }
                 TopLevelTab.History -> HistoryTabHost(historyStore = historyStore)
-                TopLevelTab.Profile -> ProfileTabHost(authApi = authApi, authSession = authSession)
+                TopLevelTab.Profile -> ProfileTabHost(
+                    authApi = authApi,
+                    authSession = authSession,
+                    profileService = profileService,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ProfileTabHost(authApi: AuthApi, authSession: AuthSession) {
+private fun ProfileTabHost(
+    authApi: AuthApi,
+    authSession: AuthSession,
+    profileService: ProfileService,
+) {
     val viewModel: ProfileViewModel = viewModel(
         factory = viewModelFactory {
             initializer { ProfileViewModel(authSession = authSession) }
         },
     )
-    ProfileAuthHost(authApi = authApi, authSession = authSession, profileViewModel = viewModel)
+    ProfileAuthHost(
+        authApi = authApi,
+        authSession = authSession,
+        profileService = profileService,
+        profileViewModel = viewModel,
+    )
 }
 
 @Composable
