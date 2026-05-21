@@ -26,6 +26,7 @@ internal data class AuthResponseDto(
     val accessToken: String,
     val refreshToken: String,
     val user: AuthUserDto,
+    val reactivated: Boolean? = null,
 )
 
 @Serializable
@@ -58,9 +59,17 @@ data class AuthUser(
     val level: String? = null,
 )
 
-/** ViewModel-facing auth result. */
+/**
+ * ViewModel-facing auth result.
+ *
+ * `reactivated` is `true` when the BFF resurrected a soft-deleted row
+ * during sign-in (ADR-0024 §4). The flag flows from `AuthApi` into
+ * `AuthSession` so the Profile tab can show a one-shot "Welcome back"
+ * banner without re-fetching the user.
+ */
 data class AuthSessionPayload(
     val accessToken: String,
     val refreshToken: String,
     val user: AuthUser,
+    val reactivated: Boolean = false,
 )
