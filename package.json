@@ -25,9 +25,9 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.60.0",
     "@quran-project/eslint-config": "workspace:*",
-    "eslint": "^9.11.1",
-    "tsx": "^4.19.2"
+    "eslint": "^9.39.4",
+    "tsx": "^4.22.3"
   }
 }

@@ -56,6 +56,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # Derive the Docker image tag from the installed @playwright/test
+      # version so the image stays in sync with pnpm bumps automatically.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
@@ -105,7 +111,7 @@ jobs:
             -w /work \
             -e E2E_BASE_URL=http://localhost:3000 \
             -e CI=1 \
-            mcr.microsoft.com/playwright:v1.57.0-jammy \
+            mcr.microsoft.com/playwright:v${{ steps.playwright.outputs.version }}-jammy \
             bash -lc "npx playwright test --shard=${{ matrix.shard }}/${{ matrix.total }}"
 
       - name: Upload Playwright report
