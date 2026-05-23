@@ -1,7 +1,7 @@
 'use client';
 
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { trace, type Tracer } from '@opentelemetry/api';
@@ -40,7 +40,7 @@ export const initWebTelemetry = (): void => {
   });
 
   const provider = new WebTracerProvider({
-    resource: new Resource({
+    resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: BROWSER_SERVICE_NAME,
       [ATTR_SERVICE_VERSION]: process.env.NEXT_PUBLIC_SERVICE_VERSION ?? '0.0.0',
       'service.namespace': 'quran-project'
