@@ -33,7 +33,7 @@
     "graphql": "^16.14.0",
     "graphql-helix": "^1.13.0",
     "jsonwebtoken": "^9.0.3",
-    "minio": "^7.1.4",
+    "minio": "^8.0.7",
     "pg": "^8.21.0",
     "winston": "^3.19.0",
     "zod": "^4.4.3"
