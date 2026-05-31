@@ -221,8 +221,9 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 }
 
 // upsertScoringJob inserts (or refreshes) the scoring_jobs row for the
-// session in PROCESSING state so a partial failure mid-pipeline leaves a
-// trace, and returns the row's created_at timestamp.
+// session in RUNNING state so a partial failure mid-pipeline leaves a
+// trace, and returns the row's created_at timestamp. The status string
+// must match the scoring_jobs_status_check CHECK constraint.
 func upsertScoringJob(ctx context.Context, db *sql.DB, sessionID string, req scoringJobRequest, surahID int32, ayahID int64) (time.Time, error) {
 	var userID sql.NullString
 	if req.UserID != "" {
@@ -232,7 +233,7 @@ func upsertScoringJob(ctx context.Context, db *sql.DB, sessionID string, req sco
 		INSERT INTO scoring_jobs (
 			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, status, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, 'PROCESSING', NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, 'RUNNING', NOW(), NOW())
 		ON CONFLICT (session_id)
 		DO UPDATE SET
 			user_id = EXCLUDED.user_id,
@@ -240,7 +241,7 @@ func upsertScoringJob(ctx context.Context, db *sql.DB, sessionID string, req sco
 			surah_id = EXCLUDED.surah_id,
 			ayah_id = EXCLUDED.ayah_id,
 			ayah_number = EXCLUDED.ayah_number,
-			status = 'PROCESSING',
+			status = 'RUNNING',
 			updated_at = NOW()
 		RETURNING created_at;
 	`
