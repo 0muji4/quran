@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -8,16 +9,17 @@ import (
 	"strconv"
 	"time"
 
-	"quran-project/apps/backend/internal/enqueue"
+	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
+	"quran-project/apps/backend/internal/storage"
 	"quran-project/apps/backend/internal/telemetry"
 )
 
-// REST exposes minimal read-only endpoints for surahs and ayahs.
+// REST exposes the HTTP surface for surahs, ayahs, and recitation scoring.
 type REST struct {
-	SurahService service.SurahService
-	DB           *sql.DB
-	Enqueuer     *enqueue.Enqueuer
+	SurahService  service.SurahService
+	DB            *sql.DB
+	ScoringEngine *scoring.Engine
 }
 
 // Register wires endpoints onto provided mux under /api using Go 1.22+
@@ -112,7 +114,7 @@ type scoringJobResponse struct {
 }
 
 func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
-	if h.DB == nil || h.Enqueuer == nil {
+	if h.DB == nil || h.ScoringEngine == nil {
 		http.Error(w, "scoring jobs not configured", http.StatusInternalServerError)
 		return
 	}
@@ -157,11 +159,80 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 	if sessionID == "" {
 		sessionID = req.UploadKey
 	}
-	query := `
+
+	createdAt, err := upsertScoringJob(r.Context(), h.DB, sessionID, req, int32(surahIDInt), ayahID)
+	if err != nil {
+		telemetry.Logger().ErrorContext(r.Context(), "persist scoring job failed",
+			"session_id", sessionID, "error", err)
+		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
+		return
+	}
+
+	result, err := h.ScoringEngine.Score(r.Context(), req.UploadKey, expectedText)
+	if err != nil {
+		markJobFailed(r.Context(), h.DB, sessionID)
+		if errors.Is(err, storage.ErrObjectNotFound) {
+			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
+			return
+		}
+		writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
+		return
+	}
+
+	evaluation := map[string]any{
+		"accuracy":     result.Score.Accuracy,
+		"fluency":      result.Score.Fluency,
+		"completeness": result.Score.Completeness,
+		"wer":          result.WER,
+		"transcript":   result.Transcript,
+		"alignments":   result.Alignments,
+	}
+	evaluationJSON, err := json.Marshal(evaluation)
+	if err != nil {
+		markJobFailed(r.Context(), h.DB, sessionID)
+		writeError(w, r, http.StatusInternalServerError, "failed to encode evaluation", err)
+		return
+	}
+
+	if _, err := h.DB.ExecContext(
+		r.Context(),
+		`UPDATE scoring_jobs
+		 SET status = 'COMPLETED', score = $2, evaluation = $3, updated_at = NOW()
+		 WHERE session_id = $1`,
+		sessionID, result.Score.Overall, evaluationJSON,
+	); err != nil {
+		writeError(w, r, http.StatusInternalServerError, "failed to persist score", err)
+		return
+	}
+
+	telemetry.RecordSessionCompleted(r.Context(), req.UserID, result.Score.Overall)
+
+	overall := result.Score.Overall
+	w.WriteHeader(http.StatusCreated)
+	writeJSON(w, scoringJobResponse{
+		JobID:      sessionID,
+		UploadKey:  req.UploadKey,
+		Status:     "COMPLETED",
+		Score:      &overall,
+		Segments:   []scoreSegment{},
+		Evaluation: evaluation,
+		CreatedAt:  createdAt,
+	})
+}
+
+// upsertScoringJob inserts (or refreshes) the scoring_jobs row for the
+// session in PROCESSING state so a partial failure mid-pipeline leaves a
+// trace, and returns the row's created_at timestamp.
+func upsertScoringJob(ctx context.Context, db *sql.DB, sessionID string, req scoringJobRequest, surahID int32, ayahID int64) (time.Time, error) {
+	var userID sql.NullString
+	if req.UserID != "" {
+		userID = sql.NullString{String: req.UserID, Valid: true}
+	}
+	const query = `
 		INSERT INTO scoring_jobs (
 			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, status, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, 'QUEUED', NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, 'PROCESSING', NOW(), NOW())
 		ON CONFLICT (session_id)
 		DO UPDATE SET
 			user_id = EXCLUDED.user_id,
@@ -169,52 +240,24 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 			surah_id = EXCLUDED.surah_id,
 			ayah_id = EXCLUDED.ayah_id,
 			ayah_number = EXCLUDED.ayah_number,
-			status = 'QUEUED',
+			status = 'PROCESSING',
 			updated_at = NOW()
 		RETURNING created_at;
 	`
-
 	var createdAt time.Time
-	var userID sql.NullString
-	if req.UserID != "" {
-		userID = sql.NullString{String: req.UserID, Valid: true}
-	}
-	if err := h.DB.QueryRowContext(
-		r.Context(),
-		query,
+	err := db.QueryRowContext(ctx, query, sessionID, userID, req.UploadKey, surahID, ayahID, *req.AyahNumber).Scan(&createdAt)
+	return createdAt, err
+}
+
+// markJobFailed best-effort flips the row to FAILED; logging is left to
+// the caller since it already has the original error in hand. Errors here
+// are swallowed so we don't mask the real failure that triggered the call.
+func markJobFailed(ctx context.Context, db *sql.DB, sessionID string) {
+	_, _ = db.ExecContext(
+		ctx,
+		`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
 		sessionID,
-		userID,
-		req.UploadKey,
-		int32(surahIDInt),
-		ayahID,
-		*req.AyahNumber,
-	).Scan(&createdAt); err != nil {
-		telemetry.Logger().ErrorContext(r.Context(), "persist scoring job failed",
-			"session_id", sessionID, "error", err)
-		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
-		return
-	}
-
-	if err := h.Enqueuer.PublishASRJob(r.Context(), sessionID, req.UploadKey, ayahID, expectedText, req.ReferenceAudioKey); err != nil {
-		telemetry.Logger().ErrorContext(r.Context(), "enqueue scoring job failed",
-			"session_id", sessionID, "ayah_id", ayahID, "error", err)
-		_, _ = h.DB.ExecContext(
-			r.Context(),
-			`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
-			sessionID,
-		)
-		http.Error(w, "failed to enqueue scoring job", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	writeJSON(w, scoringJobResponse{
-		JobID:     sessionID,
-		UploadKey: req.UploadKey,
-		Status:    "QUEUED",
-		Segments:  []scoreSegment{},
-		CreatedAt: createdAt,
-	})
+	)
 }
 
 func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
