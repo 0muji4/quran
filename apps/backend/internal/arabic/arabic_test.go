@@ -110,3 +110,64 @@ func assertAlignment(t *testing.T, got, want []Alignment) {
 		}
 	}
 }
+
+func TestScorePronunciationWithWER(t *testing.T) {
+	alignments := []Alignment{
+		{RefWord: "a", HypWord: "a", Op: OpMatch},
+		{RefWord: "b", HypWord: "c", Op: OpSubstitute},
+		{RefWord: "d", Op: OpDelete},
+		{HypWord: "e", Op: OpInsert},
+	}
+	probs := []float64{0.9, 0.7, 0.8}
+	wer := 0.5
+	got := ScorePronunciation(alignments, probs, &wer)
+
+	wantAccuracy := 0.5 // 1 - wer
+	wantCompleteness := (3.0 - 1.0) / 3.0
+	wantFluency := (0.9 + 0.7 + 0.8) / 3.0
+	wantOverall := (wantAccuracy + wantFluency + wantCompleteness) / 3.0
+
+	assertScore(t, "Accuracy", got.Accuracy, wantAccuracy)
+	assertScore(t, "Completeness", got.Completeness, wantCompleteness)
+	assertScore(t, "Fluency", got.Fluency, wantFluency)
+	assertScore(t, "Overall", got.Overall, wantOverall)
+}
+
+func TestScorePronunciationWERNilFallsBackToCounts(t *testing.T) {
+	alignments := []Alignment{
+		{RefWord: "a", HypWord: "a", Op: OpMatch},
+		{RefWord: "b", HypWord: "c", Op: OpSubstitute},
+		{RefWord: "d", Op: OpDelete},
+	}
+	got := ScorePronunciation(alignments, nil, nil)
+
+	assertScore(t, "Accuracy", got.Accuracy, 1.0/3.0)
+	assertScore(t, "Completeness", got.Completeness, (3.0-1.0)/3.0)
+	assertScore(t, "Fluency", got.Fluency, 0)
+}
+
+func TestScorePronunciationEmpty(t *testing.T) {
+	got := ScorePronunciation(nil, nil, nil)
+	if got != (PronunciationScore{}) {
+		t.Errorf("empty input score = %+v, want zero value", got)
+	}
+}
+
+func TestScorePronunciationClampsOutOfRangeWER(t *testing.T) {
+	alignments := []Alignment{{RefWord: "a", HypWord: "a", Op: OpMatch}}
+	werNeg := -0.5
+	werHigh := 1.5
+	if got := ScorePronunciation(alignments, nil, &werNeg); got.Accuracy != 1 {
+		t.Errorf("negative wer Accuracy = %v, want 1", got.Accuracy)
+	}
+	if got := ScorePronunciation(alignments, nil, &werHigh); got.Accuracy != 0 {
+		t.Errorf("wer > 1 Accuracy = %v, want 0", got.Accuracy)
+	}
+}
+
+func assertScore(t *testing.T, name string, got, want float64) {
+	t.Helper()
+	if math.Abs(got-want) > 1e-9 {
+		t.Errorf("%s = %v, want %v", name, got, want)
+	}
+}
