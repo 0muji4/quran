@@ -23,6 +23,17 @@ final class RemoteSyncedHistoryStore: HistoryStore {
   private let me: MeClient
   private let telemetry: Telemetry
 
+  /// Handle to the most recently spawned background write Task. Tests
+  /// `await pendingWriteTask?.value` to block until the fire-and-forget
+  /// write — including its telemetry-error catch block on the failure
+  /// path — has settled. Production never reads this; the existence is
+  /// purely to remove the yield-count race the older test pattern
+  /// (`for _ in 0..<10 { await Task.yield() }`) had on macOS CI.
+  /// Concurrent writes would race on this property but each Task still
+  /// runs to completion regardless — losing the handle to one is
+  /// acceptable because production never observes it.
+  private(set) var pendingWriteTask: Task<Void, Never>?
+
   init(cache: HistoryStore, me: MeClient, telemetry: Telemetry) {
     self.cache = cache
     self.me = me
@@ -37,7 +48,7 @@ final class RemoteSyncedHistoryStore: HistoryStore {
 
   func setLastPracticed(_ entry: LastPracticed) {
     cache.setLastPracticed(entry)
-    Task { [me, telemetry] in
+    pendingWriteTask = Task { [me, telemetry] in
       do {
         _ = try await me.putLastPracticed(entry)
       } catch let error as AppError {
@@ -85,7 +96,7 @@ final class RemoteSyncedHistoryStore: HistoryStore {
       achievedAt: achievedAt
     )
     let entry = BestScoreEntry(score: score, achievedAt: achievedAt)
-    Task { [me, telemetry] in
+    pendingWriteTask = Task { [me, telemetry] in
       do {
         _ = try await me.putBestScore(surahId: surahId, ayahNumber: ayahNumber, entry: entry)
       } catch let error as AppError {
@@ -121,7 +132,7 @@ final class RemoteSyncedHistoryStore: HistoryStore {
 
   func recordAttempt(_ attempt: Attempt) {
     cache.recordAttempt(attempt)
-    Task { [me, telemetry] in
+    pendingWriteTask = Task { [me, telemetry] in
       do {
         _ = try await me.recordAttempt(attempt)
       } catch let error as AppError {
