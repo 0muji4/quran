@@ -64,7 +64,7 @@ final class ApolloBackend: QuranBackend {
     }
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
-    request.setValue("audio/m4a", forHTTPHeaderField: "Content-Type")
+    request.setValue("audio/wav", forHTTPHeaderField: "Content-Type")
     do {
       let data = try Data(contentsOf: fileURL)
       let (_, response) = try await URLSession.shared.upload(for: request, from: data)
