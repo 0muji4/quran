@@ -320,7 +320,7 @@ final class PracticeViewModel: ObservableObject {
       let signedUpload = try await telemetry.measure(TelemetryEvent.practiceUploadCompleted) {
         try await backend.requestSignedUploadUrl(
           filename: fileURL.lastPathComponent,
-          contentType: "audio/m4a"
+          contentType: "audio/wav"
         )
       }
       try await backend.uploadAudio(fileURL: fileURL, to: signedUpload.url)
