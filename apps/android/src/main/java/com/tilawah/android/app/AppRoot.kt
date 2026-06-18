@@ -105,14 +105,19 @@ private val DefaultPractice = LastPracticed(
 @Composable
 fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
-    backend: QuranBackend = remember { ApolloQuranBackend() },
     baseHistoryStore: HistoryStore = defaultHistoryStore(),
     authApi: AuthApi = remember { OkHttpAuthApi() },
     authSession: AuthSession = remember { InMemoryAuthSession() },
-    authedHttp: DefaultAuthedHttpClient = remember(authApi, authSession) {
+    tokenRefresher: TokenRefresher = remember(authApi, authSession) {
+        TokenRefresher(authApi = authApi, authSession = authSession)
+    },
+    backend: QuranBackend = remember(authSession, tokenRefresher) {
+        ApolloQuranBackend(authSession = authSession, tokenRefresher = tokenRefresher)
+    },
+    authedHttp: DefaultAuthedHttpClient = remember(authSession, tokenRefresher) {
         DefaultAuthedHttpClient(
             authSession = authSession,
-            tokenRefresher = TokenRefresher(authApi = authApi, authSession = authSession),
+            tokenRefresher = tokenRefresher,
         )
     },
     profileService: ProfileService = remember(authedHttp) { HttpProfileService(http = authedHttp) },
