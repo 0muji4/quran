@@ -13,6 +13,7 @@ import (
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/storage"
 	"quran-project/apps/backend/internal/telemetry"
+	"quran-project/apps/backend/internal/transcribe"
 )
 
 // REST exposes the HTTP surface for surahs, ayahs, and recitation scoring.
@@ -173,6 +174,14 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		markJobFailed(r.Context(), h.DB, sessionID)
 		if errors.Is(err, storage.ErrObjectNotFound) {
 			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
+			return
+		}
+		// Surface the "transcriber not configured" case as 503 so the
+		// caller can tell a missing-CHIRP_PROJECT deploy apart from a
+		// real internal failure. Dev compose and e2e CI hit this path
+		// until the env var is wired.
+		if errors.Is(err, transcribe.ErrUnavailable) {
+			writeError(w, r, http.StatusServiceUnavailable, "transcriber not configured (CHIRP_PROJECT)", err)
 			return
 		}
 		writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
