@@ -32,12 +32,6 @@ services:
     volumes:
       - minio_data:/data
 
-  redis:
-    image: redis:7
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.95.0
     command: ["--config=/etc/otel-collector-config.yaml"]
@@ -110,14 +104,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_started
       otel-collector:
         condition: service_started
     environment:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
-      REDIS_URL: redis://redis:6379
-      QUEUE_AUTH_TOKEN: local-queue-token
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-backend
       SERVICE_VERSION: "0.1.0"
@@ -170,42 +160,6 @@ services:
       LOG_FORMAT: json
     ports:
       - "4000:4000"
-
-  worker:
-    build:
-      context: ../..
-      dockerfile: apps/worker/Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
-      backend:
-        condition: service_started
-      redis:
-        condition: service_started
-      minio:
-        condition: service_started
-      otel-collector:
-        condition: service_started
-    restart: on-failure
-    environment:
-      BACKEND_URL: http://backend:8080
-      REDIS_URL: redis://redis:6379
-      POSTGRES_DSN: postgres://app:app@postgres:5432/app?sslmode=disable
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minio
-      MINIO_SECRET_KEY: minio123
-      MINIO_BUCKET: quran-alignments
-      MINIO_SECURE: "false"
-      QUEUE_AUTH_TOKEN: local-queue-token
-      # Whisper configuration - balance between speed and accuracy
-      WHISPER_MODEL_SIZE: small
-      WHISPER_DEVICE: cpu
-      WHISPER_COMPUTE_TYPE: int8
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-      OTEL_SERVICE_NAME: quran-worker
-      SERVICE_VERSION: "0.1.0"
-      LOG_LEVEL: info
-      LOG_FORMAT: json
 
   web:
     build:

@@ -32,16 +32,6 @@ locals {
       cpu_always_allocated  = false
       allow_unauthenticated = true
     }
-    worker = {
-      image                 = var.container_images.worker
-      container_port        = 8080
-      cpu                   = "1"
-      memory                = "1Gi"
-      min_instances         = 1
-      max_instances         = 3
-      cpu_always_allocated  = true
-      allow_unauthenticated = false
-    }
   }
 }
 
@@ -64,7 +54,6 @@ module "sa_backend" {
   roles = [
     "roles/cloudsql.client",
     "roles/secretmanager.secretAccessor",
-    "roles/redis.viewer",
   ]
 }
 
@@ -90,19 +79,6 @@ module "sa_web" {
   roles        = []
 }
 
-module "sa_worker" {
-  source = "../../modules/service-account"
-
-  project_id   = var.project_id
-  account_id   = "quran-${local.env}-worker"
-  display_name = "Quran worker (${local.env})"
-  roles = [
-    "roles/cloudsql.client",
-    "roles/secretmanager.secretAccessor",
-    "roles/storage.objectAdmin",
-  ]
-}
-
 module "sa_otel" {
   source = "../../modules/service-account"
 
@@ -125,7 +101,6 @@ module "db_password_secret" {
   accessors = [
     module.sa_backend.email,
     module.sa_bff.email,
-    module.sa_worker.email,
   ]
 }
 
@@ -141,18 +116,6 @@ module "cloud_sql" {
   deletion_protection         = false
   private_network             = var.vpc_network_self_link
   app_user_password_secret_id = module.db_password_secret.secret_id
-}
-
-# --- Memorystore Redis --------------------------------------------------------
-module "redis" {
-  source = "../../modules/memorystore-redis"
-
-  project_id         = var.project_id
-  region             = var.region
-  name               = "quran-${local.env}"
-  tier               = "BASIC"
-  memory_size_gb     = 1
-  authorized_network = var.vpc_authorized_network
 }
 
 # --- GCS bucket ---------------------------------------------------------------
@@ -197,7 +160,6 @@ module "service" {
     backend = module.sa_backend.email
     bff     = module.sa_bff.email
     web     = module.sa_web.email
-    worker  = module.sa_worker.email
   }[each.key]
 }
 
@@ -215,6 +177,5 @@ module "wif" {
     module.sa_backend.email,
     module.sa_bff.email,
     module.sa_web.email,
-    module.sa_worker.email,
   ]
 }
