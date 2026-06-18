@@ -27,10 +27,9 @@ ops/terraform/
                            versions.tf   provider pins
 
     cloud-run-service/             A single Cloud Run revision + IAM
-                                   bindings. Used per app (web/bff/backend/worker).
+                                   bindings. Used per app (web/bff/backend).
     cloud-sql/                     Postgres 16 with private IP and
                                    automated backups.
-    memorystore-redis/             Basic tier, 1 GiB.
     gcs-bucket/                    Object storage with HMAC keys exposed
                                    for the existing S3-compatible code.
     artifact-registry/             Docker repo in asia-northeast1.
