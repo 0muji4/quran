@@ -25,7 +25,11 @@ let package = Package(
     ),
     .testTarget(
       name: "QuranRecitationAppTests",
-      dependencies: ["QuranRecitationApp"],
+      dependencies: [
+        "QuranRecitationApp",
+        .product(name: "Apollo", package: "apollo-ios"),
+        .product(name: "ApolloAPI", package: "apollo-ios")
+      ],
       path: "Tests/QuranRecitationAppTests"
     )
   ]
