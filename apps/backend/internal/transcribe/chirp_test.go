@@ -83,6 +83,18 @@ func TestBuildRequestEmptyExpectedText(t *testing.T) {
 	}
 }
 
+func TestBuildRequestChirp3SkipsWordFeatures(t *testing.T) {
+	cfg := ChirpConfig{Project: "p", Model: "chirp_3"}
+	cfg.applyDefaults()
+	tr := &ChirpTranscriber{cfg: cfg}
+
+	req := tr.buildRequest("", []byte("a"))
+	feat := req.GetConfig().GetFeatures()
+	if feat.GetEnableWordTimeOffsets() || feat.GetEnableWordConfidence() {
+		t.Errorf("chirp_3 must not request word_time_offsets / word_confidence (the recognizer rejects them); got %+v", feat)
+	}
+}
+
 func TestParseResponse(t *testing.T) {
 	resp := &speechpb.RecognizeResponse{
 		Results: []*speechpb.SpeechRecognitionResult{
