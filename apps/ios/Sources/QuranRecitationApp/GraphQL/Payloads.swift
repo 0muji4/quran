@@ -20,7 +20,30 @@ public struct SignedUploadPayload {
   init(from data: GetSignedUploadUrlMutation.Data.GetSignedUploadUrl) {
     url = data.url
     expiresAt = data.expiresAt
-    uploadKey = URL(string: data.url)?.lastPathComponent ?? ""
+    uploadKey = Self.derivedUploadKey(from: data.url)
+  }
+
+  /// Extract the object key the BFF stored in
+  /// `user_data_objects.audio_key` from a presigned upload URL.
+  ///
+  /// The presigned URL path is `/<bucket>/<key…>`, so we drop the
+  /// leading slash and the bucket segment and keep everything after
+  /// it — including any prefix like `uploads/`. The earlier
+  /// implementation used `URL.lastPathComponent`, which kept only the
+  /// final filename and made `createScoringJob` fail with
+  /// "Session ID not found for upload key" on S3-style deployments
+  /// where the key contains slashes (Cloudflare R2 with
+  /// `MINIO_UPLOAD_PREFIX=uploads/`). Mirrors the Android fix landed
+  /// in PR #439.
+  static func derivedUploadKey(from urlString: String) -> String {
+    guard let path = URL(string: urlString)?.path else { return "" }
+    let withoutLeadingSlash = path.hasPrefix("/") ? String(path.dropFirst()) : path
+    guard let firstSlash = withoutLeadingSlash.firstIndex(of: "/") else {
+      // Path has no further slashes after the bucket segment — there
+      // is no key to extract.
+      return ""
+    }
+    return String(withoutLeadingSlash[withoutLeadingSlash.index(after: firstSlash)...])
   }
 }
 
