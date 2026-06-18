@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -58,7 +59,7 @@ func main() {
 		log.Fatalf("object storage init failed: %v", err)
 	}
 
-	transcriber, err := newTranscriber(ctx)
+	transcriber, err := newTranscriber(ctx, logger)
 	if err != nil {
 		log.Fatalf("transcriber init failed: %v", err)
 	}
@@ -130,11 +131,15 @@ func newObjectStore(ctx context.Context, logger interface {
 	return store, nil
 }
 
-// newTranscriber wires the Chirp 2 transcriber. CHIRP_PROJECT is required;
-// returning the error rather than substituting a stub makes the failure
-// loud in environments where speech recognition is meant to be configured
-// (notably any deploy that handles a real Android upload).
-func newTranscriber(ctx context.Context) (*transcribe.ChirpTranscriber, error) {
+// newTranscriber wires the Chirp transcriber when `CHIRP_PROJECT` is
+// configured. When it is empty (dev `docker compose`, e2e CI, any
+// environment that legitimately does not exercise scoring) the backend
+// still boots: we log a warning and substitute an [UnavailableTranscriber]
+// that errors at request time with [transcribe.ErrUnavailable]. That keeps
+// the catalog, auth, and history endpoints reachable while any actual
+// scoring call surfaces a clear "not configured" error instead of taking
+// the whole process down at startup.
+func newTranscriber(ctx context.Context, logger *slog.Logger) (transcribe.Transcriber, error) {
 	cfg := transcribe.ChirpConfig{
 		Project:      os.Getenv("CHIRP_PROJECT"),
 		Location:     os.Getenv("CHIRP_LOCATION"),
@@ -142,7 +147,8 @@ func newTranscriber(ctx context.Context) (*transcribe.ChirpTranscriber, error) {
 		Model:        os.Getenv("CHIRP_MODEL"),
 	}
 	if cfg.Project == "" {
-		return nil, errors.New("CHIRP_PROJECT env var is required")
+		logger.Warn("CHIRP_PROJECT unset — scoring endpoints will return transcribe.ErrUnavailable until the env var is set")
+		return transcribe.NewUnavailableTranscriber(), nil
 	}
 	return transcribe.NewChirpTranscriber(ctx, cfg)
 }
