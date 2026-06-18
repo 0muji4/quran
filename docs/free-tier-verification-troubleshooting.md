@@ -87,7 +87,7 @@ Apollo Kotlin v4 は HTTP interceptor を `addHttpInterceptor` でビルダー�
 
 修正は `MediaRecorderRecorder.kt` で `OutputFormat.OGG` + `AudioEncoder.OPUS` に変更し、拡張子 `.ogg`、Content-Type `audio/ogg`、bitrate 64 kbps、sample rate 48 kHz とした (PR #438)。OPUS-in-OGG via `MediaRecorder` は **API 29+** が必要で、本検証の実機は API 29+ だったが、Android 8 系 (API 26–28) で動かしたい場合は LINEAR16 PCM への fallback を別途実装する必要がある。
 
-これも、Speech v2 がサポートする encoding の一覧を選定フェーズで確認していなかったという、選定漏れに起因する。iOS 側は AAC ではなく LINEAR16 で直接送る経路を別に持っていたため、Android 単独で顕在化した。
+これも、Speech v2 がサポートする encoding の一覧を選定フェーズで確認していなかったという、選定漏れに起因する。iOS 側も同じく `kAudioFormatMPEG4AAC` で `.m4a` を録音して `Content-Type: audio/m4a` でアップロードしており、本検証では Android しか実機で叩いていないだけで、iOS で同じフローを実行すれば同様に Chirp で復号に失敗する。iOS 側の修正は本ドキュメントの「8. iOS 側の状況」を参照。
 
 ### 3.6 BFF の MINIO_EXTERNAL_ENDPOINT に scheme を付けてしまった (設定ミス、コード変更なし)
 
@@ -164,6 +164,20 @@ PR #439 マージ後の APK で 2026-06-18 22:04:25 JST に `practice.scoring.co
 **(3) 例外ラッパーで cause を握り潰すと、根本原因切り分けのコストが大幅に上がる。** Android の `ApolloQuranBackend.wrap` が `ApolloException` を `BackendUnavailable(operation, cause)` にラップしているが、`cause` は telemetry には伝わらず、画面に出るのも "Server unavailable" だけになる。今回は BFF / backend のログを横断して切り分けたが、複数の修正で各 5–15 分ずつ余計に時間を消費した。例外を境界で抽象的にまとめるのは ViewModels から transport 型を隔離する目的では正当だが、`cause` のスタックは telemetry / structured logs に必ず流す形にする。これは Android 側に閉じた話ではなく、iOS の `ApolloBackend` も同じ構造を持っているので、両プラットフォーム同時に直す価値がある。
 
 特に (1) は、本プロジェクトが今後 ML/AI 系 managed service (Chirp 4 / GenAI / Vertex AI 等) に依存を増やすことを考えると、再発リスクが高い。採用検討時の sample request を必須項目として ADR テンプレートに組み込んでおくことを次の改善として記録する。
+
+## 8. iOS 側の状況
+
+本検証は Android 実機でのみ実施し、iOS は実機検証を行っていない。iOS のソースコードを読んだ範囲で確認した結果、Android で修正した 7 件のバグ (#433–#439) のうち、サーバー側 4 件 (#433 / #434 / #436 / #437) は iOS でも自動的に効くが、クライアント側 3 件 (#435 / #438 / #439) は iOS にも同じバグが残っている。
+
+| Android PR | iOS 側の状態 | iOS の該当箇所 |
+|---|---|---|
+| #435 Apollo Bearer auth | 同じバグ | [QuranRecitationApp.swift:15](../apps/ios/Sources/QuranRecitationApp/QuranRecitationApp.swift#L15) で `ApolloBackend()` を auth 配線なしで構築。[ApolloBackend.swift:21](../apps/ios/Sources/QuranRecitationApp/Backend/ApolloBackend.swift#L21) の `ApolloClient(url: endpoint)` は HTTP interceptor を持たない |
+| #438 OGG/Opus 録音 | 同じバグ | [AudioRecorder.swift:33](../apps/ios/Sources/QuranRecitationApp/Audio/AudioRecorder.swift#L33) で `AVFormatIDKey: Int(kAudioFormatMPEG4AAC)` を指定、`.m4a` 拡張子で保存し `audio/m4a` でアップロード |
+| #439 uploadKey 抽出 | 同じバグ | [Payloads.swift:23](../apps/ios/Sources/QuranRecitationApp/GraphQL/Payloads.swift#L23) の `SignedUploadPayload.init` が `URL(string: data.url)?.lastPathComponent` でファイル名末尾だけを取る。Android の旧 `substringAfterLast('/')` と等価 |
+
+iOS の修正は 3 つの follow-up PR として別途切り出す。修正自体は Android の対応 PR をそのまま Swift に書き直す内容で、新規の設計判断は発生しない見込み。
+
+iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render dev 環境に対して実機で行う。動作確認の達成基準は Android と同じく「録音 → アップロード → スコア表示までが一度でも成功すること」とし、flakiness は同じく別課題として切り出す。
 
 ## Appendix A: 再現手順 (再 verify するとき用)
 
