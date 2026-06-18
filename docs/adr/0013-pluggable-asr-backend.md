@@ -1,6 +1,6 @@
 # ADR 0013: Pluggable ASR Backend in the Worker
 
-- Status: Accepted
+- Status: Superseded by [ADR 0019](./0019-backend-inline-asr-supersedes-worker.md) on 2026-06-19
 - Date: 2026-05-11
 - Author: motoshi.suzuki
 - Related: [ADR 0010](./0010-gcp-cloud-run-deployment.md), [ADR 0011](./0011-cloud-portability-principle.md)
