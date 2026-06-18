@@ -7,8 +7,15 @@ import { testSurahs } from '../fixtures/test-data';
  */
 
 test.describe('Error Handling', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.context().grantPermissions(['microphone']);
+  test.beforeEach(async ({ page, browserName }) => {
+    // The `microphone` permission name is Chromium-only in Playwright —
+    // Firefox / WebKit throw `Unknown permission: microphone` from
+    // grantPermissions. Skip the grant on non-Chromium browsers; these
+    // tests do not exercise MediaRecorder directly (recording-flow is
+    // explicitly excluded from cross-browser via testIgnore).
+    if (browserName === 'chromium') {
+      await page.context().grantPermissions(['microphone']);
+    }
   });
 
   test('should fall back to ayah 1 when only the surah is provided', async ({

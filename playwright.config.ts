@@ -49,8 +49,13 @@ export default defineConfig({
     // Videos on failure only
     video: 'retain-on-failure',
 
-    // Grant microphone permission (required for MediaRecorder)
-    permissions: ['microphone'],
+    // Microphone permission is *not* set globally: Playwright only
+    // recognises the `microphone` permission name on Chromium, so
+    // requesting it at the top level causes Firefox / WebKit to throw
+    // `Unknown permission: microphone` from `browser.newContext`
+    // before any test runs. Each Chromium-based project below opts in
+    // explicitly; cross-browser projects (firefox-desktop /
+    // webkit-desktop) intentionally omit it.
 
     // Viewport size
     viewport: { width: 1280, height: 720 },
