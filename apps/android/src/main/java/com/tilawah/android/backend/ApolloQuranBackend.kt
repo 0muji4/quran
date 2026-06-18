@@ -122,9 +122,19 @@ class ApolloQuranBackend(
         )
     }
 
+    /**
+     * Extract the object key the BFF stored in `user_data_objects.audio_key`
+     * from the presigned URL. The URL path is `/<bucket>/<key…>`, so we
+     * drop the leading slash and the bucket segment and keep everything
+     * after it — including any prefix like `uploads/`. Previously this
+     * only kept the final path segment, which made `createScoringJob`
+     * 404 with "Session ID not found for upload key" on S3-style
+     * deployments where the key contains slashes.
+     */
     private fun derivedUploadKey(url: String): String =
         runCatching {
-            java.net.URI(url).path?.trimStart('/')?.substringAfterLast('/').orEmpty()
+            val path = java.net.URI(url).path?.trimStart('/').orEmpty()
+            path.substringAfter('/', missingDelimiterValue = "")
         }.getOrDefault("")
 
     override suspend fun uploadAudio(file: File, signedUrl: String, contentType: String) =
