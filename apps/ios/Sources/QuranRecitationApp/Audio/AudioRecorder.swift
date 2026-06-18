@@ -29,15 +29,25 @@ final class AudioRecorder: ObservableObject {
   func startRecording() throws {
     try AudioSessionCoordinator.shared.ensureMode(.record)
 
+    // LINEAR16 PCM in a WAV container so Google Cloud Speech-to-Text v2
+    // can auto-decode the upload. Apple's `AVAudioRecorder` does not
+    // expose an Opus encoder, so iOS cannot mirror Android's OGG/Opus
+    // path (PR #438) directly — LINEAR16 is the smallest
+    // Speech-v2-supported encoding `AVAudioRecorder` can produce
+    // natively. 16 kHz mono 16-bit is the canonical input rate for
+    // Speech v2 and yields ~160 KB for a 5-second recording, which is
+    // acceptable for free-tier verification.
     let settings: [String: Any] = [
-      AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-      AVSampleRateKey: 44_100,
+      AVFormatIDKey: Int(kAudioFormatLinearPCM),
+      AVSampleRateKey: 16_000,
       AVNumberOfChannelsKey: 1,
-      AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+      AVLinearPCMBitDepthKey: 16,
+      AVLinearPCMIsBigEndianKey: false,
+      AVLinearPCMIsFloatKey: false
     ]
 
     let fileURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent("recitation-\(UUID().uuidString).m4a")
+      .appendingPathComponent("recitation-\(UUID().uuidString).wav")
 
     do {
       let recorder = try AVAudioRecorder(url: fileURL, settings: settings)
