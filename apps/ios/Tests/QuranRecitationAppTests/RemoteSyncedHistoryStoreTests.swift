@@ -72,7 +72,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     store.setLastPracticed(entry)
     XCTAssertEqual(cache.lastPracticed(), entry, "cache update is synchronous")
 
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
     XCTAssertEqual(me.putLastPracticedCallCount, 1)
     XCTAssertEqual(me.lastPutLastPracticed, entry)
   }
@@ -88,7 +88,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     store.recordBestScore(surahId: "1", ayahNumber: 1, score: 88, achievedAt: achievedAt)
     XCTAssertEqual(cache.bestScore(surahId: "1", ayahNumber: 1)?.score, 88)
 
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
     XCTAssertEqual(me.putBestScoreCallCount, 1)
     XCTAssertEqual(me.lastPutBestScoreKey, "1:1")
     XCTAssertEqual(me.lastPutBestScoreEntry?.score, 88)
@@ -102,7 +102,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     store.recordAttempt(attemptOne)
     XCTAssertEqual(cache.recentAttempts(limit: 1), [attemptOne])
 
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
     XCTAssertEqual(me.recordAttemptCallCount, 1)
     XCTAssertEqual(me.lastRecordedAttempt, attemptOne)
   }
@@ -113,7 +113,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     let store = RemoteSyncedHistoryStore(cache: cache, me: me, telemetry: NoOpTelemetry())
 
     store.setLastPracticed(entry)
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
 
     XCTAssertEqual(cache.lastPracticed(), entry, "local cache is the user-facing record; remote failure must not roll it back")
   }
@@ -132,7 +132,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     )
 
     store.setLastPracticed(entry)
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
 
     let errorRecords = telemetry.records.compactMap { record -> (String, [String: String])? in
       if case let .error(code, context) = record { return (code, context) } else { return nil }
@@ -161,7 +161,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
       score: 88,
       achievedAt: Date(timeIntervalSince1970: 1_700_000_000)
     )
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
 
     if case let .error(code, context) = telemetry.records.first {
       XCTAssertEqual(code, "backend_unavailable")
@@ -186,7 +186,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     )
 
     store.recordAttempt(attemptOne)
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
 
     if case let .error(_, context) = telemetry.records.first {
       XCTAssertEqual(context["kind"], "attempt")
@@ -227,7 +227,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     )
 
     store.setLastPracticed(entry)
-    await Self.drainBackgroundTasks()
+    await store.pendingWriteTask?.value
 
     XCTAssertTrue(telemetry.records.isEmpty, "success path must not generate noise on the failure dashboard")
   }
@@ -320,13 +320,4 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     XCTAssertNil(cache.bestScore(surahId: "2", ayahNumber: 0))
   }
 
-  // MARK: - Helpers
-
-  /// Yield the main actor several times so any fire-and-forget
-  /// `Task { … }` the store kicks off has a chance to settle before
-  /// the assertion fires. Ten yields is empirically plenty for the
-  /// "one await on a mock" path the writes follow.
-  private static func drainBackgroundTasks() async {
-    for _ in 0..<10 { await Task.yield() }
-  }
 }
