@@ -13,12 +13,38 @@ final class ApolloBackend: QuranBackend {
   private let pollAttempts: Int
   private let pollIntervalNanos: UInt64
 
+  /// Production initialiser. Constructs an `ApolloClient` whose
+  /// network transport runs through `AuthInterceptorProvider`, so
+  /// every GraphQL request carries `Authorization: Bearer <token>`
+  /// and a 401 transparently refreshes via `TokenRefresher`.
+  ///
+  /// Mirrors the wiring on Android (PR #435). Shares the same
+  /// `TokenRefresher` instance with the REST `AuthHTTPClient` so
+  /// concurrent 401s across both transports coalesce into a single
+  /// `POST /auth/refresh` — see `TokenRefresher.refresh()` for why
+  /// this matters for the BFF's replay-detection logic.
   init(
     endpoint: URL = AppConfig.graphqlURL,
     pollAttempts: Int = 20,
-    pollIntervalNanos: UInt64 = 800_000_000
+    pollIntervalNanos: UInt64 = 800_000_000,
+    tokenStore: TokenStore,
+    refresher: TokenRefresher,
+    onSignOut: @escaping @MainActor () -> Void
   ) {
-    self.client = ApolloClient(url: endpoint)
+    let store = ApolloStore()
+    let urlSessionClient = URLSessionClient()
+    let provider = AuthInterceptorProvider(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: onSignOut,
+      client: urlSessionClient,
+      store: store
+    )
+    let transport = RequestChainNetworkTransport(
+      interceptorProvider: provider,
+      endpointURL: endpoint
+    )
+    self.client = ApolloClient(networkTransport: transport, store: store)
     self.pollAttempts = pollAttempts
     self.pollIntervalNanos = pollIntervalNanos
   }

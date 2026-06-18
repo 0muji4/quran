@@ -12,11 +12,19 @@ struct QuranRecitationApp: App {
 
   init() {
     let telemetry = OSLogTelemetry()
-    let backend = ApolloBackend()
     let authService = URLSessionAuthService()
     let tokenStore = KeychainTokenStore()
     let session = SessionStore(tokenStore: tokenStore)
     let refresher = TokenRefresher(authService: authService, tokenStore: tokenStore)
+    // Share `refresher` and `onSignOut` between Apollo and the REST
+    // HTTP client so concurrent 401s on the two transports coalesce
+    // into a single `POST /auth/refresh` and route through the same
+    // sign-out destination.
+    let backend = ApolloBackend(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: { session.signOut() }
+    )
     let http = AuthHTTPClient(
       tokenStore: tokenStore,
       refresher: refresher,
