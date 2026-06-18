@@ -8,6 +8,7 @@ import (
 
 	speech "cloud.google.com/go/speech/apiv2"
 	"cloud.google.com/go/speech/apiv2/speechpb"
+	"google.golang.org/api/option"
 )
 
 // ChirpConfig configures the Google Cloud Speech-to-Text v2 (Chirp 2) backend.
@@ -64,7 +65,17 @@ func NewChirpTranscriber(ctx context.Context, cfg ChirpConfig) (*ChirpTranscribe
 	}
 	cfg.applyDefaults()
 
-	client, err := speech.NewClient(ctx)
+	// Speech v2 uses a per-region API endpoint when Location is not
+	// "global". chirp_2 is not available at the global endpoint, so deploys
+	// that want chirp_2 must pick a supported region (e.g. asia-southeast1)
+	// AND connect to the matching <region>-speech.googleapis.com host.
+	var clientOpts []option.ClientOption
+	if cfg.Location != "" && cfg.Location != "global" {
+		clientOpts = append(clientOpts, option.WithEndpoint(
+			fmt.Sprintf("%s-speech.googleapis.com:443", cfg.Location),
+		))
+	}
+	client, err := speech.NewClient(ctx, clientOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("transcribe: open speech client: %w", err)
 	}
