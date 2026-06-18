@@ -7,6 +7,7 @@ import com.apollographql.apollo.exception.ApolloHttpException
 import com.apollographql.apollo.exception.ApolloNetworkException
 import com.tilawah.android.app.AppConfig
 import com.tilawah.android.app.AppError
+import com.tilawah.android.storage.AuthSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -36,10 +37,28 @@ import java.io.IOException
  * transport types.
  */
 class ApolloQuranBackend(
-    private val apollo: ApolloClient = defaultApolloClient(),
+    private val apollo: ApolloClient,
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val referenceAudio: ReferenceAudioClient = ReferenceAudioClient(httpClient),
 ) : QuranBackend {
+
+    /**
+     * Production constructor: builds an [ApolloClient] wired to
+     * [BearerAuthInterceptor] so every GraphQL request carries the
+     * stored access token. Tests and integration shims can keep using
+     * the primary constructor with a fake [ApolloClient].
+     */
+    constructor(
+        authSession: AuthSession,
+        tokenRefresher: TokenRefresher? = null,
+        httpClient: OkHttpClient = OkHttpClient(),
+    ) : this(
+        apollo = ApolloClient.Builder()
+            .serverUrl(AppConfig.graphqlUrl)
+            .addHttpInterceptor(BearerAuthInterceptor(authSession, tokenRefresher))
+            .build(),
+        httpClient = httpClient,
+    )
 
     override suspend fun surahs(limit: Int?, offset: Int?): List<SurahSummary> =
         wrap("surahs") {
@@ -230,10 +249,4 @@ class ApolloQuranBackend(
 
     private fun <T : Any> toOptional(value: T?): Optional<T> =
         if (value == null) Optional.absent() else Optional.present(value)
-
-    private companion object {
-        fun defaultApolloClient(): ApolloClient = ApolloClient.Builder()
-            .serverUrl(AppConfig.graphqlUrl)
-            .build()
-    }
 }
