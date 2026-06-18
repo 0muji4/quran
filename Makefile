@@ -1,4 +1,4 @@
-.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors worker-py-test format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
+.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -23,20 +23,19 @@ format: ## Format all code
 
 test: ## Run all JS/TS tests
 	pnpm test
-	$(MAKE) worker-py-test
 
 go-test: ## Run Go tests for all modules
 	@echo "Running Go tests..."
-	@go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
+	@go test ./apps/backend/... ./packages/go-pkg/...
 
 go-fmt: ## Format Go code
 	@echo "Formatting Go code..."
-	@gofmt -w $$(find ./apps/backend ./apps/worker/go ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")
+	@gofmt -w $$(find ./apps/backend ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")
 	@echo "✓ Go code formatted"
 
 go-fmt-check: ## Check Go code formatting
 	@echo "Checking Go code formatting..."
-	@unformatted=$$(gofmt -l $$(find ./apps/backend ./apps/worker/go ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")); \
+	@unformatted=$$(gofmt -l $$(find ./apps/backend ./packages/go-pkg -name '*.go' -not -path "*/vendor/*")); \
 	if [ -n "$$unformatted" ]; then \
 		echo "gofmt needed on:"; \
 		echo "$$unformatted"; \
@@ -57,26 +56,15 @@ bff-test-coverage:
 	@echo "Running BFF tests with coverage..."
 	@pnpm --filter @quran-project/bff test --coverage
 
-worker-py-test:
-	@echo "Running Python worker tests..."
-	@if [ ! -d "apps/worker/python/.venv" ]; then \
-		echo "Creating Python virtual environment..."; \
-		python3 -m venv apps/worker/python/.venv; \
-	fi
-	@echo "Installing dependencies into virtual environment..."
-	@apps/worker/python/.venv/bin/python -m pip install -r apps/worker/python/requirements-dev.txt
-	@echo "Running tests using virtual environment..."
-	@DISABLE_TELEMETRY=true apps/worker/python/.venv/bin/python -m pytest apps/worker/python/tests/
-
 go-test-integration:
 	@echo "Running Go integration tests..."
-	@echo "This will start Docker containers for PostgreSQL and Redis"
-	@go test -tags=integration -v ./packages/go-pkg/db/... ./packages/go-pkg/queue/... ./apps/backend/internal/repo/... ./apps/backend/internal/storage/...
+	@echo "This will start a Docker container for PostgreSQL"
+	@go test -tags=integration -v ./packages/go-pkg/db/... ./apps/backend/internal/repo/... ./apps/backend/internal/storage/...
 
 go-test-all:
 	@echo "Running all Go tests (unit + integration)..."
 	@go test -short ./...
-	@go test -tags=integration -v ./packages/go-pkg/db/... ./packages/go-pkg/queue/... ./apps/backend/internal/repo/... ./apps/backend/internal/storage/...
+	@go test -tags=integration -v ./packages/go-pkg/db/... ./apps/backend/internal/repo/... ./apps/backend/internal/storage/...
 
 go-test-coverage-check: ## Run Go tests with coverage check (80% threshold)
 	@echo "Running Go tests with coverage check..."

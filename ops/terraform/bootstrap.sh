@@ -36,7 +36,6 @@ APIS=(
   iamcredentials.googleapis.com
   logging.googleapis.com
   monitoring.googleapis.com
-  redis.googleapis.com
   run.googleapis.com
   secretmanager.googleapis.com
   servicenetworking.googleapis.com
