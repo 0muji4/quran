@@ -48,7 +48,11 @@ class MediaRecorderRecorder(
         }
         ensurePermission()
         focus.ensureMode(AudioFocusCoordinator.Mode.Record, onLoss = { cancel() })
-        val file = File(context.cacheDir, "recording-${System.currentTimeMillis()}.m4a")
+        // OGG/Opus is one of the audio encodings Google Cloud Speech-to-Text v2
+        // can auto-decode with Chirp 3; MPEG-4 / AAC (the original choice here)
+        // is not, so the backend rejected every upload with
+        // "Audio data does not appear to be in a supported encoding".
+        val file = File(context.cacheDir, "recording-${System.currentTimeMillis()}.ogg")
         try {
             @Suppress("DEPRECATION")
             val mr = (
@@ -59,10 +63,10 @@ class MediaRecorderRecorder(
                 }
             ).apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(128_000)
-                setAudioSamplingRate(44_100)
+                setOutputFormat(MediaRecorder.OutputFormat.OGG)
+                setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
+                setAudioEncodingBitRate(64_000)
+                setAudioSamplingRate(48_000)
                 setOutputFile(file.absolutePath)
                 prepare()
                 start()

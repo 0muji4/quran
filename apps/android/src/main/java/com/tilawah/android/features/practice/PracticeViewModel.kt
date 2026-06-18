@@ -189,9 +189,9 @@ class PracticeViewModel(
             val signed = telemetry.measure(TelemetryEvent.PRACTICE_UPLOAD_COMPLETED) {
                 val payload = backend.requestSignedUploadUrl(
                     filename = recording.file.name,
-                    contentType = AUDIO_M4A,
+                    contentType = AUDIO_OGG,
                 )
-                backend.uploadAudio(recording.file, payload.url, AUDIO_M4A)
+                backend.uploadAudio(recording.file, payload.url, AUDIO_OGG)
                 payload
             }
             val job = backend.createScoringJob(
@@ -296,6 +296,6 @@ class PracticeViewModel(
     companion object {
         const val DEFAULT_POLL_ATTEMPTS = 20
         const val DEFAULT_POLL_INTERVAL_MS = 2_000L
-        const val AUDIO_M4A = "audio/m4a"
+        const val AUDIO_OGG = "audio/ogg"
     }
 }
