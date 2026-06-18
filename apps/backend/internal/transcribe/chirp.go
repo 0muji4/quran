@@ -126,10 +126,7 @@ func (t *ChirpTranscriber) buildRequest(expectedText string, audio []byte) *spee
 		},
 		Model:         t.cfg.Model,
 		LanguageCodes: []string{t.cfg.LanguageCode},
-		Features: &speechpb.RecognitionFeatures{
-			EnableWordTimeOffsets: true,
-			EnableWordConfidence:  true,
-		},
+		Features:      featuresForModel(t.cfg.Model),
 	}
 	if !t.cfg.DisablePhraseBoost {
 		if adaptation := buildAdaptation(expectedText, t.cfg.PhraseBoost); adaptation != nil {
@@ -141,6 +138,20 @@ func (t *ChirpTranscriber) buildRequest(expectedText string, audio []byte) *spee
 		Recognizer:  recognizer,
 		Config:      config,
 		AudioSource: &speechpb.RecognizeRequest_Content{Content: audio},
+	}
+}
+
+// featuresForModel returns the RecognitionFeatures the configured model can
+// actually honour. chirp_3 (and its variants) reject per-word confidence and
+// time-offset requests; chirp_2 / chirp / latest_* accept both. Callers that
+// rely on per-word metadata must pick a model that exposes it.
+func featuresForModel(model string) *speechpb.RecognitionFeatures {
+	if strings.HasPrefix(model, "chirp_3") {
+		return &speechpb.RecognitionFeatures{}
+	}
+	return &speechpb.RecognitionFeatures{
+		EnableWordTimeOffsets: true,
+		EnableWordConfidence:  true,
 	}
 }
 
