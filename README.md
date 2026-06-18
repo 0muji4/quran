@@ -28,7 +28,6 @@ Local setup, build, and test instructions live next to the code they describe:
 | Backend (Go) | [`apps/backend/README.md`](./apps/backend/README.md) |
 | BFF (TypeScript) | [`apps/bff/README.md`](./apps/bff/README.md) |
 | Web (Next.js) | [`apps/web/README.md`](./apps/web/README.md) |
-| Worker (Python / Go) | [`apps/worker/README.md`](./apps/worker/README.md) |
 | Android | [`apps/android/README.md`](./apps/android/README.md) |
 | iOS | [`apps/ios/README.md`](./apps/ios/README.md) |
 
@@ -42,7 +41,7 @@ make dev-up
 make db-migrate && make db-seed   # first time only
 ```
 
-Default published ports: Web 3000 / BFF 4000 / Backend 8080 / Postgres 5432 / Redis 6379 / MinIO 9000-9001 / Jaeger 16686 / Prometheus 9090 / Grafana 3200. See [`ops/README.md`](./ops/README.md) for details.
+Default published ports: Web 3000 / BFF 4000 / Backend 8080 / Postgres 5432 / MinIO 9000-9001 / Jaeger 16686 / Prometheus 9090 / Grafana 3200. See [`ops/README.md`](./ops/README.md) for details.
 
 ## Running All Tests
 
@@ -55,7 +54,7 @@ Coverage thresholds are **80% for lines / functions / branches / statements**. C
 
 ## Repository Layout
 
-- `apps/` — `web` / `bff` / `backend` / `worker` / `android` / `ios`
+- `apps/` — `web` / `bff` / `backend` / `android` / `ios`
 - `packages/` — `ui` / `shared-ts` / `go-pkg` / `eslint-config` / `ts-config`
 - `db/` — migrations (`migrations/`), reference Quran seed (`seed_quran.sql`, auto-generated), and demo fixtures (`seed.sql`)
 - `ops/` — Docker Compose, observability, local dev tooling

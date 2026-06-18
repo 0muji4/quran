@@ -3,8 +3,12 @@
 - **Author**: motoshi.suzuki
 - **Reviewer**: TBD
 - **Last Updated**: 2026年5月7日
-- **Status**: Draft
+- **Status**: Draft (historical — see note below)
 - **Project**: quran-project / web 録音体験向上
+
+> **Note (2026-06-19)**: 本 DD は Python Worker (faster-whisper) 前提で書かれているが、Phase 5 検証 ([docs/free-tier-verification-troubleshooting.md](../free-tier-verification-troubleshooting.md)) で Go backend が Google Cloud Speech-to-Text v2 (chirp_3) を同期呼び出しする経路に切り替わった ([ADR 0019](../adr/0019-backend-inline-asr-supersedes-worker.md))。Worker / Redis / enqueue は削除済み。
+>
+> 本文の Worker 言及 (`apps/worker/python/main.py` 等) は当時の設計を示す履歴で、現在のコードベースには対応物がない。語単位 alignment / `WordAligner` の責務は `apps/backend/internal/arabic` と `apps/backend/internal/transcribe` に移った。fluency 成分は chirp_3 が word_confidence を返さないため現在 0 固定 (ADR 0019 参照)。
 
 ---
 

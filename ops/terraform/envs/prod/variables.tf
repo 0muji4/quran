@@ -30,7 +30,6 @@ variable "container_images" {
     backend = string
     bff     = string
     web     = string
-    worker  = string
   })
 }
 
