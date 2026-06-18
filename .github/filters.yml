@@ -50,15 +50,10 @@ js:
 go:
   - *shared
   - 'apps/backend/**'
-  - 'apps/worker/go/**'
   - 'packages/go-pkg/**'
   - 'go.work'
   - 'go.work.sum'
   - 'scripts/check-go-coverage.sh'
-
-python:
-  - *shared
-  - 'apps/worker/python/**'
 
 db:
   - *shared

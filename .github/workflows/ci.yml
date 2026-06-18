@@ -22,7 +22,6 @@ jobs:
     outputs:
       js: ${{ steps.resolve.outputs.js }}
       go: ${{ steps.resolve.outputs.go }}
-      python: ${{ steps.resolve.outputs.python }}
       db: ${{ steps.resolve.outputs.db }}
       terraform: ${{ steps.resolve.outputs.terraform }}
       ios: ${{ steps.resolve.outputs.ios }}
@@ -44,7 +43,6 @@ jobs:
           FORCE_ALL: ${{ inputs.force_all == true }}
           F_JS: ${{ steps.filter.outputs.js }}
           F_GO: ${{ steps.filter.outputs.go }}
-          F_PYTHON: ${{ steps.filter.outputs.python }}
           F_DB: ${{ steps.filter.outputs.db }}
           F_TERRAFORM: ${{ steps.filter.outputs.terraform }}
           F_IOS: ${{ steps.filter.outputs.ios }}
@@ -61,7 +59,6 @@ jobs:
           }
           emit js        "$F_JS"
           emit go        "$F_GO"
-          emit python    "$F_PYTHON"
           emit db        "$F_DB"
           emit terraform "$F_TERRAFORM"
           emit ios       "$F_IOS"
@@ -119,7 +116,7 @@ jobs:
 
       - name: Run Go format check
         run: |
-          unformatted=$(gofmt -l $(find ./apps/backend ./apps/worker/go ./packages/go-pkg -name '*.go' -not -path "*/vendor/*"))
+          unformatted=$(gofmt -l $(find ./apps/backend ./packages/go-pkg -name '*.go' -not -path "*/vendor/*"))
           if [ -n "$unformatted" ]; then
             echo "gofmt needed on:"
             echo "$unformatted"
@@ -127,30 +124,7 @@ jobs:
           fi
 
       - name: Run Go tests
-        run: go test ./apps/backend/... ./apps/worker/go/... ./packages/go-pkg/...
-
-  python-tests:
-    needs: changes
-    if: needs.changes.outputs.python == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python (worker)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: apps/worker/python/requirements-dev.txt
-
-      - name: Run Python worker tests
-        env:
-          DISABLE_TELEMETRY: "true"
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r apps/worker/python/requirements-dev.txt
-          python -m pytest apps/worker/python/tests/
+        run: go test ./apps/backend/... ./packages/go-pkg/...
 
   db-lint:
     needs: changes
@@ -281,7 +255,6 @@ jobs:
       - changes
       - js-quality
       - go-quality
-      - python-tests
       - db-lint
       - terraform-validate
       - tests
