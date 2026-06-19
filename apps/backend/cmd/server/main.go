@@ -69,8 +69,10 @@ func main() {
 		log.Fatalf("scoring engine init failed: %v", err)
 	}
 
+	jobs := scoring.NewJobService(svc, repository, engine)
+
 	mux := http.NewServeMux()
-	rest := handler.REST{SurahService: svc, DB: dbConn, ScoringEngine: engine}
+	rest := handler.REST{SurahService: svc, Jobs: jobs}
 	rest.Register(mux)
 	mux.Handle("/graphql", handler.GraphQLHandler{SurahService: svc})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
