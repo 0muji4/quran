@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mirrors the web favicon's #1F1A14 background (apps/web/app/icon.svg). -->
-    <color name="ic_launcher_background">#1F1A14</color>
+    <!-- Mirrors the web favicon's outer background (apps/web/app/icon.svg). -->
+    <color name="ic_launcher_background">#0A211D</color>
 </resources>
