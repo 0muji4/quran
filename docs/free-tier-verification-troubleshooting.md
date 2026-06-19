@@ -253,7 +253,10 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
   JWT_SECRET=<openssl rand -hex 32>
   REFRESH_TOKEN_SECRET=<openssl rand -hex 32>
   NODE_ENV=production
+  OTEL_SDK_DISABLED=true
   ```
+
+  `OTEL_SDK_DISABLED=true` を入れないと、BFF が起動時に OTEL collector (`localhost:4318`) に接続しに行って `ECONNREFUSED ::1:4318` を 5 秒ごとに吐き続ける。dev デプロイには collector を立てていないので、ログが本物のエラーで埋もれなくなる。
 
 ### A.6 Android
 
