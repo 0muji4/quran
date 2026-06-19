@@ -38,7 +38,13 @@ test.describe('Error Handling', () => {
     await expect(homePage.heading).toBeVisible();
   });
 
-  test('should handle a quick start/stop without crashing', async ({ recordPage }) => {
+  test('should handle a quick start/stop without crashing', async ({ recordPage, browserName }) => {
+    // MediaRecorder + the Chromium-only `--use-fake-device-for-media-stream`
+    // launch flag are what make `startRecording()` succeed in headless CI.
+    // Firefox / WebKit have no equivalent, so this scenario can't run on
+    // them without a real microphone source.
+    test.skip(browserName !== 'chromium', 'MediaRecorder fake-mic flags are Chromium-only');
+
     await recordPage.goto(testSurahs.alFatihah.id, 1);
 
     await recordPage.startRecording();
@@ -60,7 +66,9 @@ test.describe('Error Handling', () => {
     ).toBeVisible();
   });
 
-  test('should reset state on a page reload during recording', async ({ page, recordPage }) => {
+  test('should reset state on a page reload during recording', async ({ page, recordPage, browserName }) => {
+    test.skip(browserName !== 'chromium', 'MediaRecorder fake-mic flags are Chromium-only');
+
     await recordPage.goto(testSurahs.alFatihah.id, 1);
 
     await recordPage.startRecording();
