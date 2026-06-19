@@ -16,7 +16,16 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Postgres 18 Docker image stores data under a major-version
+      # subdirectory of `/var/lib/postgresql` (e.g.
+      # `/var/lib/postgresql/18/docker/`) to keep pg_upgrade workflows
+      # clean. Mounting the named volume at the parent path is the
+      # upstream-recommended layout for 18+; the 16-era
+      # `/var/lib/postgresql/data` mount makes the 18 entrypoint
+      # refuse to start because it treats the legacy directory as
+      # leftover data from a previous major version. See
+      # docker-library/postgres#37 + #1259.
+      - postgres_data:/var/lib/postgresql
 
   minio:
     image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
