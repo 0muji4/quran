@@ -206,3 +206,78 @@ func TestJobServiceGet(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+// TestJobServiceCreateTimeoutMarksFailedOnDetachedContext verifies that a
+// slow transcriber that runs past the JobService timeout (a) returns
+// context.DeadlineExceeded and (b) still flips the row to FAILED — the
+// cleanup write must use a context detached from the expired one so the
+// scoring_jobs row does not orphan in RUNNING.
+func TestJobServiceCreateTimeoutMarksFailedOnDetachedContext(t *testing.T) {
+	ayahLookup := fakeAyahLookup{fn: func(_ context.Context, _, _ int32) (domain.Ayah, error) {
+		return domain.Ayah{ID: 1, TextAr: "بسم"}, nil
+	}}
+
+	// Capture the context the repo sees for MarkFailed and confirm it
+	// has its own deadline (i.e. it is not the expired request ctx).
+	var markFailedCtxErr error
+	var markFailedHasDeadline bool
+	jobs := &fakeJobRepo{
+		startFn: func(_ context.Context, _ repo.StartScoringJobParams) (time.Time, error) {
+			return time.Now(), nil
+		},
+		failFn: func(ctx context.Context, _ string) error {
+			markFailedCtxErr = ctx.Err()
+			_, markFailedHasDeadline = ctx.Deadline()
+			return nil
+		},
+	}
+
+	// Transcriber blocks until the surrounding context is cancelled,
+	// which the JobService's timeout will do almost immediately.
+	store := &fakeStore{getFn: staticAudio("opus")}
+	tr := &fakeTranscriber{fn: func(ctx context.Context, _ transcribe.Request) (transcribe.Result, error) {
+		<-ctx.Done()
+		return transcribe.Result{}, ctx.Err()
+	}}
+	engine, err := scoring.NewEngine(store, tr)
+	require.NoError(t, err)
+
+	svc := scoring.NewJobService(ayahLookup, jobs, engine)
+	svc.Timeout = 20 * time.Millisecond
+
+	_, err = svc.Create(context.Background(), scoring.JobInput{
+		SessionID: "sess-timeout", UploadKey: "k", SurahID: 1, AyahNumber: 1,
+	})
+
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Equal(t, []string{"sess-timeout"}, jobs.failedSessions)
+	// Cleanup ctx must NOT inherit the expired deadline — it has its own
+	// fresh one — and must not already be in an error state.
+	require.NoError(t, markFailedCtxErr, "MarkFailed received an already-cancelled context")
+	require.True(t, markFailedHasDeadline, "MarkFailed context should carry its own deadline")
+}
+
+// TestJobServiceCreateDefaultsTimeout verifies the use case applies its
+// default deadline when Timeout is left zero.
+func TestJobServiceCreateDefaultsTimeout(t *testing.T) {
+	ayahLookup := fakeAyahLookup{fn: func(_ context.Context, _, _ int32) (domain.Ayah, error) {
+		return domain.Ayah{ID: 1, TextAr: "بسم"}, nil
+	}}
+
+	var sawDeadline bool
+	jobs := &fakeJobRepo{
+		startFn: func(ctx context.Context, _ repo.StartScoringJobParams) (time.Time, error) {
+			_, sawDeadline = ctx.Deadline()
+			return time.Now(), nil
+		},
+	}
+	engine := newEngine(t, "بسم", []transcribe.Word{{Text: "بسم", Confidence: 0.9}})
+
+	svc := scoring.NewJobService(ayahLookup, jobs, engine) // Timeout left zero
+	_, err := svc.Create(context.Background(), scoring.JobInput{
+		UploadKey: "k", SurahID: 1, AyahNumber: 1,
+	})
+
+	require.NoError(t, err)
+	require.True(t, sawDeadline, "Create should impose a deadline even when Timeout is zero")
+}
