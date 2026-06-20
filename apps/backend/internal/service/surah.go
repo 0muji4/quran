@@ -32,3 +32,10 @@ func (s SurahService) ListAyahs(ctx context.Context, surahID int32) ([]domain.Ay
 func (s SurahService) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
 	return s.AyahRepo.GetAyah(ctx, id)
 }
+
+// GetAyahByNumber fetches a single ayah by its (surahID, ayahNumber) pair.
+// This satisfies scoring.AyahLookup so the scoring use case can resolve a
+// verse without listing an entire surah.
+func (s SurahService) GetAyahByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+	return s.AyahRepo.GetByNumber(ctx, surahID, ayahNumber)
+}

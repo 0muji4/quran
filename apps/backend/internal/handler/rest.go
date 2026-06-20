@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"quran-project/apps/backend/internal/repo"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/storage"
@@ -18,9 +17,11 @@ import (
 
 // REST exposes the HTTP surface for surahs, ayahs, and recitation scoring.
 type REST struct {
-	SurahService  service.SurahService
-	DB            *sql.DB
-	ScoringEngine *scoring.Engine
+	SurahService service.SurahService
+	// Jobs orchestrates recitation scoring. It is nil in environments that
+	// do not configure scoring (the handlers guard for that), keeping the
+	// transport layer free of *sql.DB and the scoring pipeline details.
+	Jobs *scoring.JobService
 }
 
 // Register wires endpoints onto provided mux under /api using Go 1.22+
@@ -97,25 +98,23 @@ type scoringJobRequest struct {
 	ReferenceAudioKey string `json:"referenceAudioKey,omitempty"`
 }
 
-type scoreSegment struct {
-	Label   string         `json:"label"`
-	Score   float64        `json:"score"`
-	Metrics map[string]any `json:"metrics,omitempty"`
+type scoringJobResponse struct {
+	JobID      string          `json:"jobId"`
+	UploadKey  string          `json:"uploadKey"`
+	Status     string          `json:"status"`
+	Score      *float64        `json:"score,omitempty"`
+	Segments   json.RawMessage `json:"segments"`
+	Verdict    *string         `json:"verdict,omitempty"`
+	Evaluation json.RawMessage `json:"evaluation,omitempty"`
+	CreatedAt  time.Time       `json:"createdAt"`
 }
 
-type scoringJobResponse struct {
-	JobID      string         `json:"jobId"`
-	UploadKey  string         `json:"uploadKey"`
-	Status     string         `json:"status"`
-	Score      *float64       `json:"score,omitempty"`
-	Segments   []scoreSegment `json:"segments"`
-	Verdict    *string        `json:"verdict,omitempty"`
-	Evaluation map[string]any `json:"evaluation,omitempty"`
-	CreatedAt  time.Time      `json:"createdAt"`
-}
+// emptyJSONArray is the default `segments` payload; the column defaults to
+// '[]'::jsonb so the API always returns an array rather than null.
+var emptyJSONArray = json.RawMessage("[]")
 
 func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
-	if h.DB == nil || h.ScoringEngine == nil {
+	if h.Jobs == nil {
 		http.Error(w, "scoring jobs not configured", http.StatusInternalServerError)
 		return
 	}
@@ -130,148 +129,60 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	surahIDInt, err := strconv.Atoi(req.SurahID)
+	surahID, err := strconv.Atoi(req.SurahID)
 	if err != nil {
 		http.Error(w, "invalid surahId", http.StatusBadRequest)
 		return
 	}
 
-	ayahs, err := h.SurahService.ListAyahs(r.Context(), int32(surahIDInt))
+	result, err := h.Jobs.Create(r.Context(), scoring.JobInput{
+		SessionID:  req.SessionID,
+		UploadKey:  req.UploadKey,
+		SurahID:    int32(surahID),
+		AyahNumber: *req.AyahNumber,
+		UserID:     req.UserID,
+	})
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "failed to list ayahs", err)
-		return
-	}
-
-	var ayahID int64
-	var expectedText string
-	for _, ayah := range ayahs {
-		if ayah.AyahNumber == *req.AyahNumber {
-			ayahID = ayah.ID
-			expectedText = ayah.TextAr
-			break
-		}
-	}
-	if ayahID == 0 {
-		http.Error(w, "ayah not found", http.StatusNotFound)
-		return
-	}
-
-	sessionID := req.SessionID
-	if sessionID == "" {
-		sessionID = req.UploadKey
-	}
-
-	createdAt, err := upsertScoringJob(r.Context(), h.DB, sessionID, req, int32(surahIDInt), ayahID)
-	if err != nil {
-		telemetry.Logger().ErrorContext(r.Context(), "persist scoring job failed",
-			"session_id", sessionID, "error", err)
-		http.Error(w, "failed to persist scoring job", http.StatusInternalServerError)
-		return
-	}
-
-	result, err := h.ScoringEngine.Score(r.Context(), req.UploadKey, expectedText)
-	if err != nil {
-		markJobFailed(r.Context(), h.DB, sessionID)
-		if errors.Is(err, storage.ErrObjectNotFound) {
+		switch {
+		case errors.Is(err, repo.ErrAyahNotFound):
+			http.Error(w, "ayah not found", http.StatusNotFound)
+		case errors.Is(err, storage.ErrObjectNotFound):
 			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
-			return
-		}
 		// Surface the "transcriber not configured" case as 503 so the
 		// caller can tell a missing-CHIRP_PROJECT deploy apart from a
 		// real internal failure. Dev compose and e2e CI hit this path
 		// until the env var is wired.
-		if errors.Is(err, transcribe.ErrUnavailable) {
+		case errors.Is(err, transcribe.ErrUnavailable):
 			writeError(w, r, http.StatusServiceUnavailable, "transcriber not configured (CHIRP_PROJECT)", err)
-			return
+		default:
+			writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
 		}
-		writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
 		return
 	}
 
-	evaluation := map[string]any{
-		"accuracy":     result.Score.Accuracy,
-		"fluency":      result.Score.Fluency,
-		"completeness": result.Score.Completeness,
-		"wer":          result.WER,
-		"transcript":   result.Transcript,
-		"alignments":   result.Alignments,
-	}
-	evaluationJSON, err := json.Marshal(evaluation)
+	telemetry.RecordSessionCompleted(r.Context(), req.UserID, result.Score)
+
+	evaluationJSON, err := json.Marshal(result.Evaluation)
 	if err != nil {
-		markJobFailed(r.Context(), h.DB, sessionID)
 		writeError(w, r, http.StatusInternalServerError, "failed to encode evaluation", err)
 		return
 	}
 
-	if _, err := h.DB.ExecContext(
-		r.Context(),
-		`UPDATE scoring_jobs
-		 SET status = 'COMPLETED', score = $2, evaluation = $3, updated_at = NOW()
-		 WHERE session_id = $1`,
-		sessionID, result.Score.Overall, evaluationJSON,
-	); err != nil {
-		writeError(w, r, http.StatusInternalServerError, "failed to persist score", err)
-		return
-	}
-
-	telemetry.RecordSessionCompleted(r.Context(), req.UserID, result.Score.Overall)
-
-	overall := result.Score.Overall
+	score := result.Score
 	w.WriteHeader(http.StatusCreated)
 	writeJSON(w, scoringJobResponse{
-		JobID:      sessionID,
-		UploadKey:  req.UploadKey,
+		JobID:      result.SessionID,
+		UploadKey:  result.UploadKey,
 		Status:     "COMPLETED",
-		Score:      &overall,
-		Segments:   []scoreSegment{},
-		Evaluation: evaluation,
-		CreatedAt:  createdAt,
+		Score:      &score,
+		Segments:   emptyJSONArray,
+		Evaluation: evaluationJSON,
+		CreatedAt:  result.CreatedAt,
 	})
 }
 
-// upsertScoringJob inserts (or refreshes) the scoring_jobs row for the
-// session in RUNNING state so a partial failure mid-pipeline leaves a
-// trace, and returns the row's created_at timestamp. The status string
-// must match the scoring_jobs_status_check CHECK constraint.
-func upsertScoringJob(ctx context.Context, db *sql.DB, sessionID string, req scoringJobRequest, surahID int32, ayahID int64) (time.Time, error) {
-	var userID sql.NullString
-	if req.UserID != "" {
-		userID = sql.NullString{String: req.UserID, Valid: true}
-	}
-	const query = `
-		INSERT INTO scoring_jobs (
-			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, status, created_at, updated_at
-		)
-		VALUES ($1, $2, $3, $4, $5, $6, 'RUNNING', NOW(), NOW())
-		ON CONFLICT (session_id)
-		DO UPDATE SET
-			user_id = EXCLUDED.user_id,
-			upload_key = EXCLUDED.upload_key,
-			surah_id = EXCLUDED.surah_id,
-			ayah_id = EXCLUDED.ayah_id,
-			ayah_number = EXCLUDED.ayah_number,
-			status = 'RUNNING',
-			updated_at = NOW()
-		RETURNING created_at;
-	`
-	var createdAt time.Time
-	err := db.QueryRowContext(ctx, query, sessionID, userID, req.UploadKey, surahID, ayahID, *req.AyahNumber).Scan(&createdAt)
-	return createdAt, err
-}
-
-// markJobFailed best-effort flips the row to FAILED; logging is left to
-// the caller since it already has the original error in hand. Errors here
-// are swallowed so we don't mask the real failure that triggered the call.
-func markJobFailed(ctx context.Context, db *sql.DB, sessionID string) {
-	_, _ = db.ExecContext(
-		ctx,
-		`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
-		sessionID,
-	)
-}
-
 func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
-	if h.DB == nil {
+	if h.Jobs == nil {
 		http.Error(w, "scoring jobs not configured", http.StatusInternalServerError)
 		return
 	}
@@ -282,75 +193,30 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `
-		SELECT session_id, upload_key, status, score, verdict, evaluation, segments, created_at
-		FROM scoring_jobs
-		WHERE session_id = $1
-	`
-	var (
-		uploadKey     string
-		status        string
-		score         sql.NullFloat64
-		verdict       sql.NullString
-		evaluationRaw []byte
-		segmentsRaw   []byte
-		createdAt     time.Time
-	)
-
-	err := h.DB.QueryRowContext(r.Context(), query, sessionID).Scan(
-		&sessionID,
-		&uploadKey,
-		&status,
-		&score,
-		&verdict,
-		&evaluationRaw,
-		&segmentsRaw,
-		&createdAt,
-	)
-	if errors.Is(err, sql.ErrNoRows) {
+	job, err := h.Jobs.Get(r.Context(), sessionID)
+	if errors.Is(err, repo.ErrScoringJobNotFound) {
 		http.NotFound(w, r)
 		return
 	}
 	if err != nil {
-		http.Error(w, "failed to load scoring job", http.StatusInternalServerError)
+		writeError(w, r, http.StatusInternalServerError, "failed to load scoring job", err)
 		return
 	}
 
-	var evaluation map[string]any
-	if len(evaluationRaw) > 0 {
-		if err := json.Unmarshal(evaluationRaw, &evaluation); err != nil {
-			http.Error(w, "failed to decode evaluation", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	segments := []scoreSegment{}
-	if len(segmentsRaw) > 0 {
-		if err := json.Unmarshal(segmentsRaw, &segments); err != nil {
-			http.Error(w, "failed to decode segments", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	var scoreValue *float64
-	if score.Valid {
-		scoreValue = &score.Float64
-	}
-
-	var verdictValue *string
-	if verdict.Valid {
-		verdictValue = &verdict.String
+	segments := job.Segments
+	if len(segments) == 0 {
+		segments = emptyJSONArray
 	}
 
 	writeJSON(w, scoringJobResponse{
-		JobID:      sessionID,
-		UploadKey:  uploadKey,
-		Status:     status,
-		Score:      scoreValue,
+		JobID:      job.SessionID,
+		UploadKey:  job.UploadKey,
+		Status:     job.Status,
+		Score:      job.Score,
 		Segments:   segments,
-		Verdict:    verdictValue,
-		Evaluation: evaluation,
-		CreatedAt:  createdAt,
+		Verdict:    job.Verdict,
+		Evaluation: job.Evaluation,
+		CreatedAt:  job.CreatedAt,
 	})
 }
 
