@@ -1,6 +1,8 @@
 package com.tilawah.android.designsystem.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -23,22 +25,27 @@ import com.tilawah.android.designsystem.BrandTheme
 fun BrandCard(
     modifier: Modifier = Modifier,
     style: BrandCardStyle = BrandCardStyle.Standard,
+    border: BorderStroke? = null,
     content: @Composable () -> Unit,
 ) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
     val background = when (style) {
         BrandCardStyle.Standard -> colors.card
+        BrandCardStyle.Paper -> colors.paper
         BrandCardStyle.Inverse -> colors.cardInverse
     }
     val shadowElevation = when (style) {
         BrandCardStyle.Standard -> 2.dp
+        BrandCardStyle.Paper -> 2.dp
         BrandCardStyle.Inverse -> 6.dp
     }
+    val shape = RoundedCornerShape(spacing.cardCornerRadius)
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(spacing.cardCornerRadius))
-            .background(background),
+            .clip(shape)
+            .background(background)
+            .then(if (border != null) Modifier.border(border, shape) else Modifier),
         color = Color.Transparent,
         shadowElevation = shadowElevation,
     ) {

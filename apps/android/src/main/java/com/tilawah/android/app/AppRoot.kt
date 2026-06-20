@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -85,6 +85,11 @@ import com.tilawah.android.telemetry.TelemetryEvent
  * History). Mirrors iOS's `AppRoot.swift` (`TabView` + per-tab
  * `NavigationStack`).
  */
+// TODO(design): The Android Figma exports show a THREE-tab bottom bar
+// (Library / Practice / History) and reach Profile from an unspecified
+// entry point (likely a header avatar). Profile remains a 4th tab here to
+// avoid making it unreachable; resolve the Profile entry point with design,
+// then drop it from the bottom bar. Tracked in the design-fidelity audit.
 enum class TopLevelTab(val title: String) {
     Library("Library"),
     Practice("Practice"),
@@ -189,10 +194,13 @@ fun AppRoot(
                         onClick = { selectedTab = tab },
                         icon = {
                             Icon(
+                                // Icons match the Android Figma exports: search
+                                // glass (Library), microphone (Practice), clock
+                                // (History). See docs/design/Android _ Practice *.
                                 imageVector = when (tab) {
-                                    TopLevelTab.Library -> Icons.Filled.List
-                                    TopLevelTab.Practice -> Icons.Filled.PlayArrow
-                                    TopLevelTab.History -> Icons.Filled.DateRange
+                                    TopLevelTab.Library -> Icons.Filled.Search
+                                    TopLevelTab.Practice -> Icons.Filled.Mic
+                                    TopLevelTab.History -> Icons.Filled.Schedule
                                     TopLevelTab.Profile -> Icons.Filled.AccountCircle
                                 },
                                 contentDescription = tab.title,

@@ -3,11 +3,15 @@ package com.tilawah.android.features.library
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +47,7 @@ fun LibraryScreen(
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val lastPracticed by viewModel.lastPracticed.collectAsStateWithLifecycle()
     val suggestion by viewModel.suggestion.collectAsStateWithLifecycle()
+    val bestScores by viewModel.bestScores.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
@@ -88,7 +93,7 @@ fun LibraryScreen(
                 .padding(horizontal = spacing.screenHorizontal),
         )
         ChipFilter(
-            items = filterChips(),
+            items = filterChips(totalCount = (state as? LibraryUiState.Loaded)?.surahs?.size),
             selection = filter,
             onSelect = viewModel::setFilter,
         )
@@ -97,6 +102,8 @@ fun LibraryScreen(
                 LibraryUiState.Idle, LibraryUiState.Loading -> LoadingState()
                 is LibraryUiState.Loaded -> SurahList(
                     surahs = viewModel.filteredSurahs(),
+                    bestScores = bestScores,
+                    resumeSurahId = lastPracticed?.surahId,
                     onSurahOpened = { surah ->
                         viewModel.surahOpened(surah)
                         onSurahOpened(surah.id)
@@ -119,11 +126,23 @@ private fun Header() {
         modifier = Modifier.padding(horizontal = BrandTheme.spacing.screenHorizontal),
         verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
     ) {
-        Text(
-            text = stringResource(R.string.library_eyebrow),
-            style = typography.eyebrow,
-            color = colors.accent,
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Decorative leading "+" glyph that anchors the gold eyebrow,
+            // matching the Figma header treatment.
+            Text(
+                text = "+",
+                style = typography.eyebrow,
+                color = colors.decorative,
+            )
+            Text(
+                text = stringResource(R.string.library_eyebrow),
+                style = typography.eyebrow,
+                color = colors.accent,
+            )
+        }
         Text(
             text = stringResource(R.string.library_title),
             style = typography.pageTitle,
@@ -143,13 +162,27 @@ private fun SearchField(
         onValueChange = onQueryChanged,
         modifier = modifier,
         singleLine = true,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                tint = BrandTheme.colors.textSecondary,
+            )
+        },
         placeholder = { Text(stringResource(R.string.library_search_placeholder)) },
     )
 }
 
 @Composable
-private fun filterChips(): List<FilterChip<LibraryFilter>> = listOf(
-    FilterChip(LibraryFilter.All, stringResource(R.string.library_filter_all)),
+private fun filterChips(totalCount: Int?): List<FilterChip<LibraryFilter>> = listOf(
+    FilterChip(
+        LibraryFilter.All,
+        if (totalCount != null) {
+            stringResource(R.string.library_filter_all_count, totalCount)
+        } else {
+            stringResource(R.string.library_filter_all)
+        },
+    ),
     FilterChip(LibraryFilter.Mecca, stringResource(R.string.library_filter_mecca)),
     FilterChip(LibraryFilter.Medina, stringResource(R.string.library_filter_medina)),
     FilterChip(LibraryFilter.Short, stringResource(R.string.library_filter_short)),
@@ -168,6 +201,8 @@ private fun LoadingState() {
 @Composable
 private fun SurahList(
     surahs: List<SurahSummary>,
+    bestScores: Map<String, Int>,
+    resumeSurahId: String?,
     onSurahOpened: (SurahSummary) -> Unit,
 ) {
     if (surahs.isEmpty()) {
@@ -182,10 +217,16 @@ private fun SurahList(
         verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.sm),
     ) {
         items(surahs.size) { index ->
+            val surah = surahs[index]
+            // Canonical 1–114 number derived from the surah id, falling
+            // back to list position when the id is non-numeric.
+            val canonicalNumber = surah.id.toIntOrNull() ?: (index + 1)
             SurahRow(
-                index = index + 1,
-                surah = surahs[index],
-                onClick = { onSurahOpened(surahs[index]) },
+                canonicalNumber = canonicalNumber,
+                surah = surah,
+                onClick = { onSurahOpened(surah) },
+                selected = surah.id == resumeSurahId,
+                bestScore = bestScores[surah.id],
             )
         }
     }
