@@ -49,6 +49,16 @@ func (m *MemoryRepository) GetAyah(_ context.Context, id int64) (domain.Ayah, er
 	return domain.Ayah{}, errors.New("ayah not found")
 }
 
+// GetByNumber returns an ayah by its (surahID, ayahNumber) pair.
+func (m *MemoryRepository) GetByNumber(_ context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+	for _, ayah := range m.Ayahs {
+		if ayah.SurahID == surahID && ayah.AyahNumber == ayahNumber {
+			return ayah, nil
+		}
+	}
+	return domain.Ayah{}, ErrAyahNotFound
+}
+
 var (
 	_ SurahRepository = (*MemoryRepository)(nil)
 	_ AyahRepository  = (*MemoryRepository)(nil)

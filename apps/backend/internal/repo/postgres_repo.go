@@ -169,6 +169,55 @@ func (r *PostgresRepository) ListBySurah(ctx context.Context, surahID int32) ([]
 	return ayahs, nil
 }
 
+// GetByNumber returns a single ayah by its (surahID, ayahNumber) pair,
+// returning ErrAyahNotFound when no row matches. This avoids loading an
+// entire surah just to resolve one verse.
+func (r *PostgresRepository) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+	query := `
+		SELECT id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at
+		FROM ayahs
+		WHERE surah_id = $1 AND ayah_number = $2
+	`
+
+	var a domain.Ayah
+	var metadataJSON []byte
+	var textEN, transliteration sql.NullString
+
+	err := r.db.QueryRowContext(ctx, query, surahID, ayahNumber).Scan(
+		&a.ID,
+		&a.SurahID,
+		&a.AyahNumber,
+		&a.TextAr,
+		&textEN,
+		&transliteration,
+		&metadataJSON,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Ayah{}, ErrAyahNotFound
+		}
+		return domain.Ayah{}, err
+	}
+
+	if textEN.Valid {
+		a.TextEn = textEN.String
+	}
+	if transliteration.Valid {
+		a.Transliteration = transliteration.String
+	}
+
+	if len(metadataJSON) > 0 {
+		if err := json.Unmarshal(metadataJSON, &a.Metadata); err != nil {
+			return domain.Ayah{}, err
+		}
+	}
+
+	return a, nil
+}
+
 // GetAyah returns a single ayah by ID.
 func (r *PostgresRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
 	query := `
