@@ -136,66 +136,6 @@ func WithTransliteration(text string) AyahOption {
 	}
 }
 
-// ASRResultOption is a functional option for customizing ASRResult test data.
-type ASRResultOption func(*domain.ASRResult)
-
-// BuildASRResult creates a test ASRResult with sensible defaults.
-func BuildASRResult(opts ...ASRResultOption) domain.ASRResult {
-	r := domain.ASRResult{
-		SessionID:      "test-session-123",
-		AyahID:         1,
-		AudioKey:       "uploads/test-session-123.opus",
-		ExpectedTextAr: "بسم الله الرحمن الرحيم",
-		Transcript:     "بسم الله الرحمن الرحيم",
-		WordTimestamps: map[string]any{
-			"words": []map[string]any{
-				{"word": "بسم", "start": 0.0, "end": 0.5},
-				{"word": "الله", "start": 0.5, "end": 1.0},
-				{"word": "الرحمن", "start": 1.0, "end": 1.5},
-				{"word": "الرحيم", "start": 1.5, "end": 2.0},
-			},
-		},
-		WER:                0.0,
-		AlignmentObjectKey: "alignments/test-session-123.json",
-		CreatedAt:          time.Now().UTC(),
-		UpdatedAt:          time.Now().UTC(),
-	}
-
-	for _, opt := range opts {
-		opt(&r)
-	}
-
-	return r
-}
-
-// WithSessionID sets the session ID.
-func WithSessionID(id string) ASRResultOption {
-	return func(r *domain.ASRResult) {
-		r.SessionID = id
-	}
-}
-
-// WithAudioKey sets the audio key.
-func WithAudioKey(key string) ASRResultOption {
-	return func(r *domain.ASRResult) {
-		r.AudioKey = key
-	}
-}
-
-// WithTranscript sets the transcript.
-func WithTranscript(transcript string) ASRResultOption {
-	return func(r *domain.ASRResult) {
-		r.Transcript = transcript
-	}
-}
-
-// WithWER sets the Word Error Rate.
-func WithWER(wer float64) ASRResultOption {
-	return func(r *domain.ASRResult) {
-		r.WER = wer
-	}
-}
-
 // mustMarshalMetadata serialises test metadata to JSON or fails the
 // test loudly. Replaces the prior pattern of dropping the marshal
 // error which masked regressions when a new metadata type stops
