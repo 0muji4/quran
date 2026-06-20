@@ -53,7 +53,9 @@ fun BrandTheme(
         primary = colors.primary,
         onPrimary = colors.textOnPrimary,
         secondary = colors.accent,
-        onSecondary = colors.textOnPrimary,
+        // Gold surface ([accent]) must pair with dark text for normal copy
+        // (ADR 0003): white-on-gold fails WCAG AA. Use ink, not white.
+        onSecondary = colors.textPrimary,
         tertiary = colors.recording,
         background = colors.surface,
         onBackground = colors.textPrimary,

@@ -5,9 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,13 +24,19 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.tilawah.android.R
 import com.tilawah.android.designsystem.BrandTheme
+import com.tilawah.android.designsystem.components.BrandCard
+import com.tilawah.android.designsystem.components.BrandCardStyle
 
 /**
- * Circular score dial with the percentage in the centre and a verdict
- * pill below. Mirrors `apps/ios/.../Features/Result/ScoreHero.swift`.
+ * Paper score card: a pale-mint verdict pill, a circular score dial with
+ * the raw 0–100 numeral (no percent sign) above an "OF 100" caption, and
+ * an encouragement subtitle. Mirrors `docs/design/Android _ Result detail`.
  *
  * Score is a 0..1 fraction; null renders as a single dash.
  */
@@ -40,30 +50,53 @@ fun ScoreHero(
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
 
-    val percentText = score?.let { "%.0f%%".format(it * 100) } ?: "—"
-    val a11y = if (score != null) {
-        "Recitation score $percentText" + (verdict?.let { ", $it" } ?: "")
+    // The dial shows the raw 0–100 score; the percent form is reserved for a11y.
+    // Round (not truncate) so 0.87 reads as "87" rather than "86".
+    val scoreValue = score?.let { Math.round(it * 100).toInt() }
+    val scoreText = scoreValue?.toString() ?: "—"
+    val a11y = if (scoreValue != null) {
+        "Recitation score $scoreValue out of 100" + (verdict?.let { ", $it" } ?: "")
     } else {
         "Recitation score not available"
     }
-    Column(
-        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = a11y },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.md),
+    BrandCard(
+        modifier = modifier.fillMaxWidth(),
+        style = BrandCardStyle.Paper,
     ) {
-        Box(
-            modifier = Modifier.size(220.dp),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics(mergeDescendants = true) { contentDescription = a11y },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
         ) {
-            ScoreArc(score = score, baseColor = colors.tile, scoreColor = scoreColor(score, colors))
+            if (!verdict.isNullOrBlank()) {
+                VerdictBadge(verdict = verdict)
+            }
+            Box(
+                modifier = Modifier.size(180.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                ScoreArc(score = score, baseColor = colors.tile, scoreColor = colors.primary)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = scoreText,
+                        style = typography.scoreDisplay,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = stringResource(R.string.result_score_of_100),
+                        style = typography.caption,
+                        color = colors.textSecondary,
+                    )
+                }
+            }
             Text(
-                text = percentText,
-                style = typography.scoreDisplay,
-                color = colors.textPrimary,
+                text = stringResource(R.string.result_score_encouragement),
+                style = typography.body,
+                color = colors.textSecondary,
+                textAlign = TextAlign.Center,
             )
-        }
-        if (!verdict.isNullOrBlank()) {
-            VerdictBadge(verdict = verdict)
         }
     }
 }
@@ -71,7 +104,7 @@ fun ScoreHero(
 @Composable
 private fun ScoreArc(score: Double?, baseColor: Color, scoreColor: Color) {
     val sweep = ((score ?: 0.0).coerceIn(0.0, 1.0) * 360.0).toFloat()
-    Canvas(modifier = Modifier.size(220.dp)) {
+    Canvas(modifier = Modifier.size(180.dp)) {
         val stroke = 18f
         val pad = stroke / 2f
         val arcSize = Size(size.width - stroke, size.height - stroke)
@@ -102,22 +135,25 @@ private fun ScoreArc(score: Double?, baseColor: Color, scoreColor: Color) {
 @Composable
 private fun VerdictBadge(verdict: String) {
     val colors = BrandTheme.colors
-    Text(
-        text = verdict,
-        style = BrandTheme.typography.eyebrow.copy(fontWeight = FontWeight.SemiBold),
-        color = colors.textOnPrimary,
+    val spacing = BrandTheme.spacing
+    androidx.compose.foundation.layout.Row(
         modifier = Modifier
             .clip(RoundedCornerShape(percent = 50))
-            .background(colors.success)
-            .padding(horizontal = BrandTheme.spacing.lg, vertical = 8.dp),
-    )
-}
-
-private fun scoreColor(score: Double?, colors: com.tilawah.android.designsystem.BrandColors): Color {
-    if (score == null) return colors.textSecondary
-    return when {
-        score >= 0.85 -> colors.success
-        score >= 0.7 -> colors.primary
-        else -> colors.recording
+            .background(colors.mintBg)
+            .padding(horizontal = spacing.lg, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Check,
+            contentDescription = null,
+            tint = colors.mintInk,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = verdict,
+            style = BrandTheme.typography.eyebrow.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.mintInk,
+        )
     }
 }
