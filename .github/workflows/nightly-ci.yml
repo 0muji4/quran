@@ -21,6 +21,78 @@ jobs:
     with:
       force_all: true
 
+  # Catches one-way migrations: a broken DOWN file does not show up in
+  # day-to-day PR CI (we only roll forward there) but bites the moment
+  # an emergency rollback is needed. Running up → down -all → up nightly
+  # against a fresh Postgres surfaces broken reversibility within 24h,
+  # in line with the cadence used by the path-filter safety-net job above.
+  #
+  # Image versions match ops/docker/compose.dev.yml exactly so a passing
+  # nightly is evidence that the same migrate CLI a developer runs locally
+  # (`make db-migrate`) reproduces the same round-trip.
+  migration-roundtrip:
+    name: Migration round-trip (up → down → up)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quran_project
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/quran_project?sslmode=disable
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Apply UP migrations (initial)
+        run: |
+          docker run --rm --network=host \
+            -v "$PWD/db/migrations:/migrations" \
+            migrate/migrate:v4.17.1 \
+            -path=/migrations -database "$DATABASE_URL" up
+
+      # `down -all` is interactive in the migrate CLI to guard against a
+      # foot-gun in dev shells; piping `y` is the documented way to
+      # confirm it non-interactively in CI.
+      - name: Roll DOWN all
+        run: |
+          echo y | docker run --rm -i --network=host \
+            -v "$PWD/db/migrations:/migrations" \
+            migrate/migrate:v4.17.1 \
+            -path=/migrations -database "$DATABASE_URL" down -all
+
+      - name: Re-apply UP migrations
+        run: |
+          docker run --rm --network=host \
+            -v "$PWD/db/migrations:/migrations" \
+            migrate/migrate:v4.17.1 \
+            -path=/migrations -database "$DATABASE_URL" up
+
+      # Belt-and-braces: after the round-trip the schema must contain the
+      # tables the application reads from, in case a broken DOWN left the
+      # DB in a partially-migrated state that the migrate CLI's own
+      # exit-code did not catch.
+      - name: Verify expected tables exist
+        run: |
+          docker run --rm --network=host \
+            -e PGPASSWORD=postgres \
+            postgres:18-alpine \
+            psql -h localhost -U postgres -d quran_project -tAc \
+              "SELECT count(*) FROM information_schema.tables
+               WHERE table_schema = 'public'
+                 AND table_name IN ('surahs','ayahs','scoring_jobs','users')" \
+            | tee /tmp/count
+          test "$(cat /tmp/count)" = "4"
+
   cross-browser-e2e:
     name: Cross-browser e2e (${{ matrix.browser }})
     runs-on: ubuntu-latest
