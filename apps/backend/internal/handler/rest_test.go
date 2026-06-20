@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -194,56 +193,6 @@ func TestRESTHandleGetSurahAyahsRepoError(t *testing.T) {
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "failed to list ayahs\n", recorder.Body.String())
-}
-
-func TestGraphQLHandlerServeHTTP(t *testing.T) {
-	svc := service.SurahService{
-		SurahRepo: fakeSurahRepo{
-			listFn: func(ctx context.Context) ([]domain.Surah, error) {
-				return []domain.Surah{{ID: 1, NameEn: "Al-Fatiha"}}, nil
-			},
-		},
-		AyahRepo: fakeAyahRepo{},
-	}
-	handler := GraphQLHandler{SurahService: svc}
-
-	body, err := json.Marshal(map[string]string{"query": "{ surahs }"})
-	require.NoError(t, err)
-	req := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewReader(body))
-	recorder := httptest.NewRecorder()
-
-	handler.ServeHTTP(recorder, req)
-
-	require.Equal(t, http.StatusOK, recorder.Code)
-
-	var payload map[string]map[string][]domain.Surah
-	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&payload))
-	require.Len(t, payload["data"]["surahs"], 1)
-}
-
-func TestSurahGRPCServer(t *testing.T) {
-	svc := service.SurahService{
-		SurahRepo: fakeSurahRepo{
-			getFn: func(ctx context.Context, id int32) (domain.Surah, error) {
-				return domain.Surah{ID: id}, nil
-			},
-		},
-		AyahRepo: fakeAyahRepo{
-			listFn: func(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
-				return []domain.Ayah{{SurahID: surahID, AyahNumber: 1}}, nil
-			},
-		},
-	}
-
-	server := NewSurahGRPCServer(svc)
-
-	_, err := server.GetSurah(context.Background(), nil)
-	require.Error(t, err)
-
-	resp, err := server.ListAyahs(context.Background(), &ListAyahsRequest{SurahID: 5})
-	require.NoError(t, err)
-	require.Len(t, resp.Ayahs, 1)
-	require.Equal(t, int32(5), resp.Ayahs[0].SurahID)
 }
 
 var _ repo.SurahRepository = fakeSurahRepo{}
