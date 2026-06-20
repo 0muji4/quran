@@ -74,16 +74,9 @@ func main() {
 	mux := http.NewServeMux()
 	rest := handler.REST{SurahService: svc, Jobs: jobs}
 	rest.Register(mux)
-	mux.Handle("/graphql", handler.GraphQLHandler{SurahService: svc})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
-	})
-
-	// Prometheus metrics endpoint
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("# Metrics exported via OTEL\n"))
 	})
 
 	port := os.Getenv("PORT")
