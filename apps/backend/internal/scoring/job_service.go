@@ -51,6 +51,18 @@ type JobResult struct {
 	CreatedAt  time.Time
 }
 
+// DefaultJobTimeout caps how long a single scoring pipeline (transcribe +
+// score + persist) may run when the caller does not impose a tighter
+// deadline. Chirp 3 returns in 1–3 seconds in normal operation; the buffer
+// here covers retries and network jitter while still bounding RUNNING rows
+// so a hung transcriber cannot orphan them indefinitely.
+const DefaultJobTimeout = 30 * time.Second
+
+// markFailedTimeout bounds the best-effort cleanup write that flips an
+// orphan RUNNING row to FAILED. It runs on a context detached from the
+// (now expired or cancelled) request context, so it needs its own bound.
+const markFailedTimeout = 5 * time.Second
+
 // JobService orchestrates one scoring request end to end: resolve the verse,
 // open the job row, run the Engine, and persist the result. It owns no
 // transport concerns — the HTTP handler decodes the request, maps the
@@ -61,9 +73,15 @@ type JobService struct {
 	Ayahs  AyahLookup
 	Jobs   repo.ScoringJobRepository
 	Engine *Engine
+	// Timeout caps a single Create call. If zero, DefaultJobTimeout is
+	// applied. If the caller's context has an earlier deadline, that one
+	// still wins (context.WithTimeout never extends a deadline).
+	Timeout time.Duration
 }
 
 // NewJobService constructs a JobService; all collaborators are required.
+// The per-call deadline defaults to DefaultJobTimeout; override by setting
+// Timeout on the returned value.
 func NewJobService(ayahs AyahLookup, jobs repo.ScoringJobRepository, engine *Engine) *JobService {
 	return &JobService{Ayahs: ayahs, Jobs: jobs, Engine: engine}
 }
@@ -71,9 +89,17 @@ func NewJobService(ayahs AyahLookup, jobs repo.ScoringJobRepository, engine *Eng
 // Create scores one recitation: it resolves the reference ayah, opens the
 // job in RUNNING state, runs the Engine, and persists the COMPLETED result.
 // On any failure after the job is opened it best-effort marks the job FAILED
-// and returns the underlying error unchanged so the handler can inspect it
-// with errors.Is.
+// (on a detached context so the cleanup runs even when the caller's
+// deadline has elapsed) and returns the underlying error unchanged so the
+// handler can inspect it with errors.Is.
 func (s *JobService) Create(ctx context.Context, in JobInput) (JobResult, error) {
+	timeout := s.Timeout
+	if timeout <= 0 {
+		timeout = DefaultJobTimeout
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	ayah, err := s.Ayahs.GetAyahByNumber(ctx, in.SurahID, in.AyahNumber)
 	if err != nil {
 		// repo.ErrAyahNotFound flows through unchanged for the handler.
@@ -137,8 +163,13 @@ func (s *JobService) Get(ctx context.Context, sessionID string) (repo.ScoringJob
 	return s.Jobs.Get(ctx, sessionID)
 }
 
-// markFailed swallows the repository error: the caller already holds the
-// original failure and that is the one worth surfacing.
+// markFailed best-effort flips the row to FAILED on a context detached
+// from the (likely expired or cancelled) request context, so the cleanup
+// write still lands and the row does not orphan in RUNNING. The repository
+// error is swallowed: the caller already holds the original failure and
+// that is the one worth surfacing.
 func (s *JobService) markFailed(ctx context.Context, sessionID string) {
-	_ = s.Jobs.MarkFailed(ctx, sessionID)
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), markFailedTimeout)
+	defer cancel()
+	_ = s.Jobs.MarkFailed(cleanup, sessionID)
 }
