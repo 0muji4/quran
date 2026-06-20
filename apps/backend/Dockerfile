@@ -5,6 +5,10 @@ WORKDIR /app
 COPY go.work go.work.sum ./
 COPY apps/backend ./apps/backend
 COPY packages ./packages
+# The `quran-project/db` module is workspace-listed (its embed FS feeds the
+# integration test schema), so go.work resolution needs db/go.mod present.
+# Copying the directory is small and keeps the build self-contained.
+COPY db ./db
 
 ENV CGO_ENABLED=0
 
