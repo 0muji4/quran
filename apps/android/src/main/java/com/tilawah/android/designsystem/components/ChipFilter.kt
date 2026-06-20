@@ -13,16 +13,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.tilawah.android.designsystem.BrandTheme
 
 /**
  * Pill-shaped row of single-select chips. Mirrors
  * `apps/ios/.../DesignSystem/Components/ChipFilter.swift`.
  *
- * The selected chip uses the brand primary as a background; unselected
- * chips render a transparent outline using the tile color so the
- * selection contrast carries the design's intention.
+ * The selected chip uses the near-black ink surface ([BrandColors.nav])
+ * with light text; unselected chips render a near-white pill
+ * ([BrandColors.tileSoft]) with dark text, matching the Figma design.
  */
 data class FilterChip<T>(val value: T, val label: String)
 
@@ -50,9 +49,9 @@ fun <T> ChipFilter(
                 color = if (active) colors.textOnPrimary else colors.textPrimary,
                 modifier = Modifier
                     .clip(RoundedCornerShape(percent = 50))
-                    .background(if (active) colors.primary else colors.tile)
+                    .background(if (active) colors.nav else colors.tileSoft)
                     .clickable { onSelect(chip.value) }
-                    .padding(horizontal = spacing.lg, vertical = 10.dp),
+                    .padding(horizontal = spacing.lg, vertical = spacing.sm),
             )
         }
     }

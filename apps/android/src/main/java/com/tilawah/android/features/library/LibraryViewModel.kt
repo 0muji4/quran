@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.QuranBackend
 import com.tilawah.android.backend.SuggestionClient
@@ -29,7 +31,7 @@ import com.tilawah.android.telemetry.TelemetryEvent
 class LibraryViewModel(
     private val backend: QuranBackend,
     private val telemetry: Telemetry,
-    historyStore: HistoryStore? = null,
+    private val historyStore: HistoryStore? = null,
     private val suggestionClient: SuggestionClient? = null,
     private val isSignedIn: () -> Boolean = { false },
 ) : ViewModel() {
@@ -51,6 +53,17 @@ class LibraryViewModel(
     private val _suggestion = MutableStateFlow<SurahSuggestion?>(null)
     val suggestion: StateFlow<SurahSuggestion?> = _suggestion.asStateFlow()
 
+    /**
+     * Best score per surah on a 0–100 scale, keyed by `surahId`. Drives
+     * the "best NN" suffix in [SurahRow]'s metadata. Snapshotted once per
+     * [load] (rather than collecting N flows reactively) because the
+     * library list is static while visible and re-loads on tab re-entry;
+     * a per-surah `StateFlow` fan-out would cost 114 collectors for a
+     * value that changes only after a practice session ends elsewhere.
+     */
+    private val _bestScores = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val bestScores: StateFlow<Map<String, Int>> = _bestScores.asStateFlow()
+
     fun load() {
         viewModelScope.launch { loadInternal() }
     }
@@ -63,11 +76,25 @@ class LibraryViewModel(
                 backend.surahs()
             }
             _state.value = LibraryUiState.Loaded(surahs)
+            loadBestScores(surahs)
             loadSuggestion()
         } catch (cause: AppError) {
             telemetry.error(cause, mapOf("screen" to "library"))
             _state.value = LibraryUiState.Failed(cause)
         }
+    }
+
+    /**
+     * Snapshot the best score for each loaded surah into [bestScores].
+     * No-op when there is no [historyStore] (anonymous / preview), which
+     * leaves the map empty so [SurahRow] simply omits the "best" suffix.
+     */
+    private suspend fun loadBestScores(surahs: List<SurahSummary>) {
+        val store = historyStore ?: return
+        _bestScores.value = surahs.mapNotNull { surah ->
+            store.bestScoreForSurah(surah.id).first()
+                ?.let { surah.id to (it * 100).roundToInt() }
+        }.toMap()
     }
 
     /**

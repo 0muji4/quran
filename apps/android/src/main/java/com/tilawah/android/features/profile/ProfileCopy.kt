@@ -14,7 +14,10 @@ object ProfileCopy {
 
     const val editTitle: String = "Edit profile"
     const val editDisplayNameLabel: String = "DISPLAY NAME"
-    const val editLevelLabel: String = "YOUR LEVEL"
+    // Figma "Android _ Edit profile" labels this field "SKILL LEVEL"
+    // (was "YOUR LEVEL"). The on-screen copy lives in strings.xml; this
+    // constant is retained for any caller still reading it.
+    const val editLevelLabel: String = "SKILL LEVEL"
     const val editCancel: String = "Cancel"
     const val editSave: String = "Save"
     const val editSavePending: String = "Saving…"

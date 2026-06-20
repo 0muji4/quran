@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -32,9 +32,10 @@ import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.BrandCard
 
 /**
- * Teacher reference panel — surfaces the BFF-supplied recitation
- * recording with play / pause + a discrete rate selector. Mirrors
- * `apps/ios/.../Features/Practice/TeacherReferencePanel.swift`.
+ * Teacher reference panel — a single compact row: a teal circular
+ * play/pause button, a two-line block (bold "Teacher reference" title +
+ * a meta line "<reciter> · <duration> · <rate>×"), and a trailing
+ * speaker glyph. Mirrors the Figma exports `docs/design/Android _ Practice *`.
  *
  * `ReferenceUnavailable` errors render an empty card with a dashed
  * mic icon so the user can still record on their own; other errors
@@ -49,27 +50,16 @@ fun TeacherReferencePanel(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    val spacing = BrandTheme.spacing
-
     BrandCard(modifier = modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
-            Text(
-                text = stringResource(R.string.practice_reference_eyebrow),
-                style = typography.eyebrow,
-                color = colors.accent,
+        when (state) {
+            is TeacherReferenceState.Loading -> Loading()
+            is TeacherReferenceState.Ready -> Controls(
+                player = state.player,
+                onPlay = onPlay,
+                onPause = onPause,
+                onSetRate = onSetRate,
             )
-            when (state) {
-                is TeacherReferenceState.Loading -> Loading()
-                is TeacherReferenceState.Ready -> Controls(
-                    player = state.player,
-                    onPlay = onPlay,
-                    onPause = onPause,
-                    onSetRate = onSetRate,
-                )
-                is TeacherReferenceState.Unavailable -> Unavailable(onRetry)
-            }
+            is TeacherReferenceState.Unavailable -> Unavailable(onRetry)
         }
     }
 }
@@ -94,7 +84,7 @@ private fun Controls(
     player: PlayerState,
     onPlay: () -> Unit,
     onPause: () -> Unit,
-    onSetRate: (Float) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onSetRate: (Float) -> Unit,
 ) {
     val colors = BrandTheme.colors
     val typography = BrandTheme.typography
@@ -120,27 +110,34 @@ private fun Controls(
                 tint = colors.textOnPrimary,
             )
         }
-        Text(
-            text = formatTime(player.currentMs) + " / " + formatTime(player.durationMs),
-            style = typography.caption,
-            color = colors.textSecondary,
+        Column(
             modifier = Modifier.weight(1f),
-        )
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-        for (rate in listOf(0.5f, 0.75f, 1.0f)) {
-            val active = player.rate == rate
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
             Text(
-                text = "${rate}x",
-                style = typography.caption.copy(fontWeight = FontWeight.SemiBold),
-                color = if (active) colors.textOnPrimary else colors.textPrimary,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(if (active) colors.primary else colors.tile)
-                    .clickable { onSetRate(rate) }
-                    .padding(horizontal = spacing.md, vertical = 6.dp),
+                text = stringResource(R.string.practice_reference_title),
+                style = typography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.textPrimary,
+            )
+            Text(
+                text = stringResource(
+                    R.string.practice_reference_meta,
+                    // TODO: reciter is hard-coded until the BFF returns
+                    // recitation metadata (reciter + style) per ayah.
+                    RECITER_NAME,
+                    formatTime(player.durationMs),
+                    "%.2f".format(player.rate),
+                ),
+                style = typography.caption,
+                color = colors.textSecondary,
             )
         }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+            contentDescription = null,
+            tint = colors.textSecondary,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 
@@ -194,3 +191,6 @@ private fun formatTime(ms: Long): String {
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
 }
+
+/** Static reciter label; see TODO at the call site. */
+private const val RECITER_NAME = "Husary Mu'allim"
