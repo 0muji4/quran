@@ -16,8 +16,8 @@ class StatsTests {
     fun `empty attempts produces zero counts and null averages`() {
         val stats = computeStats(emptyList(), now)
         assertEquals(0, stats.thisWeekCount)
-        assertNull(stats.averagePercent)
-        assertNull(stats.bestPercent)
+        assertNull(stats.averageValue)
+        assertNull(stats.bestValue)
         assertEquals(0, stats.streakDays)
     }
 
@@ -39,8 +39,8 @@ class StatsTests {
             attempt("c", now, 0.95),
         )
         val stats = computeStats(attempts, now)
-        assertEquals(87.5, stats.averagePercent!!, 0.001)
-        assertEquals(95.0, stats.bestPercent!!, 0.001)
+        assertEquals(87.5, stats.averageValue!!, 0.001)
+        assertEquals(95.0, stats.bestValue!!, 0.001)
     }
 
     @Test

@@ -8,11 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +21,7 @@ import com.tilawah.android.app.AppError
 import com.tilawah.android.audio.PlayerState
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.PrimaryButton
+import com.tilawah.android.designsystem.components.ScreenHeader
 
 /**
  * Result detail tab — ScoreHero + verdict badge for PR 18. PRs 19–21
@@ -55,7 +52,13 @@ fun ResultDetailScreen(
             .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
-        Header(onNavigateBack = onNavigateBack)
+        ScreenHeader(
+            title = stringResource(R.string.result_title_ayah, viewModel.ayahNumber),
+            onBack = onNavigateBack,
+            backContentDescription = stringResource(R.string.result_back_a11y),
+            onMore = {},
+            moreContentDescription = stringResource(R.string.result_more_a11y),
+        )
         when (val current = state) {
             ResultDetailViewModel.UiState.Loading -> Loading()
             is ResultDetailViewModel.UiState.Loaded -> Loaded(
@@ -79,26 +82,6 @@ fun ResultDetailScreen(
             )
             is ResultDetailViewModel.UiState.Failed -> Failed(error = current.error)
         }
-    }
-}
-
-@Composable
-private fun Header(onNavigateBack: () -> Unit) {
-    androidx.compose.foundation.layout.Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onNavigateBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.result_back_a11y),
-            )
-        }
-        Text(
-            text = stringResource(R.string.result_title),
-            style = BrandTheme.typography.sectionTitle,
-            color = BrandTheme.colors.textPrimary,
-        )
     }
 }
 

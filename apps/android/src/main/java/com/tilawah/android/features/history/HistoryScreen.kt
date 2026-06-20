@@ -3,6 +3,7 @@ package com.tilawah.android.features.history
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -74,11 +75,22 @@ private fun Header() {
         modifier = Modifier.padding(horizontal = BrandTheme.spacing.screenHorizontal),
         verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
     ) {
-        Text(
-            text = stringResource(R.string.history_eyebrow),
-            style = BrandTheme.typography.eyebrow,
-            color = BrandTheme.colors.accent,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
+        ) {
+            // Gold "+" ornament leading the eyebrow, matching the Figma export.
+            Text(
+                text = "+",
+                style = BrandTheme.typography.eyebrow,
+                color = BrandTheme.colors.accent,
+            )
+            Text(
+                text = stringResource(R.string.history_eyebrow),
+                style = BrandTheme.typography.eyebrow,
+                color = BrandTheme.colors.accent,
+            )
+        }
         Text(
             text = stringResource(R.string.history_title),
             style = BrandTheme.typography.pageTitle,

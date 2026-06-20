@@ -7,15 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.R
@@ -62,14 +61,14 @@ fun PracticeScreen(
             .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
+        val surahNameEn = surah?.nameEn.orEmpty()
+        val ayahCount = surah?.ayahCount ?: 0
         Header(
-            surahNameEn = surah?.nameEn.orEmpty(),
-            currentAyah = ayah?.ayahNumber,
-            ayahCount = surah?.ayahCount ?: 0,
+            title = headerTitle(surahNameEn, ayah?.ayahNumber),
             onNavigateBack = onNavigateBack,
         )
-        ProgressDots(currentAyah = ayah?.ayahNumber, ayahCount = surah?.ayahCount ?: 0)
-        ayah?.let { AyahCard(it) }
+        PracticeProgress(currentAyah = ayah?.ayahNumber, ayahCount = ayahCount)
+        ayah?.let { AyahCard(it, surahNameEn = surahNameEn) }
 
         TeacherReferencePanel(
             state = when (val r = reference) {
@@ -109,63 +108,108 @@ fun PracticeScreen(
     }
 }
 
+/**
+ * Combines the surah name and ayah number into the single centered title
+ * the header shows (e.g. "Al-Fatihah · ayah 2"). Falls back to a plain
+ * "Practice" label before the surah metadata has loaded.
+ */
+@Composable
+private fun headerTitle(surahNameEn: String, currentAyah: Int?): String {
+    if (surahNameEn.isEmpty()) return stringResource(R.string.practice_default_title)
+    return stringResource(
+        R.string.practice_header_title,
+        surahNameEn,
+        currentAyah ?: 1,
+    )
+}
+
 @Composable
 private fun Header(
-    surahNameEn: String,
-    currentAyah: Int?,
-    ayahCount: Int,
+    title: String,
     onNavigateBack: () -> Unit,
 ) {
+    com.tilawah.android.designsystem.components.ScreenHeader(
+        title = title,
+        onBack = onNavigateBack,
+        backContentDescription = stringResource(R.string.practice_back_a11y),
+        // Overflow is a placeholder hook; the menu (change reciter, report)
+        // lands in a follow-up. TODO: wire onMore once the menu exists.
+        onMore = {},
+        moreContentDescription = stringResource(R.string.practice_more_a11y),
+    )
+}
+
+/**
+ * Ayah progress indicator. Short surahs render as a row of elongated
+ * rounded pill segments (active = wider + teal); long surahs would blow
+ * past the screen width, so above [MAX_SEGMENTS] we collapse to a single
+ * [com.tilawah.android.designsystem.components.BrandProgressBar]-style bar
+ * with an "n / total" count label.
+ */
+@Composable
+private fun PracticeProgress(currentAyah: Int?, ayahCount: Int) {
+    if (ayahCount <= 1) return
+    val active = (currentAyah ?: 1).coerceIn(1, ayahCount)
+    if (ayahCount <= MAX_SEGMENTS) {
+        ProgressSegments(active = active, ayahCount = ayahCount)
+    } else {
+        LongSurahProgress(active = active, ayahCount = ayahCount)
+    }
+}
+
+@Composable
+private fun ProgressSegments(active: Int, ayahCount: Int) {
+    val colors = BrandTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.md),
     ) {
-        IconButton(onClick = onNavigateBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.practice_back_a11y),
+        for (i in 1..ayahCount) {
+            val isActive = i == active
+            Box(
+                modifier = Modifier
+                    .height(4.dp)
+                    .width(if (isActive) 24.dp else 14.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(if (isActive) colors.primary else colors.tile),
             )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = surahNameEn.ifEmpty { stringResource(R.string.practice_default_title) },
-                style = BrandTheme.typography.sectionTitle,
-                color = BrandTheme.colors.textPrimary,
-            )
-            if (ayahCount > 0) {
-                Text(
-                    text = stringResource(
-                        R.string.practice_ayah_progress,
-                        currentAyah ?: 1,
-                        ayahCount,
-                    ),
-                    style = BrandTheme.typography.caption,
-                    color = BrandTheme.colors.textSecondary,
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun ProgressDots(currentAyah: Int?, ayahCount: Int) {
-    if (ayahCount <= 1) return
-    val active = currentAyah ?: 1
+private fun LongSurahProgress(active: Int, ayahCount: Int) {
+    val colors = BrandTheme.colors
+    val typography = BrandTheme.typography
+    val spacing = BrandTheme.spacing
+    val fraction = active.toFloat() / ayahCount.toFloat()
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.md),
     ) {
-        for (i in 1..ayahCount.coerceAtMost(MAX_DOTS)) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(4.dp)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(colors.tile),
+        ) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (i == active) BrandTheme.colors.primary else BrandTheme.colors.tile,
-                    ),
+                    .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(colors.primary),
             )
         }
+        Text(
+            text = stringResource(R.string.practice_ayah_count, active, ayahCount),
+            style = typography.caption,
+            color = colors.textSecondary,
+            textAlign = TextAlign.End,
+        )
     }
 }
 
@@ -206,4 +250,5 @@ private fun DonePanel(
     }
 }
 
-private const val MAX_DOTS = 30
+/** Above this many ayat, segment dots wrap awkwardly — fall back to a bar. */
+private const val MAX_SEGMENTS = 12
