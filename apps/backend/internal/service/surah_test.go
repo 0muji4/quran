@@ -42,6 +42,13 @@ func (s stubAyahRepo) GetAyah(ctx context.Context, id int64) (domain.Ayah, error
 	return domain.Ayah{ID: id, TextAr: s.ayah.TextAr}, nil
 }
 
+func (s stubAyahRepo) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+	if s.err != nil {
+		return domain.Ayah{}, s.err
+	}
+	return domain.Ayah{SurahID: surahID, AyahNumber: ayahNumber, TextAr: s.ayah.TextAr}, nil
+}
+
 func TestSurahService(t *testing.T) {
 	svc := SurahService{
 		SurahRepo: stubSurahRepo{surah: domain.Surah{NameEn: "Al-Fatiha"}},
@@ -57,6 +64,12 @@ func TestSurahService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(42), ayah.ID)
 	require.Equal(t, "بسم", ayah.TextAr)
+
+	byNumber, err := svc.GetAyahByNumber(context.Background(), 1, 1)
+	require.NoError(t, err)
+	require.Equal(t, int32(1), byNumber.SurahID)
+	require.Equal(t, int32(1), byNumber.AyahNumber)
+	require.Equal(t, "بسم", byNumber.TextAr)
 }
 
 func TestSurahService_ListSurahsError(t *testing.T) {

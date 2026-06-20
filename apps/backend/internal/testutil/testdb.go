@@ -119,8 +119,28 @@ func runMigrations(db *sql.DB) error {
 	);
 	`
 
+	// Create scoring_jobs table (mirrors db/migrations/20260102000000_scoring_job_state.up.sql)
+	scoringJobsSchema := `
+	CREATE TABLE IF NOT EXISTS scoring_jobs (
+		session_id  TEXT PRIMARY KEY,
+		user_id     TEXT,
+		upload_key  TEXT        NOT NULL,
+		surah_id    INTEGER     NOT NULL REFERENCES surahs(id),
+		ayah_id     BIGINT      NOT NULL REFERENCES ayahs(id),
+		ayah_number INTEGER     NOT NULL,
+		status      TEXT        NOT NULL,
+		score       NUMERIC(6,3),
+		verdict     TEXT,
+		segments    JSONB       DEFAULT '[]'::jsonb,
+		evaluation  JSONB,
+		created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+		updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+		CONSTRAINT scoring_jobs_status_check CHECK (status IN ('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED'))
+	);
+	`
+
 	// Execute migrations
-	schemas := []string{surahsSchema, ayahsSchema, asrResultsSchema}
+	schemas := []string{surahsSchema, ayahsSchema, asrResultsSchema, scoringJobsSchema}
 	for _, schema := range schemas {
 		if _, err := db.Exec(schema); err != nil {
 			return fmt.Errorf("failed to execute schema: %w", err)

@@ -30,8 +30,9 @@ func (f fakeSurahRepo) GetSurah(ctx context.Context, id int32) (domain.Surah, er
 }
 
 type fakeAyahRepo struct {
-	listFn func(ctx context.Context, surahID int32) ([]domain.Ayah, error)
-	getFn  func(ctx context.Context, id int64) (domain.Ayah, error)
+	listFn        func(ctx context.Context, surahID int32) ([]domain.Ayah, error)
+	getFn         func(ctx context.Context, id int64) (domain.Ayah, error)
+	getByNumberFn func(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error)
 }
 
 func (f fakeAyahRepo) ListBySurah(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
@@ -40,6 +41,10 @@ func (f fakeAyahRepo) ListBySurah(ctx context.Context, surahID int32) ([]domain.
 
 func (f fakeAyahRepo) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
 	return f.getFn(ctx, id)
+}
+
+func (f fakeAyahRepo) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+	return f.getByNumberFn(ctx, surahID, ayahNumber)
 }
 
 // serveREST routes a single request through a freshly-registered mux so
