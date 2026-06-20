@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,18 +14,30 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	migrationsfs "quran-project/db"
+	migrate "quran-project/packages/go-pkg/db"
 )
 
-// SetupTestDB starts a PostgreSQL testcontainer, runs migrations, and returns a connection.
-// It returns the database connection and a cleanup function that should be deferred.
+// SetupTestDB starts a PostgreSQL testcontainer, applies the canonical
+// `db/migrations/*.up.sql` set, and returns a ready-to-use connection
+// plus a cleanup function that should be deferred.
+//
+// The same migration files run against dev / prod via `make db-migrate`
+// run here, so a new migration cannot land without the test schema
+// catching up. This replaced a hand-rolled schema list that drifted from
+// production and broke CI in PR #454.
 func SetupTestDB(t *testing.T) (*sql.DB, func()) {
 	t.Helper()
 
 	ctx := context.Background()
 
-	// Start PostgreSQL container
+	// Pin the test container to the same Postgres major as Neon dev and
+	// the local docker-compose stack (PR #451). Matching the prod major
+	// avoids version-skew bugs (JSONB / numeric / window-function edge
+	// cases) only surfacing post-deploy.
 	pgContainer, err := postgres.Run(ctx,
-		"docker.io/postgres:16-alpine",
+		"docker.io/postgres:18-alpine",
 		postgres.WithDatabase("testdb"),
 		postgres.WithUsername("testuser"),
 		postgres.WithPassword("testpass"),
@@ -38,29 +51,27 @@ func SetupTestDB(t *testing.T) (*sql.DB, func()) {
 		t.Fatalf("failed to start postgres container: %v", err)
 	}
 
-	// Get connection string
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
 		t.Fatalf("failed to get connection string: %v", err)
 	}
 
-	// Connect to database
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		t.Fatalf("failed to connect to database: %v", err)
 	}
 
-	// Verify connection
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatalf("failed to ping database: %v", err)
 	}
 
-	// Run migrations
-	if err := runMigrations(db); err != nil {
-		t.Fatalf("failed to run migrations: %v", err)
+	if err := migrate.ApplyMigrations(ctx, db, migrate.StaticLoader{
+		FS:   migrationsfs.MigrationsFS,
+		Root: "migrations",
+	}); err != nil {
+		t.Fatalf("failed to apply migrations: %v", err)
 	}
 
-	// Return cleanup function
 	cleanup := func() {
 		_ = db.Close()
 		if err := pgContainer.Terminate(ctx); err != nil {
@@ -71,95 +82,43 @@ func SetupTestDB(t *testing.T) (*sql.DB, func()) {
 	return db, cleanup
 }
 
-// runMigrations applies the schema to the test database
-func runMigrations(db *sql.DB) error {
-	// Create surahs table
-	surahsSchema := `
-	CREATE TABLE IF NOT EXISTS surahs (
-		id SERIAL PRIMARY KEY,
-		name_ar TEXT NOT NULL,
-		name_en TEXT NOT NULL,
-		revelation_place TEXT NOT NULL,
-		ayah_count INTEGER NOT NULL,
-		metadata JSONB,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);
-	`
-
-	// Create ayahs table
-	ayahsSchema := `
-	CREATE TABLE IF NOT EXISTS ayahs (
-		id BIGSERIAL PRIMARY KEY,
-		surah_id INTEGER NOT NULL REFERENCES surahs(id) ON DELETE CASCADE,
-		ayah_number INTEGER NOT NULL,
-		text_ar TEXT NOT NULL,
-		text_en TEXT,
-		transliteration TEXT,
-		metadata JSONB,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(surah_id, ayah_number)
-	);
-	`
-
-	// Create asr_results table
-	asrResultsSchema := `
-	CREATE TABLE IF NOT EXISTS asr_results (
-		session_id TEXT PRIMARY KEY,
-		ayah_id BIGINT NOT NULL,
-		audio_key TEXT NOT NULL,
-		expected_text_ar TEXT,
-		transcript TEXT NOT NULL,
-		word_timestamps JSONB,
-		wer DOUBLE PRECISION,
-		alignment_object_key TEXT,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);
-	`
-
-	// Create scoring_jobs table (mirrors db/migrations/20260102000000_scoring_job_state.up.sql)
-	scoringJobsSchema := `
-	CREATE TABLE IF NOT EXISTS scoring_jobs (
-		session_id  TEXT PRIMARY KEY,
-		user_id     TEXT,
-		upload_key  TEXT        NOT NULL,
-		surah_id    INTEGER     NOT NULL REFERENCES surahs(id),
-		ayah_id     BIGINT      NOT NULL REFERENCES ayahs(id),
-		ayah_number INTEGER     NOT NULL,
-		status      TEXT        NOT NULL,
-		score       NUMERIC(6,3),
-		verdict     TEXT,
-		segments    JSONB       DEFAULT '[]'::jsonb,
-		evaluation  JSONB,
-		created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-		updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-		CONSTRAINT scoring_jobs_status_check CHECK (status IN ('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED'))
-	);
-	`
-
-	// Execute migrations
-	schemas := []string{surahsSchema, ayahsSchema, asrResultsSchema, scoringJobsSchema}
-	for _, schema := range schemas {
-		if _, err := db.Exec(schema); err != nil {
-			return fmt.Errorf("failed to execute schema: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// CleanupTables truncates all tables for test isolation.
+// CleanupTables truncates every user table in the public schema for test
+// isolation. Discovering the table set at runtime keeps the cleanup in
+// step with the migrations automatically — adding a new table no longer
+// requires updating a hand-maintained list.
 func CleanupTables(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	tables := []string{"asr_results", "ayahs", "surahs"}
-	for _, table := range tables {
-		_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
-		if err != nil {
-			t.Fatalf("failed to truncate table %s: %v", table, err)
+	rows, err := db.Query(`
+		SELECT tablename FROM pg_tables
+		WHERE schemaname = 'public' AND tablename != 'schema_migrations'
+	`)
+	if err != nil {
+		t.Fatalf("failed to list tables: %v", err)
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("failed to scan table name: %v", err)
 		}
+		// Quote each identifier so reserved words and mixed case both work.
+		tables = append(tables, fmt.Sprintf("%q", name))
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("failed to iterate tables: %v", err)
+	}
+	if len(tables) == 0 {
+		return
+	}
+
+	// One TRUNCATE statement is cheaper than per-table, and RESTART
+	// IDENTITY keeps SERIAL sequences predictable between tests.
+	stmt := fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", strings.Join(tables, ", "))
+	if _, err := db.Exec(stmt); err != nil {
+		t.Fatalf("failed to truncate tables: %v", err)
 	}
 }
 
