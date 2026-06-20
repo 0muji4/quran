@@ -25,7 +25,7 @@ class ResultDetailViewModel(
     private val telemetry: Telemetry,
     private val jobId: String,
     private val surahId: String,
-    private val ayahNumber: Int,
+    val ayahNumber: Int,
     initial: ScoringResultPayload? = null,
     val teacherPlayer: Player? = null,
     val youPlayer: Player? = null,

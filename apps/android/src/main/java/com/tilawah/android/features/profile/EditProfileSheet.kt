@@ -1,44 +1,55 @@
 package com.tilawah.android.features.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tilawah.android.R
 import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.PrimaryButton
 import com.tilawah.android.features.auth.components.AuthTextField
 
 /**
- * Modal sheet that drives `PATCH /auth/me`. Two fields — display name
- * and skill level — mirror the iOS `EditProfileSheet` and the web
- * `EditProfileButton` modal. Cancel dismisses without persisting; Save
- * persists then dismisses on success, leaving the sheet open with an
- * error banner on failure.
+ * Edit Profile, presented as a FULL-SCREEN view (not a modal sheet) to
+ * match `docs/design/Android _ Edit profile.png`. Drives `PATCH /auth/me`
+ * with two editable fields — display name and skill level. Cancel / back
+ * dismisses without persisting; Save persists then dismisses on success,
+ * staying on-screen with an error message on failure.
+ *
+ * The entry composable name and `(viewModel, initialDisplayName,
+ * initialLevel, onDismiss, modifier)` signature are unchanged from the
+ * previous modal version, so the host (`ProfileAuthHost`) needs no edit —
+ * only the internal presentation changed from `ModalBottomSheet` to a
+ * full-bleed [Surface].
  *
  * Driven by [EditProfileViewModel]; the parent host owns the show /
  * hide flag and the ViewModel lifetime.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileSheet(
     viewModel: EditProfileViewModel,
@@ -48,16 +59,16 @@ fun EditProfileSheet(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
-        onDismissRequest = {
-            if (!state.isSubmitting) onDismiss()
-        },
-        sheetState = sheetState,
-        modifier = modifier,
+    // System back behaves like Cancel, but is suppressed mid-save so a
+    // half-applied PATCH can't leave the host in an inconsistent state.
+    BackHandler(enabled = !state.isSubmitting, onBack = onDismiss)
+
+    Surface(
+        color = BrandTheme.colors.surface,
+        modifier = modifier.fillMaxSize(),
     ) {
-        EditProfileSheetContent(
+        EditProfileScreenContent(
             state = state,
             initialDisplayName = initialDisplayName,
             initialLevel = initialLevel,
@@ -70,7 +81,7 @@ fun EditProfileSheet(
 }
 
 @Composable
-internal fun EditProfileSheetContent(
+internal fun EditProfileScreenContent(
     state: EditProfileUiState,
     initialDisplayName: String,
     initialLevel: String?,
@@ -82,20 +93,50 @@ internal fun EditProfileSheetContent(
 ) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
+    val canSubmit = state.canSubmit(initialDisplayName, initialLevel)
+    // Monogram tracks the live field, not the initial value, so the
+    // avatar updates as the user types.
+    val avatarName = state.displayName.takeIf { it.isNotBlank() } ?: initialDisplayName
+
     Column(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
+        EditProfileNavBar(
+            onCancel = onCancel,
+            onSave = onSubmit,
+            saveEnabled = canSubmit,
+            saving = state.isSubmitting,
+        )
+
+        // Centered avatar + "Change photo" link.
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+        ) {
+            GradientAvatar(name = avatarName, size = 96.dp, monogramFontSize = 36)
+            // TODO(profile): no photo upload backend yet — link is inert.
+            TextButton(onClick = {}, enabled = !state.isSubmitting) {
+                Text(
+                    text = stringResource(R.string.profile_edit_change_photo),
+                    color = colors.primary,
+                    style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                )
+            }
+        }
+
         Text(
-            text = ProfileCopy.editTitle,
-            style = BrandTheme.typography.pageTitle,
-            color = colors.textPrimary,
+            text = stringResource(R.string.profile_edit_section),
+            style = BrandTheme.typography.eyebrow,
+            color = colors.textSecondary,
         )
 
         AuthTextField(
-            label = ProfileCopy.editDisplayNameLabel,
+            label = stringResource(R.string.profile_edit_display_name_label),
             value = state.displayName,
             onValueChange = onDisplayNameChange,
             enabled = !state.isSubmitting,
@@ -116,21 +157,63 @@ internal fun EditProfileSheetContent(
             else -> Unit
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-            modifier = Modifier.fillMaxWidth(),
+        Text(
+            text = stringResource(R.string.profile_edit_footer_hint),
+            style = BrandTheme.typography.caption,
+            color = colors.textSecondary,
+        )
+    }
+}
+
+@Composable
+private fun EditProfileNavBar(
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    saveEnabled: Boolean,
+    saving: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val colors = BrandTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(
+            onClick = onCancel,
+            enabled = !saving,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
         ) {
-            TextButton(
-                onClick = onCancel,
-                enabled = !state.isSubmitting,
-            ) {
-                Text(text = ProfileCopy.editCancel, color = colors.textSecondary)
-            }
-            PrimaryButton(
-                label = if (state.isSubmitting) ProfileCopy.editSavePending else ProfileCopy.editSave,
-                onClick = onSubmit,
-                enabled = state.canSubmit(initialDisplayName, initialLevel),
-                modifier = Modifier.fillMaxWidth(),
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = null,
+                tint = colors.textSecondary,
+            )
+            Text(
+                text = stringResource(R.string.profile_edit_cancel),
+                color = colors.textSecondary,
+                style = BrandTheme.typography.body,
+            )
+        }
+        Text(
+            text = stringResource(R.string.profile_edit_title),
+            style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.textPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(
+            onClick = onSave,
+            enabled = saveEnabled,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        ) {
+            Text(
+                text = if (saving) {
+                    stringResource(R.string.profile_edit_saving)
+                } else {
+                    stringResource(R.string.profile_edit_save)
+                },
+                color = if (saveEnabled) colors.primary else colors.textSecondary,
+                style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
             )
         }
     }
@@ -147,7 +230,7 @@ private fun LevelPicker(
     val spacing = BrandTheme.spacing
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
         Text(
-            text = ProfileCopy.editLevelLabel,
+            text = stringResource(R.string.profile_edit_skill_level_label),
             style = BrandTheme.typography.eyebrow.copy(fontWeight = FontWeight.SemiBold),
             color = colors.textSecondary,
         )

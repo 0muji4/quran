@@ -12,8 +12,9 @@ import com.tilawah.android.designsystem.BrandTheme
 
 /**
  * Stylised arch + star drawn over a square canvas. Used as the hero
- * mark above "Welcome back" on the sign-in screen. Renders in two
- * brand strokes (outer arch + inner arch) and a single 4-point star.
+ * mark above "Welcome back" on the sign-in screen. Renders the two
+ * brand arches in gold, a brown open-book / "M" doorway glyph centred
+ * inside the inner arch, and a single 4-point star at the apex.
  *
  * Vector-only (no resource asset) so the same composable can scale to
  * any size without an extra `xxxhdpi` PNG pass.
@@ -40,10 +41,32 @@ fun AuthArchIcon(modifier: Modifier = Modifier) {
         drawPath(outer, color = colors.accent, style = stroke)
         drawPath(inner, color = colors.accent, style = stroke)
 
-        // Four-point star at the top-right of the arch.
-        val cx = w * 0.78f
-        val cy = h * 0.12f
-        val r = w * 0.05f
+        // Brown open-book / "M" doorway glyph centred inside the inner
+        // arch. Two peaked halves meeting at a centre valley with a
+        // vertical spine, reading as an open book in a doorway.
+        val bookStroke = Stroke(width = w * 0.022f)
+        val book = Path().apply {
+            // Left page: rises from the base to a peak, dipping at centre.
+            moveTo(w * 0.455f, h * 0.80f)
+            lineTo(w * 0.455f, h * 0.66f)
+            quadraticBezierTo(w * 0.478f, h * 0.69f, w * 0.50f, h * 0.69f)
+            // Right page: mirror of the left.
+            quadraticBezierTo(w * 0.522f, h * 0.69f, w * 0.545f, h * 0.66f)
+            lineTo(w * 0.545f, h * 0.80f)
+        }
+        drawPath(book, color = colors.goldOnLight, style = bookStroke)
+        // Centre spine of the book.
+        drawLine(
+            color = colors.goldOnLight,
+            start = Offset(w * 0.50f, h * 0.69f),
+            end = Offset(w * 0.50f, h * 0.80f),
+            strokeWidth = w * 0.022f,
+        )
+
+        // Four-point star at the apex, top-centre of the arch.
+        val cx = w * 0.50f
+        val cy = h * 0.10f
+        val r = w * 0.055f
         val star = Path().apply {
             moveTo(cx, cy - r)
             lineTo(cx + r * 0.4f, cy - r * 0.4f)

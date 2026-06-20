@@ -3,21 +3,22 @@ package com.tilawah.android.features.result
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.tilawah.android.R
 import com.tilawah.android.backend.PronunciationFeedback
@@ -25,14 +26,12 @@ import com.tilawah.android.backend.WordAlignment
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.BrandCard
 import androidx.compose.ui.res.stringResource
-import androidx.compose.foundation.layout.heightIn
 
 /**
- * Word-comparison tile grid driven by `feedback.wordAlignments[]`.
- * Mirrors `apps/ios/.../Features/Result/WordComparisonGrid.swift`.
- *
- * Tile color encodes the alignment op (match / sub / del / ins);
- * the WER footnote sits below.
+ * Word-comparison tiles driven by `feedback.wordAlignments[]`. Tiles use
+ * pale tonal fills with dark text and sit in a single right-aligned RTL
+ * row; the card header carries an abbreviated "WER 12%" on the right.
+ * Mirrors `docs/design/Android _ Result detail`.
  */
 @Composable
 fun WordComparisonGrid(
@@ -46,30 +45,45 @@ fun WordComparisonGrid(
 
     BrandCard(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
-            Text(
-                text = stringResource(R.string.result_word_grid_title),
-                style = typography.sectionTitle.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.textPrimary,
-            )
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 96.dp),
-                contentPadding = PaddingValues(0.dp),
-                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 0.dp, max = 320.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                items(feedback.wordAlignments) { alignment ->
-                    WordTile(alignment = alignment)
+                Text(
+                    text = stringResource(R.string.result_word_grid_title),
+                    style = typography.sectionTitle.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.textPrimary,
+                )
+                feedback.wer?.let { wer ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.result_word_grid_wer_label),
+                            style = typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.textSecondary,
+                        )
+                        Text(
+                            text = stringResource(R.string.result_word_grid_wer_value, Math.round(wer * 100).toInt()),
+                            style = typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.primary,
+                        )
+                    }
                 }
             }
-            feedback.wer?.let { wer ->
-                Text(
-                    text = stringResource(R.string.result_word_grid_wer, wer * 100),
-                    style = typography.caption,
-                    color = colors.textSecondary,
-                )
+            // Arabic reads right-to-left, so lay the tiles in an RTL row.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    feedback.wordAlignments.forEach { alignment ->
+                        WordTile(alignment = alignment)
+                    }
+                }
             }
         }
     }
@@ -80,11 +94,14 @@ private fun WordTile(alignment: WordAlignment) {
     val colors = BrandTheme.colors
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
-    val tileColor = colorForOp(alignment.op, colors)
+    val tileColor = tileFillForOp(alignment.op, colors)
     val text = alignment.refWord ?: alignment.hypWord ?: "—"
     val opLabel = labelForOp(alignment.op)
 
-    Column(
+    Text(
+        text = text,
+        style = typography.arabicAyah.copy(fontSize = typography.body.fontSize),
+        color = colors.textPrimary,
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
             .background(tileColor)
@@ -92,28 +109,18 @@ private fun WordTile(alignment: WordAlignment) {
             .semantics(mergeDescendants = true) {
                 contentDescription = "$text ($opLabel)"
             },
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(
-            text = text,
-            style = typography.body.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.textOnPrimary,
-        )
-        Text(
-            text = labelForOp(alignment.op),
-            style = typography.caption,
-            color = colors.textOnPrimary.copy(alpha = 0.85f),
-        )
-    }
+    )
 }
 
-private fun colorForOp(op: String, colors: com.tilawah.android.designsystem.BrandColors): Color =
+/**
+ * Pale tonal fill per alignment op — dark text sits on top. Matches use a
+ * mint wash; everything else uses a light cream/gold wash (a low-alpha
+ * tint of [BrandColors.accent], which is too saturated to use solid).
+ */
+private fun tileFillForOp(op: String, colors: com.tilawah.android.designsystem.BrandColors): Color =
     when (op.lowercase()) {
-        "match" -> colors.success
-        "sub", "substitute", "substitution" -> colors.recording
-        "del", "delete", "deletion" -> colors.recording.copy(alpha = 0.7f)
-        "ins", "insert", "insertion" -> colors.accent
-        else -> colors.primary
+        "match" -> colors.mintBg
+        else -> colors.accent.copy(alpha = 0.18f)
     }
 
 private fun labelForOp(op: String): String = when (op.lowercase()) {

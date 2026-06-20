@@ -1,6 +1,8 @@
 package com.tilawah.android.features.auth
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,11 +10,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.PrimaryButton
@@ -59,18 +67,34 @@ fun SignUpScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = spacing.screenHorizontal, vertical = spacing.xl),
         ) {
+            // Header: circular outlined back chevron (returns to sign-in,
+            // the only prior auth screen) on the left, and a plain
+            // right-aligned step indicator. Matches the Figma export.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(spacing.minTapTarget)
+                        .clip(CircleShape)
+                        .border(BorderStroke(1.dp, colors.borderDefault), CircleShape)
+                        .clickable(enabled = !state.pending, onClick = onSignIn),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back to sign in",
+                        tint = colors.textPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
                 Text(
                     text = "Step 1 of 1",
                     style = BrandTheme.typography.caption,
                     color = colors.textSecondary,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(colors.tile)
-                        .padding(horizontal = spacing.md, vertical = spacing.xs),
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End,
                 )
             }
             copy.eyebrow?.let {
@@ -112,7 +136,7 @@ fun SignUpScreen(
                 value = state.password,
                 onValueChange = viewModel::setPassword,
                 enabled = !state.pending,
-                helperText = "Use 8+ characters with a mix of letters and numbers.",
+                helperText = "Use 8+ characters with a mix of letters and numbers",
             )
 
             LevelSelector(
