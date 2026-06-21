@@ -37,7 +37,7 @@ export function StreakBadge() {
 
   return (
     <span className={cx(badgeClass)}>
-      <span aria-hidden="true">+</span> {days}-day streak
+      <span aria-hidden="true">✦</span> {days}-day streak
     </span>
   );
 }
