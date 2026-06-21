@@ -61,7 +61,7 @@ const sortSelectClass = css({
   background: '[transparent]',
   borderWidth: '[0]',
   cursor: 'pointer',
-  '&:focus-visible': { outlineColor: 'teal' }
+  '&:focus-visible': { outlineColor: 'green' }
 });
 
 // A row is a navigable Link (avatar + info + score) with the playback
@@ -137,7 +137,7 @@ const scoreClass = css({
 // ≥80 reads as the brand green, below that as the AA-safe warm gold
 // (ADR 0003 gold.onLight), and a failed attempt as red — so the colour
 // alone conveys the tier without relying on the number.
-const scorePassClass = css({ color: 'teal' });
+const scorePassClass = css({ color: 'green' });
 const scoreMidClass = css({ color: 'gold.onLight' });
 const scoreFailedClass = css({ color: 'red', fontSize: '[16px]' });
 
@@ -152,7 +152,7 @@ const playButtonClass = css({
   borderStyle: 'solid',
   borderColor: 'border',
   backgroundColor: 'bg.paper',
-  color: 'teal',
+  color: 'green',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',

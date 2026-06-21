@@ -51,7 +51,7 @@ export function ScoringErrorCard({ reasons, hint, canReplay, onReplay, onRecordA
         ) : null}
         <button
           type="button"
-          className={`${styles.btnTeal} ${styles.scoringErrorPrimary}`}
+          className={`${styles.btnGreen} ${styles.scoringErrorPrimary}`}
           onClick={onRecordAgain}
         >
           <ArrowRightIcon size={14} /> {t('recordAgain')}

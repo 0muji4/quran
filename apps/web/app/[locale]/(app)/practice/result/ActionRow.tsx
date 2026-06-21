@@ -33,7 +33,7 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
       <Link href={tryAgainHref} className={styles.btnGhost}>
         <ArrowLeftIcon /> {t('tryAgain')}
       </Link>
-      <Link href={continueHref} className={`${styles.btnTeal} ${styles.resultPrimaryBtn}`}>
+      <Link href={continueHref} className={`${styles.btnGreen} ${styles.resultPrimaryBtn}`}>
         {continueLabel} <ArrowRightIcon />
       </Link>
     </div>

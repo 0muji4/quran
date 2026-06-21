@@ -103,7 +103,7 @@ const dotClass = css({
 });
 
 const bestScoreClass = css({
-  color: 'teal',
+  color: 'green',
   fontWeight: 600
 });
 

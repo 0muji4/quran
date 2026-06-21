@@ -32,9 +32,9 @@ export const tokens = defineTokens({
       onDark: { value: '#efe4ce' },
       onDarkMut: { value: '#d4c4a4' }
     },
-    // Brand primary green. The #462 refresh moved it from the prior teal
-    // toward the design's emerald; kept under the `teal` key for now.
-    teal: {
+    // Brand primary green (emerald). Renamed here from the prior `teal`
+    // key; the #462 design refresh moved the value teal → emerald.
+    green: {
       DEFAULT: { value: '#106840' },
       deep: { value: '#0c5132' }
     },
@@ -56,7 +56,7 @@ export const tokens = defineTokens({
     },
     // Per-segment scoring status, used by SegmentHighlights and any
     // future score-breakdown surface. Intentionally keeps the universal
-    // traffic-light hues rather than brand-aligning to teal/red — pass
+    // traffic-light hues rather than brand-aligning to green/red — pass
     // / warn / fail need to read at a glance regardless of palette.
     score: {
       pass: { value: '#16a34a' },

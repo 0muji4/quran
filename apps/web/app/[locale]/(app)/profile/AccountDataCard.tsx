@@ -65,7 +65,7 @@ const downloadLinkClass = css({
   font: '[inherit]',
   fontSize: '[14px]',
   fontWeight: 600,
-  color: 'teal.deep',
+  color: 'green.deep',
   background: '[transparent]',
   borderWidth: '[0]',
   padding: '[0]',

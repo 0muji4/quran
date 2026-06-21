@@ -29,7 +29,7 @@ const cardTitleClass = css({ fontFamily: 'serif', fontSize: '[20px]', color: 'in
 const historyLinkClass = css({
   fontSize: '[13px]',
   fontWeight: 600,
-  color: 'teal.deep',
+  color: 'green.deep',
   textDecoration: 'none',
   display: 'inline-flex',
   alignItems: 'center',
@@ -78,7 +78,7 @@ const toggleClass = css({
   width: '[44px]',
   height: '[26px]',
   borderRadius: 'pill',
-  backgroundColor: 'teal',
+  backgroundColor: 'green',
   borderWidth: '[0]',
   position: 'relative',
   flexShrink: 0,

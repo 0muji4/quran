@@ -44,7 +44,7 @@ const inputClass = css({
   backgroundColor: 'bg.paper',
   color: 'ink.strong',
   minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'teal' }
+  '&:focus-visible': { outlineColor: 'green' }
 });
 
 const passwordRowClass = css({
@@ -63,7 +63,7 @@ const passwordToggleClass = css({
   font: '[inherit]',
   fontSize: '[13px]',
   fontWeight: 600,
-  color: 'teal.deep',
+  color: 'green.deep',
   backgroundColor: '[transparent]',
   borderWidth: '[0]',
   paddingBlock: '1',

@@ -73,7 +73,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--colors-teal);
+  background: var(--colors-green);
   /* `left` is set inline from 0–100%; translate keeps the dot centred on the
      target so ayah 1 sits flush left and the final ayah sits flush right. */
   transform: translate(-50%, -50%);
@@ -242,9 +242,9 @@
   color: var(--colors-red-soft);
 }
 
-.panelIconTeal {
+.panelIconGreen {
   background: rgba(45, 90, 79, 0.12);
-  color: var(--colors-teal);
+  color: var(--colors-green);
 }
 
 .panelTitle {
@@ -320,14 +320,14 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radii-pill);
-  background: var(--colors-teal);
+  background: var(--colors-green);
   color: #fff;
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
 
 .playButton:hover {
-  background: var(--colors-teal-deep);
+  background: var(--colors-green-deep);
 }
 
 .playButton:disabled {
@@ -407,17 +407,17 @@
   min-height: 44px;
   padding: 0 8px;
   gap: 4px;
-  color: var(--colors-teal);
+  color: var(--colors-green);
   font-size: 13px;
   font-weight: 600;
 }
 
 .loopBtnActive {
-  color: var(--colors-teal-deep);
+  color: var(--colors-green-deep);
 }
 
 .loopBtn:hover {
-  color: var(--colors-teal-deep);
+  color: var(--colors-green-deep);
 }
 
 /* Recorder panel -------------------------------------------------- */
@@ -460,7 +460,7 @@
 }
 
 .recorderBarAnalysing {
-  background: var(--colors-teal);
+  background: var(--colors-green);
   opacity: 0.85;
   transition: height 80ms linear;
 }
@@ -473,7 +473,7 @@
   width: 76px;
   height: 76px;
   border-radius: var(--radii-pill);
-  background: var(--colors-teal);
+  background: var(--colors-green);
   color: #fff;
   box-shadow: 0 8px 20px rgba(45, 90, 79, 0.25);
   transition:
@@ -551,7 +551,7 @@
   align-items: center;
   gap: 6px;
   background: rgba(45, 90, 79, 0.08);
-  color: var(--colors-teal);
+  color: var(--colors-green);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -563,7 +563,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--colors-teal);
+  background: var(--colors-green);
   animation: pulseDot 1.2s ease-in-out infinite;
 }
 
@@ -640,8 +640,8 @@
 }
 
 .checklistItemDone .checklistMarker {
-  background: var(--colors-teal);
-  border-color: var(--colors-teal);
+  background: var(--colors-green);
+  border-color: var(--colors-green);
   color: #fff;
 }
 
@@ -652,7 +652,7 @@
 
 .checklistItemActive .checklistMarker {
   background: var(--colors-bg-paper, #fff);
-  border-color: var(--colors-teal);
+  border-color: var(--colors-green);
   box-shadow: 0 0 0 3px rgba(45, 90, 79, 0.18);
 }
 
@@ -759,7 +759,7 @@
 }
 
 .lastScore {
-  color: var(--colors-teal);
+  color: var(--colors-green);
   font-weight: 600;
 }
 
@@ -773,7 +773,7 @@
 .scoreNumber {
   font-family: var(--fonts-serif);
   font-size: 64px;
-  color: var(--colors-teal);
+  color: var(--colors-green);
   line-height: 1;
 }
 
@@ -809,13 +809,13 @@
   border-color: var(--colors-ink-muted);
 }
 
-.btnTeal {
+.btnGreen {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   gap: var(--spacing-2);
-  background: var(--colors-teal);
+  background: var(--colors-green);
   color: #fff;
   border-radius: var(--radii-pill);
   padding: 8px 14px;
@@ -823,8 +823,8 @@
   font-weight: 600;
 }
 
-.btnTeal:hover {
-  background: var(--colors-teal-deep);
+.btnGreen:hover {
+  background: var(--colors-green-deep);
 }
 
 .spinner {
@@ -902,7 +902,7 @@
 
 .detailsSummary {
   cursor: pointer;
-  color: var(--colors-teal);
+  color: var(--colors-green);
   font-weight: 600;
   font-size: 14px;
 }
@@ -1106,7 +1106,7 @@
   overflow: hidden;
 }
 
-.metricBarFillTeal,
+.metricBarFillGreen,
 .metricBarFillAmber,
 .metricBarFillRed {
   display: block;
@@ -1115,8 +1115,8 @@
   transition: width 400ms ease;
 }
 
-.metricBarFillTeal {
-  background: var(--colors-teal);
+.metricBarFillGreen {
+  background: var(--colors-green);
 }
 
 .metricBarFillAmber {
@@ -1195,7 +1195,7 @@
 }
 
 .legendDotMatch {
-  background: var(--colors-teal);
+  background: var(--colors-green);
 }
 
 .legendDotSub {
@@ -1316,7 +1316,7 @@
   gap: 6px;
   background: transparent;
   border: 0;
-  color: var(--colors-teal);
+  color: var(--colors-green);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1325,7 +1325,7 @@
 }
 
 .listenBackPlayBoth:hover {
-  color: var(--colors-teal-deep);
+  color: var(--colors-green-deep);
 }
 
 .listenBackGrid {
@@ -1366,11 +1366,11 @@
   color: var(--colors-ink-muted);
 }
 
-/* Teacher reads teal, the user's own recitation reads gold — a left
+/* Teacher reads green, the user's own recitation reads gold — a left
    accent plus the matching play button / waveform tint differentiate
    the two tiles (the classes the component referenced were missing). */
 .listenBackTileTeacher {
-  border-left: 3px solid var(--colors-teal);
+  border-left: 3px solid var(--colors-green);
 }
 
 .listenBackTileUser {
@@ -1399,7 +1399,7 @@
 }
 
 .listenBackPlayBtnTeacher {
-  background: var(--colors-teal);
+  background: var(--colors-green);
 }
 
 .listenBackPlayBtnUser {
@@ -1422,7 +1422,7 @@
 }
 
 .listenBackWaveTeacher span {
-  background: var(--colors-teal);
+  background: var(--colors-green);
   opacity: 0.5;
 }
 
@@ -1482,7 +1482,7 @@
   height: 36px;
   border-radius: 50%;
   border: 3px solid var(--colors-tan-soft, #efe6d6);
-  border-top-color: var(--colors-teal);
+  border-top-color: var(--colors-green);
   animation: spin 0.9s linear infinite;
 }
 
@@ -1504,7 +1504,7 @@
 .resultPendingCancel {
   margin-top: var(--spacing-2);
   font-size: 13px;
-  color: var(--colors-teal);
+  color: var(--colors-green);
   text-decoration: underline;
   font-weight: 600;
 }
@@ -1549,7 +1549,7 @@
 
 /* Phase 2.3-D: a11y polish ------------------------------------------ */
 
-/* The default :focus-visible outline (var(--colors-teal)) is too dark to
+/* The default :focus-visible outline (var(--colors-green)) is too dark to
  * see on the recording panel's near-black background. Switch to the
  * cream tan accent so the keyboard ring stays high-contrast there. */
 .panelDark :focus-visible {
