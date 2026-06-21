@@ -311,9 +311,9 @@
     }
   },
   "history": {
-    "eyebrow": "+ Your tilawah journey",
-    "title": "Recent attempts",
-    "description": "A log of your recent recitations and scores. Synced across your devices when you are signed in.",
+    "eyebrow": "✦ Your practice",
+    "title": "History",
+    "description": "Every attempt is saved so you can hear your progress over time.",
     "signedOut": {
       "title": "Sign in to track your practice",
       "body": "Your attempts, best scores and continue-from progress sync across devices when you have an account.",
@@ -327,14 +327,18 @@
     "filteredEmpty": "No attempts for the selected surah yet.",
     "filter": {
       "ariaLabel": "Filter attempts by surah",
-      "all": "All"
+      "all": "All attempts"
     },
     "row": {
       "title": "{name} · ayah {ayah}",
       "scoreAriaLabel": "Score {score}",
       "failedAriaLabel": "Failed attempt",
       "statusCompleted": "Completed",
-      "statusFailed": "Failed"
+      "statusFailed": "Failed",
+      "play": "Play your recitation",
+      "pause": "Pause recitation",
+      "loadingRecording": "Loading recording…",
+      "recordingUnavailable": "Recording unavailable"
     },
     "stats": {
       "ariaLabel": "Practice summary",
@@ -345,7 +349,10 @@
       "best": "Best",
       "bestUnknown": "—",
       "streak": "Streak",
-      "streakUnit": "days"
+      "streakUnit": "days",
+      "yourProgress": "Your progress",
+      "bestSubtitle": "{surah} · {ayah}",
+      "streakSubtitle": "days · best {best}"
     }
   }
 }
