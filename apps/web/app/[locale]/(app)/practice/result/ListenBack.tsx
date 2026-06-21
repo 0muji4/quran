@@ -149,7 +149,7 @@ function ListenBackTile({
         <span className={styles.listenBackTileTitle}>{title}</span>
         <span className={styles.listenBackTileSubtitle}>{subtitle}</span>
       </div>
-      <div className={styles.listenBackPlayer}>
+      <div className={styles.listenBackPlayer} data-testid="listen-back-player">
         <button
           type="button"
           className={buttonClass}
