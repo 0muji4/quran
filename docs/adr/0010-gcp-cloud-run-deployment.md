@@ -97,7 +97,7 @@ Re-evaluate the GCP choice (in particular consider AWS) when **two or more** of 
 4. **A hosted IDaaS** (AWS Cognito or similar) is adopted, making the gravity of identity infrastructure pull other workloads onto the same cloud.
 5. **A specific managed service unique to another cloud** (e.g. Aurora Global Database for multi-master writes, DynamoDB Global Tables) becomes load-bearing for the product.
 
-Until then, the deployment plan in `~/.claude/plans/backend-frontend-worker-nifty-muffin.md` is the active reference.
+Until then, the internal deployment plan is the active reference.
 
 ## Alternatives Considered
 
@@ -108,7 +108,7 @@ Until then, the deployment plan in `~/.claude/plans/backend-frontend-worker-nift
 
 ## References
 
-- `~/.claude/plans/backend-frontend-worker-nifty-muffin.md` — full deployment plan this ADR implements
+- Internal deployment plan — the full deployment plan this ADR implements
 - [ADR 0001](./0001-skip-kubernetes.md) — superseded; reasoning carried forward
 - [ADR 0011](./0011-cloud-portability-principle.md) — portability constraints on cloud-specific managed services
 - `ops/docker/compose.dev.yml` — local stack that remains unchanged

@@ -57,7 +57,7 @@ Per-call-site migration plan (rough order):
 - **Names express constraints.** `--color-gold-surface` cannot be reached for text without a code reviewer noticing the misuse. The token system documents itself rather than relying on style-guide vigilance.
 - **Brand identity preserved.** `--color-gold-surface` keeps the `#b8893c` warmth on backgrounds. The visible change is `.btnGold` text colour (white → dark) and `.eyebrow` text colour (gold → dark gold-brown), both of which read as deliberate-looking treatments rather than brand drift.
 - **No new system to learn.** This is a token rename plus one new value; no methodology, no third-party design system, no migration tooling.
-- **Aligns with the engineering principles in `~/.claude/CLAUDE.md`** — the named tokens express intent (Why) and constrain misuse (How), which is the recurring "design first, sizing second" discipline.
+- **Aligns with the project's engineering principles** — the named tokens express intent (Why) and constrain misuse (How), which is the recurring "design first, sizing second" discipline.
 
 ## Consequences
 
