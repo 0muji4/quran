@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from '../../../../i18n/navigation';
 import { updateProfileAction, type UserLevel } from '../../../actions';
-import { css, cx } from '../../../../styled-system/css';
+import { css } from '../../../../styled-system/css';
 
 interface Props {
   displayName: string | null;
@@ -132,6 +132,9 @@ const cancelButtonClass = css({
 });
 
 const saveButtonClass = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '2',
   paddingBlock: '2',
   paddingInline: '5',
   borderRadius: 'pill',
@@ -143,6 +146,116 @@ const saveButtonClass = css({
   cursor: 'pointer',
   _disabled: { opacity: 0.6, cursor: 'progress' }
 });
+
+const headerRowClass = css({
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '4'
+});
+
+const closeButtonClass = css({
+  flexShrink: 0,
+  width: '[32px]',
+  height: '[32px]',
+  borderRadius: 'pill',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'border',
+  backgroundColor: 'bg.paper',
+  color: 'ink.muted',
+  fontSize: '[18px]',
+  lineHeight: '[1]',
+  cursor: 'pointer',
+  '&:hover': { borderColor: 'ink.muted', color: 'ink.strong' }
+});
+
+// PROFILE PHOTO section. UI-only: upload/remove are inert placeholders.
+// TODO(profile-photo): wire to an avatar-upload endpoint.
+const photoSectionClass = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4',
+  flexWrap: 'wrap'
+});
+const photoColumnClass = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2',
+  flex: '1',
+  minWidth: '[200px]'
+});
+const photoLabelClass = css({
+  fontSize: '[11px]',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '[0.06em]',
+  color: 'ink.muted'
+});
+const photoActionsClass = css({ display: 'flex', alignItems: 'center', gap: '3' });
+const photoAvatarClass = css({
+  width: '[64px]',
+  height: '[64px]',
+  borderRadius: '[50%]',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'bg.paper',
+  fontFamily: 'serif',
+  fontSize: '[24px]',
+  flexShrink: 0,
+  background:
+    '[radial-gradient(circle at 35% 30%, var(--colors-gold-surface), var(--colors-bg-nav))]'
+});
+const uploadButtonClass = css({
+  paddingBlock: '2',
+  paddingInline: '4',
+  borderRadius: 'pill',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'border',
+  backgroundColor: 'bg.paper',
+  color: 'ink.strong',
+  fontSize: '[13px]',
+  fontWeight: 600,
+  cursor: 'not-allowed',
+  opacity: 0.55
+});
+const removeButtonClass = css({
+  font: '[inherit]',
+  fontSize: '[13px]',
+  fontWeight: 600,
+  color: 'red',
+  background: '[transparent]',
+  borderWidth: '[0]',
+  padding: '[0]',
+  cursor: 'not-allowed',
+  opacity: 0.55
+});
+
+// Tan info callout pointing email/password + preferences to where they
+// actually live, so this modal stays scoped to name + level + photo.
+const calloutClass = css({
+  display: 'flex',
+  gap: '2',
+  backgroundColor: 'tan.soft',
+  borderRadius: 'md',
+  paddingBlock: '3',
+  paddingInline: '4',
+  fontSize: '[13px]',
+  color: 'ink.default',
+  lineHeight: '[1.5]'
+});
+
+const footerClass = css({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '4',
+  flexWrap: 'wrap'
+});
+
+const syncTextClass = css({ fontSize: '[12px]', color: 'ink.muted' });
 
 const LEVEL_OPTIONS: { value: UserLevel; label: string }[] = [
   { value: 'beginner', label: 'Beginner · Learning Arabic' },
@@ -163,6 +276,7 @@ export function EditProfileButton({ displayName, email, level }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const photoInitial = (nameValue.trim().charAt(0) || email.charAt(0) || '·').toUpperCase();
 
   // Reset modal state whenever it opens so a Cancel → re-open doesn't
   // carry over a stale draft.
@@ -240,11 +354,21 @@ export function EditProfileButton({ displayName, email, level }: Props) {
           }}
         >
           <form className={modalClass} onSubmit={onSubmit} noValidate>
-            <div>
-              <p className={eyebrowClass}>
-                <span aria-hidden="true">+ </span>Your account
-              </p>
-              <h2 className={titleClass}>Edit profile</h2>
+            <div className={headerRowClass}>
+              <div>
+                <p className={eyebrowClass}>
+                  <span aria-hidden="true">✦ </span>Your account
+                </p>
+                <h2 className={titleClass}>Edit profile</h2>
+              </div>
+              <button
+                type="button"
+                className={closeButtonClass}
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
             </div>
 
             {error && (
@@ -252,6 +376,26 @@ export function EditProfileButton({ displayName, email, level }: Props) {
                 {error}
               </div>
             )}
+
+            <div className={photoSectionClass}>
+              <span className={photoAvatarClass} aria-hidden="true">
+                {photoInitial}
+              </span>
+              <div className={photoColumnClass}>
+                <span className={photoLabelClass}>Profile photo</span>
+                <div className={photoActionsClass}>
+                  <button type="button" className={uploadButtonClass} disabled title="Coming soon">
+                    Upload photo
+                  </button>
+                  <button type="button" className={removeButtonClass} disabled title="Coming soon">
+                    Remove
+                  </button>
+                </div>
+                <span className={helperClass}>
+                  Square, ≥ 200×200px. JPG, PNG, or WebP up to 2MB.
+                </span>
+              </div>
+            </div>
 
             <div className={fieldClass}>
               <label className={labelClass} htmlFor="edit-display-name">
@@ -294,18 +438,31 @@ export function EditProfileButton({ displayName, email, level }: Props) {
               </span>
             </div>
 
-            <div className={actionsClass}>
-              <button
-                type="button"
-                className={cancelButtonClass}
-                onClick={() => setOpen(false)}
-                disabled={pending}
-              >
-                Cancel
-              </button>
-              <button type="submit" className={cx(saveButtonClass)} disabled={pending}>
-                {pending ? 'Saving…' : 'Save changes'}
-              </button>
+            <p className={calloutClass}>
+              <span aria-hidden="true">ⓘ</span>
+              <span>
+                Looking to change your <strong>email or password</strong>? They live in{' '}
+                <strong>Account &amp; data</strong> on the Profile page. Practice{' '}
+                <strong>preferences</strong> (reciter, speed, reminders) are right next to it.
+              </span>
+            </p>
+
+            <div className={footerClass}>
+              <span className={syncTextClass}>Changes sync to every signed-in device.</span>
+              <div className={actionsClass}>
+                <button
+                  type="button"
+                  className={cancelButtonClass}
+                  onClick={() => setOpen(false)}
+                  disabled={pending}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={saveButtonClass} disabled={pending}>
+                  <span aria-hidden="true">✓</span>
+                  {pending ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
             </div>
           </form>
         </div>

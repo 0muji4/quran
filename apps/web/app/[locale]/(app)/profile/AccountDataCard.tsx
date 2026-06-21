@@ -57,6 +57,23 @@ const helperClass = css({
   color: 'ink.muted'
 });
 
+// Disabled "Download" affordance for the export row. Export is not wired
+// to a backend yet, so it renders dimmed like the deferred OAuth / forgot
+// links rather than as a dead control.
+// TODO(profile-export): enable once the BFF exposes a data-export endpoint.
+const downloadLinkClass = css({
+  font: '[inherit]',
+  fontSize: '[14px]',
+  fontWeight: 600,
+  color: 'teal.deep',
+  background: '[transparent]',
+  borderWidth: '[0]',
+  padding: '[0]',
+  cursor: 'not-allowed',
+  opacity: 0.55,
+  flexShrink: 0
+});
+
 // "Account & data". Phase-1 surface: Email + Password rows render
 // the current value (or a placeholder) and a disabled action link
 // labelled "Change" / "Update". The change / update / delete /
@@ -87,6 +104,16 @@ export function AccountDataCard({ email }: Props) {
           <span className={helperClass}>Rotate when you suspect a leak or every few months.</span>
         </div>
         <UpdatePasswordButton />
+      </div>
+
+      <div className={rowClass}>
+        <div className={labelStackClass}>
+          <span className={eyebrowClass}>Export your data</span>
+          <span className={primaryClass}>Download a copy of every attempt and score</span>
+        </div>
+        <button type="button" className={downloadLinkClass} disabled title="Coming soon">
+          Download
+        </button>
       </div>
     </section>
   );
