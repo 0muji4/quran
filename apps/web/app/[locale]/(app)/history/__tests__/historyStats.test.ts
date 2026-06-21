@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHistoryStats } from '../historyStats';
+import { computeHistoryStats, scoreTrendForAyah } from '../historyStats';
 import type { Attempt } from '../../../../lib/storage';
 
 // Use `in` so that `score: null` overrides are honored. Plain `??`
@@ -126,5 +126,40 @@ describe('computeHistoryStats', () => {
       NOW
     );
     expect(stats.streakDays).toBe(0);
+  });
+});
+
+describe('scoreTrendForAyah', () => {
+  it("returns this ayah's scored attempts oldest→newest", () => {
+    const trend = scoreTrendForAyah(
+      [
+        attempt({ createdAt: '2026-05-16T10:00:00Z', surahId: '1', ayahNumber: 1, score: 90 }),
+        attempt({ createdAt: '2026-05-14T10:00:00Z', surahId: '1', ayahNumber: 1, score: 70 }),
+        attempt({ createdAt: '2026-05-15T10:00:00Z', surahId: '1', ayahNumber: 2, score: 50 }), // other ayah
+        attempt({
+          createdAt: '2026-05-15T10:00:00Z',
+          surahId: '1',
+          ayahNumber: 1,
+          score: null,
+          status: 'FAILED' as const
+        }), // unscored
+        attempt({ createdAt: '2026-05-15T11:00:00Z', surahId: '1', ayahNumber: 1, score: 80 })
+      ],
+      '1',
+      1
+    );
+    expect(trend).toEqual([70, 80, 90]);
+  });
+
+  it('caps at the most recent `limit` points', () => {
+    const attempts = Array.from({ length: 8 }, (_, i) =>
+      attempt({
+        createdAt: `2026-05-0${i + 1}T10:00:00Z`,
+        surahId: '1',
+        ayahNumber: 1,
+        score: i * 10
+      })
+    );
+    expect(scoreTrendForAyah(attempts, '1', 1, 6)).toEqual([20, 30, 40, 50, 60, 70]);
   });
 });
