@@ -66,7 +66,11 @@ test.describe('Error Handling', () => {
     ).toBeVisible();
   });
 
-  test('should reset state on a page reload during recording', async ({ page, recordPage, browserName }) => {
+  test('should reset state on a page reload during recording', async ({
+    page,
+    recordPage,
+    browserName
+  }) => {
     test.skip(browserName !== 'chromium', 'MediaRecorder fake-mic flags are Chromium-only');
 
     await recordPage.goto(testSurahs.alFatihah.id, 1);

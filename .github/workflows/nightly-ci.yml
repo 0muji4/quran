@@ -12,7 +12,7 @@ name: Nightly Full CI
 # `main` exists, this workflow should grow a branch matrix.
 on:
   schedule:
-    - cron: '0 18 * * *'   # 03:00 JST daily, outside Asia working hours
+    - cron: '0 18 * * *' # 03:00 JST daily, outside Asia working hours
   workflow_dispatch:
 
 jobs:

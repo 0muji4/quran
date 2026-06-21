@@ -1,0 +1,81 @@
+name: Update Visual Baselines
+
+# Source of truth for the Playwright visual baselines: a macOS dev host
+# can't reproduce CI's Linux rendering, so regenerate them here and commit
+# back to the dispatched branch. Run via Actions → "Update Visual Baselines".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-baselines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Keep the Docker image tag in sync with the installed Playwright.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Start Docker Compose services
+        run: docker compose -f ops/docker/compose.dev.yml up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 180 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; echo "Waiting for web service..."; done'
+
+      - name: Run database migrations
+        run: make db-migrate
+
+      - name: Seed database with test data
+        run: make db-seed
+
+      # Match e2e.yml's image + host networking so the PNGs match what the
+      # e2e visual job compares against.
+      - name: Regenerate visual baselines
+        run: |
+          docker run --rm \
+            --network=host \
+            -v "$PWD:/work" \
+            -w /work \
+            -e E2E_BASE_URL=http://localhost:3000 \
+            -e CI=1 \
+            mcr.microsoft.com/playwright:v${{ steps.playwright.outputs.version }}-jammy \
+            bash -lc "npx playwright test e2e/tests/visual/ --update-snapshots --project=chromium-desktop"
+
+      - name: Shutdown Docker Compose
+        if: always()
+        run: docker compose -f ops/docker/compose.dev.yml down -v
+
+      - name: Commit updated baselines
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/tests/visual/visual.spec.ts-snapshots
+          if git diff --cached --quiet; then
+            echo "No baseline changes — nothing to commit."
+          else
+            git commit -m "chore(e2e): refresh visual baselines [skip ci]"
+            git push
+          fi

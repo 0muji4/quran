@@ -12,7 +12,7 @@ This asymmetry is not merely cosmetic. The 2026-05-09 Update on ADR 0009 cites "
 
 > "Localizing iOS alone creates cross-platform divergence that has to be unwound later."
 
-In other words, the web's missing i18n posture is currently a load-bearing reason for *not* localizing iOS values either. The product is paying the cost of having infrastructure on one platform and content stuck behind cross-platform parity on the other.
+In other words, the web's missing i18n posture is currently a load-bearing reason for _not_ localizing iOS values either. The product is paying the cost of having infrastructure on one platform and content stuck behind cross-platform parity on the other.
 
 A May 2026 Web ↔ iOS feature audit (internal, Cross-cutting #1) flagged this gap explicitly. Retrofitting i18n into a Next.js App Router codebase has the same cost shape as the SwiftUI retrofit ADR 0009 warned against: every Server Component, Client Component, and Server Action throw site has to be revisited.
 
@@ -47,7 +47,7 @@ Positive:
 
 Negative:
 
-- The migration touches every Component file. Mitigated by the phased plan below and by adopting `t(...)` for *new* code immediately so the migration set only shrinks.
+- The migration touches every Component file. Mitigated by the phased plan below and by adopting `t(...)` for _new_ code immediately so the migration set only shrinks.
 - A new dependency: `next-intl` (~30 KB gzip), plus middleware adds a small server-side hop. Acceptable; it's the smallest viable App Router-native option.
 - URL shape changes: `/sign-in` becomes `/en/sign-in`. Existing analytics dashboards and bookmarks need a 30x redirect from un-prefixed paths to the default locale. Tracked as part of Phase 1.
 - Diff hygiene: PRs that introduce text must touch `messages/en.json` (and `messages/ar.json` for the mirror) alongside the component. Mitigated by code review and (later) a CI check that fails on `t('key')` calls with no entry in `en.json`.
@@ -59,7 +59,7 @@ Negative:
 - **`react-intl` (FormatJS).** Industry standard, format-rich. Rejected for now: App Router integration is heavier, the `IntlProvider` posture forces Client Component boundaries that `next-intl` avoids. Re-evaluate if ICU message format requirements appear.
 - **`i18next` + `react-i18next`.** Larger feature surface than Tilawah currently needs (resource backends, namespace splitting, plural rules), and its Server Component integration is community-maintained rather than library-first. Rejected as overkill.
 - **Subdomain locale routing (`ar.tilawah.example`).** Rejected: more deploy complexity than path-prefix and offers no UX advantage for an app where most users arrive from internal links rather than search.
-- **Skip Arabic infrastructure on Web entirely.** Considered as a counter-proposal during the audit follow-up: remove iOS i18n instead of adding Web i18n, on the grounds that ar values are unshipped on both sides. Rejected: ADR 0009's reasoning about *infrastructure cost vs values cost* applies identically — the cheap moment to add the bundles is before the codebase fills with literals.
+- **Skip Arabic infrastructure on Web entirely.** Considered as a counter-proposal during the audit follow-up: remove iOS i18n instead of adding Web i18n, on the grounds that ar values are unshipped on both sides. Rejected: ADR 0009's reasoning about _infrastructure cost vs values cost_ applies identically — the cheap moment to add the bundles is before the codebase fills with literals.
 
 ## Migration Plan
 

@@ -4,22 +4,22 @@ Go HTTP server that serves Surah / Ayah data and accepts ASR scoring jobs. Liste
 
 ## Endpoints
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/healthz` | Health check |
-| GET | `/api/surahs` | List Surahs |
-| GET | `/api/surahs/{id}` | Surah detail |
-| GET | `/api/surahs/{id}/ayahs` | List Ayahs for a Surah |
+| Method | Path                     | Purpose                |
+| ------ | ------------------------ | ---------------------- |
+| GET    | `/healthz`               | Health check           |
+| GET    | `/api/surahs`            | List Surahs            |
+| GET    | `/api/surahs/{id}`       | Surah detail           |
+| GET    | `/api/surahs/{id}/ayahs` | List Ayahs for a Surah |
 
 Scoring-related endpoints live under `internal/`.
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PORT` | `8080` | Listen port |
-| `DATABASE_URL` | — | Postgres DSN (required) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP collector endpoint (optional) |
+| Variable                      | Default | Purpose                            |
+| ----------------------------- | ------- | ---------------------------------- |
+| `PORT`                        | `8080`  | Listen port                        |
+| `DATABASE_URL`                | —       | Postgres DSN (required)            |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | —       | OTLP collector endpoint (optional) |
 
 ## Build / Run
 

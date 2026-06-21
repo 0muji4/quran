@@ -24,7 +24,7 @@ From the first iOS rebuild PR forward:
 ## Rationale
 
 - **Retrofitting i18n is the most-frequently-cited "we should have done this earlier" decision in iOS codebases.** The marginal cost of `Text("key")` over `Text("Literal")` is ~zero at write time and saves a full View pass later.
-- **Arabic is not optional for this product.** Even if the first ar translations are placeholder, the *infrastructure* must exist: bundles, fonts, RTL handling, error-message localization. Writing the View bodies with hard-coded English now means rewriting them later.
+- **Arabic is not optional for this product.** Even if the first ar translations are placeholder, the _infrastructure_ must exist: bundles, fonts, RTL handling, error-message localization. Writing the View bodies with hard-coded English now means rewriting them later.
 - **`LocalizedStringKey` is SwiftUI-native.** No third-party library needed. Xcode tooling exports `Localizable.strings` to localizers cleanly.
 - **Centralised typography** prevents font drift and makes a future "switch Arabic font" change a one-line edit.
 - **Errors deserve the same care as UI copy.** Pushing `AppError.errorDescription` through `NSLocalizedString` means no path produces an unlocalizable user string.

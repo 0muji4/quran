@@ -34,10 +34,10 @@ PR #87 において、Web フロントエンド `apps/web/` を Tilawah ブラ�
 
 #### 1.1 既知の事前負債の解消 — Done in PR #90
 
-| 負債                                         | 場所                                         | 対応                                                                                                | 状態                |
-| -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------- |
-| `Response` 型キャストの型エラー              | `apps/web/app/__tests__/actions.test.ts:321` | `as unknown as Response` への書き換え。`pnpm typecheck` の green 化。                               | ✅ Done in PR #90   |
-| `DROP DATABASE` 中の Postgres セッション競合 | `apps/bff/src/__tests__/setup.ts:52`         | クリーンアップ前に `pg_terminate_backend` で残存接続を切断、または `force: true` 相当の処理を導入。 | ✅ Done in PR #90   |
+| 負債                                         | 場所                                         | 対応                                                                                                | 状態              |
+| -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------- |
+| `Response` 型キャストの型エラー              | `apps/web/app/__tests__/actions.test.ts:321` | `as unknown as Response` への書き換え。`pnpm typecheck` の green 化。                               | ✅ Done in PR #90 |
+| `DROP DATABASE` 中の Postgres セッション競合 | `apps/bff/src/__tests__/setup.ts:52`         | クリーンアップ前に `pg_terminate_backend` で残存接続を切断、または `force: true` 相当の処理を導入。 | ✅ Done in PR #90 |
 
 これらは PR #87 では touch しなかった事前負債だが、ローカル `pnpm test` の green 復旧には影響度がある。
 
@@ -70,16 +70,16 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| Result page core (Hero / metrics / Word-by-word / auto-redirect) | ✅ Done | #93 |
-| Listen back (BFF presigned `recordingUrl` + Web players) | ✅ Done | #106 |
-| Polling slow/stuck hint + Surah-completion celebration toast | ✅ Done | #107 |
-| Result page a11y polish (h1 / role=img / role=progressbar / focus mgmt) | ✅ Done | #126 |
-| `/practice` URL を path-based に移行 (`/practice/[surahId]/[ayahNumber]/result/[jobId]`) | ✅ Done | #127 |
-| Analysing UI (3-step checklist + shimmer waveform + Scoring badge) | ✅ Done | #129 / #130 |
-| Could-not-score error UI (replay + too-short guard + COULDN'T PROCESS badge) | ✅ Done | #131 / #132 |
-| Result detail micro additions (Listen back "Play both" / Action row "Save attempt") | ✅ Done | #133 / #134 |
+| サブスコープ                                                                             | 状態    | PR          |
+| ---------------------------------------------------------------------------------------- | ------- | ----------- |
+| Result page core (Hero / metrics / Word-by-word / auto-redirect)                         | ✅ Done | #93         |
+| Listen back (BFF presigned `recordingUrl` + Web players)                                 | ✅ Done | #106        |
+| Polling slow/stuck hint + Surah-completion celebration toast                             | ✅ Done | #107        |
+| Result page a11y polish (h1 / role=img / role=progressbar / focus mgmt)                  | ✅ Done | #126        |
+| `/practice` URL を path-based に移行 (`/practice/[surahId]/[ayahNumber]/result/[jobId]`) | ✅ Done | #127        |
+| Analysing UI (3-step checklist + shimmer waveform + Scoring badge)                       | ✅ Done | #129 / #130 |
+| Could-not-score error UI (replay + too-short guard + COULDN'T PROCESS badge)             | ✅ Done | #131 / #132 |
+| Result detail micro additions (Listen back "Play both" / Action row "Save attempt")      | ✅ Done | #133 / #134 |
 
 #### 2.2 モバイル / タブレット最適化 — Done in PRs #136–#140
 
@@ -95,54 +95,54 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 **A. 必ず壊れる / overflow 懸念**
 
-| # | 場所 | 問題 |
-|---|------|------|
+| #   | 場所                                                            | 問題                                                                                                                                                                         |
+| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A-1 | `apps/web/app/styles/practice.module.css:123-129` `.ayahArabic` | `clamp(40px, 5.5vw, 64px)` は床 40px 固定だが、`word-break` / `overflow-wrap` 未設定。Al-Baqarah 2:255（49 単語 / 213 文字）が 375px viewport で水平 overflow を起こす可能性 |
 
 **B. WCAG 44px 未満の tap target**
 
-| # | 場所 | 現状サイズ |
-|---|------|------------|
-| B-1 | `practice.module.css:348-357` `.speedPill` (0.75× / 1.00× / 1.25×) | padding 6px 14px → 高さ ~24-26px |
-| B-2 | `practice.module.css:369-376` `.loopBtn` | text only, 高さ ~16-20px |
-| B-3 | `practice.module.css:752-767` `.btnGhost` | 8px 14px → ~30-34px |
-| B-4 | `practice.module.css:769-783` `.btnTeal` | 8px 14px → ~30-34px |
-| B-5 | `practice.module.css:701-718` `.recorderCancel` | 8px 16px → ~30-34px |
-| B-6 | `practice.module.css:815-839` `.navBtn` | 10px 18px → ~36-40px |
-| B-7 | `library.module.css:131-160` `.btnGold` / `.btnGhostDark` | 10px 18px → ~36-40px |
-| B-8 | `nav.module.css:59-84` `.tab` | 6px 2px → ~25-27px（mobile 切替後も同じ） |
-| B-9 | `history.module.css:56-73` `.statusPill` | 4px 10px → ~24-26px |
+| #   | 場所                                                               | 現状サイズ                                |
+| --- | ------------------------------------------------------------------ | ----------------------------------------- |
+| B-1 | `practice.module.css:348-357` `.speedPill` (0.75× / 1.00× / 1.25×) | padding 6px 14px → 高さ ~24-26px          |
+| B-2 | `practice.module.css:369-376` `.loopBtn`                           | text only, 高さ ~16-20px                  |
+| B-3 | `practice.module.css:752-767` `.btnGhost`                          | 8px 14px → ~30-34px                       |
+| B-4 | `practice.module.css:769-783` `.btnTeal`                           | 8px 14px → ~30-34px                       |
+| B-5 | `practice.module.css:701-718` `.recorderCancel`                    | 8px 16px → ~30-34px                       |
+| B-6 | `practice.module.css:815-839` `.navBtn`                            | 10px 18px → ~36-40px                      |
+| B-7 | `library.module.css:131-160` `.btnGold` / `.btnGhostDark`          | 10px 18px → ~36-40px                      |
+| B-8 | `nav.module.css:59-84` `.tab`                                      | 6px 2px → ~25-27px（mobile 切替後も同じ） |
+| B-9 | `history.module.css:56-73` `.statusPill`                           | 4px 10px → ~24-26px                       |
 
 **C. 視覚的に窮屈（broken ではないが mobile 体験を損なう）**
 
-| # | 場所 | 問題 |
-|---|------|------|
-| C-1 | `apps/web/app/library/ContinueCard.tsx:14-24` + `library.module.css:43-52` `.continueOrnament` | compass SVG が 200px 固定、375px ではカード幅の 61% を占める。media query 未設定 |
-| C-2 | `library.module.css:249-261` `.searchBox` | `min-width: 280px` で 375px 時に余白 47px しか残らない |
-| C-3 | `practice.module.css:973-980` `.sideStats` (Result hero) | `grid-template-columns: repeat(3, max-content)` で 900px 以下も 3-col 維持、フォント縮小なし |
-| C-4 | `practice.module.css:1158-1185` `.wordCompareTiles` / `.wordTile` | `min-width: 64px + padding 28px = 92px/個`。Al-Baqarah 49 単語で 13-14 行になる |
+| #   | 場所                                                                                           | 問題                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| C-1 | `apps/web/app/library/ContinueCard.tsx:14-24` + `library.module.css:43-52` `.continueOrnament` | compass SVG が 200px 固定、375px ではカード幅の 61% を占める。media query 未設定             |
+| C-2 | `library.module.css:249-261` `.searchBox`                                                      | `min-width: 280px` で 375px 時に余白 47px しか残らない                                       |
+| C-3 | `practice.module.css:973-980` `.sideStats` (Result hero)                                       | `grid-template-columns: repeat(3, max-content)` で 900px 以下も 3-col 維持、フォント縮小なし |
+| C-4 | `practice.module.css:1158-1185` `.wordCompareTiles` / `.wordTile`                              | `min-width: 64px + padding 28px = 92px/個`。Al-Baqarah 49 単語で 13-14 行になる              |
 
 ##### 2.2 推奨 PR 分割（200 行/PR ターゲット）
 
-| PR | スコープ | 主な対象クラス | 推定行数 |
-|----|---------|----------------|----------|
-| **2.2-A** | tap targets を全部 ≥44px に統一 (B-1〜B-9) | `.speedPill` `.loopBtn` `.btnGhost` `.btnTeal` `.btnGold` `.btnGhostDark` `.navBtn` `.recorderCancel` `.tab` `.statusPill` | ~120 |
-| **2.2-B** | Arabic text overflow ガード + Word tile mobile 縮小 (A-1, C-4) | `.ayahArabic` `.wordCompareTiles` `.wordTile` | ~80 |
-| **2.2-C** | ContinueCard ornament + library mobile (C-1, C-2) | `.continueOrnament` `.searchBox` `.searchInput` `.filterPills` | ~80 |
-| **2.2-D** | Result hero stats モバイル breakpoint (C-3) | `.sideStats` `.sideStatLabel` `.sideStatValue` `.scoreDial` クラス周辺 | ~40 |
-| **2.2-E** | Playwright multi-viewport fixtures（375 / 414 / 768 / 1024）+ smoke specs | `playwright.config.ts` `e2e/tests/mobile-layout.spec.ts`（新規） | ~100 |
+| PR        | スコープ                                                                  | 主な対象クラス                                                                                                             | 推定行数 |
+| --------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **2.2-A** | tap targets を全部 ≥44px に統一 (B-1〜B-9)                                | `.speedPill` `.loopBtn` `.btnGhost` `.btnTeal` `.btnGold` `.btnGhostDark` `.navBtn` `.recorderCancel` `.tab` `.statusPill` | ~120     |
+| **2.2-B** | Arabic text overflow ガード + Word tile mobile 縮小 (A-1, C-4)            | `.ayahArabic` `.wordCompareTiles` `.wordTile`                                                                              | ~80      |
+| **2.2-C** | ContinueCard ornament + library mobile (C-1, C-2)                         | `.continueOrnament` `.searchBox` `.searchInput` `.filterPills`                                                             | ~80      |
+| **2.2-D** | Result hero stats モバイル breakpoint (C-3)                               | `.sideStats` `.sideStatLabel` `.sideStatValue` `.scoreDial` クラス周辺                                                     | ~40      |
+| **2.2-E** | Playwright multi-viewport fixtures（375 / 414 / 768 / 1024）+ smoke specs | `playwright.config.ts` `e2e/tests/mobile-layout.spec.ts`（新規）                                                           | ~100     |
 
 **順序**: 2.2-A → B → C → D を独立して並行可、E は A〜D 完了後にリグレッション検出インフラとして追加。各 PR は別ブランチ + `gh api repos/.../pulls -X POST` で起票（GraphQL レート対策）。
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
+| サブスコープ                                                                                                                                                                                 | 状態    | PR   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
 | 2.2-A: tap targets ≥44px (`.speedPill` / `.loopBtn` / `.btnGhost` / `.btnTeal` / `.btnGold` / `.btnGhostDark` / `.navBtn` / `.recorderCancel` / `.tab`) + 32px on display-only `.statusPill` | ✅ Done | #136 |
-| 2.2-B: Arabic overflow guard (`.ayahArabic` `overflow-wrap` / `word-break`) + word tile mobile shrink (`@media (max-width: 600px)`) | ✅ Done | #137 |
-| 2.2-C: ContinueCard ornament `clamp(120px, 40vw, 200px)` + library search / filter mobile tweaks | ✅ Done | #138 |
-| 2.2-D: Result hero stats 1fr 3-col + label / value / padding shrink at `@media (max-width: 700px)` | ✅ Done | #139 |
-| 2.2-E: Playwright multi-viewport projects (`mobile-iphone` / `tablet-ipad` / `desktop-1024`, chromium-only) + `e2e/tests/mobile/mobile-layout.spec.ts` smoke suite | ✅ Done | #140 |
+| 2.2-B: Arabic overflow guard (`.ayahArabic` `overflow-wrap` / `word-break`) + word tile mobile shrink (`@media (max-width: 600px)`)                                                          | ✅ Done | #137 |
+| 2.2-C: ContinueCard ornament `clamp(120px, 40vw, 200px)` + library search / filter mobile tweaks                                                                                             | ✅ Done | #138 |
+| 2.2-D: Result hero stats 1fr 3-col + label / value / padding shrink at `@media (max-width: 700px)`                                                                                           | ✅ Done | #139 |
+| 2.2-E: Playwright multi-viewport projects (`mobile-iphone` / `tablet-ipad` / `desktop-1024`, chromium-only) + `e2e/tests/mobile/mobile-layout.spec.ts` smoke suite                           | ✅ Done | #140 |
 
 実装上の差分メモ:
 
@@ -158,6 +158,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 ##### 2.2 各 PR の詳細実装ガイド
 
 **2.2-A (tap targets)**:
+
 - 各 class に `min-height: 44px` を追加し、padding は維持しつつ flex で中央寄せ
 - `.tab` (nav) は `padding-block: 12px` に増やして `min-height: 44px` 確保
 - `.speedPill` / `.loopBtn` は親 `.teacherControls` の wrap 挙動も確認
@@ -165,6 +166,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 - 単体テストはなし（CSS のみ）。手動確認は Playwright `viewport: { width: 375, height: 812 }` で各 button の `boundingBox().height >= 44`
 
 **2.2-B (Arabic overflow)**:
+
 - `.ayahArabic` に `overflow-wrap: break-word` / `word-break: break-word` 追加
 - `@media (max-width: 600px)` で `clamp(32px, 5.5vw, 64px)` に floor を下げる（40 → 32）
 - `.wordTile` に `@media (max-width: 600px)` で `min-width: 48px; padding: 8px 10px; font-size: 18px`
@@ -172,17 +174,20 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 - 検証: Al-Baqarah 2:255 を 375px DevTools で確認、horizontal scroll が出ないこと
 
 **2.2-C (ContinueCard ornament + library)**:
+
 - `.continueOrnament` を `clamp(120px, 40vw, 200px)` に変更、または `@media (max-width: 600px) { display: none }`
 - `.searchBox` の `min-width` を mobile で 200px に、または `min-width: 0` + flex 全幅
 - `.searchInput` font-size を 15 → 14px (mobile)
 - `.filterPills` の gap を mobile では `var(--space-2)` (8 → 4 px は small)
 
 **2.2-D (Result hero stats)**:
+
 - `.sideStats` に `@media (max-width: 700px) { grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }`
 - `.sideStatValue` を mobile で 18px、`.sideStatLabel` を 10px
 - 必要なら `.resultHero` の `padding: var(--space-6) var(--space-8)` を mobile で `var(--space-5) var(--space-5)` に
 
 **2.2-E (Playwright multi-viewport)**:
+
 - `e2e/playwright.config.ts` に `projects` を追加: `mobile-iphone` (Pixel 5/iPhone 12 等の preset)、`tablet-ipad`、`desktop-1024`
 - 新規 `e2e/tests/mobile-layout.spec.ts` で各 viewport ごとに:
   - 主要画面（library / practice / result）が水平スクロールしないこと（`document.documentElement.scrollWidth <= window.innerWidth`）
@@ -214,13 +219,13 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| 2.3-A: `@axe-core/playwright` scaffold + allow-listed baseline (`/`、`/practice/1/1`、`/history` の 3 ルート、chromium-desktop 限定) | ✅ Done | #142 |
-| 2.3-B: RecorderPanel に `role="status" aria-live="polite"` の状態アナウンス（`recorderStatus.ts` 純関数 + 8 ユニットテスト） | ✅ Done | #143 |
-| 2.3-C: TopNav `role="tablist"` 削除 / HistoryList の `<ul>/<li>` 化 / SurahCard の集約 `aria-label` | ✅ Done | #144 |
+| サブスコープ                                                                                                                                       | 状態    | PR   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
+| 2.3-A: `@axe-core/playwright` scaffold + allow-listed baseline (`/`、`/practice/1/1`、`/history` の 3 ルート、chromium-desktop 限定)               | ✅ Done | #142 |
+| 2.3-B: RecorderPanel に `role="status" aria-live="polite"` の状態アナウンス（`recorderStatus.ts` 純関数 + 8 ユニットテスト）                       | ✅ Done | #143 |
+| 2.3-C: TopNav `role="tablist"` 削除 / HistoryList の `<ul>/<li>` 化 / SurahCard の集約 `aria-label`                                                | ✅ Done | #144 |
 | 2.3-D: `--color-ink-on-dark-mut` を AA 適合に bump / `prefers-reduced-motion` で 4 アニメーション停止 / dark bg 上の focus outline tan に override | ✅ Done | #145 |
-| 2.3-E: skip-to-content link + `<main id="main-content" tabIndex={-1}>` + 3 つの keyboard-flow e2e | ✅ Done | #146 |
+| 2.3-E: skip-to-content link + `<main id="main-content" tabIndex={-1}>` + 3 つの keyboard-flow e2e                                                  | ✅ Done | #146 |
 
 実装上の差分メモ:
 
@@ -270,13 +275,13 @@ POST /me/attempts             (body: Attempt)
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| 3.1-A: `last_practiced` / `best_scores` / `practice_attempts` migration (ADR 0011) | ✅ Done | #210 |
-| 3.1-B: BFF `/me/*` GET/PUT/POST routes + storage adapter | ✅ Done | #211 / #212 |
-| 3.1-C: `MOCK_SESSION` を seeded UUID 化（FK 整合） | ✅ Done | #214 |
-| 3.1-D: Web `storage.ts` を BFF cache-first に切替 + Server Actions 配線 | ✅ Done | #215 |
-| 3.1-E: 匿名 localStorage の初回 sign-up 時 BFF へのオートインポート | ✅ Done | #221 |
+| サブスコープ                                                                       | 状態    | PR          |
+| ---------------------------------------------------------------------------------- | ------- | ----------- |
+| 3.1-A: `last_practiced` / `best_scores` / `practice_attempts` migration (ADR 0011) | ✅ Done | #210        |
+| 3.1-B: BFF `/me/*` GET/PUT/POST routes + storage adapter                           | ✅ Done | #211 / #212 |
+| 3.1-C: `MOCK_SESSION` を seeded UUID 化（FK 整合）                                 | ✅ Done | #214        |
+| 3.1-D: Web `storage.ts` を BFF cache-first に切替 + Server Actions 配線            | ✅ Done | #215        |
+| 3.1-E: 匿名 localStorage の初回 sign-up 時 BFF へのオートインポート                | ✅ Done | #221        |
 
 #### 3.2 認証導線と実ユーザーアバター — Done in PRs #209, #216–#220
 
@@ -290,14 +295,14 @@ POST /me/attempts             (body: Attempt)
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| 3.2-A: ADR 0010 (Email + Password)・ADR 0011 (BFF persistence + localStorage cache) | ✅ Done | #209 |
-| 3.2-B-DB: `users.password_hash` カラム追加 | ✅ Done | #216 |
-| 3.2-B-BFF: `POST /auth/signup` / `POST /auth/login`（bcrypt + JWT、timing-attack 耐性） | ✅ Done | #217 |
+| サブスコープ                                                                                      | 状態    | PR   |
+| ------------------------------------------------------------------------------------------------- | ------- | ---- |
+| 3.2-A: ADR 0010 (Email + Password)・ADR 0011 (BFF persistence + localStorage cache)               | ✅ Done | #209 |
+| 3.2-B-DB: `users.password_hash` カラム追加                                                        | ✅ Done | #216 |
+| 3.2-B-BFF: `POST /auth/signup` / `POST /auth/login`（bcrypt + JWT、timing-attack 耐性）           | ✅ Done | #217 |
 | 3.2-C: Web Server Actions（signUp / signIn / signOut）+ HttpOnly cookies + `bffFetch` Bearer 転送 | ✅ Done | #218 |
-| 3.2-C-2: `/sign-in` `/sign-up` ページと `AuthForm`（`useTransition` で状態管理） | ✅ Done | #219 |
-| 3.2-D: TopNav の session 表示（avatar / Sign in / Sign out）+ `clearLocalCache` | ✅ Done | #220 |
+| 3.2-C-2: `/sign-in` `/sign-up` ページと `AuthForm`（`useTransition` で状態管理）                  | ✅ Done | #219 |
+| 3.2-D: TopNav の session 表示（avatar / Sign in / Sign out）+ `clearLocalCache`                   | ✅ Done | #220 |
 
 #### 3.3 Difficulty / Suggested の真ロジック化 — Done in PRs #235, #236
 
@@ -311,9 +316,9 @@ POST /me/attempts             (body: Attempt)
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| 3.3-A: BFF `GET /me/suggestions`（`composeSuggestion` pure selector + Mecca-short 候補 SQL + 11 unit tests）+ ADR 0015 | ✅ Done | #235 |
+| サブスコープ                                                                                                                                                                               | 状態    | PR   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
+| 3.3-A: BFF `GET /me/suggestions`（`composeSuggestion` pure selector + Mecca-short 候補 SQL + 11 unit tests）+ ADR 0015                                                                     | ✅ Done | #235 |
 | 3.3-B: Web `fetchSuggestionFromBff()` Server Action + `classify.ts` thin adapter（BFF レスポンス使用 → `ayahCount` heuristic にフォールバック）+ Library Server Component 配線 + e2e smoke | ✅ Done | #236 |
 
 実装上のメモ:
@@ -333,12 +338,12 @@ POST /me/attempts             (body: Attempt)
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| Scaffold (`visual.spec.ts` + Docker baseline 運用) | ✅ Done | #148 |
-| 3 active scene (library / history / practice idle) | ✅ Done | #149 |
+| サブスコープ                                                                                                      | 状態    | PR   |
+| ----------------------------------------------------------------------------------------------------------------- | ------- | ---- |
+| Scaffold (`visual.spec.ts` + Docker baseline 運用)                                                                | ✅ Done | #148 |
+| 3 active scene (library / history / practice idle)                                                                | ✅ Done | #149 |
 | Result scene (`scoring_jobs` + `asr_results` seed + audio mask + `NODE_ENV=development` で `MOCK_SESSION` 実効化) | ✅ Done | #238 |
-| Recording scene (Docker `--network=host` への切替で `MediaRecorder` 解禁、`test.fixme` 撤去) | ✅ Done | #239 |
+| Recording scene (Docker `--network=host` への切替で `MediaRecorder` 解禁、`test.fixme` 撤去)                      | ✅ Done | #239 |
 
 実装上のメモ:
 
@@ -383,11 +388,11 @@ POST /me/attempts             (body: Attempt)
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
+| サブスコープ                                                                                                        | 状態    | PR   |
+| ------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
 | `playwright.config.ts` の `firefox-desktop` / `webkit-desktop` プロジェクト追加（`E2E_CROSS_BROWSER=true` で gate） | ✅ Done | #243 |
-| `.github/workflows/nightly-ci.yml` に `cross-browser-e2e` matrix job 追加（firefox + webkit、独立 artefact） | ✅ Done | #243 |
-| ADR 0017（PR-time vs nightly scope、testIgnore 戦略、failure policy） | ✅ Done | #243 |
+| `.github/workflows/nightly-ci.yml` に `cross-browser-e2e` matrix job 追加（firefox + webkit、独立 artefact）        | ✅ Done | #243 |
+| ADR 0017（PR-time vs nightly scope、testIgnore 戦略、failure policy）                                               | ✅ Done | #243 |
 
 実装上のメモ:
 
@@ -409,12 +414,12 @@ POST /me/attempts             (body: Attempt)
 
 ##### 4.3 サブ PR 分割
 
-| サブ PR | スコープ | 主な対象 | 推定行数 |
-|----|---------|----------|----------|
-| **4.3-A** | bundle analyzer 導入 + baseline 計測 — ✅ Done in #245 | `next.config.mjs` `package.json` ADR 0018 | ~80 |
-| **4.3-B** | `PracticeClient` の server/client 境界分割 — ✅ Done in #246 | `PracticeClient.tsx` (削除) `recordingEvents.ts` | ~80 |
-| **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done in #248 | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx` | ~180 |
-| **4.3-D** | Amiri を Quran corpus に pre-subset 化（ADR 0020）— ✅ Done in #249 | `scripts/build-amiri-quran-subset.sh` `apps/web/app/fonts/*.woff2` `layout.tsx` | ~250 |
+| サブ PR   | スコープ                                                            | 主な対象                                                                        | 推定行数 |
+| --------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------- |
+| **4.3-A** | bundle analyzer 導入 + baseline 計測 — ✅ Done in #245              | `next.config.mjs` `package.json` ADR 0018                                       | ~80      |
+| **4.3-B** | `PracticeClient` の server/client 境界分割 — ✅ Done in #246        | `PracticeClient.tsx` (削除) `recordingEvents.ts`                                | ~80      |
+| **4.3-C** | Web Vitals → OTel RUM（ADR 0019）— ✅ Done in #248                  | `app/telemetry/web-vitals.ts` `WebTelemetryInit.tsx`                            | ~180     |
+| **4.3-D** | Amiri を Quran corpus に pre-subset 化（ADR 0020）— ✅ Done in #249 | `scripts/build-amiri-quran-subset.sh` `apps/web/app/fonts/*.woff2` `layout.tsx` | ~250     |
 
 **Phase 4.3 状態**: 全 4 サブ PR 消化済。第一手で baseline を取り（A）、フラット化（B）、RUM 計測の口（C）、最大レバーの font subset（D）の順に進めた。残りは 2.4 / 4.1 / 任意残のみ。
 
@@ -424,25 +429,25 @@ POST /me/attempts             (body: Attempt)
 
 **Per-route First Load JS（gzipped）**:
 
-| Route | Page JS | First Load JS |
-| ----- | ------- | ------------- |
-| `/practice/[s]/[a]` | 6.82 kB | **136 kB** ← 最重 |
-| `/practice/[s]/[a]/result/[jobId]` | 5.03 kB | **134 kB** |
-| `/` | 6.2 kB | 130 kB |
-| `/history` | 3.03 kB | 108 kB |
-| `/sign-in` / `/sign-up` | 2.87 kB | 108 kB |
-| shared baseline | — | 102 kB (54.2 + 45.4 + 1.95) |
+| Route                              | Page JS | First Load JS               |
+| ---------------------------------- | ------- | --------------------------- |
+| `/practice/[s]/[a]`                | 6.82 kB | **136 kB** ← 最重           |
+| `/practice/[s]/[a]/result/[jobId]` | 5.03 kB | **134 kB**                  |
+| `/`                                | 6.2 kB  | 130 kB                      |
+| `/history`                         | 3.03 kB | 108 kB                      |
+| `/sign-in` / `/sign-up`            | 2.87 kB | 108 kB                      |
+| shared baseline                    | —       | 102 kB (54.2 + 45.4 + 1.95) |
 
 **Per-font woff2（first-paint cost）**:
 
-| 用途 | Font / subset | サイズ |
-| ---- | ------------- | ------ |
-| 英語 UI body | Cormorant latin `.p` | ~37 KiB |
-| 英語 UI sans | Inter latin `.p` | ~47 KiB |
-| **Ayah Arabic 本体** | **Amiri arabic-400 `.p`** | **~106 KiB** ← 最重 |
-| Ayah Arabic 太字 | Amiri arabic-700 `.p` | ~98 KiB |
-| 1 routes per-paint 合計（400 のみ） | | ~190 KiB |
-| 1 routes per-paint 合計（400 + 700） | | ~288 KiB |
+| 用途                                 | Font / subset             | サイズ              |
+| ------------------------------------ | ------------------------- | ------------------- |
+| 英語 UI body                         | Cormorant latin `.p`      | ~37 KiB             |
+| 英語 UI sans                         | Inter latin `.p`          | ~47 KiB             |
+| **Ayah Arabic 本体**                 | **Amiri arabic-400 `.p`** | **~106 KiB** ← 最重 |
+| Ayah Arabic 太字                     | Amiri arabic-700 `.p`     | ~98 KiB             |
+| 1 routes per-paint 合計（400 のみ）  |                           | ~190 KiB            |
+| 1 routes per-paint 合計（400 + 700） |                           | ~288 KiB            |
 
 → **4.3-D の Amiri Quran-subset 化が単独で最大の font 削減レバー**。Quran 朗誦 corpus は ~700 glyph、Amiri full は ~3,500 glyph。
 
@@ -478,9 +483,9 @@ ADR 0018 + 4.3-C で「最大の font レバー = Amiri Arabic ~204 KiB（両 we
 
 **完了状況**:
 
-| サブスコープ | 状態 | PR |
-| ------------ | ---- | -- |
-| Browser OTel scaffold (`web-tracer.ts` `WebTracerProvider` + `BatchSpanProcessor` + `OTLPTraceExporter`、`NEXT_PUBLIC_OTEL_ENDPOINT` で gate)、`trackUiEvent(name, attrs)` 閉じた `web.ui.*` event union、`WebTelemetryInit` `'use client'` mounted from `layout.tsx`、ADR 0016 | ✅ Done | #241 |
+| サブスコープ                                                                                                                                                                                                                                                                                     | 状態    | PR   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ---- |
+| Browser OTel scaffold (`web-tracer.ts` `WebTracerProvider` + `BatchSpanProcessor` + `OTLPTraceExporter`、`NEXT_PUBLIC_OTEL_ENDPOINT` で gate)、`trackUiEvent(name, attrs)` 閉じた `web.ui.*` event union、`WebTelemetryInit` `'use client'` mounted from `layout.tsx`、ADR 0016                  | ✅ Done | #241 |
 | Instrumentation call sites: `RecorderPanel` (recording_started / stopped / cancelled、durationMs + tooShort)、`SuggestedCard` (suggested_clicked、`reason` 属性に ADR 0015 を載せる)、`TeacherPanel` (speed_changed / loop_toggled)、`ResultDetail` (`ResultViewedTracker` 経由で result_viewed) | ✅ Done | #242 |
 
 実装上のメモ:
@@ -544,18 +549,18 @@ Phase 4 (4.4 telemetry)      ────  → 単独（KR2 早期 Win）
 
 ## 7. 改訂履歴
 
-| 日付       | 改訂者         | 内容                                                                       |
-| ---------- | -------------- | -------------------------------------------------------------------------- |
-| 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票）                                            |
-| 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記 |
-| 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート） |
-| 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記 |
-| 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記 |
-| 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映 |
-| 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。 |
-| 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記 |
-| 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化 |
-| 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記 |
-| 2026-05-14 | motoshi.suzuki | Phase 4.3-C を PR #248 で消化済とマーク。4.3-D（Amiri Quran subset、ADR 0020）の進行中 PR を §4.3 サブ表に記録し、Amiri first-paint payload 204 → 94 KiB（−54%）、OFL Reserved-Font-Name 対応、visual 5/5 通過の実装メモを本文に追記。Phase 4.3 全 4 サブ PR が完了見込み |
-| 2026-05-14 | motoshi.suzuki | Phase 4.3-D を PR #249 で消化済とマークし「全 4 サブ PR 消化済」状態をサブ表直下にメモ。あわせて `docs/telemetry.md` に Web-only RUM セクション、`README.md` に Amiri OFL attribution、ADR 0016 に ADR 0019 への "See also" pointer を追記（同一 PR 内） |
+| 日付       | 改訂者         | 内容                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-08 | motoshi.suzuki | 初版（PR #87 マージ前提で起票）                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-05-08 | motoshi.suzuki | Phase 1.1 を PR #90 で消化済みとマーク。storage singleton leak の併合解消も追記                                                                                                                                                                                                                                                                                                                |
+| 2026-05-09 | motoshi.suzuki | Phase 2.1 + 2.1.x を全消化済みとマーク（PR #93 / #106 / #107 / #126 / #127 / #129 / #130 / #131 / #132 / #133 / #134）。Phase 2.2 を実装可能粒度に分解（A〜E の 5 PR スコープ + 詳細実装ガイド + 引き継ぎノート）                                                                                                                                                                              |
+| 2026-05-09 | motoshi.suzuki | Phase 2.2 を全消化済みとマーク（PR #136 / #137 / #138 / #139 / #140）。実装差分メモ・残課題（実機検証 / CI shard 運用）を追記                                                                                                                                                                                                                                                                  |
+| 2026-05-09 | motoshi.suzuki | Phase 2.3 を全消化済みとマーク（PR #142 / #143 / #144 / #145 / #146）。実装差分メモ（TeacherPanel/ContinueCard を audit から除外、page-has-heading-one を allow-list、aria-live 文言の caption 重複対応）と残課題（practice h1 / VoiceOver 実機検証）を追記                                                                                                                                    |
+| 2026-05-12 | motoshi.suzuki | Phase 3.3 を全消化済みとマーク（PR #235 BFF / #236 Web）。ADR 0015 で suggestion アルゴリズムと閾値を明文化。§2.3 残課題のうち `practice` h1 と axe allow-list の解消、`--color-ink-muted` の darken を反映                                                                                                                                                                                    |
+| 2026-05-13 | motoshi.suzuki | §2.3 残課題 "on-cream AA 不足 3 パターン" を解消済みに更新（commit `a83baff` で全パターン処理済み・axe 違反ゼロを確認）。                                                                                                                                                                                                                                                                      |
+| 2026-05-13 | motoshi.suzuki | Phase 3.4 / 4.2 / 4.4 を全消化済みとマーク（PR #238 / #239 / #243 / #241 / #242）。ADR 0016 / 0017 で browser telemetry / cross-browser scope を明文化。`compose.dev.yml` の `NODE_ENV=development` 副次修正、Docker `--network=host` 移行による secure-context 解消、result-scene の audio mask + 緩めた tolerance 等の実装メモを節内に追記                                                   |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3 を A〜D のサブ PR に分解。4.3-A の `@next/bundle-analyzer` 導入 + baseline 計測を本ドキュメント §4.3 に転載（ADR 0018 と整合）。`/practice/[s]/[a]` 136 kB / Amiri arabic 204 KiB（両 weight 合算）が次手の優先ターゲットであることを明文化                                                                                                                                          |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-A を PR #245 で、4.3-B を PR #246 で消化済とマーク。4.3-C（Web Vitals → OTel RUM、ADR 0019）の進行中 PR を §4.3 サブ表に記録し、bundle delta（+1 kB First Load JS）+ PII boundary（`web-vitals/attribution` 未 import）の実装メモを本文に追記                                                                                                                                        |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-C を PR #248 で消化済とマーク。4.3-D（Amiri Quran subset、ADR 0020）の進行中 PR を §4.3 サブ表に記録し、Amiri first-paint payload 204 → 94 KiB（−54%）、OFL Reserved-Font-Name 対応、visual 5/5 通過の実装メモを本文に追記。Phase 4.3 全 4 サブ PR が完了見込み                                                                                                                      |
+| 2026-05-14 | motoshi.suzuki | Phase 4.3-D を PR #249 で消化済とマークし「全 4 サブ PR 消化済」状態をサブ表直下にメモ。あわせて `docs/telemetry.md` に Web-only RUM セクション、`README.md` に Amiri OFL attribution、ADR 0016 に ADR 0019 への "See also" pointer を追記（同一 PR 内）                                                                                                                                       |
 | 2026-05-14 | motoshi.suzuki | 残スコープ整理。§2.4 Press-and-hold を **Dropped**（ビックテック音声 UX 参照 — 押下保持型は短メッセージ用パターンで、ayah 単位の数秒〜十数秒の連続発声に不適合）。§4.1 i18n を **Parked**（アラビア語ネイティブレビュアー未確保 + ADR 0020 の UI 用フォント方針未確定）。§4 依存図と §5 推奨着手順を残スコープ視点に整理し、ロードマップ本体スコープが事実上クローズ済である旨を §5 末尾に明記 |

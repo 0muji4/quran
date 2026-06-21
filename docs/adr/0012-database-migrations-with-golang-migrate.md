@@ -47,13 +47,13 @@ Every version has both halves. Filenames are validated by `scripts/migrate-lint.
 
 ### Why golang-migrate over Flyway / Atlas / dbmate
 
-| Tool | Considered | Reason for / against |
-|---|---|---|
+| Tool                         | Considered                                                                                                                                                                                                                                                                                                                                          | Reason for / against                                                                                                                                                                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **golang-migrate** ✅ chosen | Single static binary distributed as a small container image. Plain SQL files. Postgres advisory lock during run. Familiar `{version}_{name}.(up\|down).sql` convention. Aligns with [ADR 0011](./0011-cloud-portability-principle.md): the migration tool itself is a deploy-time concern, not a runtime dependency, so swapping it later is cheap. |
-| Flyway / Liquibase | considered | Most mature option overall, especially in enterprise contexts; language-neutral. Rejected because the official runner is a JVM image (~250 MiB) versus migrate's ~30 MiB, and the team has no JVM elsewhere in the stack. The features we would actually use are a strict subset of what golang-migrate also provides. |
-| Atlas | considered | Strong story for declarative schema + versioned migrations, plus schema-diffing. Rejected as overkill for current scale and learning cost; revisit if we ever want declarative schema. |
-| dbmate | considered | Thinner than golang-migrate but weaker advisory-lock semantics, smaller community. Net negative versus golang-migrate. |
-| Self-rolled | considered | Rejected; reinventing tracking + locking + ordering for no benefit. |
+| Flyway / Liquibase           | considered                                                                                                                                                                                                                                                                                                                                          | Most mature option overall, especially in enterprise contexts; language-neutral. Rejected because the official runner is a JVM image (~250 MiB) versus migrate's ~30 MiB, and the team has no JVM elsewhere in the stack. The features we would actually use are a strict subset of what golang-migrate also provides. |
+| Atlas                        | considered                                                                                                                                                                                                                                                                                                                                          | Strong story for declarative schema + versioned migrations, plus schema-diffing. Rejected as overkill for current scale and learning cost; revisit if we ever want declarative schema.                                                                                                                                 |
+| dbmate                       | considered                                                                                                                                                                                                                                                                                                                                          | Thinner than golang-migrate but weaker advisory-lock semantics, smaller community. Net negative versus golang-migrate.                                                                                                                                                                                                 |
+| Self-rolled                  | considered                                                                                                                                                                                                                                                                                                                                          | Rejected; reinventing tracking + locking + ordering for no benefit.                                                                                                                                                                                                                                                    |
 
 ### Why Docker container instead of host binary
 
@@ -92,19 +92,19 @@ Negative:
 
 ## Operational
 
-| Action | Command |
-|---|---|
-| Apply all pending migrations | `make db-migrate` |
-| Roll back one (local only) | `make db-migrate-down` |
-| Print current version | `make db-migrate-version` |
-| Validate filenames | `make migrate-lint` |
-| Full local reset | `make db-reset` (DROPs, CREATEs, then `db-migrate`) |
-| Production / staging | Cloud Run Job `migrate-{env}` invoked by the deploy pipeline (Phase 5+) |
+| Action                       | Command                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| Apply all pending migrations | `make db-migrate`                                                       |
+| Roll back one (local only)   | `make db-migrate-down`                                                  |
+| Print current version        | `make db-migrate-version`                                               |
+| Validate filenames           | `make migrate-lint`                                                     |
+| Full local reset             | `make db-reset` (DROPs, CREATEs, then `db-migrate`)                     |
+| Production / staging         | Cloud Run Job `migrate-{env}` invoked by the deploy pipeline (Phase 5+) |
 
 If a migration fails in any environment:
 
 1. Inspect the error.
-2. If state is `dirty`, fix the underlying SQL by writing a *new* corrective migration (do not edit the failing file if it has run in any non-throwaway env).
+2. If state is `dirty`, fix the underlying SQL by writing a _new_ corrective migration (do not edit the failing file if it has run in any non-throwaway env).
 3. After applying the corrective migration, force the version with `migrate force <version>` only after confirming the schema is in the intended state. Document the incident in `docs/runbooks/`.
 
 ## Alternatives Considered

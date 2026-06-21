@@ -52,7 +52,7 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          description: "Error rate for {{ $labels.job }} is {{ $value }}%, which exceeds the 5% threshold"
+          description: 'Error rate for {{ $labels.job }} is {{ $value }}%, which exceeds the 5% threshold'
           summary: High error rate detected
         labels:
           severity: critical
@@ -104,7 +104,7 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          description: "P95 latency for {{ $labels.job }} is {{ $value }}ms, which exceeds the 1000ms threshold"
+          description: 'P95 latency for {{ $labels.job }} is {{ $value }}ms, which exceeds the 1000ms threshold'
           summary: High P95 latency detected
         labels:
           severity: warning
@@ -156,9 +156,8 @@ groups:
         execErrState: Alerting
         for: 1m
         annotations:
-          description: "Service {{ $labels.job }} is down (up == 0)"
+          description: 'Service {{ $labels.job }} is down (up == 0)'
           summary: Service is down
         labels:
           severity: critical
           team: sre
-

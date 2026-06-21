@@ -27,19 +27,19 @@ struct NoOpTelemetry: Telemetry  { /* used by tests and Previews */ }
 
 Event names follow a dot-segmented namespace shared with web and Android. Initial set:
 
-| Event | Attributes | Emitted from |
-|-------|------------|--------------|
-| `library.tab.selected` | — | `AppRoot` |
-| `library.surah.opened` | `surah_id` | `LibraryViewModel` |
-| `practice.reference.played` | `surah_id`, `ayah` | `PracticeViewModel` |
-| `practice.recording.started` | `surah_id`, `ayah` | `PracticeViewModel` |
-| `practice.recording.stopped` | `duration_ms` | `PracticeViewModel` |
-| `practice.upload.completed` | `size_bytes`, `duration_ms`, `success` | `PracticeViewModel` (via `measure`) |
-| `practice.scoring.completed` | `poll_count`, `duration_ms`, `status`, `score` | `PracticeViewModel` (via `measure`) |
-| `practice.scoring.failed` | `error_code` (= `AppError` case name) | `PracticeViewModel` |
-| `result.try_again.tapped` | `surah_id`, `ayah` | `ResultDetailViewModel` |
-| `result.continue.tapped` | `surah_id`, `next_ayah` | `ResultDetailViewModel` |
-| (any thrown `AppError`) | (case-derived) | every facade boundary via `Telemetry.error` |
+| Event                        | Attributes                                     | Emitted from                                |
+| ---------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| `library.tab.selected`       | —                                              | `AppRoot`                                   |
+| `library.surah.opened`       | `surah_id`                                     | `LibraryViewModel`                          |
+| `practice.reference.played`  | `surah_id`, `ayah`                             | `PracticeViewModel`                         |
+| `practice.recording.started` | `surah_id`, `ayah`                             | `PracticeViewModel`                         |
+| `practice.recording.stopped` | `duration_ms`                                  | `PracticeViewModel`                         |
+| `practice.upload.completed`  | `size_bytes`, `duration_ms`, `success`         | `PracticeViewModel` (via `measure`)         |
+| `practice.scoring.completed` | `poll_count`, `duration_ms`, `status`, `score` | `PracticeViewModel` (via `measure`)         |
+| `practice.scoring.failed`    | `error_code` (= `AppError` case name)          | `PracticeViewModel`                         |
+| `result.try_again.tapped`    | `surah_id`, `ayah`                             | `ResultDetailViewModel`                     |
+| `result.continue.tapped`     | `surah_id`, `next_ayah`                        | `ResultDetailViewModel`                     |
+| (any thrown `AppError`)      | (case-derived)                                 | every facade boundary via `Telemetry.error` |
 
 The taxonomy is documented in `docs/telemetry.md` (added alongside the iOS rollout) and is the contract that web and Android are expected to honour.
 

@@ -61,12 +61,15 @@ Per environment (`staging`, then `prod`):
    Link billing to the project.
 
 2. **Bootstrap** the state bucket and enable APIs:
+
    ```sh
    PROJECT_ID=quran-staging REGION=asia-northeast1 ./bootstrap.sh
    ```
+
    Re-running is safe; the script noops if the bucket exists.
 
 3. **Configure the backend** for the env:
+
    ```sh
    cd envs/staging
    cp backend.hcl.example backend.hcl
@@ -74,12 +77,14 @@ Per environment (`staging`, then `prod`):
    ```
 
 4. **Configure variables** (project_id, billing_account, etc.):
+
    ```sh
    cp terraform.tfvars.example terraform.tfvars
    $EDITOR terraform.tfvars
    ```
 
 5. **Init and plan**:
+
    ```sh
    terraform init -backend-config=backend.hcl
    terraform validate
@@ -108,10 +113,10 @@ initialisation (which would require credentials).
 
 ## Required environment variables
 
-| Var | Purpose | Example |
-| --- | --- | --- |
+| Var                              | Purpose                                                                                                                         | Example                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service account key, used by the google providers when running locally. CI uses Workload Identity Federation instead. | `~/.config/gcloud/application_default_credentials.json` |
-| `TF_VAR_project_id` | Override `project_id` from CLI / CI without editing tfvars. | `quran-staging` |
+| `TF_VAR_project_id`              | Override `project_id` from CLI / CI without editing tfvars.                                                                     | `quran-staging`                                         |
 
 ## Out of scope (separate follow-ups)
 
