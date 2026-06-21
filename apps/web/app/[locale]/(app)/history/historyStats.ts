@@ -5,7 +5,11 @@ export interface HistoryStats {
   averageScore: number | null;
   bestScore: number | null;
   bestSurah: string | null;
+  /** Ayah number of the best-scoring attempt, for the Best tile's "{surah} · {ayah}" subtitle. */
+  bestAyah: number | null;
   streakDays: number;
+  /** Longest run of consecutive practiced days ever, for the Streak tile's "best {n}" subtitle. */
+  longestStreak: number;
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -35,19 +39,24 @@ export const computeHistoryStats = (attempts: Attempt[], now: Date = new Date())
       ? null
       : scoredAttempts.reduce((sum, a) => sum + a.score, 0) / scoredAttempts.length;
 
-  const best = scoredAttempts.reduce<{ score: number; surah: string } | null>((acc, a) => {
-    if (acc === null || a.score > acc.score) {
-      return { score: a.score, surah: a.surahNameEn };
-    }
-    return acc;
-  }, null);
+  const best = scoredAttempts.reduce<{ score: number; surah: string; ayah: number } | null>(
+    (acc, a) => {
+      if (acc === null || a.score > acc.score) {
+        return { score: a.score, surah: a.surahNameEn, ayah: a.ayahNumber };
+      }
+      return acc;
+    },
+    null
+  );
 
   return {
     thisWeekCount,
     averageScore,
     bestScore: best?.score ?? null,
     bestSurah: best?.surah ?? null,
-    streakDays: computeStreak(attempts, now)
+    bestAyah: best?.ayah ?? null,
+    streakDays: computeStreak(attempts, now),
+    longestStreak: computeLongestStreak(attempts)
   };
 };
 
@@ -66,4 +75,31 @@ const computeStreak = (attempts: Attempt[], now: Date): number => {
     cursor -= MS_PER_DAY;
   }
   return streak;
+};
+
+// Longest run of consecutive practiced days across the whole history,
+// for the Streak tile's "best {n}" subtitle. Independent of `now` — it
+// is the personal best, not the current streak.
+const computeLongestStreak = (attempts: Attempt[]): number => {
+  const days = new Set<number>();
+  for (const attempt of attempts) {
+    const date = new Date(attempt.createdAt);
+    if (Number.isFinite(date.getTime())) {
+      days.add(startOfDay(date));
+    }
+  }
+  let longest = 0;
+  for (const day of days) {
+    // Only count from the start of a run (no prior day) so each run is
+    // measured once.
+    if (days.has(day - MS_PER_DAY)) continue;
+    let run = 1;
+    let next = day + MS_PER_DAY;
+    while (days.has(next)) {
+      run += 1;
+      next += MS_PER_DAY;
+    }
+    longest = Math.max(longest, run);
+  }
+  return longest;
 };

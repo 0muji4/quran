@@ -17,6 +17,12 @@ vi.mock('../../../../lib/storage', () => ({
   getRecentAttempts: () => getRecentAttemptsMock()
 }));
 
+// Inline playback calls this server action lazily on click; the refresh
+// tests never click play, so a stub keeps the server module out of jsdom.
+vi.mock('../../../../actions', () => ({
+  fetchScoringJob: vi.fn()
+}));
+
 const renderList = (signedIn: boolean) =>
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
