@@ -120,6 +120,24 @@ const submitClass = css({
   _disabled: { opacity: 0.6, cursor: 'progress' }
 });
 
+// Right-aligned "Forgot password?" shown on sign-in. Password reset is
+// deferred per ADR 0010, so — like iOS and the OAuth buttons — it is
+// rendered disabled/dimmed rather than linking to a route that does not
+// exist yet.
+const forgotRowClass = css({ display: 'flex', justifyContent: 'flex-end' });
+
+const forgotLinkClass = css({
+  font: '[inherit]',
+  fontSize: '[13px]',
+  fontWeight: 600,
+  color: 'teal.deep',
+  background: '[transparent]',
+  borderWidth: '[0]',
+  padding: '[0]',
+  cursor: 'not-allowed',
+  opacity: 0.55
+});
+
 const footerClass = css({
   marginTop: '6',
   fontSize: '[13px]',
@@ -288,6 +306,14 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
           disabled={pending}
           helperText={mode === 'signup' ? t('password.helper') : undefined}
         />
+
+        {mode === 'signin' && (
+          <div className={forgotRowClass}>
+            <button type="button" className={forgotLinkClass} disabled title="Coming soon">
+              {t('forgotPassword')}
+            </button>
+          </div>
+        )}
 
         {mode === 'signup' && <LevelSelector disabled={pending} />}
 
