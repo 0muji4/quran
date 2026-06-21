@@ -40,7 +40,7 @@ Specifics:
 - **Universal user experience.** Every Big Tech consumer app onboards new accounts with Email + Password. Users do not need to learn a new flow.
 - **No external service on the login critical path.** Magic link makes email delivery a hard dependency for every login; password keeps it a soft dependency for the rarer reset flow. SLO posture is better.
 - **Existing scaffolding fits.** The JWT verification middleware, cookie / bearer dual ingress, and `/auth/refresh` route are already wired. Adding signup / login is incremental.
-- **Aligned with the project's "avoid unnecessary abstraction" principle (`~/.claude/CLAUDE.md`).** A standard form-based credential is the simpler primitive; magic link layers a token-in-URL exchange on top.
+- **Aligned with the project's "avoid unnecessary abstraction" principle.** A standard form-based credential is the simpler primitive; magic link layers a token-in-URL exchange on top.
 - **2026 password-manager landscape (iCloud Keychain, 1Password, Google PM) plus FaceID/TouchID autofill removes most of the historical "passwords are friction" critique on mobile.**
 - **NIST SP 800-63B (latest revision) drops password-complexity rules in favour of length-only.** That removes the historical "rules are user-hostile" critique.
 

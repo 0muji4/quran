@@ -12,7 +12,7 @@ The Worker is the ASR (Automatic Speech Recognition) and pronunciation-scoring c
 1. **ADR 0010 needs Cloud Run liveness.** Cloud Run requires the container to bind `$PORT` and answer HTTP within ~240 s of cold start. The Worker is a long-running consumer (`redis.brpop` loop) with no HTTP surface today, so a `/healthz` endpoint must be added.
 2. **The ASR roadmap (deployment plan Phase 11+, and the Tilawah voice/pronunciation feedback DD) anticipates switching the inference backend** — faster-whisper on CPU now, faster-whisper on Cloud Run L4 GPU later, possibly Hugging Face Inference Endpoints, possibly AWS Inferentia2 as a remote service. Coupling the queue-and-storage loop to a specific local-Python model class makes those switches harder than they need to be.
 
-The deployment plan (`~/.claude/plans/backend-frontend-worker-nifty-muffin.md`) and ADR 0011 (cloud portability) both anticipate this separation. This ADR codifies the boundary.
+The internal deployment plan and ADR 0011 (cloud portability) both anticipate this separation. This ADR codifies the boundary.
 
 ## Decision
 
@@ -106,4 +106,4 @@ Negative:
 - `apps/worker/python/tests/test_worker.py` — backend factory and `/healthz` coverage
 - [ADR 0010](./0010-gcp-cloud-run-deployment.md) — Cloud Run liveness requirement that motivates `/healthz`
 - [ADR 0011](./0011-cloud-portability-principle.md) — portability principle this ADR operationalises in the Worker
-- `~/.claude/plans/backend-frontend-worker-nifty-muffin.md` — deployment plan, Phase 3
+- Internal deployment plan — Phase 3
