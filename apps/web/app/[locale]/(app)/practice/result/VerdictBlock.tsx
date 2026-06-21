@@ -12,7 +12,7 @@ export async function VerdictBlock({ verdict }: Props) {
   return (
     <div className={styles.verdictBlock}>
       <span className={styles.verdictBadge}>
-        <span aria-hidden="true">← </span>
+        <span aria-hidden="true">✦ </span>
         {t('badge')}
       </span>
       <AutoFocusHeading className={styles.verdictHeadline}>{t('headline')}</AutoFocusHeading>
