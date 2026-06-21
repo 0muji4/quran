@@ -163,7 +163,7 @@ const avatarClass = css({
   // Pale-mint disc with deep-green initial: a green-family avatar that
   // stays legible and stands out against the dark forest-green nav.
   backgroundColor: 'mint.bg',
-  color: 'teal.deep',
+  color: 'green.deep',
   fontWeight: 600,
   fontSize: '[14px]'
 });

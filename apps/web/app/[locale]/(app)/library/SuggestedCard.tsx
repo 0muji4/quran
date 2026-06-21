@@ -58,14 +58,14 @@ const dotClass = css({
   backgroundColor: 'ink.muted'
 });
 
-const linkTealClass = css({
+const linkGreenClass = css({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '[4px]',
-  color: 'teal',
+  color: 'green',
   fontWeight: 600,
   fontSize: '[14px]',
-  _hover: { color: 'teal.deep' }
+  _hover: { color: 'green.deep' }
 });
 
 export function SuggestedCard({ surahs, suggestion = null }: Props) {
@@ -101,7 +101,7 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
           <span>{difficulty}</span>
         </span>
         <Link
-          className={linkTealClass}
+          className={linkGreenClass}
           href={`/practice/${picked.id}/1`}
           onClick={() =>
             trackUiEvent('web.ui.suggested_clicked', {

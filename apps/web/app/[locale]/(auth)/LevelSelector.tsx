@@ -54,11 +54,11 @@ const cardClass = css({
   cursor: 'pointer',
   transition: '[border-color 0.15s ease, background 0.15s ease]',
   '&:has(input:checked)': {
-    borderColor: 'teal',
+    borderColor: 'green',
     backgroundColor: 'mint.bg'
   },
   '&:has(input:focus-visible)': {
-    outline: '[2px solid var(--colors-teal)]',
+    outline: '[2px solid var(--colors-green)]',
     outlineOffset: '[2px]'
   }
 });
@@ -68,7 +68,7 @@ const radioClass = css({
   top: '2',
   right: '2',
   margin: '[0]',
-  accentColor: 'teal'
+  accentColor: 'green'
 });
 
 const cardTextClass = css({

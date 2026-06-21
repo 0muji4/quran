@@ -56,7 +56,7 @@ export function LibraryErrorState() {
       <p className={recoveryClass}>{t('recovery')}</p>
       <button
         type="button"
-        className={button({ tone: 'teal', size: 'lg' })}
+        className={button({ tone: 'green', size: 'lg' })}
         onClick={onRetry}
         disabled={pending}
       >

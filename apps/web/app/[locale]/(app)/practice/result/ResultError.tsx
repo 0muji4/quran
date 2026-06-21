@@ -18,7 +18,7 @@ export function ResultError({ surah, ayah, message }: Props) {
     <section className={styles.resultError} role="alert">
       <h1 className={styles.resultErrorTitle}>{t('title')}</h1>
       <p className={styles.resultErrorBody}>{message}</p>
-      <Link href={tryAgainHref} className={`${styles.btnTeal} ${styles.resultPrimaryBtn}`}>
+      <Link href={tryAgainHref} className={`${styles.btnGreen} ${styles.resultPrimaryBtn}`}>
         {t('tryAgain')}
       </Link>
     </section>

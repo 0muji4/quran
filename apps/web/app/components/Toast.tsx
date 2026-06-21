@@ -59,7 +59,7 @@ const containerClass = css({
   }
 });
 
-const toneSuccessClass = css({ backgroundColor: 'teal' });
+const toneSuccessClass = css({ backgroundColor: 'green' });
 const toneInfoClass = css({ backgroundColor: 'ink.strong' });
 
 const iconClass = css({
@@ -123,7 +123,7 @@ const ICONS: Record<ToastTone, string> = {
  *
  * Visual styling is opinionated for this app — same look as the
  * legacy CompletionToast we factored out of — but tone variants let
- * callers pick teal for celebrations and ink-strong for neutral
+ * callers pick green for celebrations and ink-strong for neutral
  * "informational" messages.
  */
 export function Toast({

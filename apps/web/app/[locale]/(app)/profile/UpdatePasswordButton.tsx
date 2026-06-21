@@ -8,7 +8,7 @@ const triggerClass = css({
   font: '[inherit]',
   fontSize: '[14px]',
   fontWeight: 600,
-  color: 'teal.deep',
+  color: 'green.deep',
   backgroundColor: '[transparent]',
   borderWidth: '[0]',
   cursor: 'pointer'
@@ -78,7 +78,7 @@ const inputClass = css({
   backgroundColor: 'bg.paper',
   color: 'ink.strong',
   minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'teal' }
+  '&:focus-visible': { outlineColor: 'green' }
 });
 
 const helperClass = css({
@@ -124,7 +124,7 @@ const saveButtonClass = css({
   paddingInline: '5',
   borderRadius: 'pill',
   borderWidth: '[0]',
-  backgroundColor: 'teal',
+  backgroundColor: 'green',
   color: 'tan.soft',
   fontSize: '[14px]',
   fontWeight: 600,

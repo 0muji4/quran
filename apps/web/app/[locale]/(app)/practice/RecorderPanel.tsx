@@ -248,7 +248,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
     isRecording || isScoringError
       ? `${styles.panelIcon} ${styles.panelIconRed}`
       : isAnalysing
-        ? `${styles.panelIcon} ${styles.panelIconTeal}`
+        ? `${styles.panelIcon} ${styles.panelIconGreen}`
         : `${styles.panelIcon} ${styles.panelIconTan}`;
 
   const headerTitle = isRecording
