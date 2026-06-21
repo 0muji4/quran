@@ -195,7 +195,7 @@ integration test 終了時に解放されず、`pg_terminate_backend` で切断�
 - audit は 2026-05-09 時点。**進める前に develop の最新を pull** して座標が動いていないか再確認すること
 - ユーザー指針:
   - PR 規模 ~200 行 / 件、scaffolding と integration を分けるパターンが確立済み（PR #129/#130 / #131/#132 が参考）
-  - PR description / commit メッセージは英語、AI / Claude フッター不要
+  - PR description / commit メッセージは英語、AI フッター不要
   - GraphQL レートが切れたら `gh api repos/.../pulls -X POST` で REST 起票
   - CI 失敗は e2e の URL / heading assertion 周辺が再発しやすい — `RecordPage.ts` ロケータと `error-handling.spec.ts` `navigation.spec.ts` を真っ先に確認
 

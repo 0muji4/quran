@@ -14,7 +14,7 @@ This asymmetry is not merely cosmetic. The 2026-05-09 Update on ADR 0009 cites "
 
 In other words, the web's missing i18n posture is currently a load-bearing reason for *not* localizing iOS values either. The product is paying the cost of having infrastructure on one platform and content stuck behind cross-platform parity on the other.
 
-A May 2026 Web ↔ iOS feature audit (see `~/.claude/plans/audit-the-current-feature-dapper-puffin.md`, Cross-cutting #1) flagged this gap explicitly. Retrofitting i18n into a Next.js App Router codebase has the same cost shape as the SwiftUI retrofit ADR 0009 warned against: every Server Component, Client Component, and Server Action throw site has to be revisited.
+A May 2026 Web ↔ iOS feature audit (internal, Cross-cutting #1) flagged this gap explicitly. Retrofitting i18n into a Next.js App Router codebase has the same cost shape as the SwiftUI retrofit ADR 0009 warned against: every Server Component, Client Component, and Server Action throw site has to be revisited.
 
 ## Decision
 
