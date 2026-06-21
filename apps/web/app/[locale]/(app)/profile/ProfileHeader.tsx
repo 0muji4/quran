@@ -49,11 +49,6 @@ const nameClass = css({
   color: 'ink.strong'
 });
 
-const emailClass = css({
-  fontSize: '[14px]',
-  color: 'ink.muted'
-});
-
 const badgeRowClass = css({
   display: 'flex',
   flexWrap: 'wrap',
@@ -108,7 +103,6 @@ export function ProfileHeader({ displayName, email, level, createdAt }: Props) {
       </div>
       <div className={identityClass}>
         <span className={nameClass}>{displayName ?? email}</span>
-        <span className={emailClass}>{email}</span>
         <div className={badgeRowClass}>
           {levelText && <span className={cx(badgeBaseClass, badgeLevelClass)}>{levelText}</span>}
           {joinedText && <span className={cx(badgeBaseClass, badgeJoinedClass)}>{joinedText}</span>}

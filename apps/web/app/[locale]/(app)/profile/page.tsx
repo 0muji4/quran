@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentSession } from '../../../lib/session';
 import { fetchCurrentUserProfile } from '../../../actions';
 import { ProfileHeader } from './ProfileHeader';
+import { PracticePreferencesCard } from './PracticePreferencesCard';
 import { AccountDataCard } from './AccountDataCard';
 import { SignOutSection } from './SignOutSection';
 import { css } from '../../../../styled-system/css';
@@ -52,7 +53,7 @@ export default async function ProfilePage() {
     <div className={pageClass}>
       <header>
         <p className={eyebrowClass}>
-          <span aria-hidden="true">+ </span>Your account
+          <span aria-hidden="true">✦ </span>Your account
         </p>
         <h1 className={titleClass}>Profile</h1>
       </header>
@@ -63,6 +64,8 @@ export default async function ProfilePage() {
         level={view.level ?? null}
         createdAt={view.createdAt ?? null}
       />
+
+      <PracticePreferencesCard />
 
       <AccountDataCard email={view.email} />
 
