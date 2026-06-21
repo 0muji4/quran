@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
+import { fetchScoringJob } from '../../../actions';
 import { getRecentAttempts, type Attempt } from '../../../lib/storage';
-import { formatPracticedAt } from '../../../lib/classify';
-import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 import { HistoryFilterChips } from './HistoryFilterChips';
 import { HistoryStatsGrid } from './HistoryStatsGrid';
 import {
@@ -17,6 +16,7 @@ import {
 import { computeHistoryStats } from './historyStats';
 import { css, cx } from '../../../../styled-system/css';
 import { statusPill } from '../../../../styled-system/recipes';
+import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 
 const HISTORY_MOBILE_MQ = '@media (max-width: 640px)';
 
@@ -31,9 +31,10 @@ const listClass = css({
 
 const listItemClass = css({ listStyle: 'none' });
 
+// A row is a navigable Link (avatar + info + score) with the playback
+// button as a *sibling* — a <button> must not nest inside an <a>.
 const rowClass = css({
-  display: 'grid',
-  gridTemplateColumns: 'auto 1fr auto auto',
+  display: 'flex',
   alignItems: 'center',
   gap: '4',
   paddingBlock: '4',
@@ -42,32 +43,40 @@ const rowClass = css({
   borderWidth: '1px',
   borderStyle: 'solid',
   borderColor: 'border',
-  borderRadius: 'md',
+  borderRadius: 'md'
+});
+
+const rowLinkClass = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4',
+  flex: '1',
+  minWidth: '[0]',
   textDecoration: 'none',
-  color: '[inherit]',
-  [HISTORY_MOBILE_MQ]: {
-    gridTemplateColumns: '1fr auto',
-    gridTemplateAreas: '"score status" "info  info"'
-  }
+  color: '[inherit]'
 });
 
-const scoreBaseClass = css({
+// Cream disc carrying the ayah number, mirroring the design's leading
+// avatar. Decorative — the row's accessible label lives on the title.
+const avatarClass = css({
+  flexShrink: '0',
+  width: '[40px]',
+  height: '[40px]',
+  borderRadius: 'pill',
+  backgroundColor: 'bg.page',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'border',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   fontFamily: 'serif',
-  fontSize: '[28px]',
-  color: 'teal',
-  minWidth: '[64px]',
-  fontVariantNumeric: 'tabular-nums',
-  [HISTORY_MOBILE_MQ]: { gridArea: 'score' }
+  fontSize: '[15px]',
+  color: 'ink.muted',
+  fontVariantNumeric: 'tabular-nums'
 });
 
-const scoreFailedClass = css({
-  color: 'red',
-  fontSize: '[16px]'
-});
-
-const infoClass = css({
-  [HISTORY_MOBILE_MQ]: { gridArea: 'info' }
-});
+const infoClass = css({ flex: '1', minWidth: '[0]' });
 
 const titleClass = css({
   fontFamily: 'serif',
@@ -81,9 +90,46 @@ const metaClass = css({
   marginTop: '[2px]'
 });
 
-const statusPillMobileClass = css({
-  [HISTORY_MOBILE_MQ]: { gridArea: 'status' }
+const scoreClass = css({
+  fontFamily: 'serif',
+  fontSize: '[28px]',
+  fontVariantNumeric: 'tabular-nums',
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  gap: '[2px]',
+  flexShrink: '0',
+  [HISTORY_MOBILE_MQ]: { fontSize: '[24px]' }
 });
+
+// ≥80 reads as the brand green, below that as the AA-safe warm gold
+// (ADR 0003 gold.onLight), and a failed attempt as red — so the colour
+// alone conveys the tier without relying on the number.
+const scorePassClass = css({ color: 'teal' });
+const scoreMidClass = css({ color: 'gold.onLight' });
+const scoreFailedClass = css({ color: 'red', fontSize: '[16px]' });
+
+const scoreSuffixClass = css({ fontSize: '[13px]', color: 'ink.muted' });
+
+const playButtonClass = css({
+  flexShrink: '0',
+  width: '[40px]',
+  height: '[40px]',
+  borderRadius: 'pill',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'border',
+  backgroundColor: 'bg.paper',
+  color: 'teal',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '[14px]',
+  cursor: 'pointer',
+  _hover: { backgroundColor: 'bg.page' },
+  _disabled: { opacity: 0.5, cursor: 'progress' }
+});
+
+const playButtonErrorClass = css({ color: 'red', borderColor: 'red' });
 
 const emptyClass = css({
   textAlign: 'center',
@@ -106,9 +152,6 @@ const emptyTitleClass = css({
 
 const emptyCtaClass = css({ marginTop: '4', textDecoration: 'none' });
 
-// Inline empty state for the "filter matched nothing" case — distinct
-// from the full-page empty state because the chips above are still
-// available to reset the filter back to All.
 const filteredEmptyClass = css({
   textAlign: 'center',
   paddingBlock: '8',
@@ -117,10 +160,36 @@ const filteredEmptyClass = css({
   fontSize: '[14px]'
 });
 
-const formatDate = (iso: string): string => {
+const startOfDay = (d: Date): number => {
+  const c = new Date(d);
+  c.setHours(0, 0, 0, 0);
+  return c.getTime();
+};
+
+// "Today · 14:02" / "Yesterday · 21:14" / "May 5 · 09:22", optionally
+// with a "· m:ss" duration — matching the design's row meta line.
+const formatRowMeta = (iso: string, durationMs?: number | null): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString();
+  const today = startOfDay(new Date());
+  const day = startOfDay(d);
+  const dayLabel =
+    day === today
+      ? 'Today'
+      : day === today - 86_400_000
+        ? 'Yesterday'
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const time = d.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  let meta = `${dayLabel} · ${time}`;
+  if (durationMs && durationMs > 0) {
+    const total = Math.round(durationMs / 1000);
+    meta += ` · ${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+  return meta;
 };
 
 interface Props {
@@ -130,20 +199,22 @@ interface Props {
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
   const [filter, setFilter] = useState<HistoryFilter>(ALL_FILTER);
+  // Inline playback state. `playingId` is the attempt currently sounding;
+  // `loadingId` covers the fetch of its (lazily presigned) recording URL;
+  // `errorId` flags a row whose recording could not be played.
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // jobId → presigned recording URL (or null when none exists), so a
+  // second play of the same row skips the round-trip.
+  const urlCacheRef = useRef<Map<string, string | null>>(new Map());
   const t = useTranslations('history');
 
-  // Re-read on mount and whenever the sign-in state flips. iOS does the
-  // same via `task(id: session.currentUser?.id)` so the gated history
-  // store reflects the new identity without waiting for the next page
-  // navigation.
   useEffect(() => {
     setAttempts(getRecentAttempts());
   }, [signedIn]);
 
-  // Re-read when the page becomes visible again (tab switch, app focus).
-  // iOS's `HistoryView.onAppear` covers the same case; on the web,
-  // staying on `/history` while another device records an attempt would
-  // otherwise leave the list stale until a manual reload.
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -157,6 +228,50 @@ export function HistoryList({ signedIn }: Props) {
   const stats = useMemo(() => (attempts ? computeHistoryStats(attempts) : null), [attempts]);
   const filterOptions = useMemo(() => historyFilterOptions(attempts ?? []), [attempts]);
   const visibleAttempts = useMemo(() => filterAttempts(attempts ?? [], filter), [attempts, filter]);
+
+  const handlePlay = useCallback(
+    async (attempt: Attempt) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (playingId === attempt.id) {
+        audio.pause();
+        setPlayingId(null);
+        return;
+      }
+
+      setErrorId(null);
+      const start = (url: string) => {
+        audio.src = url;
+        setPlayingId(attempt.id);
+        void audio.play().catch(() => {
+          setPlayingId(null);
+          setErrorId(attempt.id);
+        });
+      };
+
+      const cached = urlCacheRef.current.get(attempt.jobId);
+      if (cached !== undefined) {
+        if (cached) start(cached);
+        else setErrorId(attempt.id);
+        return;
+      }
+
+      setLoadingId(attempt.id);
+      try {
+        const job = await fetchScoringJob(attempt.jobId);
+        const url = job.recordingUrl ?? null;
+        urlCacheRef.current.set(attempt.jobId, url);
+        if (url) start(url);
+        else setErrorId(attempt.id);
+      } catch {
+        setErrorId(attempt.id);
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [playingId]
+  );
 
   if (!signedIn) {
     return (
@@ -190,43 +305,79 @@ export function HistoryList({ signedIn }: Props) {
     <>
       {stats && <HistoryStatsGrid stats={stats} />}
       <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
+      {/* Single shared element so only one recording sounds at a time. */}
+      <audio ref={audioRef} preload="none" onEnded={() => setPlayingId(null)} hidden />
       {visibleAttempts.length === 0 ? (
         <p className={filteredEmptyClass}>{t('filteredEmpty')}</p>
       ) : (
         <ul className={listClass}>
           {visibleAttempts.map((a) => {
-            const completed = a.status === 'COMPLETED';
+            // null score → failed/unscored row (renders "—"); a number
+            // narrows the score branches below for TypeScript.
+            const score = a.status === 'COMPLETED' ? a.score : null;
+            const isPlaying = playingId === a.id;
+            const isLoading = loadingId === a.id;
+            const isError = errorId === a.id;
             return (
               <li key={a.id} className={listItemClass}>
-                <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowClass}>
-                  <span
-                    className={completed ? scoreBaseClass : cx(scoreBaseClass, scoreFailedClass)}
+                <div className={rowClass}>
+                  <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowLinkClass}>
+                    <span className={avatarClass} aria-hidden="true">
+                      {a.ayahNumber}
+                    </span>
+                    <span className={infoClass}>
+                      <span className={titleClass}>
+                        {t('row.title', { name: a.surahNameEn, ayah: a.ayahNumber })}
+                      </span>
+                      <span className={metaClass}>{formatRowMeta(a.createdAt, a.durationMs)}</span>
+                    </span>
+                    <span
+                      className={cx(
+                        scoreClass,
+                        score !== null
+                          ? score >= 80
+                            ? scorePassClass
+                            : scoreMidClass
+                          : scoreFailedClass
+                      )}
+                      aria-label={
+                        score !== null
+                          ? t('row.scoreAriaLabel', { score })
+                          : t('row.failedAriaLabel')
+                      }
+                    >
+                      {score !== null ? (
+                        <>
+                          {score}
+                          <span className={scoreSuffixClass} aria-hidden="true">
+                            /100
+                          </span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    className={cx(playButtonClass, isError && playButtonErrorClass)}
+                    onClick={() => void handlePlay(a)}
+                    disabled={isLoading}
                     aria-label={
-                      completed
-                        ? t('row.scoreAriaLabel', { score: a.score ?? 0 })
-                        : t('row.failedAriaLabel')
+                      isError
+                        ? t('row.recordingUnavailable')
+                        : isLoading
+                          ? t('row.loadingRecording')
+                          : isPlaying
+                            ? t('row.pause')
+                            : t('row.play')
                     }
                   >
-                    {completed && a.score !== null ? a.score : '—'}
-                  </span>
-                  <div className={infoClass}>
-                    <p className={titleClass}>
-                      {t('row.title', { name: a.surahNameEn, ayah: a.ayahNumber })}
-                    </p>
-                    <p className={metaClass}>
-                      {formatDate(a.createdAt)} · {formatPracticedAt(a.createdAt)}
-                    </p>
-                  </div>
-                  <span
-                    className={cx(
-                      statusPill({ tone: completed ? 'completed' : 'failed' }),
-                      statusPillMobileClass
-                    )}
-                  >
-                    {completed ? t('row.statusCompleted') : t('row.statusFailed')}
-                  </span>
-                  <ArrowRightIcon size={14} />
-                </Link>
+                    <span aria-hidden="true">
+                      {isLoading ? '…' : isError ? '!' : isPlaying ? '❚❚' : '▶'}
+                    </span>
+                  </button>
+                </div>
               </li>
             );
           })}
