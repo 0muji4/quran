@@ -355,7 +355,18 @@
       "streakUnit": "days",
       "yourProgress": "Your progress",
       "bestSubtitle": "{surah} · {ayah}",
-      "streakSubtitle": "days · best {best}"
+      "streakSubtitle": "days · best {best}",
+      "attempts": "Attempts",
+      "attemptsUnitWeek": "this week",
+      "attemptsUnitLifetime": "all time",
+      "scopeWeek": "This week",
+      "scopeLifetime": "Lifetime"
+    },
+    "sort": {
+      "label": "Sort",
+      "recent": "Most recent",
+      "score": "Highest score",
+      "ariaLabel": "Sort attempts"
     }
   }
 }
