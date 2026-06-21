@@ -17,8 +17,10 @@ extension Color.brand {
   /// Card surface on top of the page background.
   static let card = Color(brandHex: 0xFAF6EC)
 
-  /// Inverted card surface used for the Continue card and Recording panel.
-  static let cardInverse = Color(brandHex: 0x221814)
+  /// Inverted (dark) card surface, repointed from warm brown to forest
+  /// green by the #462 design refresh. Cream `textOnInverse` stays WCAG
+  /// AA on it.
+  static let cardInverse = Color(brandHex: 0x0E3D2B)
 
   /// Primary action color (teal).
   static let primary = Color(brandHex: 0x2A6F75)

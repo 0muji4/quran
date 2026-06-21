@@ -19,9 +19,10 @@ import com.tilawah.android.designsystem.BrandTheme
  * Pill-shaped row of single-select chips. Mirrors
  * `apps/ios/.../DesignSystem/Components/ChipFilter.swift`.
  *
- * The selected chip uses the near-black ink surface ([BrandColors.nav])
- * with light text; unselected chips render a near-white pill
- * ([BrandColors.tileSoft]) with dark text, matching the Figma design.
+ * The selected chip uses the dark forest-green brand surface
+ * ([BrandColors.cardInverse]) with light text; unselected chips render a
+ * near-white pill ([BrandColors.tileSoft]) with dark text, matching the
+ * Figma design.
  */
 data class FilterChip<T>(val value: T, val label: String)
 
@@ -49,7 +50,7 @@ fun <T> ChipFilter(
                 color = if (active) colors.textOnPrimary else colors.textPrimary,
                 modifier = Modifier
                     .clip(RoundedCornerShape(percent = 50))
-                    .background(if (active) colors.nav else colors.tileSoft)
+                    .background(if (active) colors.cardInverse else colors.tileSoft)
                     .clickable { onSelect(chip.value) }
                     .padding(horizontal = spacing.lg, vertical = spacing.sm),
             )
