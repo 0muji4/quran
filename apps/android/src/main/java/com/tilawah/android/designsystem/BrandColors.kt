@@ -24,16 +24,18 @@ data class BrandColors(
     val card: Color,
     /** Pure-white card surface (surah list rows). */
     val paper: Color,
-    /** Dark surface used for the Recording panel (active) / brand-dark. */
+    /**
+     * Inverted (dark) brand surface, repointed from warm brown to forest
+     * green by the #462 design refresh. Cream [textOnInverse] /
+     * [goldOnDark] stay WCAG AA on it.
+     */
     val cardInverse: Color,
-    /** Near-black ink surface: Continue card + selected filter chip. */
-    val nav: Color,
     val primary: Color,
     /** Gold surface (CTA backgrounds, accents). Pair with dark text. */
     val accent: Color,
     /** Gold text on light (cream/paper) surfaces — clears WCAG AA. */
     val goldOnLight: Color,
-    /** Gold text on dark surfaces (continue card eyebrow, nav). */
+    /** Gold text/value on the dark (forest-green) surface. */
     val goldOnDark: Color,
     val recording: Color,
     val success: Color,
@@ -59,8 +61,7 @@ val BrandColorsLight = BrandColors(
     surface = Color(0xFFF7F3EC),
     card = Color(0xFFFAF6EC),
     paper = Color(0xFFFFFFFF),
-    cardInverse = Color(0xFF221814),
-    nav = Color(0xFF1F1A14),
+    cardInverse = Color(0xFF0E3D2B),
     primary = Color(0xFF1F5D55),
     accent = Color(0xFFC0894A),
     goldOnLight = Color(0xFF6E4F1E),

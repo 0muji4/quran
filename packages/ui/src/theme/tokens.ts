@@ -17,10 +17,13 @@ export const tokens = defineTokens({
       page: { value: '#f5f0e5' },
       paper: { value: '#ffffff' },
       paperSoft: { value: '#faf6ec' },
-      nav: { value: '#1f1a14' },
-      continue: { value: '#2b1f14' },
-      recording: { value: '#14181c' },
-      brandDark: { value: '#221814' }
+      // Dark brand surfaces, repointed from warm brown to forest green by
+      // the #462 design refresh. Cream (ink.onDark) and gold (gold.onDark)
+      // text stay WCAG AA on this green.
+      nav: { value: '#0b3324' },
+      continue: { value: '#0e3d2b' },
+      recording: { value: '#0e3d2b' },
+      brandDark: { value: '#0e3d2b' }
     },
     ink: {
       strong: { value: '#1f1a14' },
