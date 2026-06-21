@@ -9,7 +9,7 @@ interface Props {
   kind: MetricKind;
   // 0..1 fraction (matches PronunciationFeedback.accuracy etc).
   value: number | null | undefined;
-  tone?: 'amber' | 'red' | 'teal';
+  tone?: 'amber' | 'red' | 'green';
 }
 
 const toPercent = (
@@ -20,7 +20,7 @@ const toPercent = (
   }
   const pct = Math.max(0, Math.min(100, v * 100));
   let tone: Props['tone'] = 'red';
-  if (pct >= 80) tone = 'teal';
+  if (pct >= 80) tone = 'green';
   else if (pct >= 50) tone = 'amber';
   return { display: `${pct.toFixed(1)}%`, pct, tone };
 };
@@ -30,8 +30,8 @@ export function MetricCard({ kind, value, tone }: Props) {
   const computed = toPercent(value);
   const effectiveTone = tone ?? computed.tone;
   const trackClass =
-    effectiveTone === 'teal'
-      ? styles.metricBarFillTeal
+    effectiveTone === 'green'
+      ? styles.metricBarFillGreen
       : effectiveTone === 'amber'
         ? styles.metricBarFillAmber
         : styles.metricBarFillRed;

@@ -62,7 +62,7 @@ const inputClass = css({
   backgroundColor: 'bg.paper',
   color: 'ink.strong',
   minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'teal' }
+  '&:focus-visible': { outlineColor: 'green' }
 });
 
 const termsRowClass = css({
@@ -75,7 +75,7 @@ const termsCheckboxClass = css({
   width: '[16px]',
   height: '[16px]',
   marginTop: '[2px]',
-  accentColor: 'teal'
+  accentColor: 'green'
 });
 
 const termsLabelClass = css({
@@ -84,7 +84,7 @@ const termsLabelClass = css({
   color: 'ink.default',
   cursor: 'pointer',
   '& a': {
-    color: 'teal.deep',
+    color: 'green.deep',
     textDecoration: 'underline'
   }
 });
@@ -95,10 +95,10 @@ const termsErrorClass = css({
   color: 'red'
 });
 
-// .submit doesn't quite match button(tone:'teal') — legacy submit uses
+// .submit doesn't quite match button(tone:'green') — legacy submit uses
 // 12/20 padding, 15px font, 48px min-height, and tan-soft (not bg.paper)
 // text. Keep inline so the auth CTA preserves its slightly larger
-// silhouette and the cream-on-teal pairing the brand design asked for.
+// silhouette and the cream-on-green pairing the brand design asked for.
 const submitClass = css({
   display: 'inline-flex',
   alignItems: 'center',
@@ -109,14 +109,14 @@ const submitClass = css({
   fontWeight: 600,
   paddingBlock: '3',
   paddingInline: '5',
-  backgroundColor: 'teal',
+  backgroundColor: 'green',
   color: 'tan.soft',
   borderWidth: '[0]',
   borderRadius: 'pill',
   minHeight: '[48px]',
   cursor: 'pointer',
   transition: '[background 0.15s ease]',
-  '&:hover:not(:disabled)': { backgroundColor: 'teal.deep' },
+  '&:hover:not(:disabled)': { backgroundColor: 'green.deep' },
   _disabled: { opacity: 0.6, cursor: 'progress' }
 });
 
@@ -130,7 +130,7 @@ const forgotLinkClass = css({
   font: '[inherit]',
   fontSize: '[13px]',
   fontWeight: 600,
-  color: 'teal.deep',
+  color: 'green.deep',
   background: '[transparent]',
   borderWidth: '[0]',
   padding: '[0]',
@@ -144,7 +144,7 @@ const footerClass = css({
   color: 'ink.muted',
   textAlign: 'center',
   '& a': {
-    color: 'teal.deep',
+    color: 'green.deep',
     fontWeight: 600,
     textDecoration: 'underline'
   }

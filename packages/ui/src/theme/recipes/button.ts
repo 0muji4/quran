@@ -1,6 +1,6 @@
 import { defineRecipe } from '@pandacss/dev';
 
-// Tilawah brand button. Collapses .btnGhost / .btnTeal / .btnGold /
+// Tilawah brand button. Collapses .btnGhost / .btnGreen / .btnGold /
 // .navBtn (and friends) into one tone × size matrix. ADR 0003 governs
 // the gold case: surface bg + ink.strong text, hover lifts to onDark.
 //
@@ -36,11 +36,11 @@ export const button = defineRecipe({
         fontWeight: 600,
         _hover: { borderColor: 'ink.muted' }
       },
-      teal: {
-        background: 'teal',
+      green: {
+        background: 'green',
         color: 'bg.paper',
         fontWeight: 600,
-        _hover: { background: 'teal.deep' }
+        _hover: { background: 'green.deep' }
       },
       gold: {
         background: 'gold.surface',

@@ -66,7 +66,7 @@ const badgeBaseClass = css({
   borderRadius: 'pill'
 });
 
-const badgeLevelClass = css({ backgroundColor: 'mint.bg', color: 'teal.deep' });
+const badgeLevelClass = css({ backgroundColor: 'mint.bg', color: 'green.deep' });
 const badgeJoinedClass = css({ backgroundColor: 'tan.soft', color: 'ink.muted' });
 
 const initialFor = (displayName: string | null, email: string): string => {
