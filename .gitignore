@@ -80,6 +80,8 @@ ops/terraform/**/.terraform.tfstate.lock.info
 # iOS SwiftPM build artifacts
 apps/ios/.build/
 apps/ios/Package.resolved
+# Xcode/SwiftPM-generated workspace + per-user state (schemes, editor state)
+apps/ios/.swiftpm/
 
 # Panda CSS generated code
 apps/web/styled-system/
