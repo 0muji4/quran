@@ -1366,9 +1366,76 @@
   color: var(--colors-ink-muted);
 }
 
-.listenBackAudio {
-  width: 100%;
+/* Teacher reads teal, the user's own recitation reads gold — a left
+   accent plus the matching play button / waveform tint differentiate
+   the two tiles (the classes the component referenced were missing). */
+.listenBackTileTeacher {
+  border-left: 3px solid var(--colors-teal);
+}
+
+.listenBackTileUser {
+  border-left: 3px solid var(--colors-gold-surface);
+}
+
+.listenBackPlayer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-1);
+}
+
+.listenBackPlayBtn {
+  flex-shrink: 0;
+  width: 36px;
   height: 36px;
+  border: 0;
+  border-radius: var(--radii-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.listenBackPlayBtnTeacher {
+  background: var(--colors-teal);
+}
+
+.listenBackPlayBtnUser {
+  background: var(--colors-gold-surface);
+}
+
+.listenBackWave {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  min-width: 0;
+}
+
+.listenBackWave span {
+  flex: 1;
+  min-height: 3px;
+  border-radius: 2px;
+}
+
+.listenBackWaveTeacher span {
+  background: var(--colors-teal);
+  opacity: 0.5;
+}
+
+.listenBackWaveUser span {
+  background: var(--colors-gold-surface);
+  opacity: 0.55;
+}
+
+.listenBackDuration {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--colors-ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .listenBackEmpty {

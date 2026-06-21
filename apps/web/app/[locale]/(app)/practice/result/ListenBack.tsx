@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type Ref } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
@@ -9,6 +9,12 @@ interface Props {
   userRecordingUrl: string | null;
   teacherLabel?: string;
 }
+
+// Static, decorative waveform silhouette (the players are not scrubbable;
+// the bars stand in for the recording's shape, matching the mockup).
+const WAVE = [
+  34, 58, 30, 76, 46, 64, 38, 88, 52, 70, 40, 82, 36, 60, 44, 90, 50, 66, 32, 78, 48, 62, 42, 72
+];
 
 // Side-by-side playback so the user can compare their recitation against the
 // teacher's reference. Both URLs are presigned and short-lived (~1h); if one
@@ -92,6 +98,12 @@ export function ListenBack({ teacherUrl, userRecordingUrl, teacherLabel }: Props
   );
 }
 
+const formatTime = (seconds: number): string => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const total = Math.floor(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
 function ListenBackTile({
   audioRef,
   kind,
@@ -100,29 +112,70 @@ function ListenBackTile({
   src,
   fallback
 }: {
-  audioRef: Ref<HTMLAudioElement>;
+  audioRef: RefObject<HTMLAudioElement>;
   kind: 'teacher' | 'user';
   title: string;
   subtitle: string;
   src: string;
   fallback: string;
 }) {
+  const t = useTranslations('result.listenBack');
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState<number | null>(null);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) void audio.play().catch(() => setPlaying(false));
+    else audio.pause();
+  };
+
   const tileClass =
     kind === 'teacher'
       ? `${styles.listenBackTile} ${styles.listenBackTileTeacher}`
       : `${styles.listenBackTile} ${styles.listenBackTileUser}`;
+  const buttonClass =
+    kind === 'teacher'
+      ? `${styles.listenBackPlayBtn} ${styles.listenBackPlayBtnTeacher}`
+      : `${styles.listenBackPlayBtn} ${styles.listenBackPlayBtnUser}`;
+  const waveClass =
+    kind === 'teacher'
+      ? `${styles.listenBackWave} ${styles.listenBackWaveTeacher}`
+      : `${styles.listenBackWave} ${styles.listenBackWaveUser}`;
+
   return (
     <div className={tileClass}>
       <div className={styles.listenBackTileHead}>
         <span className={styles.listenBackTileTitle}>{title}</span>
         <span className={styles.listenBackTileSubtitle}>{subtitle}</span>
       </div>
+      <div className={styles.listenBackPlayer}>
+        <button
+          type="button"
+          className={buttonClass}
+          onClick={toggle}
+          aria-label={`${playing ? t('pause') : t('play')} ${title}`}
+        >
+          <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
+        </button>
+        <span className={waveClass} aria-hidden="true">
+          {WAVE.map((h, i) => (
+            <span key={i} style={{ height: `${h}%` }} />
+          ))}
+        </span>
+        <span className={styles.listenBackDuration}>
+          {duration === null ? '–:--' : formatTime(duration)}
+        </span>
+      </div>
       <audio
         ref={audioRef}
-        controls
-        preload="metadata"
         src={src}
-        className={styles.listenBackAudio}
+        preload="metadata"
+        hidden
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       >
         {fallback}
       </audio>
