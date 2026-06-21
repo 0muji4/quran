@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
 import type { SurahSummary } from '../../../lib/types';
 import { getLastPracticed } from '../../../lib/storage';
+import { formatPracticedAt } from '../../../lib/classify';
 import { useLocalStorageState } from '../../../hooks/useLocalStorageState';
 import { ArrowRightIcon, BookmarkIcon } from '../../../components/icons/ArrowRightIcon';
 import { css, cx } from '../../../../styled-system/css';
@@ -171,7 +172,7 @@ export function ContinueCard({ surahs }: Props) {
           {t('progress', {
             ayah: last.ayahNumber,
             total: ayahCount,
-            date: new Date(last.practicedAt).toLocaleDateString()
+            date: formatPracticedAt(last.practicedAt)
           })}
         </p>
         <div className={progressTrackClass} aria-hidden="true">
