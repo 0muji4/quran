@@ -97,9 +97,9 @@ export const panel = defineSlotRecipe({
           color: 'ink.onDark'
         },
         badge: {
-          // ADR 0003: gold-on-dark axis only for text on the brown
-          // surface. The legacy CSS used rgba()-tinted gold for both
-          // bg and border; bracket escapes preserve that ratio.
+          // ADR 0003: gold-on-dark axis only for text on the dark
+          // forest-green surface. The legacy CSS used rgba()-tinted gold
+          // for both bg and border; bracket escapes preserve that ratio.
           backgroundColor: '[rgba(184, 137, 60, 0.18)]',
           color: 'gold.onDark',
           borderWidth: '1px',

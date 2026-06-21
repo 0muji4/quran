@@ -45,7 +45,8 @@ import java.util.Locale
 /**
  * Dark "Continue your practice" card that resumes the user's last session.
  * Mirrors `apps/ios/.../Features/Library/ContinueCard.swift`. Sits on
- * [BrandTheme.colors.nav] so it pops against the cream surface; the eyebrow
+ * [BrandTheme.colors.cardInverse] (deep forest green) so it pops against
+ * the cream surface; the eyebrow
  * is a small outlined pill, the title pairs the Arabic name with its Latin
  * transliteration, and an amber progress bar previews how far the surah is.
  */
@@ -69,7 +70,7 @@ fun ContinueCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(spacing.cardCornerRadius))
-            .background(colors.nav)
+            .background(colors.cardInverse)
             .padding(spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.md),
     ) {
