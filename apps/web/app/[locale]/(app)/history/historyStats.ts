@@ -1,5 +1,9 @@
 import type { Attempt } from '../../../lib/storage';
 
+// Stat range: "week" scopes Attempts / Average / Best to the last 7 days;
+// "lifetime" uses everything. Streak is always lifetime regardless.
+export type HistoryScope = 'week' | 'lifetime';
+
 export interface HistoryStats {
   thisWeekCount: number;
   averageScore: number | null;
@@ -59,6 +63,23 @@ export const computeHistoryStats = (attempts: Attempt[], now: Date = new Date())
     longestStreak: computeLongestStreak(attempts)
   };
 };
+
+// Recent score trend (oldest → newest) for a single ayah, feeding the
+// per-row Sparkline. Only scored attempts count; capped at `limit` so
+// the line stays a glanceable shape rather than a dense chart.
+export const scoreTrendForAyah = (
+  attempts: Attempt[],
+  surahId: string,
+  ayahNumber: number,
+  limit = 6
+): number[] =>
+  attempts
+    .filter((a) => a.surahId === surahId && a.ayahNumber === ayahNumber && a.score !== null)
+    .map((a) => ({ at: new Date(a.createdAt).getTime(), score: a.score as number }))
+    .filter((x) => Number.isFinite(x.at))
+    .sort((a, b) => a.at - b.at)
+    .slice(-limit)
+    .map((x) => x.score);
 
 const computeStreak = (attempts: Attempt[], now: Date): number => {
   const practicedDays = new Set<number>();

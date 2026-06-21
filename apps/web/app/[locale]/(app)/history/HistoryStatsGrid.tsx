@@ -3,19 +3,57 @@
 import { useTranslations } from 'next-intl';
 import { css, cx } from '../../../../styled-system/css';
 import { panel } from '../../../../styled-system/recipes';
-import type { HistoryStats } from './historyStats';
+import type { HistoryStats, HistoryScope } from './historyStats';
 
 interface Props {
   stats: HistoryStats;
+  /** Count for the Attempts tile — scoped (this week) or total (lifetime). */
+  attemptCount: number;
+  scope: HistoryScope;
+  onScopeChange: (scope: HistoryScope) => void;
 }
 
 const sectionWrapClass = css({ marginBottom: '6' });
 
+const headRowClass = css({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '4',
+  marginBottom: '3',
+  flexWrap: 'wrap'
+});
+
 const progressLabelClass = css({
   fontSize: '[15px]',
   fontWeight: 600,
+  color: 'ink.strong'
+});
+
+// Segmented "This week / Lifetime" range control.
+const toggleClass = css({
+  display: 'inline-flex',
+  backgroundColor: 'bg.page',
+  borderRadius: 'pill',
+  padding: '[3px]',
+  gap: '[2px]'
+});
+const toggleBtnClass = css({
+  font: '[inherit]',
+  fontSize: '[13px]',
+  fontWeight: 600,
+  paddingBlock: '1',
+  paddingInline: '3',
+  borderRadius: 'pill',
+  borderWidth: '[0]',
+  background: '[transparent]',
+  color: 'ink.muted',
+  cursor: 'pointer'
+});
+const toggleBtnActiveClass = css({
+  backgroundColor: 'bg.paper',
   color: 'ink.strong',
-  marginBottom: '3'
+  boxShadow: 'card'
 });
 
 const gridClass = css({
@@ -62,7 +100,7 @@ const smallOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
 // 1×4 summary tiles (this-week / average / best / streak). The Average
 // tile uses the dark "continue" surface to call out the running average,
 // matching iOS `StatsGrid`'s inverse BrandCard treatment.
-export function HistoryStatsGrid({ stats }: Props) {
+export function HistoryStatsGrid({ stats, attemptCount, scope, onScopeChange }: Props) {
   const t = useTranslations('history.stats');
   // `panel(...)` is a slot recipe: it returns an object with one class
   // per slot (root / body / title / …). We only need the outer surface
@@ -73,12 +111,32 @@ export function HistoryStatsGrid({ stats }: Props) {
 
   return (
     <div className={sectionWrapClass}>
-      <p className={progressLabelClass}>{t('yourProgress')}</p>
+      <div className={headRowClass}>
+        <p className={progressLabelClass}>{t('yourProgress')}</p>
+        <div className={toggleClass} role="group" aria-label={t('ariaLabel')}>
+          <button
+            type="button"
+            className={cx(toggleBtnClass, scope === 'week' && toggleBtnActiveClass)}
+            aria-pressed={scope === 'week'}
+            onClick={() => onScopeChange('week')}
+          >
+            {t('scopeWeek')}
+          </button>
+          <button
+            type="button"
+            className={cx(toggleBtnClass, scope === 'lifetime' && toggleBtnActiveClass)}
+            aria-pressed={scope === 'lifetime'}
+            onClick={() => onScopeChange('lifetime')}
+          >
+            {t('scopeLifetime')}
+          </button>
+        </div>
+      </div>
       <section className={gridClass} aria-label={t('ariaLabel')}>
         <Tile
-          eyebrow={t('thisWeek')}
-          big={String(stats.thisWeekCount)}
-          small={t('thisWeekUnit')}
+          eyebrow={t('attempts')}
+          big={String(attemptCount)}
+          small={scope === 'week' ? t('attemptsUnitWeek') : t('attemptsUnitLifetime')}
           panelClass={paperPanel}
           eyebrowClassName={eyebrowOnPaperClass}
           bigClassName={bigOnPaperClass}

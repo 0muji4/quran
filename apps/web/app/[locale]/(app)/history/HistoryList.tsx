@@ -13,12 +13,17 @@ import {
   historyFilterOptions,
   type HistoryFilter
 } from './historyFilters';
-import { computeHistoryStats } from './historyStats';
+import { computeHistoryStats, scoreTrendForAyah, type HistoryScope } from './historyStats';
+import { Sparkline } from './Sparkline';
 import { css, cx } from '../../../../styled-system/css';
 import { statusPill } from '../../../../styled-system/recipes';
 import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
 
 const HISTORY_MOBILE_MQ = '@media (max-width: 640px)';
+
+type HistorySort = 'recent' | 'score';
+
+const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
 const listClass = css({
   display: 'flex',
@@ -30,6 +35,34 @@ const listClass = css({
 });
 
 const listItemClass = css({ listStyle: 'none' });
+
+// Trend line column. Tinted by the row's score tier (currentColor) and
+// hidden on narrow phones where the row stacks.
+const sparklineWrapClass = css({
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'center',
+  [HISTORY_MOBILE_MQ]: { display: 'none' }
+});
+
+const sortRowClass = css({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  gap: '2',
+  marginBottom: '4'
+});
+const sortLabelClass = css({ fontSize: '[13px]', color: 'ink.muted' });
+const sortSelectClass = css({
+  font: '[inherit]',
+  fontSize: '[13px]',
+  fontWeight: 600,
+  color: 'ink.strong',
+  background: '[transparent]',
+  borderWidth: '[0]',
+  cursor: 'pointer',
+  '&:focus-visible': { outlineColor: 'teal' }
+});
 
 // A row is a navigable Link (avatar + info + score) with the playback
 // button as a *sibling* — a <button> must not nest inside an <a>.
@@ -199,6 +232,8 @@ interface Props {
 export function HistoryList({ signedIn }: Props) {
   const [attempts, setAttempts] = useState<Attempt[] | null>(null);
   const [filter, setFilter] = useState<HistoryFilter>(ALL_FILTER);
+  const [scope, setScope] = useState<HistoryScope>('week');
+  const [sort, setSort] = useState<HistorySort>('recent');
   // Inline playback state. `playingId` is the attempt currently sounding;
   // `loadingId` covers the fetch of its (lazily presigned) recording URL;
   // `errorId` flags a row whose recording could not be played.
@@ -225,9 +260,36 @@ export function HistoryList({ signedIn }: Props) {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
 
-  const stats = useMemo(() => (attempts ? computeHistoryStats(attempts) : null), [attempts]);
+  // Attempts within the active range — drives the Attempts / Average /
+  // Best tiles. Streak ignores the toggle (a streak is inherently
+  // all-time), so it is read from a separate lifetime computation below.
+  const scopedAttempts = useMemo(() => {
+    const all = attempts ?? [];
+    if (scope === 'lifetime') return all;
+    const weekStart = Date.now() - MS_PER_WEEK;
+    return all.filter((a) => {
+      const at = new Date(a.createdAt).getTime();
+      return Number.isFinite(at) && at >= weekStart;
+    });
+  }, [attempts, scope]);
+
+  const stats = useMemo(() => {
+    if (!attempts) return null;
+    const scoped = computeHistoryStats(scopedAttempts);
+    const lifetime = computeHistoryStats(attempts);
+    return { ...scoped, streakDays: lifetime.streakDays, longestStreak: lifetime.longestStreak };
+  }, [attempts, scopedAttempts]);
+
   const filterOptions = useMemo(() => historyFilterOptions(attempts ?? []), [attempts]);
-  const visibleAttempts = useMemo(() => filterAttempts(attempts ?? [], filter), [attempts, filter]);
+  const visibleAttempts = useMemo(() => {
+    const filtered = filterAttempts(attempts ?? [], filter);
+    // `recent` keeps storage order (newest first). `score` sorts highest
+    // first with unscored/failed attempts last; the spread keeps the
+    // sort off the memoised source array.
+    return sort === 'score'
+      ? [...filtered].sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+      : filtered;
+  }, [attempts, filter, sort]);
 
   const handlePlay = useCallback(
     async (attempt: Attempt) => {
@@ -303,8 +365,30 @@ export function HistoryList({ signedIn }: Props) {
 
   return (
     <>
-      {stats && <HistoryStatsGrid stats={stats} />}
+      {stats && (
+        <HistoryStatsGrid
+          stats={stats}
+          attemptCount={scopedAttempts.length}
+          scope={scope}
+          onScopeChange={setScope}
+        />
+      )}
       <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
+      <div className={sortRowClass}>
+        <label className={sortLabelClass} htmlFor="history-sort">
+          {t('sort.label')}:
+        </label>
+        <select
+          id="history-sort"
+          className={sortSelectClass}
+          value={sort}
+          onChange={(e) => setSort(e.target.value as HistorySort)}
+          aria-label={t('sort.ariaLabel')}
+        >
+          <option value="recent">{t('sort.recent')}</option>
+          <option value="score">{t('sort.score')}</option>
+        </select>
+      </div>
       {/* Single shared element so only one recording sounds at a time. */}
       <audio ref={audioRef} preload="none" onEnded={() => setPlayingId(null)} hidden />
       {visibleAttempts.length === 0 ? (
@@ -330,6 +414,18 @@ export function HistoryList({ signedIn }: Props) {
                         {t('row.title', { name: a.surahNameEn, ayah: a.ayahNumber })}
                       </span>
                       <span className={metaClass}>{formatRowMeta(a.createdAt, a.durationMs)}</span>
+                    </span>
+                    <span
+                      className={cx(
+                        sparklineWrapClass,
+                        score !== null
+                          ? score >= 80
+                            ? scorePassClass
+                            : scoreMidClass
+                          : scoreFailedClass
+                      )}
+                    >
+                      <Sparkline values={scoreTrendForAyah(attempts, a.surahId, a.ayahNumber)} />
                     </span>
                     <span
                       className={cx(
