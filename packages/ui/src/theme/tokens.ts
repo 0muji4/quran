@@ -29,9 +29,11 @@ export const tokens = defineTokens({
       onDark: { value: '#efe4ce' },
       onDarkMut: { value: '#d4c4a4' }
     },
+    // Brand primary green. The #462 refresh moved it from the prior teal
+    // toward the design's emerald; kept under the `teal` key for now.
     teal: {
-      DEFAULT: { value: '#2d5a4f' },
-      deep: { value: '#1f4036' }
+      DEFAULT: { value: '#106840' },
+      deep: { value: '#0c5132' }
     },
     mint: {
       bg: { value: '#d9efe3' },
