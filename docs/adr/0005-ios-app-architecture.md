@@ -66,4 +66,4 @@ Re-open this decision when **any** of the following hold:
 - `apps/ios/Sources/QuranRecitationApp/QuranRecitationApp.swift` — current single-screen entry point
 - `apps/ios/Sources/QuranRecitationApp/RecordingViewModel.swift:9-32` — current string-based status pattern
 - `docs/design/iOS *.png` — six-screen target design
-- `~/.claude/CLAUDE.md` — guidance on avoiding unnecessary abstraction
+- Project engineering principles — guidance on avoiding unnecessary abstraction

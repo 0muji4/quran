@@ -94,4 +94,4 @@ Without those elements, this ADR stands.
 - [ADR 0010](./0010-gcp-cloud-run-deployment.md) — the cloud-choice decision this principle constrains
 - `apps/bff/src/storage/*.ts` — illustrates the principle: BFF talks S3 protocol to whatever the env points at (MinIO locally, GCS in cloud, S3 if migrated)
 - `apps/worker/python/main.py` — Redis BLPOP queue contract preserved across clouds
-- `~/.claude/plans/backend-frontend-worker-nifty-muffin.md` — the deployment plan that operationalises both ADRs
+- Internal deployment plan — operationalises both ADRs

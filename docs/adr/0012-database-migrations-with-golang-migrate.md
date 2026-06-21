@@ -121,4 +121,4 @@ If a migration fails in any environment:
 - `scripts/migrate-lint.sh` — filename validation
 - `.github/workflows/ci.yml` — replaces the obsolete `sql-migrate` step with `migrate-lint`
 - `.github/workflows/e2e.yml` — continues to call `make db-migrate` unchanged
-- `~/.claude/plans/backend-frontend-worker-nifty-muffin.md` — deployment plan, Phase 1 / Phase 5
+- Internal deployment plan — Phase 1 / Phase 5

@@ -71,4 +71,4 @@ Until then, develop on Compose, ship to PaaS.
 - `ops/observability/README.md` — existing OTel / Jaeger / Prom / Loki / Grafana wiring
 - `.github/workflows/{ci,test,e2e}.yml` — current CI scope (tests only, no deploy)
 - Sibling project `Twitter-Clone/k8s/` and `Twitter-Clone/skaffold.yaml` — comparison case for a recent k8s migration
-- `~/.claude/CLAUDE.md` — guidance on avoiding unnecessary abstraction and means-as-ends decisions
+- Project engineering principles — guidance on avoiding unnecessary abstraction and means-as-ends decisions
