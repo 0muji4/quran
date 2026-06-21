@@ -36,7 +36,7 @@ Account deletion is **soft** with a **30-day reactivation window** before the ro
 
 ## Rationale
 
-- **Why soft, not hard, by default.** A streak / audio history that took weeks to build is one tap away from destruction. The product gives the user 30 days to undo a misclick; the cost to the team is a small DB column and a single cron entry. The user-facing affordance ("type DELETE to confirm") is the *first* line of defence; the grace period is the *fallback* for when that line failed.
+- **Why soft, not hard, by default.** A streak / audio history that took weeks to build is one tap away from destruction. The product gives the user 30 days to undo a misclick; the cost to the team is a small DB column and a single cron entry. The user-facing affordance ("type DELETE to confirm") is the _first_ line of defence; the grace period is the _fallback_ for when that line failed.
 - **Why 30 days.** Big-tech precedent (Google: ~60d, GitHub: 90d, Twitter: 30d, Stripe: 90d for regulated reasons) clusters between 30 and 90. 30 is the shortest that still gives a reasonable "I changed my mind" window without hoarding stale data unnecessarily. We can extend later if support requests warrant it; shortening would feel like a retraction.
 - **Why reactivate on sign-in rather than via a recovery link.** The sign-in flow is the only flow the deleted user has any incentive to come back through. Adding a separate "Recover deleted account" UI gives us two entry points to test and one more confusing message to write. Treating sign-in as the reactivation path keeps the surface area minimal.
 - **Why CASCADE-by-default on the purge.** The alternative — keeping orphaned attempts after the user row vanishes — is technically possible but has no UX consumer (the User-Practice JOIN in History always filters by `user_id`, and nothing else does). The simplicity is worth more than the optionality.
@@ -55,13 +55,13 @@ Positive:
 Negative:
 
 - The `users` table grows monotonically until the purge runs. With Tilawah's current scale this is invisible; if accounts spike into the millions, the daily purge becomes a bigger transaction. Mitigated by partitioning the purge into batches if the daily count ever exceeds, say, 10k.
-- A deleted user who *forgets* their password during the 30-day grace cannot recover (password reset is itself deferred to a future PR). Acceptable tradeoff for Phase 2; the password-reset flow lands separately and will need to recognise the soft-deleted state at that point.
+- A deleted user who _forgets_ their password during the 30-day grace cannot recover (password reset is itself deferred to a future PR). Acceptable tradeoff for Phase 2; the password-reset flow lands separately and will need to recognise the soft-deleted state at that point.
 - Email re-registration: a user who soft-deleted their account cannot sign up with the same email until the grace window expires (the `UNIQUE` constraint on `email` still applies). Surfacing this as "email already in use" is mildly confusing; the sign-up handler will need a small branch to say "this email was recently deleted — sign in to restore the account." Tracked in the implementation PR.
 
 ## Alternatives Considered
 
 - **Hard delete only.** Simplest implementation; loses the misclick recovery and creates support tickets ("can you restore my account?") that we can't honour. Rejected.
-- **Soft delete with no auto-purge.** Keep deleted rows forever, behind a `deleted_at` flag. Cleaner from a "we can always restore" perspective but creates indefinite PII retention, which is the *exact* thing GDPR Art. 17 prohibits. Rejected.
+- **Soft delete with no auto-purge.** Keep deleted rows forever, behind a `deleted_at` flag. Cleaner from a "we can always restore" perspective but creates indefinite PII retention, which is the _exact_ thing GDPR Art. 17 prohibits. Rejected.
 - **Recovery via emailed link.** A signed-in deleted user gets an email with a magic restore link. More secure against a leaked password mid-grace, but adds an external dependency (no email send infra exists today; see ADR-XXXX-pending). Rejected for Phase 2; reconsider once we have a transactional email pipeline.
 - **Type-to-confirm "email-address" instead of "DELETE".** Considered as an even higher friction option (the user has to type their own email). Rejected for now: DELETE is enough friction for a streak-and-audio loss, and asking the user to type their email is awkward when the email is already shown in the modal context.
 - **48-hour grace** (matches some mobile-first apps). Rejected: too short for a user who deletes on a Sunday and only thinks about it the next weekend.

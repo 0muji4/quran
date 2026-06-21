@@ -53,14 +53,14 @@ Python `typing.Protocol` is structural — any class with the right shape satisf
 
 ### Why the boundary is `transcribe(audio_path, expected_text_ar) -> TranscriptionResult`, not something narrower
 
-The Worker's downstream code (`process_job`) needs both the final transcript string *and* per-word timestamps + probabilities for alignment and pronunciation scoring. A narrower boundary (just the transcript) would force every future backend to also emit timestamps in our shape — which managed APIs typically do — and would push timestamp normalisation into many places. The current shape is the smallest interface that lets the downstream code remain backend-agnostic.
+The Worker's downstream code (`process_job`) needs both the final transcript string _and_ per-word timestamps + probabilities for alignment and pronunciation scoring. A narrower boundary (just the transcript) would force every future backend to also emit timestamps in our shape — which managed APIs typically do — and would push timestamp normalisation into many places. The current shape is the smallest interface that lets the downstream code remain backend-agnostic.
 
 ### Why not abstract at the HTTP boundary instead
 
 Tempting: stand up an "ASR microservice" in front, have the Worker hit HTTP. Rejected for now:
 
 - It doubles the moving parts (extra service, extra deploy) for zero benefit at MVP scale.
-- The boundary already exists *inside* the Worker process at a clean place.
+- The boundary already exists _inside_ the Worker process at a clean place.
 - A future "ASR microservice" implementation of `Transcriber` is itself just one more class implementing the protocol — `RemoteAsrServiceTranscriber(url)` calling out via HTTP. The protocol absorbs that case without changing the consumer.
 
 ### Why `/healthz` uses stdlib `http.server` instead of aiohttp / FastAPI

@@ -26,7 +26,7 @@ datasources:
         - datasourceUid: Jaeger
           matcherRegex: "trace_id=(\\w+)"
           name: TraceID
-          url: "$${__value.raw}"
+          url: '$${__value.raw}'
 
   - name: Jaeger
     uid: Jaeger

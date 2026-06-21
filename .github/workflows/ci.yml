@@ -98,6 +98,21 @@ jobs:
       - name: Run build
         run: pnpm build
 
+  # Repo-wide Prettier gate. js-quality's format:check is per-workspace,
+  # so root files (docs, ops, workflows) went unchecked. Ungated so drift
+  # in any path is caught.
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check repo-wide formatting
+        run: npx --yes prettier@3.8.3 --check .
+
   go-quality:
     needs: changes
     if: needs.changes.outputs.go == 'true'
@@ -254,6 +269,7 @@ jobs:
     needs:
       - changes
       - js-quality
+      - format
       - go-quality
       - db-lint
       - terraform-validate

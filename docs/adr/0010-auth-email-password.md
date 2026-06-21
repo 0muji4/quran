@@ -14,13 +14,13 @@ The Tilawah web app needs real authentication to enable Phase 3.1 (BFF persisten
 
 The candidate methods considered (in roughly decreasing 2026 Big-Tech alignment):
 
-| Method | Big-Tech use | MVP code cost | External deps |
-| --- | --- | --- | --- |
-| Email + Password | Universal primary at Apple, Google, Meta, Microsoft, Amazon, GitHub, X | ~150 LoC across signup / login / hash / verify | bcrypt only on login critical path |
-| Passkey (WebAuthn) | Add-on layer at all of the above (post-2024) | ~250 LoC, browser API juggling | none |
-| Sign in with Google / Apple | Common alternate, never primary | ~100 LoC + OAuth client config on each platform | Apple Developer Program required for iOS |
-| Magic link | Common in B2B SaaS (Slack, Notion); rare in consumer Big Tech | ~80 LoC | Email delivery on login critical path (spam folders, latency) |
-| Hosted SaaS (Clerk / Auth0 / Supabase Auth) | n/a | minimal | Vendor lock-in, monthly cost |
+| Method                                      | Big-Tech use                                                           | MVP code cost                                   | External deps                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| Email + Password                            | Universal primary at Apple, Google, Meta, Microsoft, Amazon, GitHub, X | ~150 LoC across signup / login / hash / verify  | bcrypt only on login critical path                            |
+| Passkey (WebAuthn)                          | Add-on layer at all of the above (post-2024)                           | ~250 LoC, browser API juggling                  | none                                                          |
+| Sign in with Google / Apple                 | Common alternate, never primary                                        | ~100 LoC + OAuth client config on each platform | Apple Developer Program required for iOS                      |
+| Magic link                                  | Common in B2B SaaS (Slack, Notion); rare in consumer Big Tech          | ~80 LoC                                         | Email delivery on login critical path (spam folders, latency) |
+| Hosted SaaS (Clerk / Auth0 / Supabase Auth) | n/a                                                                    | minimal                                         | Vendor lock-in, monthly cost                                  |
 
 ## Decision
 
@@ -64,15 +64,15 @@ Negative:
 
 Re-open this decision when **any** of the following hold:
 
-1. Passkey adoption reaches a point where the project wants WebAuthn as the *primary* method (not parallel). Schema and JWT layer already permit this.
+1. Passkey adoption reaches a point where the project wants WebAuthn as the _primary_ method (not parallel). Schema and JWT layer already permit this.
 2. A federated identity (Sign in with Apple / Google) becomes a compliance or distribution requirement (e.g., App Store rule changes mandating a federated option alongside email+password).
 3. The team grows past one engineer and the "operate password reset / breach response" burden becomes a meaningful fraction of on-call time.
 4. A regulatory change (GDPR, CCPA, sector-specific) imposes a stronger MFA requirement.
 
 ## Alternatives Considered
 
-- **Magic link.** Rejected as primary: rare in consumer Big Tech, hard email-delivery dependency on the login critical path, additional UX education needed. Reasonable as a *secondary* path for users who do not want a password — could be added later if requested.
-- **Sign in with Google / Apple.** Rejected as primary: requires OAuth client registration on web AND native (iOS), Apple variant needs Apple Developer Program enrolment. Good as a *secondary* path post-launch.
+- **Magic link.** Rejected as primary: rare in consumer Big Tech, hard email-delivery dependency on the login critical path, additional UX education needed. Reasonable as a _secondary_ path for users who do not want a password — could be added later if requested.
+- **Sign in with Google / Apple.** Rejected as primary: requires OAuth client registration on web AND native (iOS), Apple variant needs Apple Developer Program enrolment. Good as a _secondary_ path post-launch.
 - **Clerk / Auth0 / Supabase Auth.** Rejected: vendor lock-in, monthly cost during pre-revenue, the verification logic itself is already half-built locally.
 - **Email + Password without Passkey-ready architecture.** Rejected as a strict subset of this decision; the Passkey path is one schema migration away and ignoring it locks the team out of the dominant 2026 auth trend.
 

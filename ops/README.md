@@ -28,14 +28,14 @@ docker compose -f ops/docker/compose.dev.yml down -v
 
 Published ports after `make dev-up`:
 
-| Service | URL |
-|---|---|
-| Web | http://localhost:3000 |
-| BFF | http://localhost:4000 |
-| Backend (Go) | http://localhost:8080 |
-| Postgres | localhost:5432 |
-| Redis | localhost:6379 |
-| MinIO API | http://localhost:9000 |
+| Service       | URL                   |
+| ------------- | --------------------- |
+| Web           | http://localhost:3000 |
+| BFF           | http://localhost:4000 |
+| Backend (Go)  | http://localhost:8080 |
+| Postgres      | localhost:5432        |
+| Redis         | localhost:6379        |
+| MinIO API     | http://localhost:9000 |
 | MinIO Console | http://localhost:9001 |
 
 Observability URLs and OTLP endpoints are documented in [`observability/README.md`](./observability/README.md).

@@ -4,32 +4,32 @@ A cross-platform pronunciation practice app for Quran recitation. Provides guide
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Web | React + TypeScript (Next.js / App Router) |
-| BFF | TypeScript (Express + GraphQL + RSC-friendly REST) |
-| Backend | Go |
-| Worker | Python (faster-whisper) / Go (placeholder) |
-| Mobile | Android (Kotlin / Compose), iOS (Swift / Apollo) |
-| Database | PostgreSQL |
-| Object Storage | S3-compatible (MinIO) |
-| Cache / Queue | Redis |
-| Containers / Dev | Docker Compose |
-| Observability | OpenTelemetry, Jaeger, Prometheus, Loki, Grafana |
+| Layer            | Technology                                         |
+| ---------------- | -------------------------------------------------- |
+| Web              | React + TypeScript (Next.js / App Router)          |
+| BFF              | TypeScript (Express + GraphQL + RSC-friendly REST) |
+| Backend          | Go                                                 |
+| Worker           | Python (faster-whisper) / Go (placeholder)         |
+| Mobile           | Android (Kotlin / Compose), iOS (Swift / Apollo)   |
+| Database         | PostgreSQL                                         |
+| Object Storage   | S3-compatible (MinIO)                              |
+| Cache / Queue    | Redis                                              |
+| Containers / Dev | Docker Compose                                     |
+| Observability    | OpenTelemetry, Jaeger, Prometheus, Loki, Grafana   |
 
 ## Per-domain READMEs
 
 Local setup, build, and test instructions live next to the code they describe:
 
-| Domain | Location |
-|---|---|
-| Local dev stack (Docker Compose / Make / DB) | [`ops/README.md`](./ops/README.md) |
+| Domain                                                            | Location                                                       |
+| ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| Local dev stack (Docker Compose / Make / DB)                      | [`ops/README.md`](./ops/README.md)                             |
 | Observability stack (OTEL / Jaeger / Prometheus / Loki / Grafana) | [`ops/observability/README.md`](./ops/observability/README.md) |
-| Backend (Go) | [`apps/backend/README.md`](./apps/backend/README.md) |
-| BFF (TypeScript) | [`apps/bff/README.md`](./apps/bff/README.md) |
-| Web (Next.js) | [`apps/web/README.md`](./apps/web/README.md) |
-| Android | [`apps/android/README.md`](./apps/android/README.md) |
-| iOS | [`apps/ios/README.md`](./apps/ios/README.md) |
+| Backend (Go)                                                      | [`apps/backend/README.md`](./apps/backend/README.md)           |
+| BFF (TypeScript)                                                  | [`apps/bff/README.md`](./apps/bff/README.md)                   |
+| Web (Next.js)                                                     | [`apps/web/README.md`](./apps/web/README.md)                   |
+| Android                                                           | [`apps/android/README.md`](./apps/android/README.md)           |
+| iOS                                                               | [`apps/ios/README.md`](./apps/ios/README.md)                   |
 
 ## Prerequisites
 

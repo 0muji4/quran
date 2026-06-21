@@ -15,11 +15,11 @@ Two more dark-context tokens already exist as siblings: `--color-gold-soft: #d9b
 
 Phase 2.3 surfaced WCAG AA contrast failures involving the single `--color-gold` token. axe measured:
 
-| Pair | Where | Ratio | Required | Status |
-| --- | --- | --- | --- | --- |
-| `#b8893c` × cream `#f5f0e5` | `.eyebrow` | 2.76:1 | 4.5:1 | fails dramatically |
-| white `#ffffff` × `#b8893c` | `.btnGold` | 3.14:1 | 4.5:1 (or 3:1 large) | fails normal text |
-| `#7b6e5c` × cream `#f5f0e5` | `--color-ink-muted` | 4.37:1 | 4.5:1 | just under |
+| Pair                        | Where               | Ratio  | Required             | Status             |
+| --------------------------- | ------------------- | ------ | -------------------- | ------------------ |
+| `#b8893c` × cream `#f5f0e5` | `.eyebrow`          | 2.76:1 | 4.5:1                | fails dramatically |
+| white `#ffffff` × `#b8893c` | `.btnGold`          | 3.14:1 | 4.5:1 (or 3:1 large) | fails normal text  |
+| `#7b6e5c` × cream `#f5f0e5` | `--color-ink-muted` | 4.37:1 | 4.5:1                | just under         |
 
 A single token cannot satisfy both usages: bright enough for the metallic-gold brand and white-on-gold fails AA; dark enough for AA text on cream and the gold loses its identity for backgrounds. The same misuse risk applies to any future component author who reaches for `--color-gold` without realising the call site dictates which contrast threshold matters.
 

@@ -10,7 +10,7 @@ import globals from 'globals';
 export default [
   // Global ignores
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**']
   },
 
   // Base ESLint recommended config
@@ -24,16 +24,16 @@ export default [
       parserOptions: {
         ecmaFeatures: { jsx: true },
         ecmaVersion: 'latest',
-        sourceType: 'module',
+        sourceType: 'module'
       },
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2020,
-      },
+        ...globals.es2020
+      }
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      '@typescript-eslint': tsPlugin
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
@@ -43,7 +43,7 @@ export default [
         'error',
         // Enforce `import type` for type-only imports, but allow inline `import()`
         // type expressions (used by the `vi.importActual<typeof import('...')>` pattern).
-        { prefer: 'type-imports', disallowTypeAnnotations: false },
+        { prefer: 'type-imports', disallowTypeAnnotations: false }
       ],
       '@typescript-eslint/no-non-null-assertion': 'error',
       eqeqeq: ['error', 'smart'],
@@ -57,46 +57,46 @@ export default [
         {
           selector: 'ExportDefaultDeclaration',
           message:
-            'Default exports are forbidden (Google TypeScript Style Guide). Use a named export.',
-        },
-      ],
-    },
+            'Default exports are forbidden (Google TypeScript Style Guide). Use a named export.'
+        }
+      ]
+    }
   },
 
   // React configuration
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      react: reactPlugin,
+      react: reactPlugin
     },
     settings: {
-      react: { version: 'detect' },
+      react: { version: 'detect' }
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',
-    },
+      'react/react-in-jsx-scope': 'off'
+    }
   },
 
   // React Hooks configuration
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      'react-hooks': reactHooksPlugin,
+      'react-hooks': reactHooksPlugin
     },
     rules: {
-      ...reactHooksPlugin.configs.recommended.rules,
-    },
+      ...reactHooksPlugin.configs.recommended.rules
+    }
   },
 
   // Prettier configuration
   {
     plugins: {
-      prettier: prettierPlugin,
+      prettier: prettierPlugin
     },
     rules: {
       ...prettierConfig.rules,
-      'prettier/prettier': ['warn', { endOfLine: 'auto' }],
-    },
-  },
+      'prettier/prettier': ['warn', { endOfLine: 'auto' }]
+    }
+  }
 ];

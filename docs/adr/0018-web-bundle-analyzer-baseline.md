@@ -33,52 +33,52 @@ Captured from `ANALYZE=true pnpm --filter @quran-project/web run analyze` on `fe
 
 ### Per-route First Load JS (gzipped, from `next build` summary)
 
-| Route                                             | Page JS  | First Load JS |
-| ------------------------------------------------- | -------- | ------------- |
-| `/`                                               | 6.2 kB   | **130 kB**    |
-| `/practice/[surahId]/[ayahNumber]`                | 6.82 kB  | **136 kB** ←  |
-| `/practice/[surahId]/[ayahNumber]/result/[jobId]` | 5.03 kB  | **134 kB** ←  |
-| `/history`                                        | 3.03 kB  | 108 kB        |
-| `/sign-in`, `/sign-up`                            | 2.87 kB  | 108 kB        |
-| `/_not-found`                                     | 995 B    | 103 kB        |
-| `/healthz`                                        | 133 B    | 102 kB        |
-| Shared (every route)                              | —        | 102 kB        |
+| Route                                             | Page JS | First Load JS |
+| ------------------------------------------------- | ------- | ------------- |
+| `/`                                               | 6.2 kB  | **130 kB**    |
+| `/practice/[surahId]/[ayahNumber]`                | 6.82 kB | **136 kB** ←  |
+| `/practice/[surahId]/[ayahNumber]/result/[jobId]` | 5.03 kB | **134 kB** ←  |
+| `/history`                                        | 3.03 kB | 108 kB        |
+| `/sign-in`, `/sign-up`                            | 2.87 kB | 108 kB        |
+| `/_not-found`                                     | 995 B   | 103 kB        |
+| `/healthz`                                        | 133 B   | 102 kB        |
+| Shared (every route)                              | —       | 102 kB        |
 
 Shared 102 kB decomposes into two webpack chunks:
 
-| Chunk                          | Size (gzipped) |
-| ------------------------------ | -------------- |
-| `chunks/29491661-….js`         | 54.2 kB        |
-| `chunks/895-….js`              | 45.4 kB        |
-| `chunks/other shared`          | 1.95 kB        |
+| Chunk                  | Size (gzipped) |
+| ---------------------- | -------------- |
+| `chunks/29491661-….js` | 54.2 kB        |
+| `chunks/895-….js`      | 45.4 kB        |
+| `chunks/other shared`  | 1.95 kB        |
 
 `/practice/[surahId]/[ayahNumber]` is the heaviest route at 136 kB First Load JS, which 4.3-B will target by extracting `RecorderPanel` / `TeacherPanel` boundaries.
 
 ### Per-font woff2 footprint (raw bytes, served from `_next/static/media`)
 
-| Font                       | Subset / weight        | File              | Size      |
-| -------------------------- | ---------------------- | ----------------- | --------- |
-| **Cormorant Garamond** (w500/600/700, shared files) | latin (preload `.p`)  | `7b89a4fd…`       | 37,776 B  |
-|                            | latin-ext              | `48410f3d…`       | 33,740 B  |
-|                            | vietnamese             | `c48b38fe…`       | 11,264 B  |
-|                            | cyrillic               | `8715d2ed…`       | 21,132 B  |
-|                            | cyrillic-ext           | `393d45a2…`       | 23,408 B  |
-|                            | **subtotal**           |                   | **127.3 KiB** |
-| **Inter** (variable 100–900) | latin (preload `.p`) | `e4af272c…`       | 48,432 B  |
-|                            | latin-ext              | `8e9860b6…`       | 85,272 B  |
-|                            | vietnamese             | `df0a9ae2…`       | 10,424 B  |
-|                            | cyrillic               | `21350d82…`       | 18,744 B  |
-|                            | cyrillic-ext           | `ba9851c3…`       | 25,844 B  |
-|                            | greek                  | `19cfc722…`       | 10,280 B  |
-|                            | mathematical           | `c5fe6dc8…`       | 11,272 B  |
-|                            | **subtotal**           |                   | **205.3 KiB** |
-| **Amiri** (w400)            | **arabic (preload `.p`)** | `5aae3a1c…`   | **108,492 B** ← |
-|                            | latin-ext              | `ecb0c194…`       | 10,424 B  |
-|                            | latin                  | `8c2fd50d…`       | 19,572 B  |
-| **Amiri** (w700)            | **arabic (preload `.p`)** | `da6e5417…`   | **100,024 B** ← |
-|                            | latin-ext              | `9c796412…`       | 10,836 B  |
-|                            | latin                  | `dd5f2241…`       | 20,284 B  |
-|                            | **subtotal**           |                   | **263.3 KiB** |
+| Font                                                | Subset / weight           | File        | Size            |
+| --------------------------------------------------- | ------------------------- | ----------- | --------------- |
+| **Cormorant Garamond** (w500/600/700, shared files) | latin (preload `.p`)      | `7b89a4fd…` | 37,776 B        |
+|                                                     | latin-ext                 | `48410f3d…` | 33,740 B        |
+|                                                     | vietnamese                | `c48b38fe…` | 11,264 B        |
+|                                                     | cyrillic                  | `8715d2ed…` | 21,132 B        |
+|                                                     | cyrillic-ext              | `393d45a2…` | 23,408 B        |
+|                                                     | **subtotal**              |             | **127.3 KiB**   |
+| **Inter** (variable 100–900)                        | latin (preload `.p`)      | `e4af272c…` | 48,432 B        |
+|                                                     | latin-ext                 | `8e9860b6…` | 85,272 B        |
+|                                                     | vietnamese                | `df0a9ae2…` | 10,424 B        |
+|                                                     | cyrillic                  | `21350d82…` | 18,744 B        |
+|                                                     | cyrillic-ext              | `ba9851c3…` | 25,844 B        |
+|                                                     | greek                     | `19cfc722…` | 10,280 B        |
+|                                                     | mathematical              | `c5fe6dc8…` | 11,272 B        |
+|                                                     | **subtotal**              |             | **205.3 KiB**   |
+| **Amiri** (w400)                                    | **arabic (preload `.p`)** | `5aae3a1c…` | **108,492 B** ← |
+|                                                     | latin-ext                 | `ecb0c194…` | 10,424 B        |
+|                                                     | latin                     | `8c2fd50d…` | 19,572 B        |
+| **Amiri** (w700)                                    | **arabic (preload `.p`)** | `da6e5417…` | **100,024 B** ← |
+|                                                     | latin-ext                 | `9c796412…` | 10,836 B        |
+|                                                     | latin                     | `dd5f2241…` | 20,284 B        |
+|                                                     | **subtotal**              |             | **263.3 KiB**   |
 
 **Unicode-range gating means most of the above is conditional**: only the file whose `unicode-range` matches characters present on the page is actually fetched. The realistic on-paint cost of `/practice/[s]/[a]` (English UI + Arabic ayah body in Amiri 400) is:
 

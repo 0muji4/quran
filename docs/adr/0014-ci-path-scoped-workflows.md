@@ -14,7 +14,7 @@ As the deployment work (ADR 0010) and the per-app phases progress, CI volume per
 1. **Compute & feedback latency.** PR feedback time directly affects iteration velocity and is the most-cited frustration in monorepo developer-experience surveys.
 2. **Noise blindness.** When every PR runs every check, the team stops reading the green/red distinctions per-stack and starts treating CI as a single binary signal. A real failure in a stack the PR did not touch gets attributed to "flaky CI" rather than investigated.
 
-A naive fix — adding `on.paths` filters to each workflow — interacts badly with GitHub's branch protection. A required check that gets *skipped* is recorded as `neutral`, and most branch-protection configurations block merge on a neutral check. The team would either disable required checks (losing the protection) or override per-PR (losing the team-wide guarantee).
+A naive fix — adding `on.paths` filters to each workflow — interacts badly with GitHub's branch protection. A required check that gets _skipped_ is recorded as `neutral`, and most branch-protection configurations block merge on a neutral check. The team would either disable required checks (losing the protection) or override per-PR (losing the team-wide guarantee).
 
 ## Decision
 
@@ -36,9 +36,9 @@ Doing this first matters because every other change in this ADR can land safely 
 
 ### Why `dorny/paths-filter` over `on.paths`
 
-GitHub's native `on.paths` is simpler to write but produces silently-skipped workflows whose required-check effects depend on branch-protection edge cases. `paths-filter`-gated *jobs* always run (the `changes` job itself executes), so the umbrella job always observes definite `success` / `failure` / `skipped` results. The cost is one extra dependency.
+GitHub's native `on.paths` is simpler to write but produces silently-skipped workflows whose required-check effects depend on branch-protection edge cases. `paths-filter`-gated _jobs_ always run (the `changes` job itself executes), so the umbrella job always observes definite `success` / `failure` / `skipped` results. The cost is one extra dependency.
 
-### Why hand-maintained filters over Turborepo *for now*
+### Why hand-maintained filters over Turborepo _for now_
 
 Turborepo's affected-graph is structurally superior — it cannot have the "forgot to add `packages/shared-ts` to the `js` filter" failure mode this ADR's nightly safety net is designed to catch. But Turborepo requires:
 
@@ -51,7 +51,7 @@ At the current scale (4 packages, 4 apps), the maintenance burden of `.github/fi
 
 ### Why a nightly full-CI is mandatory rather than optional
 
-The single most common path-filter failure mode is *silent under-execution*: a contributor adds a new shared file to `packages/`, forgets to add it to the `shared` anchor in `filters.yml`, and for some weeks no JS-side test runs on PRs that touch it. The bug only surfaces when something else triggers a full run.
+The single most common path-filter failure mode is _silent under-execution_: a contributor adds a new shared file to `packages/`, forgets to add it to the `shared` anchor in `filters.yml`, and for some weeks no JS-side test runs on PRs that touch it. The bug only surfaces when something else triggers a full run.
 
 Running the full unfiltered suite nightly against `develop` and `main` bounds this hazard to "at most one calendar day of undetected drift" and makes detection automatic. Without this, the path-filter pattern goes from "best practice" to "tech debt accumulator."
 
@@ -90,7 +90,7 @@ Trigger 3 is the strongest single signal: it is the symptom of the failure mode 
 
 - Compute optimisation (larger runners, parallel sharding, test-suite partitioning). May be revisited as a separate ADR; orthogonal to scoping.
 - Migration to a different CI provider. Remains on GitHub Actions.
-- Per-job behaviour changes. This ADR governs *when* each existing job runs, not *what* it does.
+- Per-job behaviour changes. This ADR governs _when_ each existing job runs, not _what_ it does.
 - Pre-merge merge queues (`merge_group` events). May be layered on later; the umbrella-job pattern is compatible.
 - Dependabot / Renovate workflow paths. They produce `pnpm-lock.yaml` and `go.sum` diffs that the `shared` anchor already captures.
 

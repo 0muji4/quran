@@ -74,22 +74,22 @@ Measured against the post-4.3-C baseline (PR #248) on the same build pipeline:
 
 ### Font payload at first paint of `/practice/[s]/[a]`
 
-| File                                    | Before (Google) | After (subset) | Delta |
-|-----------------------------------------|----------------:|---------------:|------:|
-| Amiri weight 400 arabic `.p` (preload)  | 108,492 B       | **46,820 B**   | **−61.7 KiB** |
-| Amiri weight 700 arabic `.p` (preload)  | 100,024 B       | **47,064 B**   | **−51.7 KiB** |
-| Amiri latin / latin-ext (range-gated)   | 30,008 + 31,120 B | 0 (not included in subset) | −59.7 KiB |
-| **Sum of all Amiri assets shipped**     | **~269 KiB**    | **~93.9 KiB**  | **~−175 KiB (~−65 %)** |
+| File                                   |   Before (Google) |             After (subset) |                  Delta |
+| -------------------------------------- | ----------------: | -------------------------: | ---------------------: |
+| Amiri weight 400 arabic `.p` (preload) |         108,492 B |               **46,820 B** |          **−61.7 KiB** |
+| Amiri weight 700 arabic `.p` (preload) |         100,024 B |               **47,064 B** |          **−51.7 KiB** |
+| Amiri latin / latin-ext (range-gated)  | 30,008 + 31,120 B | 0 (not included in subset) |              −59.7 KiB |
+| **Sum of all Amiri assets shipped**    |      **~269 KiB** |              **~93.9 KiB** | **~−175 KiB (~−65 %)** |
 
 The realistic per-paint number — Arabic-400 + Arabic-700, both preloaded — moves from ~204 KiB to ~93.9 KiB. That's a **~54 % reduction in Amiri first-paint cost** and a **~38 % reduction in total first-paint font payload** across all three families.
 
 ### JS bundle (no change expected)
 
-| Route | First Load JS (before) | First Load JS (after) |
-|-------|-----------------------:|----------------------:|
-| `/`                                | 131 kB | **131 kB** |
-| `/practice/[s]/[a]`                | 136 kB | **136 kB** |
-| `/practice/[s]/[a]/result/[jobId]` | 134 kB | **134 kB** |
+| Route                              | First Load JS (before) | First Load JS (after) |
+| ---------------------------------- | ---------------------: | --------------------: |
+| `/`                                |                 131 kB |            **131 kB** |
+| `/practice/[s]/[a]`                |                 136 kB |            **136 kB** |
+| `/practice/[s]/[a]/result/[jobId]` |                 134 kB |            **134 kB** |
 
 Font binaries don't appear in the First Load JS metric; the savings show up as fewer / smaller `_next/static/media/*.woff2` requests at runtime.
 

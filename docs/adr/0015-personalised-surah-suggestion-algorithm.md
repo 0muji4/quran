@@ -83,7 +83,7 @@ A dense map of all 114 surahs would mean the response is ~3 KB even for a brand-
 ### Positive
 
 - The Suggested card stops always pointing at Al-Ikhlas. New users see the canonical short surahs in order; returning users see the surah they are weakest on once they have scores.
-- The difficulty pill stops lying. A user who has scored 95 on Al-Fatihah no longer sees it labelled "Easy" because it is short — it is labelled "Easy" because *they* find it easy.
+- The difficulty pill stops lying. A user who has scored 95 on Al-Fatihah no longer sees it labelled "Easy" because it is short — it is labelled "Easy" because _they_ find it easy.
 - Web's `lib/classify.ts` shrinks to a display adapter, which is the right shape for a future i18n pass (ADR will follow for Phase 4.1).
 - `reason` plumbing is ready for Phase 4.4 telemetry without further BFF changes.
 

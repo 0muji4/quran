@@ -18,11 +18,13 @@ From ESLint v9.0.0, the default configuration file is now eslint.config.js.
 ```
 
 **原因分析**：
+
 - プロジェクトはESLint v9.11.1を使用
 - 設定ファイルは旧形式の`.eslintrc.cjs`のまま
 - ESLint v9では新しいFlat Config形式が必須
 
 **影響範囲**：
+
 - `packages/ui`
 - `apps/bff`
 - `apps/web`
@@ -36,6 +38,7 @@ From ESLint v9.0.0, the default configuration file is now eslint.config.js.
 本プロジェクトはpnpmワークスペースを使用したモノレポ構成で、ESLint設定も共有パッケージ（`@quran-project/eslint-config`）として管理されていました。
 
 **移行の優先順位**：
+
 1. 共有設定パッケージの変換
 2. 各パッケージの設定ファイル更新
 3. lint実行と問題修正
@@ -81,9 +84,9 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      'react': reactPlugin,
+      react: reactPlugin,
       'react-hooks': reactHooksPlugin,
-      'prettier': prettierPlugin
+      prettier: prettierPlugin
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
@@ -101,6 +104,7 @@ export default [
 ```
 
 **重要なポイント**：
+
 - ES Module形式（`import/export`）を使用
 - 配列形式で設定を記述
 - `globals`パッケージを使用してグローバル変数を定義
@@ -115,7 +119,7 @@ export default [
   "main": "index.js",
   "dependencies": {
     "@eslint/js": "^9.11.1",
-    "globals": "^15.12.0",
+    "globals": "^15.12.0"
     // ... その他の依存関係
   }
 }
@@ -141,6 +145,7 @@ export default [
 ```
 
 **変更内容**：
+
 - `.eslintrc.cjs`を削除
 - `eslint.config.js`を新規作成
 - スプレッド演算子で共有設定を展開
@@ -156,7 +161,7 @@ export default [
 'jwt' is not defined  no-undef
 ```
 
-**解決策**：[apps/bff/src/rest/__tests__/rest.integration.test.ts](apps/bff/src/rest/__tests__/rest.integration.test.ts)に不足していたインポートを追加
+**解決策**：[apps/bff/src/rest/**tests**/rest.integration.test.ts](apps/bff/src/rest/__tests__/rest.integration.test.ts)に不足していたインポートを追加
 
 ```typescript
 import jwt from 'jsonwebtoken';
@@ -202,7 +207,7 @@ expected "spy" to be called 1 times, but got 0 times
 
 **原因**：Vitestのモックパスが正しく解決されていない
 
-**解決策**：[apps/bff/src/server/__tests__/graphql.test.ts](apps/bff/src/server/__tests__/graphql.test.ts)でモック参照を`vi.mock()`の外部で作成
+**解決策**：[apps/bff/src/server/**tests**/graphql.test.ts](apps/bff/src/server/__tests__/graphql.test.ts)でモック参照を`vi.mock()`の外部で作成
 
 ```typescript
 const fetchSurahsFromBackend = vi.fn().mockResolvedValue(mockSurahs);
@@ -222,7 +227,7 @@ AggregateError: connect ECONNREFUSED ::1:5432
 
 **原因**：CI環境にPostgreSQLがインストールされていない
 
-**解決策**：[apps/bff/src/infra/__tests__/storage.integration.test.ts](apps/bff/src/infra/__tests__/storage.integration.test.ts)で接続可否をチェックし、条件付きスキップを実装
+**解決策**：[apps/bff/src/infra/**tests**/storage.integration.test.ts](apps/bff/src/infra/__tests__/storage.integration.test.ts)で接続可否をチェックし、条件付きスキップを実装
 
 ```typescript
 const isPostgresAvailable = async (): Promise<boolean> => {
@@ -288,7 +293,7 @@ Found multiple elements with the role "link"
 
 **原因**：テスト間でDOMがクリーンアップされていない
 
-**解決策**：[apps/web/app/__tests__/page.test.tsx](apps/web/app/__tests__/page.test.tsx)でテスト後のクリーンアップを追加
+**解決策**：[apps/web/app/**tests**/page.test.tsx](apps/web/app/__tests__/page.test.tsx)でテスト後のクリーンアップを追加
 
 ```typescript
 import { cleanup } from '@testing-library/react';
@@ -387,23 +392,26 @@ ESLint v9への移行を検討されている方の参考になれば幸いで�
 **変更されたファイル一覧**：
 
 作成：
+
 - [packages/eslint-config/index.js](packages/eslint-config/index.js)
 - [packages/ui/eslint.config.js](packages/ui/eslint.config.js)
 - [apps/bff/eslint.config.js](apps/bff/eslint.config.js)
 - [apps/web/eslint.config.js](apps/web/eslint.config.js)
 
 更新：
+
 - [packages/eslint-config/package.json](packages/eslint-config/package.json)
-- [apps/bff/src/rest/__tests__/rest.integration.test.ts](apps/bff/src/rest/__tests__/rest.integration.test.ts)
+- [apps/bff/src/rest/**tests**/rest.integration.test.ts](apps/bff/src/rest/__tests__/rest.integration.test.ts)
 - [apps/bff/src/jobs/scoringJobs.ts](apps/bff/src/jobs/scoringJobs.ts)
-- [apps/bff/src/infra/__tests__/storage.integration.test.ts](apps/bff/src/infra/__tests__/storage.integration.test.ts)
-- [apps/bff/src/server/__tests__/graphql.test.ts](apps/bff/src/server/__tests__/graphql.test.ts)
+- [apps/bff/src/infra/**tests**/storage.integration.test.ts](apps/bff/src/infra/__tests__/storage.integration.test.ts)
+- [apps/bff/src/server/**tests**/graphql.test.ts](apps/bff/src/server/__tests__/graphql.test.ts)
 - [apps/web/package.json](apps/web/package.json)
 - [apps/web/test/setup.ts](apps/web/test/setup.ts)
-- [apps/web/app/__tests__/page.test.tsx](apps/web/app/__tests__/page.test.tsx)
+- [apps/web/app/**tests**/page.test.tsx](apps/web/app/__tests__/page.test.tsx)
 - [apps/web/app/actions.ts](apps/web/app/actions.ts)
 
 削除：
+
 - packages/eslint-config/index.cjs
 - packages/ui/.eslintrc.cjs
 - apps/bff/.eslintrc.cjs

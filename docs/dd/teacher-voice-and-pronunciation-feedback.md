@@ -20,11 +20,11 @@
 
 しかし、現在のフローには以下の根本的なギャップがある。
 
-| ギャップ | 影響 |
-|---|---|
-| ユーザーが選択した āyah の **正しい発音を聴く手段がない** | 学習サイクルが成立しない。録音前にお手本がないため、ユーザーは自身の発音の妥当性を判断できない。 |
-| スコアリングが **テキストレベルの WER のみ** に基づく | 「正しい単語を発した」ことしか評価できず、makharij（調音点）や tajwīd（朗誦規則）といった発音そのものの精度を測れない。 |
-| 結果 UI が **語単位の正誤** を可視化していない | ユーザーはスコア値しか見られず、どの語をどう修正すべきかが分からない。 |
+| ギャップ                                                  | 影響                                                                                                                    |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| ユーザーが選択した āyah の **正しい発音を聴く手段がない** | 学習サイクルが成立しない。録音前にお手本がないため、ユーザーは自身の発音の妥当性を判断できない。                        |
+| スコアリングが **テキストレベルの WER のみ** に基づく     | 「正しい単語を発した」ことしか評価できず、makharij（調音点）や tajwīd（朗誦規則）といった発音そのものの精度を測れない。 |
+| 結果 UI が **語単位の正誤** を可視化していない            | ユーザーはスコア値しか見られず、どの語をどう修正すべきかが分からない。                                                  |
 
 ### 1.2 設計目標
 
@@ -49,13 +49,13 @@ PRD 不在による要件の曖昧さは、Section 9 で「Phase 1 完了後に 
 
 調査により、以下の既存資産が **次タスクの 8 割を既に実装済み** であることが判明した。これは本設計の前提条件として重要である。
 
-| 資産 | 場所 | 提供能力 |
-|---|---|---|
+| 資産                               | 場所                                                | 提供能力                                                                                                                        |
+| ---------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `PronunciationFeedback` GraphQL 型 | `packages/shared-ts/src/graphql/types.generated.ts` | `accuracy`, `completeness`, `fluency`, `overall`, `wordAlignments`, `referenceAudioUrl`, `wer`, `transcript` を保持するスロット |
-| `WordAlignment` GraphQL 型 | 同上 | `{ refWord, hypWord, op }`：WER アラインメント結果（insert/delete/sub）を表現可能 |
-| `ScoreSegment` GraphQL 型 | 同上 | `score`, `metrics: JSONObject`：語単位スコアの拡張用 escape hatch を保持 |
-| Faster-Whisper Worker | `apps/worker/python/main.py` | Arabic ASR、語単位タイムスタンプ生成、MinIO 連携、Postgres 書き戻し |
-| MinIO 基盤 | `ops/docker/compose.dev.yml` の `minio` サービス | 模範音声キャッシュに転用可能 |
+| `WordAlignment` GraphQL 型         | 同上                                                | `{ refWord, hypWord, op }`：WER アラインメント結果（insert/delete/sub）を表現可能                                               |
+| `ScoreSegment` GraphQL 型          | 同上                                                | `score`, `metrics: JSONObject`：語単位スコアの拡張用 escape hatch を保持                                                        |
+| Faster-Whisper Worker              | `apps/worker/python/main.py`                        | Arabic ASR、語単位タイムスタンプ生成、MinIO 連携、Postgres 書き戻し                                                             |
+| MinIO 基盤                         | `ops/docker/compose.dev.yml` の `minio` サービス    | 模範音声キャッシュに転用可能                                                                                                    |
 
 つまり、設計の力点は「新しい仕組みを建てる」ではなく「既存スキーマとパイプラインを **正しく満たす**」ことに置かれる。
 
@@ -176,18 +176,18 @@ flowchart LR
   Align -. "Phase 2: word ops" .-> PG
 ```
 
-*Fig 1. 全体構成。実線は Phase 1 のフロー、点線は Phase 2 で追加されるフロー。*
+_Fig 1. 全体構成。実線は Phase 1 のフロー、点線は Phase 2 で追加されるフロー。_
 
 ### 3.2 主要コンポーネント
 
-| コンポーネント | 役割 |
-|---|---|
-| `TeacherAudio.tsx` (web) | 選択中の āyah に対する模範音声を `<audio controls>` で再生する。録音中は一時停止する。 |
-| `refAudioKey()` (shared-ts) | (surahId, ayahNumber) → MinIO オブジェクトキーを返す純関数。web/bff/worker で共有。 |
-| `ReferenceAudioCache` (worker) | MinIO に該当キーが存在しなければ EveryAyah からダウンロードし保存する。signed URL を返す。 |
-| `BFF JobPayload Augmentation` | スコアリングジョブ作成時に `referenceAudioKey` を payload に含める。 |
-| `WordAligner` (worker, Phase 2) | ユーザー音声の Whisper 結果と模範音声の Whisper 結果を語単位でアラインし、`WordAlignment[]` を生成する。 |
-| `WordFeedbackOverlay` (web, Phase 2) | スコアリング結果の `wordAlignments` を読み、ayah テキストの語ごとに色分け表示する。 |
+| コンポーネント                       | 役割                                                                                                     |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `TeacherAudio.tsx` (web)             | 選択中の āyah に対する模範音声を `<audio controls>` で再生する。録音中は一時停止する。                   |
+| `refAudioKey()` (shared-ts)          | (surahId, ayahNumber) → MinIO オブジェクトキーを返す純関数。web/bff/worker で共有。                      |
+| `ReferenceAudioCache` (worker)       | MinIO に該当キーが存在しなければ EveryAyah からダウンロードし保存する。signed URL を返す。               |
+| `BFF JobPayload Augmentation`        | スコアリングジョブ作成時に `referenceAudioKey` を payload に含める。                                     |
+| `WordAligner` (worker, Phase 2)      | ユーザー音声の Whisper 結果と模範音声の Whisper 結果を語単位でアラインし、`WordAlignment[]` を生成する。 |
+| `WordFeedbackOverlay` (web, Phase 2) | スコアリング結果の `wordAlignments` を読み、ayah テキストの語ごとに色分け表示する。                      |
 
 ### 3.3 主要フロー
 
@@ -221,7 +221,7 @@ sequenceDiagram
   MinIO-->>TA: MP3 stream
 ```
 
-*Fig 2. 模範音声配信シーケンス。EveryAyah は cache miss 時のみ叩かれる。*
+_Fig 2. 模範音声配信シーケンス。EveryAyah は cache miss 時のみ叩かれる。_
 
 #### 3.3.2 Score path: 録音 → スコアリング（Phase 1 + Phase 2）
 
@@ -250,7 +250,7 @@ sequenceDiagram
   BFF-->>Web: PronunciationFeedback (incl. referenceAudioUrl, wordAlignments)
 ```
 
-*Fig 3. スコアリングシーケンス。実線が Phase 1 範囲、Note が Phase 2 範囲。*
+_Fig 3. スコアリングシーケンス。実線が Phase 1 範囲、Note が Phase 2 範囲。_
 
 ---
 
@@ -258,38 +258,38 @@ sequenceDiagram
 
 ### 4.1 模範音声の調達方法
 
-| 案 | Pros | Cons | 棄却/採用 |
-|---|---|---|---|
-| EveryAyah 直接利用 | 無料、Mu'allim あり、URL がテンプレート | SLA なし | **Phase 1 で採用**（MinIO キャッシュで SLA リスクを吸収） |
-| Quran.com API v4 | 語単位タイミングを取得可能 | API 呼び出し必須、JSON parsing | **Phase 2 候補**（Whisper 二重ランで代替可能なら不要） |
-| 自社録音 | ブランド整合、品質保証 | 月単位の制作コスト | 棄却 |
-| TTS (text-to-speech) | 即時実装可能 | tajwīd / makharij を表現できず学習目的に反する | 棄却 |
+| 案                   | Pros                                    | Cons                                           | 棄却/採用                                                 |
+| -------------------- | --------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| EveryAyah 直接利用   | 無料、Mu'allim あり、URL がテンプレート | SLA なし                                       | **Phase 1 で採用**（MinIO キャッシュで SLA リスクを吸収） |
+| Quran.com API v4     | 語単位タイミングを取得可能              | API 呼び出し必須、JSON parsing                 | **Phase 2 候補**（Whisper 二重ランで代替可能なら不要）    |
+| 自社録音             | ブランド整合、品質保証                  | 月単位の制作コスト                             | 棄却                                                      |
+| TTS (text-to-speech) | 即時実装可能                            | tajwīd / makharij を表現できず学習目的に反する | 棄却                                                      |
 
 ### 4.2 模範音声の配信経路
 
-| 案 | Pros | Cons | 棄却/採用 |
-|---|---|---|---|
-| ブラウザから EveryAyah 直接参照 | 最小実装 | Worker と URL が乖離、再現性なし | 棄却 |
-| BFF が EveryAyah を proxy で stream | URL 統一、CORS 不問 | Range request 実装、帯域コスト | 棄却（過剰実装） |
-| **BFF が MinIO キャッシュを介す（採用）** | URL 統一、再現性、Worker から同 URL を参照可能 | キャッシュ実装が必要 | **採用** |
+| 案                                        | Pros                                           | Cons                             | 棄却/採用        |
+| ----------------------------------------- | ---------------------------------------------- | -------------------------------- | ---------------- |
+| ブラウザから EveryAyah 直接参照           | 最小実装                                       | Worker と URL が乖離、再現性なし | 棄却             |
+| BFF が EveryAyah を proxy で stream       | URL 統一、CORS 不問                            | Range request 実装、帯域コスト   | 棄却（過剰実装） |
+| **BFF が MinIO キャッシュを介す（採用）** | URL 統一、再現性、Worker から同 URL を参照可能 | キャッシュ実装が必要             | **採用**         |
 
 ### 4.3 語単位アライメント手法（Phase 2）
 
-| 案 | Pros | Cons | 採用判定 |
-|---|---|---|---|
-| **Whisper 二重ラン + テキストアライメント（採用）** | 既存 Worker 拡張で実装可能、Phase 1 に追加コスト不要 | アコースティック比較ではない | Phase 2 で採用 |
-| Quran.com API の word segments を ground truth とする | ML 不要、決定論的 | 第三者依存が増える | Phase 2.5 で再検討 |
-| MFCC + DTW によるアコースティック比較 | 真の発音類似度を測れる | 実装コスト高、評価困難 | Phase 3 |
-| 専用 pronunciation assessment モデル（Microsoft Cognitive Services 等） | 完成度高い | 商用 API 課金、Quran 特化なし | 棄却 |
-| Tarteel.ai オープンモデル流用 | Quran 特化 | 別 ML スタック導入 | Phase 4 候補 |
+| 案                                                                      | Pros                                                 | Cons                          | 採用判定           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------- | ----------------------------- | ------------------ |
+| **Whisper 二重ラン + テキストアライメント（採用）**                     | 既存 Worker 拡張で実装可能、Phase 1 に追加コスト不要 | アコースティック比較ではない  | Phase 2 で採用     |
+| Quran.com API の word segments を ground truth とする                   | ML 不要、決定論的                                    | 第三者依存が増える            | Phase 2.5 で再検討 |
+| MFCC + DTW によるアコースティック比較                                   | 真の発音類似度を測れる                               | 実装コスト高、評価困難        | Phase 3            |
+| 専用 pronunciation assessment モデル（Microsoft Cognitive Services 等） | 完成度高い                                           | 商用 API 課金、Quran 特化なし | 棄却               |
+| Tarteel.ai オープンモデル流用                                           | Quran 特化                                           | 別 ML スタック導入            | Phase 4 候補       |
 
 ### 4.4 評価粒度
 
-| 粒度 | Pros | Cons | 採用判定 |
-|---|---|---|---|
-| **語 (word) 単位（採用）** | 既存スキーマと整合、Whisper の出力単位、UI 表現が直感的 | tajwīd の細部までは捉えられない | Phase 2 で採用 |
-| 音節 (syllable) 単位 | より細かいフィードバック | Arabic syllabifier 必須、UI が煩雑、ユーザー行動可能性が低い | 棄却（Phase 4 以降） |
-| 音素 (phoneme) 単位 | makharij を直接評価できる | phonemizer + acoustic model + 評価 UI が必要 | Phase 4 以降 |
+| 粒度                       | Pros                                                    | Cons                                                         | 採用判定             |
+| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------ | -------------------- |
+| **語 (word) 単位（採用）** | 既存スキーマと整合、Whisper の出力単位、UI 表現が直感的 | tajwīd の細部までは捉えられない                              | Phase 2 で採用       |
+| 音節 (syllable) 単位       | より細かいフィードバック                                | Arabic syllabifier 必須、UI が煩雑、ユーザー行動可能性が低い | 棄却（Phase 4 以降） |
+| 音素 (phoneme) 単位        | makharij を直接評価できる                               | phonemizer + acoustic model + 評価 UI が必要                 | Phase 4 以降         |
 
 ---
 
@@ -308,6 +308,7 @@ sequenceDiagram
 **Section 2 対応**: 2.1（データパス一貫性）
 
 **Design**:
+
 - 配置: `packages/shared-ts/src/referenceAudio.ts`
 - Signature: `(surahId: number, ayahNumber: number) => string`
 - 副次関数: `everyAyahSourceUrl(surahId, ayahNumber): string` も同ファイルに定義し、cache miss 時のフォールバック取得元を一元管理する。
@@ -324,12 +325,14 @@ sequenceDiagram
 **Section 2 対応**: 2.2（第三者依存リスク）, 2.3（再現性）
 
 **Design**:
+
 - 配置: `apps/bff/src/rest/rest.ts` に追加
 - Endpoint: `GET /api/reference-audio?surah=N&ayah=M`
 - レスポンス: `{ url: string, expiresAt: string }`
 - 内部処理: `ReferenceAudioCache.ensure(surah, ayah)` を呼び、cache miss なら EveryAyah から取得して MinIO に保存。MinIO の signed GET URL（TTL 5分）を返す。
 
 **Failure handling**:
+
 - EveryAyah 404 → 503 with `{ error: "REFERENCE_UNAVAILABLE" }`
 - MinIO 失敗 → 502 with `{ error: "STORAGE_UNAVAILABLE" }`
 - 範囲外 surah/ayah → 400 with `{ error: "INVALID_AYAH" }`
@@ -343,6 +346,7 @@ sequenceDiagram
 **Section 2 対応**: 2.2, 2.3, 2.7
 
 **Design**:
+
 - 言語別実装:
   - BFF: `apps/bff/src/infra/referenceAudio.ts`（既存 `storage.ts` の MinIO クライアントを再利用）
   - Worker: `apps/worker/python/reference_audio.py`（既存 MinIO クライアント再利用）
@@ -354,6 +358,7 @@ sequenceDiagram
 - HTTP timeout: EveryAyah への取得は 10 秒 timeout、3 回リトライ（exponential backoff）。
 
 **Failure handling**:
+
 - EveryAyah 連続失敗 → 例外を上位に伝播、ユーザーには 5xx を返す
 - MinIO PUT 失敗 → 同上
 - リトライ中の重複 PUT は冪等（同一キー）なので問題なし
@@ -367,6 +372,7 @@ sequenceDiagram
 **Section 2 対応**: 2.4（マイク汚染）, 2.8（autoplay）
 
 **Design**:
+
 - 配置: `apps/web/app/record/TeacherAudio.tsx`
 - Props: `{ surahId: number; ayahNumber: number; isRecording: boolean }`
 - 内部処理:
@@ -378,6 +384,7 @@ sequenceDiagram
 - onError ハンドラ: 取得失敗時は「Reference audio is currently unavailable.」のフォールバック UI を表示
 
 **Failure handling**:
+
 - BFF 5xx → フォールバック UI 表示、エラーは telemetry に送出
 - ブラウザの autoplay policy → ユーザーが再生ボタンを押すまで音は鳴らない設計なので問題なし
 
@@ -390,11 +397,13 @@ sequenceDiagram
 **Section 2 対応**: 2.1, 2.5
 
 **Design**:
+
 - 変更箇所: `apps/bff/src/jobs/scoringJobs.ts`
 - 既存ジョブペイロード `{ session_id, audio_key, ayah_id, expected_text_ar }` に **`reference_audio_key: string`** を追加
 - BFF はジョブ作成時点で `ReferenceAudioCache.ensure()` を呼び、cache が確実に存在する状態でキーを enqueue する（Worker 側で取得する設計にすると、Worker が EveryAyah に直接アクセスする結合が生まれるため避ける）
 
 **Failure handling**:
+
 - cache 確保に失敗 → ジョブ作成自体を失敗させ、ユーザーに 503 を返す（Phase 1 は厳格モード）
 - Phase 2 でこの厳格性を緩める可能性あり（best-effort で `reference_audio_key: null` を許す）
 
@@ -407,6 +416,7 @@ sequenceDiagram
 **Section 2 対応**: 2.5
 
 **Design**:
+
 - 配置: `apps/worker/python/main.py` を拡張（または `reference_pipeline.py` 切り出し）
 - 入力: `reference_audio_key` (MinIO key)
 - 処理:
@@ -428,6 +438,7 @@ CREATE TABLE reference_alignments (
 ```
 
 **Failure handling**:
+
 - Whisper 失敗 → ジョブ全体を FAILED にせず、`wordAlignments` を空配列で返す（テキスト WER は維持）
 - DB 書き込み失敗 → ジョブ失敗
 
@@ -440,12 +451,14 @@ CREATE TABLE reference_alignments (
 **Section 2 対応**: 2.5
 
 **Design**:
+
 - 配置: `apps/worker/python/word_aligner.py`
 - アルゴリズム: Levenshtein 距離ベースの sequence alignment（Python `difflib.SequenceMatcher` か `python-Levenshtein` を採用）
 - 出力: `[{ refWord, hypWord, op: 'match' | 'sub' | 'ins' | 'del' }, ...]`
 - 既存スキーマ `WordAlignment.op` の型は `Scalars['String']` なので追加マイグレーション不要
 
 **Failure handling**:
+
 - 一方の transcription が空 → 全 `op: 'del'` または `'ins'` で埋める
 - 入力が極端に長い (> 200 単語) → そのまま処理（Quran 1 ayah は最大 ~80 単語程度なので想定外）
 
@@ -458,6 +471,7 @@ CREATE TABLE reference_alignments (
 **Section 2 対応**: 2.5（UI 表現として）
 
 **Design**:
+
 - 配置: `apps/web/app/record/WordFeedbackOverlay.tsx`
 - Props: `{ ayahWords: string[]; alignments: WordAlignment[] }`
 - 表示ルール:
@@ -468,6 +482,7 @@ CREATE TABLE reference_alignments (
 - 各語は click 可能。click すると模範音声の該当語の `start_ms`〜`end_ms` 区間のみ再生する（`reference_alignments.word_alignments` から取得）。
 
 **Failure handling**:
+
 - `alignments` が空 → 「語単位フィードバックは利用できません」と表示。ただしテキスト WER は別 UI で表示する。
 
 **Scope boundaries**: A/B 同時再生、波形可視化は Phase 3 以降。
@@ -476,17 +491,17 @@ CREATE TABLE reference_alignments (
 
 ## 6. Failure & Edge Cases
 
-| Case | What happens | Expected behavior (current scope) | Residual risk | Future mitigation |
-|---|---|---|---|---|
-| EveryAyah 404 (該当 ayah の MP3 不在) | cache miss 時の取得失敗 | BFF が 503 を返す。UI は「reference audio unavailable」表示 | 一部 ayah で永続的に再生不可 | Phase 4 で代替 reciter にフォールバック |
-| EveryAyah ダウン | 全 cache miss が失敗 | 既存 cache hit のみ動作。新規 ayah は 503 | 新規 ayah が利用不可 | Phase 4 で複数 reciter ソース冗長化 |
-| MinIO ダウン | cache 操作全体が失敗 | BFF が 502 を返す。ジョブ作成も失敗 | サービス全体停止 | 既存 MinIO 障害対応に準ずる |
-| 録音中に模範音声を再生 | マイクが模範音声を拾う | `TeacherAudio` が `isRecording` を監視し自動停止する | ユーザーがブラウザ別タブで再生する経路は防げない | Phase 3 で録音時に音声出力デバイスを制御する案を検討 |
-| 同一 ayah への同時 cache miss | 重複 PUT が発生 | 後勝ちで上書き、コンテンツは同一なので無害 | なし | — |
-| Whisper が模範音声で失敗 (Phase 2) | reference_alignments 生成不可 | 当該ジョブの `wordAlignments` を空配列で返す。WER は通常通り計算 | 当該 ayah の語単位 UI が常に空 | 失敗結果を DB に negative-cache し、別 reciter で再試行 |
-| ユーザー音声と模範音声で語数差が極端 | 全 ins または全 del | アライメント結果として正常に表現 | UI が赤一色になりユーザー体験が悪い | Phase 3 で「録音内容が ayah と異なります」警告を別途出す |
-| ブラウザ autoplay block | user gesture 前は再生されない | デザイン通り（ボタン押下が前提） | なし | — |
-| Postgres マイグレーション失敗 (Phase 2 移行時) | `reference_alignments` 不在 | Worker が空配列で返却（5.7 失敗ハンドリング） | Phase 2 機能が無効化されるが Phase 1 機能は継続 | デプロイ手順でマイグレーションを先行する |
+| Case                                           | What happens                  | Expected behavior (current scope)                                | Residual risk                                    | Future mitigation                                        |
+| ---------------------------------------------- | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| EveryAyah 404 (該当 ayah の MP3 不在)          | cache miss 時の取得失敗       | BFF が 503 を返す。UI は「reference audio unavailable」表示      | 一部 ayah で永続的に再生不可                     | Phase 4 で代替 reciter にフォールバック                  |
+| EveryAyah ダウン                               | 全 cache miss が失敗          | 既存 cache hit のみ動作。新規 ayah は 503                        | 新規 ayah が利用不可                             | Phase 4 で複数 reciter ソース冗長化                      |
+| MinIO ダウン                                   | cache 操作全体が失敗          | BFF が 502 を返す。ジョブ作成も失敗                              | サービス全体停止                                 | 既存 MinIO 障害対応に準ずる                              |
+| 録音中に模範音声を再生                         | マイクが模範音声を拾う        | `TeacherAudio` が `isRecording` を監視し自動停止する             | ユーザーがブラウザ別タブで再生する経路は防げない | Phase 3 で録音時に音声出力デバイスを制御する案を検討     |
+| 同一 ayah への同時 cache miss                  | 重複 PUT が発生               | 後勝ちで上書き、コンテンツは同一なので無害                       | なし                                             | —                                                        |
+| Whisper が模範音声で失敗 (Phase 2)             | reference_alignments 生成不可 | 当該ジョブの `wordAlignments` を空配列で返す。WER は通常通り計算 | 当該 ayah の語単位 UI が常に空                   | 失敗結果を DB に negative-cache し、別 reciter で再試行  |
+| ユーザー音声と模範音声で語数差が極端           | 全 ins または全 del           | アライメント結果として正常に表現                                 | UI が赤一色になりユーザー体験が悪い              | Phase 3 で「録音内容が ayah と異なります」警告を別途出す |
+| ブラウザ autoplay block                        | user gesture 前は再生されない | デザイン通り（ボタン押下が前提）                                 | なし                                             | —                                                        |
+| Postgres マイグレーション失敗 (Phase 2 移行時) | `reference_alignments` 不在   | Worker が空配列で返却（5.7 失敗ハンドリング）                    | Phase 2 機能が無効化されるが Phase 1 機能は継続  | デプロイ手順でマイグレーションを先行する                 |
 
 ---
 
@@ -496,13 +511,13 @@ CREATE TABLE reference_alignments (
 
 **Deliverable**: 録音ページで模範音声を再生でき、スコアリングジョブに `referenceAudioKey` が乗る。
 
-| Step | Scope | 依存 |
-|---|---|---|
-| 1.1 | `shared-ts` に `refAudioKey` / `everyAyahSourceUrl` 追加 | なし |
-| 1.2 | BFF に `ReferenceAudioCache` + `GET /api/reference-audio` 実装 | 1.1 |
-| 1.3 | BFF ジョブ作成時に `referenceAudioKey` を enqueue | 1.1, 1.2 |
-| 1.4 | `TeacherAudio.tsx` 実装と `RecorderClient.tsx` への統合 | 1.2 |
-| 1.5 | E2E 確認: 任意 ayah で再生 → 録音 → ジョブに refKey が含まれることをログで確認 | 1.1〜1.4 |
+| Step | Scope                                                                          | 依存     |
+| ---- | ------------------------------------------------------------------------------ | -------- |
+| 1.1  | `shared-ts` に `refAudioKey` / `everyAyahSourceUrl` 追加                       | なし     |
+| 1.2  | BFF に `ReferenceAudioCache` + `GET /api/reference-audio` 実装                 | 1.1      |
+| 1.3  | BFF ジョブ作成時に `referenceAudioKey` を enqueue                              | 1.1, 1.2 |
+| 1.4  | `TeacherAudio.tsx` 実装と `RecorderClient.tsx` への統合                        | 1.2      |
+| 1.5  | E2E 確認: 任意 ayah で再生 → 録音 → ジョブに refKey が含まれることをログで確認 | 1.1〜1.4 |
 
 **見積**: 1 PR、~150 行、~2 営業日。
 
@@ -510,14 +525,14 @@ CREATE TABLE reference_alignments (
 
 **Deliverable**: 録音結果に対し語単位の正誤がカラー表示され、語クリックで模範音声の該当区間が再生できる。
 
-| Step | Scope | 依存 |
-|---|---|---|
-| 2.1 | `reference_alignments` テーブル追加（migration） | Phase 1 完了 |
-| 2.2 | Worker に `Reference Whisper Pipeline` 実装（5.7） | 2.1 |
-| 2.3 | Worker に `WordAligner` 実装（5.8） | 2.2 |
-| 2.4 | Worker → Postgres `PronunciationFeedback.wordAlignments` 書き込み | 2.3 |
-| 2.5 | `WordFeedbackOverlay.tsx` 実装、`RecorderClient.tsx` への統合 | 2.4 |
-| 2.6 | 語クリックで模範音声の該当区間再生 | 2.5、`reference_alignments` API |
+| Step | Scope                                                             | 依存                            |
+| ---- | ----------------------------------------------------------------- | ------------------------------- |
+| 2.1  | `reference_alignments` テーブル追加（migration）                  | Phase 1 完了                    |
+| 2.2  | Worker に `Reference Whisper Pipeline` 実装（5.7）                | 2.1                             |
+| 2.3  | Worker に `WordAligner` 実装（5.8）                               | 2.2                             |
+| 2.4  | Worker → Postgres `PronunciationFeedback.wordAlignments` 書き込み | 2.3                             |
+| 2.5  | `WordFeedbackOverlay.tsx` 実装、`RecorderClient.tsx` への統合     | 2.4                             |
+| 2.6  | 語クリックで模範音声の該当区間再生                                | 2.5、`reference_alignments` API |
 
 **見積**: 2〜3 PR、~400 行、~5〜7 営業日。
 
@@ -529,15 +544,15 @@ CREATE TABLE reference_alignments (
 
 ## 8. Future Work
 
-| 項目 | 棄却理由 | 再検討トリガー |
-|---|---|---|
-| アコースティック比較（MFCC + DTW など） | Phase 1〜2 では over-scope。テキストアラインメントで MVP 価値を検証してから判断 | Phase 2 ローンチ後、ユーザーから「単語は合ってるのに発音が違うことを指摘してほしい」要望が出た時点 |
-| Reciter ピッカー | 学習目的の MVP では Husary Mu'allim 一択で十分 | ユーザー比 30% 以上が「別 reciter で聴きたい」要望を出した時点 |
-| Quran.com API v4 への migration | Whisper 二重ランで語タイミングは取得可能。Quran.com 切替は accuracy 向上策 | Whisper 結果の語境界エラー率が 5% を超えた時点 |
-| 音節・音素単位フィードバック | Arabic syllabifier / phonemizer の導入コスト大、UI 複雑度大 | tajwīd 教師との連携プロジェクトが立ち上がった時点 |
-| Tarteel.ai 等の Quran 特化 ASR/PA モデル流用 | 別 ML スタック導入コスト | 内製モデルの精度ボトルネックが顕在化した時点 |
-| オフライン対応（PWA + IndexedDB cache） | MVP では不要 | モバイル版 PWA 化の意思決定がなされた時点 |
-| 録音中の他タブからの音声再生検出 | 完全な検出は不可能 | 実運用でデータ汚染が観測された時点 |
+| 項目                                         | 棄却理由                                                                        | 再検討トリガー                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| アコースティック比較（MFCC + DTW など）      | Phase 1〜2 では over-scope。テキストアラインメントで MVP 価値を検証してから判断 | Phase 2 ローンチ後、ユーザーから「単語は合ってるのに発音が違うことを指摘してほしい」要望が出た時点 |
+| Reciter ピッカー                             | 学習目的の MVP では Husary Mu'allim 一択で十分                                  | ユーザー比 30% 以上が「別 reciter で聴きたい」要望を出した時点                                     |
+| Quran.com API v4 への migration              | Whisper 二重ランで語タイミングは取得可能。Quran.com 切替は accuracy 向上策      | Whisper 結果の語境界エラー率が 5% を超えた時点                                                     |
+| 音節・音素単位フィードバック                 | Arabic syllabifier / phonemizer の導入コスト大、UI 複雑度大                     | tajwīd 教師との連携プロジェクトが立ち上がった時点                                                  |
+| Tarteel.ai 等の Quran 特化 ASR/PA モデル流用 | 別 ML スタック導入コスト                                                        | 内製モデルの精度ボトルネックが顕在化した時点                                                       |
+| オフライン対応（PWA + IndexedDB cache）      | MVP では不要                                                                    | モバイル版 PWA 化の意思決定がなされた時点                                                          |
+| 録音中の他タブからの音声再生検出             | 完全な検出は不可能                                                              | 実運用でデータ汚染が観測された時点                                                                 |
 
 ---
 

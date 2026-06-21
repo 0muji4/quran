@@ -23,16 +23,14 @@ export default defineConfig({
   workers: 1,
 
   // Reporters
-  reporter: process.env.CI
-    ? [['html'], ['github']]
-    : [['html'], ['list']],
+  reporter: process.env.CI ? [['html'], ['github']] : [['html'], ['list']],
 
   // Global test timeout (60s per test - scoring jobs are slow)
   timeout: 60000,
 
   // Assertion timeout
   expect: {
-    timeout: 10000,
+    timeout: 10000
   },
 
   // Shared test configuration
@@ -58,7 +56,7 @@ export default defineConfig({
     // webkit-desktop) intentionally omit it.
 
     // Viewport size
-    viewport: { width: 1280, height: 720 },
+    viewport: { width: 1280, height: 720 }
   },
 
   // Project layout
@@ -82,11 +80,11 @@ export default defineConfig({
           args: [
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            '--allow-file-access',
-          ],
+            '--allow-file-access'
+          ]
         },
-        permissions: ['microphone'],
-      },
+        permissions: ['microphone']
+      }
     },
     {
       name: 'mobile-iphone',
@@ -98,11 +96,11 @@ export default defineConfig({
           args: [
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            '--allow-file-access',
-          ],
+            '--allow-file-access'
+          ]
         },
-        permissions: ['microphone'],
-      },
+        permissions: ['microphone']
+      }
     },
     {
       name: 'tablet-ipad',
@@ -114,11 +112,11 @@ export default defineConfig({
           args: [
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            '--allow-file-access',
-          ],
+            '--allow-file-access'
+          ]
         },
-        permissions: ['microphone'],
-      },
+        permissions: ['microphone']
+      }
     },
     {
       name: 'desktop-1024',
@@ -130,26 +128,26 @@ export default defineConfig({
           args: [
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            '--allow-file-access',
-          ],
+            '--allow-file-access'
+          ]
         },
-        permissions: ['microphone'],
-      },
+        permissions: ['microphone']
+      }
     },
     ...(process.env.E2E_CROSS_BROWSER === 'true'
       ? [
           {
             name: 'firefox-desktop',
             testIgnore: /[\\/](mobile|visual|a11y)[\\/]|recording-flow\.spec\.ts$/,
-            use: { ...devices['Desktop Firefox'] },
+            use: { ...devices['Desktop Firefox'] }
           },
           {
             name: 'webkit-desktop',
             testIgnore: /[\\/](mobile|visual|a11y)[\\/]|recording-flow\.spec\.ts$/,
-            use: { ...devices['Desktop Safari'] },
-          },
+            use: { ...devices['Desktop Safari'] }
+          }
         ]
-      : []),
+      : [])
   ],
 
   // Start Docker Compose stack if not already running
@@ -161,6 +159,6 @@ export default defineConfig({
         timeout: 180000, // 3 minutes for full stack startup
         reuseExistingServer: true,
         stdout: 'pipe',
-        stderr: 'pipe',
-      },
+        stderr: 'pipe'
+      }
 });

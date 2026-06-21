@@ -38,6 +38,7 @@ reach the prod-ish `web` service rather than a `pnpm dev` host process.
 2. **Build and start `web` from the current source.** The image cache
    may be stale (the Tilawah redesign in PR #87 moved many surfaces),
    so always pass `--build`:
+
    ```bash
    docker compose -f ops/docker/compose.dev.yml up -d --wait --build web
    ```
@@ -47,6 +48,7 @@ reach the prod-ish `web` service rather than a `pnpm dev` host process.
    Use the same Playwright version as the project (currently 1.57.0).
    `CI=1` skips the compose-managed webServer block in
    `playwright.config.ts`:
+
    ```bash
    docker run --rm \
      --network=host \
@@ -57,6 +59,7 @@ reach the prod-ish `web` service rather than a `pnpm dev` host process.
      mcr.microsoft.com/playwright:v1.57.0-jammy \
      bash -lc "npx playwright test e2e/tests/visual/ --update-snapshots --project=chromium-desktop"
    ```
+
    The image already has `@playwright/test` baked in, so `pnpm install`
    is not required.
 

@@ -15,21 +15,21 @@ systematic な逸脱は **1 点のみ** で、オブジェクト型を `interfac
 
 ## ルール別 適合状況
 
-| ルール | 状況 | 対応 |
-| --- | --- | --- |
-| `interface` vs `type`（オブジェクト型） | 逸脱: 約 99 箇所が `type X = {}` | **修正済み** — `interface` に変換 |
-| `import type`（型のみ import） | おおむね適合 | enforce 追加 + 端数を autofix |
-| `var` 不使用 | 適合（0 件） | `no-var` で固定 |
-| `prefer-const` | 適合 | `prefer-const` で固定 |
-| `===` / `!==` | 適合（`== null` のみ。Google 公認の例外） | `eqeqeq: smart` で固定 |
-| 命名規約（UpperCamelCase / lowerCamelCase / CONSTANT_CASE） | 適合 | 変更なし |
-| namespace import (`import * as`) | 適合（0 件） | 変更なし |
-| `require()` | 適合（0 件） | 変更なし |
-| `enum` | 適合（手書きコードに `enum` なし。リテラルユニオンを使用） | 変更なし |
-| `any` | 限定的に使用（すべて文書化済み or 生成コード） | 受け入れ（下記参照） |
-| non-null assertion (`!`) | **修正済み** — 66 件を排除 | `no-non-null-assertion: error` で強制 |
-| default export | **修正済み** — 原則禁止。フレームワーク必須パスのみ許可 | `no-restricted-syntax` で強制 |
-| エラーハンドリング / 可視性修飾子 / JSDoc | 適合 | 変更なし |
+| ルール                                                      | 状況                                                       | 対応                                  |
+| ----------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------- |
+| `interface` vs `type`（オブジェクト型）                     | 逸脱: 約 99 箇所が `type X = {}`                           | **修正済み** — `interface` に変換     |
+| `import type`（型のみ import）                              | おおむね適合                                               | enforce 追加 + 端数を autofix         |
+| `var` 不使用                                                | 適合（0 件）                                               | `no-var` で固定                       |
+| `prefer-const`                                              | 適合                                                       | `prefer-const` で固定                 |
+| `===` / `!==`                                               | 適合（`== null` のみ。Google 公認の例外）                  | `eqeqeq: smart` で固定                |
+| 命名規約（UpperCamelCase / lowerCamelCase / CONSTANT_CASE） | 適合                                                       | 変更なし                              |
+| namespace import (`import * as`)                            | 適合（0 件）                                               | 変更なし                              |
+| `require()`                                                 | 適合（0 件）                                               | 変更なし                              |
+| `enum`                                                      | 適合（手書きコードに `enum` なし。リテラルユニオンを使用） | 変更なし                              |
+| `any`                                                       | 限定的に使用（すべて文書化済み or 生成コード）             | 受け入れ（下記参照）                  |
+| non-null assertion (`!`)                                    | **修正済み** — 66 件を排除                                 | `no-non-null-assertion: error` で強制 |
+| default export                                              | **修正済み** — 原則禁止。フレームワーク必須パスのみ許可    | `no-restricted-syntax` で強制         |
+| エラーハンドリング / 可視性修飾子 / JSDoc                   | 適合                                                       | 変更なし                              |
 
 ## 実施した変更
 

@@ -26,16 +26,14 @@ export default defineConfig({
   workers: 1,
 
   // Reporters
-  reporter: process.env.CI
-    ? [['html'], ['github']]
-    : [['html'], ['list']],
+  reporter: process.env.CI ? [['html'], ['github']] : [['html'], ['list']],
 
   // Global test timeout (60s per test - scoring jobs are slow)
   timeout: 60000,
 
   // Assertion timeout
   expect: {
-    timeout: 10000,
+    timeout: 10000
   },
 
   // Shared test configuration
@@ -56,7 +54,7 @@ export default defineConfig({
     permissions: ['microphone'],
 
     // Viewport size
-    viewport: { width: 1280, height: 720 },
+    viewport: { width: 1280, height: 720 }
   },
 
   // Project layout
@@ -68,23 +66,23 @@ export default defineConfig({
     {
       name: 'chromium-desktop',
       testIgnore: /[\\/]mobile[\\/]/,
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'] }
     },
     {
       name: 'mobile-iphone',
       testMatch: /[\\/]mobile[\\/]/,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 375, height: 812 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 375, height: 812 } }
     },
     {
       name: 'tablet-ipad',
       testMatch: /[\\/]mobile[\\/]/,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } }
     },
     {
       name: 'desktop-1024',
       testMatch: /[\\/]mobile[\\/]/,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } },
-    },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } }
+    }
   ],
 
   // Start Docker Compose stack if not already running
@@ -94,6 +92,6 @@ export default defineConfig({
     timeout: 180000, // 3 minutes for full stack startup
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
-    stderr: 'pipe',
-  },
+    stderr: 'pipe'
+  }
 });

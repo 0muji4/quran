@@ -40,13 +40,13 @@ onTTFB(dispatch);
 
 Distinct from the `web.ui.*` (user-driven) event namespace introduced in ADR 0016:
 
-| Vital                | Span name           |
-|----------------------|---------------------|
-| Largest Contentful Paint | `web.vitals.lcp`  |
-| First Contentful Paint   | `web.vitals.fcp`  |
-| Interaction to Next Paint| `web.vitals.inp`  |
-| Cumulative Layout Shift  | `web.vitals.cls`  |
-| Time to First Byte       | `web.vitals.ttfb` |
+| Vital                     | Span name         |
+| ------------------------- | ----------------- |
+| Largest Contentful Paint  | `web.vitals.lcp`  |
+| First Contentful Paint    | `web.vitals.fcp`  |
+| Interaction to Next Paint | `web.vitals.inp`  |
+| Cumulative Layout Shift   | `web.vitals.cls`  |
+| Time to First Byte        | `web.vitals.ttfb` |
 
 Keeping `vitals` and `ui` under the same `web.*` prefix lets the OTel collector / Loki / Grafana route them to one perf-only dashboard later without parsing attributes. The two sub-namespaces let downstream filtering distinguish user-action timings from auto-captured paint metrics.
 
@@ -84,11 +84,11 @@ This PR ships measurement, not gates. Reasons:
 
 Measured against the post-4.3-A/B baseline:
 
-| Route                              | Before (4.3-A)  | After (4.3-C)  |
-|------------------------------------|----------------:|---------------:|
-| `/` First Load JS                  | 130 kB          | **131 kB (+1)**|
-| `/practice/[s]/[a]` First Load JS  | 136 kB          | 136 kB (no change at print precision) |
-| `app/layout-*.js` (raw, per-route) | 7.4 kB          | **14.4 kB (+7 raw ≈ +3 gzipped)** |
+| Route                              | Before (4.3-A) |                         After (4.3-C) |
+| ---------------------------------- | -------------: | ------------------------------------: |
+| `/` First Load JS                  |         130 kB |                       **131 kB (+1)** |
+| `/practice/[s]/[a]` First Load JS  |         136 kB | 136 kB (no change at print precision) |
+| `app/layout-*.js` (raw, per-route) |         7.4 kB |     **14.4 kB (+7 raw ≈ +3 gzipped)** |
 
 `web-vitals@4.2.4` is ~3 kB gzipped including its `PerformanceObserver` plumbing. It lands in the root layout chunk because `WebTelemetryInit` is mounted in `app/layout.tsx`. The shared 102 kB framework / OTel-base chunks are unchanged.
 
@@ -111,7 +111,7 @@ Measured against the post-4.3-A/B baseline:
 
 - Real-user data turns out to be too sparse to derive percentiles → revisit and add Lighthouse CI as a synthetic complement.
 - `web-vitals` releases a major version with breaking changes to the `Metric` shape → re-pin and audit the test snapshot.
-- A future feature *needs* attribution data (element-level breakdowns) → re-evaluate the PII boundary; importing `web-vitals/attribution` would re-open this ADR.
+- A future feature _needs_ attribution data (element-level breakdowns) → re-evaluate the PII boundary; importing `web-vitals/attribution` would re-open this ADR.
 
 ## References
 
