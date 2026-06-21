@@ -160,8 +160,10 @@ const avatarClass = css({
   width: '[36px]',
   height: '[36px]',
   borderRadius: 'pill',
-  backgroundColor: 'tan',
-  color: 'ink.strong',
+  // Pale-mint disc with deep-green initial: a green-family avatar that
+  // stays legible and stands out against the dark forest-green nav.
+  backgroundColor: 'mint.bg',
+  color: 'teal.deep',
   fontWeight: 600,
   fontSize: '[14px]'
 });

@@ -951,7 +951,7 @@
 }
 
 .scoreDialProgress {
-  stroke: var(--colors-tan, #c8a566);
+  stroke: var(--colors-gold-surface, #b8893c);
   transition: stroke-dashoffset 400ms ease;
 }
 
