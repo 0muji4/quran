@@ -31,20 +31,6 @@ Local setup, build, and test instructions live next to the code they describe:
 | Android | [`apps/android/README.md`](./apps/android/README.md) |
 | iOS | [`apps/ios/README.md`](./apps/ios/README.md) |
 
-## Prerequisites
-
-Use **Node 20** locally (matches CI). `.node-version` is gitignored on purpose, so
-each developer pins the version in their own checkout rather than committing it.
-With nodenv:
-
-```bash
-nodenv local 20.20.0   # writes a local, gitignored .node-version
-```
-
-Other version managers (`fnm`, `nvm`, `asdf`) read `.node-version` too. Without a
-Node 20 selected, `pnpm` resolves against the wrong runtime and fails with
-`pnpm: command not found`.
-
 ## Quick Start
 
 To bring up the entire stack:
