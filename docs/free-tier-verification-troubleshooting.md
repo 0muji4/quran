@@ -25,12 +25,12 @@ Python worker (faster-whisper) を廃止し、Go backend が Google Cloud Speech
 
 最終的に動いた構成は次の通り。
 
-| サービス | 用途 | 月額 | 選定理由 |
-|---|---|---|---|
-| GCP Speech-to-Text v2 (`chirp_3`, `us` multi-region, `ar-SA`) | Arabic transcribe | $0 (60 min 無料枠) | Speech v2 の中で Arabic を扱える唯一のモデル。Chirp 2 は 16 言語のみで Arabic 非対応 |
-| Neon Postgres 18 (Singapore) | DB | $0 (free tier) | Render と同リージョン、Postgres 18 が default で選べる |
-| Cloudflare R2 (`tilawah-dev-uploads`) | 音声 / reference audio | $0 (<10 GB) | S3 互換、egress 無料、API token 単位の権限分離 |
-| Render Web Service × 2 (Singapore) | backend (Go) + bff (Node) | $0 (free tier) | Docker deploy が無料、secret file mount あり、Singapore region が Neon と同一 |
+| サービス                                                      | 用途                      | 月額               | 選定理由                                                                             |
+| ------------------------------------------------------------- | ------------------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| GCP Speech-to-Text v2 (`chirp_3`, `us` multi-region, `ar-SA`) | Arabic transcribe         | $0 (60 min 無料枠) | Speech v2 の中で Arabic を扱える唯一のモデル。Chirp 2 は 16 言語のみで Arabic 非対応 |
+| Neon Postgres 18 (Singapore)                                  | DB                        | $0 (free tier)     | Render と同リージョン、Postgres 18 が default で選べる                               |
+| Cloudflare R2 (`tilawah-dev-uploads`)                         | 音声 / reference audio    | $0 (<10 GB)        | S3 互換、egress 無料、API token 単位の権限分離                                       |
+| Render Web Service × 2 (Singapore)                            | backend (Go) + bff (Node) | $0 (free tier)     | Docker deploy が無料、secret file mount あり、Singapore region が Neon と同一        |
 
 GCP の予算アラートを $1 で設定して、Speech-to-Text の課金ミス (Preview 期間の rate 誤り等) で課金事故が起きても即座に気付ける状態にしている。
 
@@ -111,19 +111,19 @@ Apollo Kotlin v4 は HTTP interceptor を `addHttpInterceptor` でビルダー�
 
 PR 単位の時系列は次の通り。
 
-| # | PR | 内容 | 区分 |
-|---|---|---|---|
-| 1 | [#429](https://github.com/0muji4/quran-project/pull/429) | `apps/backend/internal/arabic`: normalize / WER / alignment を Python から Go に移植 | scoring port |
-| 2 | [#430](https://github.com/0muji4/quran-project/pull/430) | `apps/backend/internal/transcribe`: Chirp 2 transcriber 実装 | transcribe |
-| 3 | [#431](https://github.com/0muji4/quran-project/pull/431) | `arabic.ScorePronunciation`: accuracy / fluency / completeness / overall の集約 | scoring port |
-| 4 | [#432](https://github.com/0muji4/quran-project/pull/432) | `apps/backend/internal/storage`: minio-go ベースの S3 互換 adapter | storage |
-| 5 | [#433](https://github.com/0muji4/quran-project/pull/433) | `handleCreateScoringJob` を同期化、worker 経路の Redis enqueue を廃止 | sync handler |
-| 6 | [#434](https://github.com/0muji4/quran-project/pull/434) | `PROCESSING` → `RUNNING`: scoring_jobs CHECK 制約に対応 | bug fix |
-| 7 | [#435](https://github.com/0muji4/quran-project/pull/435) | Android: `BearerAuthInterceptor` を Apollo に配線 | bug fix |
-| 8 | [#436](https://github.com/0muji4/quran-project/pull/436) | Speech v2 client を `<region>-speech.googleapis.com` に routing | bug fix |
-| 9 | [#437](https://github.com/0muji4/quran-project/pull/437) | `featuresForModel`: chirp_3 系では word-level feature を送らない | bug fix |
-| 10 | [#438](https://github.com/0muji4/quran-project/pull/438) | Android: MPEG_4/AAC から OGG/OPUS に録音形式を切り替え | bug fix |
-| 11 | [#439](https://github.com/0muji4/quran-project/pull/439) | Android: `derivedUploadKey` で bucket セグメントのみ落として prefix を保持 | bug fix |
+| #   | PR                                                       | 内容                                                                                 | 区分         |
+| --- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
+| 1   | [#429](https://github.com/0muji4/quran-project/pull/429) | `apps/backend/internal/arabic`: normalize / WER / alignment を Python から Go に移植 | scoring port |
+| 2   | [#430](https://github.com/0muji4/quran-project/pull/430) | `apps/backend/internal/transcribe`: Chirp 2 transcriber 実装                         | transcribe   |
+| 3   | [#431](https://github.com/0muji4/quran-project/pull/431) | `arabic.ScorePronunciation`: accuracy / fluency / completeness / overall の集約      | scoring port |
+| 4   | [#432](https://github.com/0muji4/quran-project/pull/432) | `apps/backend/internal/storage`: minio-go ベースの S3 互換 adapter                   | storage      |
+| 5   | [#433](https://github.com/0muji4/quran-project/pull/433) | `handleCreateScoringJob` を同期化、worker 経路の Redis enqueue を廃止                | sync handler |
+| 6   | [#434](https://github.com/0muji4/quran-project/pull/434) | `PROCESSING` → `RUNNING`: scoring_jobs CHECK 制約に対応                              | bug fix      |
+| 7   | [#435](https://github.com/0muji4/quran-project/pull/435) | Android: `BearerAuthInterceptor` を Apollo に配線                                    | bug fix      |
+| 8   | [#436](https://github.com/0muji4/quran-project/pull/436) | Speech v2 client を `<region>-speech.googleapis.com` に routing                      | bug fix      |
+| 9   | [#437](https://github.com/0muji4/quran-project/pull/437) | `featuresForModel`: chirp_3 系では word-level feature を送らない                     | bug fix      |
+| 10  | [#438](https://github.com/0muji4/quran-project/pull/438) | Android: MPEG_4/AAC から OGG/OPUS に録音形式を切り替え                               | bug fix      |
+| 11  | [#439](https://github.com/0muji4/quran-project/pull/439) | Android: `derivedUploadKey` で bucket セグメントのみ落として prefix を保持           | bug fix      |
 
 PR #439 マージ後の APK で 2026-06-18 22:04:25 JST に `practice.scoring.completed.succeeded duration_ms=0` を Android 側で観測し、同タイミングで BFF (Render) が `POST /graphql duration_ms=2627 status=200` を返したことを確認して動作確認達成と判定した。BFF ログには `Creating scoring job sessionId=d664c2cc-... referenceAudioKey=reference-audio/001001.mp3` が見え、score は 0.4167 だった。
 
@@ -137,12 +137,12 @@ PR #439 マージ後の APK で 2026-06-18 22:04:25 JST に `practice.scoring.co
 
 候補原因:
 
-| 仮説 | 観察と整合性 |
-|---|---|
+| 仮説                                                                 | 観察と整合性                                                                            |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Render Free tier の service-to-service connection が再利用時に詰まる | 1 回目 OK / 2 回目 NG という再現性。free tier の HTTP/2 connection pooling の挙動と整合 |
-| Chirp 3 Preview の per-project rate limit | 短時間連投で stall する挙動と整合。ただし quota 通知は出ていない |
-| Backend 側の gRPC client connection が cold になる | 2 回目に再 handshake → cold start 込みで 60 秒超 |
-| BFF の `fetchWithTracing` に timeout がない | hang を上位に通知できない (副次的悪化要因) |
+| Chirp 3 Preview の per-project rate limit                            | 短時間連投で stall する挙動と整合。ただし quota 通知は出ていない                        |
+| Backend 側の gRPC client connection が cold になる                   | 2 回目に再 handshake → cold start 込みで 60 秒超                                        |
+| BFF の `fetchWithTracing` に timeout がない                          | hang を上位に通知できない (副次的悪化要因)                                              |
 
 最低限の対応として、BFF の `apps/bff/src/infra/backendClient.ts` の `fetchWithTracing` に `AbortSignal.timeout(30_000)` を入れれば、hang は 30 秒で諦めて Android に伝わるので "Server unavailable" は 60 秒待たずに出る。これは現在の症状を可視化する応急処置だが、根本原因 (なぜ 2 回目 hang するか) の切り分けには到達しない。Phase 6 以降で paid tier への切替 / Chirp 3 quota の実測 / gRPC keepalive 設定を含めて調査する。
 
@@ -169,11 +169,11 @@ PR #439 マージ後の APK で 2026-06-18 22:04:25 JST に `practice.scoring.co
 
 本検証は Android 実機でのみ実施し、iOS は実機検証を行っていない。iOS のソースコードを読んだ範囲で確認した結果、Android で修正した 7 件のバグ (#433–#439) のうち、サーバー側 4 件 (#433 / #434 / #436 / #437) は iOS でも自動的に効くが、クライアント側 3 件 (#435 / #438 / #439) は iOS にも同じバグが残っている。
 
-| Android PR | iOS 側の状態 | iOS の該当箇所 |
-|---|---|---|
-| #435 Apollo Bearer auth | 同じバグ | [QuranRecitationApp.swift:15](../apps/ios/Sources/QuranRecitationApp/QuranRecitationApp.swift#L15) で `ApolloBackend()` を auth 配線なしで構築。[ApolloBackend.swift:21](../apps/ios/Sources/QuranRecitationApp/Backend/ApolloBackend.swift#L21) の `ApolloClient(url: endpoint)` は HTTP interceptor を持たない |
-| #438 OGG/Opus 録音 | 同じバグ | [AudioRecorder.swift:33](../apps/ios/Sources/QuranRecitationApp/Audio/AudioRecorder.swift#L33) で `AVFormatIDKey: Int(kAudioFormatMPEG4AAC)` を指定、`.m4a` 拡張子で保存し `audio/m4a` でアップロード |
-| #439 uploadKey 抽出 | 同じバグ | [Payloads.swift:23](../apps/ios/Sources/QuranRecitationApp/GraphQL/Payloads.swift#L23) の `SignedUploadPayload.init` が `URL(string: data.url)?.lastPathComponent` でファイル名末尾だけを取る。Android の旧 `substringAfterLast('/')` と等価 |
+| Android PR              | iOS 側の状態 | iOS の該当箇所                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #435 Apollo Bearer auth | 同じバグ     | [QuranRecitationApp.swift:15](../apps/ios/Sources/QuranRecitationApp/QuranRecitationApp.swift#L15) で `ApolloBackend()` を auth 配線なしで構築。[ApolloBackend.swift:21](../apps/ios/Sources/QuranRecitationApp/Backend/ApolloBackend.swift#L21) の `ApolloClient(url: endpoint)` は HTTP interceptor を持たない |
+| #438 OGG/Opus 録音      | 同じバグ     | [AudioRecorder.swift:33](../apps/ios/Sources/QuranRecitationApp/Audio/AudioRecorder.swift#L33) で `AVFormatIDKey: Int(kAudioFormatMPEG4AAC)` を指定、`.m4a` 拡張子で保存し `audio/m4a` でアップロード                                                                                                            |
+| #439 uploadKey 抽出     | 同じバグ     | [Payloads.swift:23](../apps/ios/Sources/QuranRecitationApp/GraphQL/Payloads.swift#L23) の `SignedUploadPayload.init` が `URL(string: data.url)?.lastPathComponent` でファイル名末尾だけを取る。Android の旧 `substringAfterLast('/')` と等価                                                                     |
 
 iOS の修正は 3 つの follow-up PR として別途切り出す。修正自体は Android の対応 PR をそのまま Swift に書き直す内容で、新規の設計判断は発生しない見込み。
 
@@ -201,13 +201,15 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
 - CORS:
 
   ```json
-  [{
-    "AllowedOrigins": ["*"],
-    "AllowedMethods": ["PUT", "GET", "HEAD"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }]
+  [
+    {
+      "AllowedOrigins": ["*"],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
   ```
 
 ### A.4 Render Web Service (backend)

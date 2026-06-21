@@ -70,14 +70,14 @@ CREATE INDEX idx_practice_attempts_user_created_at
 
 ### Endpoints
 
-| Verb | Path | Body | Response |
-| --- | --- | --- | --- |
-| GET | `/me/last-practiced` | — | `LastPracticed \| null` |
-| PUT | `/me/last-practiced` | `LastPracticed` | `LastPracticed` (echoed) |
-| GET | `/me/best-scores` | — | `Record<"surahId:ayahNumber", BestScoreEntry>` |
-| PUT | `/me/best-scores/:key` | `{ score, achievedAt }` | `BestScoreEntry` |
-| GET | `/me/attempts?limit=50` | — | `{ attempts: Attempt[] }` |
-| POST | `/me/attempts` | `Attempt` | `Attempt` (echoed) |
+| Verb | Path                    | Body                    | Response                                       |
+| ---- | ----------------------- | ----------------------- | ---------------------------------------------- |
+| GET  | `/me/last-practiced`    | —                       | `LastPracticed \| null`                        |
+| PUT  | `/me/last-practiced`    | `LastPracticed`         | `LastPracticed` (echoed)                       |
+| GET  | `/me/best-scores`       | —                       | `Record<"surahId:ayahNumber", BestScoreEntry>` |
+| PUT  | `/me/best-scores/:key`  | `{ score, achievedAt }` | `BestScoreEntry`                               |
+| GET  | `/me/attempts?limit=50` | —                       | `{ attempts: Attempt[] }`                      |
+| POST | `/me/attempts`          | `Attempt`               | `Attempt` (echoed)                             |
 
 All endpoints `requireAuth(req, res)` — same scaffold as existing routes. Validation via zod. Storage layer talks raw `pg.Pool` (consistent with `apps/bff/src/infra/storage.ts`).
 

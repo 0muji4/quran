@@ -10,29 +10,29 @@ upstream sources for this taxonomy.
 
 ## Library
 
-| Event | Attributes | Emitted from |
-|-------|------------|--------------|
-| `library.tab.selected` | — | Bottom-tab selection |
-| `library.surah.opened` | `surah_id` | Tap on a surah row |
+| Event                     | Attributes                | Emitted from             |
+| ------------------------- | ------------------------- | ------------------------ |
+| `library.tab.selected`    | —                         | Bottom-tab selection     |
+| `library.surah.opened`    | `surah_id`                | Tap on a surah row       |
 | `library.continue.tapped` | `surah_id`, `ayah_number` | Tap on the Continue card |
 
 ## Practice
 
-| Event | Attributes | Notes |
-|-------|------------|-------|
-| `practice.reference.played` | `surah_id`, `ayah` | First play of the teacher reference |
-| `practice.recording.started` | `surah_id`, `ayah` | Tap of the record button |
-| `practice.recording.stopped` | `duration_ms` | Tap of the stop button |
-| `practice.upload.completed.succeeded` / `.failed` | `duration_ms` | Emitted by `Telemetry.measure` wrapping the upload |
-| `practice.scoring.completed.succeeded` / `.failed` | `duration_ms` | Emitted by `Telemetry.measure` wrapping the poll loop |
-| `practice.scoring.failed` | `error_code` | Set to `AppError.telemetryCode` on iOS; matching value on web/Android |
+| Event                                              | Attributes         | Notes                                                                 |
+| -------------------------------------------------- | ------------------ | --------------------------------------------------------------------- |
+| `practice.reference.played`                        | `surah_id`, `ayah` | First play of the teacher reference                                   |
+| `practice.recording.started`                       | `surah_id`, `ayah` | Tap of the record button                                              |
+| `practice.recording.stopped`                       | `duration_ms`      | Tap of the stop button                                                |
+| `practice.upload.completed.succeeded` / `.failed`  | `duration_ms`      | Emitted by `Telemetry.measure` wrapping the upload                    |
+| `practice.scoring.completed.succeeded` / `.failed` | `duration_ms`      | Emitted by `Telemetry.measure` wrapping the poll loop                 |
+| `practice.scoring.failed`                          | `error_code`       | Set to `AppError.telemetryCode` on iOS; matching value on web/Android |
 
 ## Result
 
-| Event | Attributes | Notes |
-|-------|------------|-------|
-| `result.try_again.tapped` | `surah_id`, `ayah` | Secondary CTA on the result detail |
-| `result.continue.tapped` | `surah_id`, `next_ayah` | Primary CTA on the result detail |
+| Event                     | Attributes              | Notes                              |
+| ------------------------- | ----------------------- | ---------------------------------- |
+| `result.try_again.tapped` | `surah_id`, `ayah`      | Secondary CTA on the result detail |
+| `result.continue.tapped`  | `surah_id`, `next_ayah` | Primary CTA on the result detail   |
 
 ## Errors
 
@@ -64,10 +64,10 @@ Per platform:
 
 The events listed above are the **cross-platform** contract — every platform emits them with the same name. The Tilawah web build additionally ships two browser-only span namespaces that have no iOS / Android counterpart and therefore don't appear in the tables above:
 
-| Namespace | Source | Spec |
-|-----------|--------|------|
-| `web.ui.*` | User-driven UI events (`recording_started`, `loop_toggled`, `suggested_clicked`, etc.) emitted via `trackUiEvent()` from `apps/web/app/telemetry/use-ui-event.ts`. | ADR 0016 |
-| `web.vitals.*` | Auto-captured Core Web Vitals (`lcp`, `fcp`, `inp`, `cls`, `ttfb`) emitted via `apps/web/app/telemetry/web-vitals.ts` from the `web-vitals` library. | ADR 0019 |
+| Namespace      | Source                                                                                                                                                             | Spec     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `web.ui.*`     | User-driven UI events (`recording_started`, `loop_toggled`, `suggested_clicked`, etc.) emitted via `trackUiEvent()` from `apps/web/app/telemetry/use-ui-event.ts`. | ADR 0016 |
+| `web.vitals.*` | Auto-captured Core Web Vitals (`lcp`, `fcp`, `inp`, `cls`, `ttfb`) emitted via `apps/web/app/telemetry/web-vitals.ts` from the `web-vitals` library.               | ADR 0019 |
 
 Both flow through the same `WebTracerProvider` registered by `web-tracer.ts` and are gated by `NEXT_PUBLIC_OTEL_ENDPOINT`. The collector / Loki / Grafana can route them onto a web-perf dashboard with a `name =~ "web\..*"` filter while leaving the cross-platform `library.* / practice.* / result.*` stream intact.
 

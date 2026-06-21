@@ -5,3 +5,6 @@ coverage
 *.log
 .turbo
 pnpm-lock.yaml
+
+# Xcode rewrites asset-catalog Contents.json on every change; let it own that format.
+**/*.xcassets/**

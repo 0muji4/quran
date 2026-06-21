@@ -21,16 +21,16 @@ The project will not adopt **cloud-vendor-specific managed services** for any co
 
 **Disallowed without an explicit superseding ADR:**
 
-| Class | Disallowed examples | Portable alternative in use |
-|---|---|---|
-| Managed AI/ML platform | Vertex AI, AWS Bedrock, SageMaker for hosted models | Self-hosted inference (Faster-Whisper today; HF Inference Endpoints if vendor-neutral hosting is wanted) |
-| Identity-as-a-Service | AWS Cognito, GCP Identity Platform, Firebase Auth | BFF-issued JWT + refresh token already implemented |
-| Vendor-specific NoSQL | DynamoDB, Firestore, Spanner | PostgreSQL (with `jsonb` columns when document shape is genuinely needed) |
-| Vendor-specific stream/queue | AWS Kinesis, GCP Pub/Sub for the primary work queue | Redis lists (`BLPOP`) — current contract |
-| Vendor-specific workflow engine | AWS Step Functions, GCP Workflows | Application-level coordination in Backend / Worker |
-| Vendor-specific search | OpenSearch Service, Algolia for core indexing | Postgres full-text (`tsvector`) or self-hosted OpenSearch container |
-| Storage vendor extensions | S3 Object Lambda, S3 Select, GCS Pub/Sub notifications coupling product logic | S3-compatible primitives (PutObject, GetObject, signed URLs) only |
-| Vendor-specific CDN-edge compute coupled to product logic | CloudFront Functions / Lambda@Edge encoding business rules; Cloud CDN custom origin VCL with product semantics | Plain CDN caching only; logic stays in BFF |
+| Class                                                     | Disallowed examples                                                                                            | Portable alternative in use                                                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Managed AI/ML platform                                    | Vertex AI, AWS Bedrock, SageMaker for hosted models                                                            | Self-hosted inference (Faster-Whisper today; HF Inference Endpoints if vendor-neutral hosting is wanted) |
+| Identity-as-a-Service                                     | AWS Cognito, GCP Identity Platform, Firebase Auth                                                              | BFF-issued JWT + refresh token already implemented                                                       |
+| Vendor-specific NoSQL                                     | DynamoDB, Firestore, Spanner                                                                                   | PostgreSQL (with `jsonb` columns when document shape is genuinely needed)                                |
+| Vendor-specific stream/queue                              | AWS Kinesis, GCP Pub/Sub for the primary work queue                                                            | Redis lists (`BLPOP`) — current contract                                                                 |
+| Vendor-specific workflow engine                           | AWS Step Functions, GCP Workflows                                                                              | Application-level coordination in Backend / Worker                                                       |
+| Vendor-specific search                                    | OpenSearch Service, Algolia for core indexing                                                                  | Postgres full-text (`tsvector`) or self-hosted OpenSearch container                                      |
+| Storage vendor extensions                                 | S3 Object Lambda, S3 Select, GCS Pub/Sub notifications coupling product logic                                  | S3-compatible primitives (PutObject, GetObject, signed URLs) only                                        |
+| Vendor-specific CDN-edge compute coupled to product logic | CloudFront Functions / Lambda@Edge encoding business rules; Cloud CDN custom origin VCL with product semantics | Plain CDN caching only; logic stays in BFF                                                               |
 
 **Explicitly allowed**, because they expose standard interfaces and have one-to-one analogues across major clouds:
 
@@ -87,7 +87,7 @@ Without those elements, this ADR stands.
 
 - **Adopt cloud-native managed services freely as needed.** Rejected: lowest short-term friction but compounds switch cost. Past experience on neighbouring projects (DynamoDB, Cognito) shows the cost is consistently underestimated until the migration is mandatory.
 - **Pre-build an abstraction layer over every cloud SDK.** Rejected: over-engineering. Standard wire protocols (Postgres, Redis, S3, OTLP) are already the abstraction layer; reimplementing them in application code adds maintenance burden without portability gain.
-- **Stay strictly cloud-agnostic (avoid managed Postgres / Redis / object storage entirely).** Rejected: refuses the legitimate productivity benefit of managed primitives that *do* have portable wire protocols. The principle is "no vendor-specific *behaviour*", not "no vendor-managed *capacity*."
+- **Stay strictly cloud-agnostic (avoid managed Postgres / Redis / object storage entirely).** Rejected: refuses the legitimate productivity benefit of managed primitives that _do_ have portable wire protocols. The principle is "no vendor-specific _behaviour_", not "no vendor-managed _capacity_."
 
 ## References
 

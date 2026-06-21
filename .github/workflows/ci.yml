@@ -98,6 +98,25 @@ jobs:
       - name: Run build
         run: pnpm build
 
+  # Repo-wide Prettier gate. js-quality's `pnpm format:check` is
+  # per-workspace (`pnpm -r`), so root-level files — docs, ops configs,
+  # workflows, scripts — were never checked, which is how unformatted
+  # drift slipped in unnoticed. This job checks the whole tree (honouring
+  # .prettierignore) so every committed file stays Prettier-clean.
+  # Ungated: formatting drift can land in any path, so it runs on every
+  # PR. Pinned to the workspace Prettier version.
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check repo-wide formatting
+        run: npx --yes prettier@3.8.3 --check .
+
   go-quality:
     needs: changes
     if: needs.changes.outputs.go == 'true'
@@ -254,6 +273,7 @@ jobs:
     needs:
       - changes
       - js-quality
+      - format
       - go-quality
       - db-lint
       - terraform-validate
