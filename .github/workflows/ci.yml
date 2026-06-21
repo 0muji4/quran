@@ -98,13 +98,9 @@ jobs:
       - name: Run build
         run: pnpm build
 
-  # Repo-wide Prettier gate. js-quality's `pnpm format:check` is
-  # per-workspace (`pnpm -r`), so root-level files — docs, ops configs,
-  # workflows, scripts — were never checked, which is how unformatted
-  # drift slipped in unnoticed. This job checks the whole tree (honouring
-  # .prettierignore) so every committed file stays Prettier-clean.
-  # Ungated: formatting drift can land in any path, so it runs on every
-  # PR. Pinned to the workspace Prettier version.
+  # Repo-wide Prettier gate. js-quality's format:check is per-workspace,
+  # so root files (docs, ops, workflows) went unchecked. Ungated so drift
+  # in any path is caught.
   format:
     runs-on: ubuntu-latest
     steps:

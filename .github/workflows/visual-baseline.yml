@@ -1,15 +1,8 @@
 name: Update Visual Baselines
 
-# Regenerate the Playwright visual-regression baselines on the Linux
-# runner and commit them back to the branch the workflow was dispatched
-# on. Baselines must be generated on Linux Chromium to match CI; a macOS
-# dev host cannot reproduce CI's sub-pixel rendering (and cannot satisfy
-# the secure-context requirement for the recording scene), so the source
-# of truth for baselines is this workflow, not a local run.
-#
-# Usage: Actions → "Update Visual Baselines" → Run workflow → pick the
-# branch. The job commits the updated *.png under
-# e2e/tests/visual/visual.spec.ts-snapshots/ to that branch.
+# Source of truth for the Playwright visual baselines: a macOS dev host
+# can't reproduce CI's Linux rendering, so regenerate them here and commit
+# back to the dispatched branch. Run via Actions → "Update Visual Baselines".
 on:
   workflow_dispatch:
 
@@ -57,9 +50,8 @@ jobs:
       - name: Seed database with test data
         run: make db-seed
 
-      # Same Docker-image + host-networking setup as e2e.yml so the
-      # regenerated PNGs are byte-identical to what the e2e visual job
-      # compares against.
+      # Match e2e.yml's image + host networking so the PNGs match what the
+      # e2e visual job compares against.
       - name: Regenerate visual baselines
         run: |
           docker run --rm \
