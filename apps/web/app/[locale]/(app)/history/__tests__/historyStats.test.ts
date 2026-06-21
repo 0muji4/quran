@@ -66,17 +66,41 @@ describe('computeHistoryStats', () => {
     expect(stats.averageScore).toBeNull();
   });
 
-  it('reports the best score and the surah it belongs to', () => {
+  it('reports the best score with the surah and ayah it belongs to', () => {
     const stats = computeHistoryStats(
       [
         attempt({ createdAt: '2026-05-16T11:00:00Z', score: 75, surahNameEn: 'Al-Fatihah' }),
-        attempt({ createdAt: '2026-05-15T11:00:00Z', score: 92, surahNameEn: 'Al-Ikhlas' }),
+        attempt({
+          createdAt: '2026-05-15T11:00:00Z',
+          score: 92,
+          surahNameEn: 'Al-Ikhlas',
+          ayahNumber: 3
+        }),
         attempt({ createdAt: '2026-05-14T11:00:00Z', score: 88, surahNameEn: 'Al-Baqarah' })
       ],
       NOW
     );
     expect(stats.bestScore).toBe(92);
     expect(stats.bestSurah).toBe('Al-Ikhlas');
+    expect(stats.bestAyah).toBe(3);
+  });
+
+  it('reports the longest historical streak independent of the current one', () => {
+    const stats = computeHistoryStats(
+      [
+        // Current run: today + yesterday (length 2).
+        attempt({ createdAt: '2026-05-16T11:00:00Z' }),
+        attempt({ createdAt: '2026-05-15T11:00:00Z' }),
+        // Older run of 4 consecutive days (May 8–11).
+        attempt({ createdAt: '2026-05-11T11:00:00Z' }),
+        attempt({ createdAt: '2026-05-10T11:00:00Z' }),
+        attempt({ createdAt: '2026-05-09T11:00:00Z' }),
+        attempt({ createdAt: '2026-05-08T11:00:00Z' })
+      ],
+      NOW
+    );
+    expect(stats.streakDays).toBe(2);
+    expect(stats.longestStreak).toBe(4);
   });
 
   it('counts a streak of consecutive practice days ending today', () => {
