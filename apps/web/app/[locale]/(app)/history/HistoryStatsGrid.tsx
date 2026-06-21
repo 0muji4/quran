@@ -9,11 +9,19 @@ interface Props {
   stats: HistoryStats;
 }
 
+const sectionWrapClass = css({ marginBottom: '6' });
+
+const progressLabelClass = css({
+  fontSize: '[15px]',
+  fontWeight: 600,
+  color: 'ink.strong',
+  marginBottom: '3'
+});
+
 const gridClass = css({
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '3',
-  marginBottom: '6'
+  gap: '3'
 });
 
 const tileClass = css({
@@ -64,44 +72,51 @@ export function HistoryStatsGrid({ stats }: Props) {
   const unknown = t('bestUnknown');
 
   return (
-    <section className={gridClass} aria-label={t('ariaLabel')}>
-      <Tile
-        eyebrow={t('thisWeek')}
-        big={String(stats.thisWeekCount)}
-        small={t('thisWeekUnit')}
-        panelClass={paperPanel}
-        eyebrowClassName={eyebrowOnPaperClass}
-        bigClassName={bigOnPaperClass}
-        smallClassName={smallOnPaperClass}
-      />
-      <Tile
-        eyebrow={t('average')}
-        big={stats.averageScore === null ? unknown : String(Math.round(stats.averageScore))}
-        small={t('averageUnit')}
-        panelClass={continuePanel}
-        eyebrowClassName={eyebrowOnContinueClass}
-        bigClassName={bigOnContinueClass}
-        smallClassName={smallOnContinueClass}
-      />
-      <Tile
-        eyebrow={t('best')}
-        big={stats.bestScore === null ? unknown : String(Math.round(stats.bestScore))}
-        small={stats.bestSurah ?? unknown}
-        panelClass={paperPanel}
-        eyebrowClassName={eyebrowOnPaperClass}
-        bigClassName={bigOnPaperClass}
-        smallClassName={smallOnPaperClass}
-      />
-      <Tile
-        eyebrow={t('streak')}
-        big={String(stats.streakDays)}
-        small={t('streakUnit')}
-        panelClass={paperPanel}
-        eyebrowClassName={eyebrowOnPaperClass}
-        bigClassName={bigOnPaperClass}
-        smallClassName={smallOnPaperClass}
-      />
-    </section>
+    <div className={sectionWrapClass}>
+      <p className={progressLabelClass}>{t('yourProgress')}</p>
+      <section className={gridClass} aria-label={t('ariaLabel')}>
+        <Tile
+          eyebrow={t('thisWeek')}
+          big={String(stats.thisWeekCount)}
+          small={t('thisWeekUnit')}
+          panelClass={paperPanel}
+          eyebrowClassName={eyebrowOnPaperClass}
+          bigClassName={bigOnPaperClass}
+          smallClassName={smallOnPaperClass}
+        />
+        <Tile
+          eyebrow={t('average')}
+          big={stats.averageScore === null ? unknown : String(Math.round(stats.averageScore))}
+          small={t('averageUnit')}
+          panelClass={continuePanel}
+          eyebrowClassName={eyebrowOnContinueClass}
+          bigClassName={bigOnContinueClass}
+          smallClassName={smallOnContinueClass}
+        />
+        <Tile
+          eyebrow={t('best')}
+          big={stats.bestScore === null ? unknown : String(Math.round(stats.bestScore))}
+          small={
+            stats.bestSurah
+              ? t('bestSubtitle', { surah: stats.bestSurah, ayah: stats.bestAyah ?? 0 })
+              : unknown
+          }
+          panelClass={paperPanel}
+          eyebrowClassName={eyebrowOnPaperClass}
+          bigClassName={bigOnPaperClass}
+          smallClassName={smallOnPaperClass}
+        />
+        <Tile
+          eyebrow={t('streak')}
+          big={String(stats.streakDays)}
+          small={t('streakSubtitle', { best: stats.longestStreak })}
+          panelClass={paperPanel}
+          eyebrowClassName={eyebrowOnPaperClass}
+          bigClassName={bigOnPaperClass}
+          smallClassName={smallOnPaperClass}
+        />
+      </section>
+    </div>
   );
 }
 

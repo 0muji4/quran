@@ -16,8 +16,8 @@ const rowClass = css({
 // filter row (`LibraryClient.tsx`) so the History chips look like the
 // Library chips by construction rather than by accident.
 const pillActiveClass = css({
-  backgroundColor: 'ink.strong',
-  borderColor: 'ink.strong',
+  backgroundColor: 'teal',
+  borderColor: 'teal',
   color: 'bg.paper'
 });
 
