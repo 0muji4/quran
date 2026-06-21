@@ -27,7 +27,8 @@ import java.time.ZoneId
  *
  * The Figma export renders four separate tiles (not one card with a
  * borderless grid); the AVERAGE tile is the dark inverse variant
- * (`colors.nav` background, light label, gold value). Each tile carries
+ * (`colors.cardInverse` forest-green background, light label, gold
+ * value). Each tile carries
  * three lines: eyebrow label / large serif value / subtitle unit.
  * Mirrors `apps/ios/.../Features/History/StatsGrid.swift`.
  */
@@ -93,8 +94,9 @@ private fun StatTile(
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
 
-    val background = if (inverse) colors.nav else colors.paper
-    val labelColor = if (inverse) colors.goldOnDark else colors.textSecondary
+    val background = if (inverse) colors.cardInverse else colors.paper
+    // On the inverse tile only the value is gold; the label stays a pale tint.
+    val labelColor = if (inverse) colors.textOnInverse.copy(alpha = 0.65f) else colors.textSecondary
     val valueColor = if (inverse) colors.goldOnDark else colors.textPrimary
     val unitColor = if (inverse) colors.textOnInverse else colors.textSecondary
 
