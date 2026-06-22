@@ -17,6 +17,12 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Practice preferences for the mock user so the card renders under
+-- MOCK_SESSION in dev / e2e (Issue #476). Idempotent.
+INSERT INTO user_preferences (user_id)
+VALUES ('00000000-0000-0000-0000-000000000001')
+ON CONFLICT (user_id) DO NOTHING;
+
 -- Deterministic Result-page fixture for visual regression (Phase 3.4 /
 -- ADR 0004). Pairs a COMPLETED scoring_jobs row with the asr_results row
 -- the BFF joins on, so /practice/1/1/result/visual-baseline-fatihah-1
