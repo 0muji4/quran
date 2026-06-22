@@ -68,6 +68,11 @@ class LibraryViewModel(
         viewModelScope.launch { loadInternal() }
     }
 
+    /** Re-evaluate the personalised suggestion when auth state changes. */
+    fun refreshSuggestion() {
+        viewModelScope.launch { loadSuggestion() }
+    }
+
     /** Suspending helper exposed for unit tests. */
     suspend fun loadInternal() {
         _state.value = LibraryUiState.Loading

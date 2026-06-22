@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -322,10 +323,12 @@ private fun LibraryTabHost(
             }
         },
     )
+    val signedIn by signedInState.collectAsStateWithLifecycle()
     LibraryScreen(
         viewModel = viewModel,
         onSurahOpened = { /* surah-detail navigation lands when Result/Practice graph stabilises */ },
         onResume = onResume,
+        signedIn = signedIn,
     )
 }
 
