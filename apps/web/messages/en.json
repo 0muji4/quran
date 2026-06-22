@@ -98,7 +98,7 @@
     "primaryNavAriaLabel": "Primary"
   },
   "library": {
-    "eyebrow": "+ Continue your practice",
+    "eyebrow": "✦ Continue your practice",
     "title": "Choose a surah to recite",
     "description": "Listen to a teacher's recitation, then record your own. We'll score your pronunciation against the reference.",
     "searchPlaceholder": "Search by surah name or number...",
@@ -171,7 +171,7 @@
       "badgeCouldntProcess": "Couldn't process",
       "captionIdle": "Tap the mic to begin",
       "captionRecording": "Tap to stop and submit for scoring",
-      "lastAttempt": "Last attempt: {score} / 100",
+      "lastAttempt": "Last attempt: {score} / 100 · {when}",
       "cancel": "Cancel and try again",
       "tooShort": "Recording was {seconds} s — too short to score",
       "ariaStart": "Start recording",

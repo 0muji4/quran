@@ -144,7 +144,12 @@ test.describe('visual regression — desktop 1280x720', () => {
 
     await expect(page).toHaveScreenshot('practice-idle.png', {
       fullPage: true,
-      maxDiffPixels: 200
+      maxDiffPixels: 200,
+      // The "Last attempt: N / 100 · {when}" footer ends in a relative
+      // time ("yesterday", "2 days ago") computed from Date.now(), so it
+      // drifts daily and would make this baseline flaky. Mask it the same
+      // way the result scene masks its async-duration player.
+      mask: [page.locator('[data-testid="last-attempt"]')]
     });
   });
 

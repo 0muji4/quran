@@ -280,7 +280,9 @@
   align-items: center;
   gap: var(--spacing-2);
   font-size: 13px;
-  color: var(--colors-red-soft);
+  /* Cream digits on the green recording panel; only the pulsing dot
+     stays red (see .recordingTimerDot). Matches docs/design/3. Practice. */
+  color: var(--colors-ink-on-dark);
   font-variant-numeric: tabular-nums;
 }
 

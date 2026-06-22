@@ -226,7 +226,7 @@ export function ChangeEmailButton({ currentEmail }: Props) {
           <form className={modalClass} onSubmit={onSubmit} noValidate>
             <div>
               <p className={eyebrowClass}>
-                <span aria-hidden="true">+ </span>Account & data
+                <span aria-hidden="true">✦ </span>Account & data
               </p>
               <h2 className={titleClass}>Change email</h2>
             </div>

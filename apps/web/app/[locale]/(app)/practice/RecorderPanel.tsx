@@ -12,6 +12,7 @@ import { RecorderBars } from './RecorderBars';
 import { ScoringErrorCard } from './ScoringErrorCard';
 import { recorderStatusMessage } from './recorderStatus';
 import { notifyRecordingStarted } from './recordingEvents';
+import { formatPracticedAt } from '../../../lib/classify';
 import {
   getRecentAttempts,
   recordAttempt,
@@ -367,9 +368,13 @@ export function RecorderPanel({ surah, ayah }: Props) {
         stage === 'idle' &&
         lastAttempt &&
         lastAttempt.score !== null && (
-          <p className={styles.recorderFooter}>
+          // `data-testid` lets the visual-regression idle scene mask this
+          // line: `when` is a relative time ("yesterday", "2 days ago") that
+          // drifts daily and would otherwise make the baseline flaky.
+          <p className={styles.recorderFooter} data-testid="last-attempt">
             {t.rich('lastAttempt', {
               score: lastAttempt.score,
+              when: formatPracticedAt(lastAttempt.createdAt),
               span: (chunks) => <span className={styles.lastScore}>{chunks}</span>
             })}
           </p>
