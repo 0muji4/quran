@@ -14,13 +14,13 @@ final class VerdictTests: XCTestCase {
   }
 
   func test_mastered_bandFor90AndAbove() {
-    XCTAssertEqual(verdictForScore(90).badge, "MASTERED")
-    XCTAssertEqual(verdictForScore(100).badge, "MASTERED")
+    XCTAssertEqual(verdictForScore(90).badge, "MASHALLAH — MASTERED")
+    XCTAssertEqual(verdictForScore(100).badge, "MASHALLAH — MASTERED")
   }
 
-  func test_greatWork_bandFor70Through89() {
-    XCTAssertEqual(verdictForScore(70).badge, "GREAT WORK")
-    XCTAssertEqual(verdictForScore(89).badge, "GREAT WORK")
+  func test_great_bandFor70Through89() {
+    XCTAssertEqual(verdictForScore(70).badge, "MASHALLAH — WELL RECITED")
+    XCTAssertEqual(verdictForScore(89).badge, "MASHALLAH — WELL RECITED")
   }
 
   func test_keepPractising_midBandFor40Through69() {
@@ -29,13 +29,13 @@ final class VerdictTests: XCTestCase {
     XCTAssertTrue(verdictForScore(52).headline.contains("Some work"))
   }
 
-  func test_keepPractising_lowBandBelow40() {
-    XCTAssertEqual(verdictForScore(0).badge, "KEEP PRACTISING")
-    XCTAssertEqual(verdictForScore(39).badge, "KEEP PRACTISING")
+  func test_keepGoing_lowBandBelow40() {
+    XCTAssertEqual(verdictForScore(0).badge, "KEEP GOING")
+    XCTAssertEqual(verdictForScore(39).badge, "KEEP GOING")
     XCTAssertTrue(verdictForScore(10).headline.contains("Not quite"))
   }
 
-  func test_twoKeepPractisingBands_haveDifferentHeadlines() {
+  func test_midAndLowBands_haveDifferentHeadlines() {
     XCTAssertNotEqual(verdictForScore(50).headline, verdictForScore(20).headline)
   }
 }
