@@ -368,5 +368,20 @@
       "score": "Highest score",
       "ariaLabel": "Sort attempts"
     }
+  },
+  "profile": {
+    "preferences": {
+      "title": "Practice preferences",
+      "viewProgress": "View progress in History",
+      "reciterLabel": "Reference reciter",
+      "speedLabel": "Default playback speed",
+      "speedHelper": "Used when opening any ayah",
+      "reminderLabel": "Daily practice reminder",
+      "reminderHelper": "Saved to your account — used once daily reminders are available.",
+      "reminderStatusOn": "On · {time}",
+      "reminderStatusOff": "Off",
+      "reminderTimeLabel": "Reminder time",
+      "saveError": "Couldn't save your change. Please try again."
+    }
   }
 }

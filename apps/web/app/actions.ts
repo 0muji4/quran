@@ -10,6 +10,7 @@ import { clearAuthCookies, setAuthCookies } from './lib/auth-cookies';
 import { logger } from './telemetry/logger';
 import { tracer } from './telemetry/telemetry';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { DEFAULT_PRACTICE_PREFERENCES, type PracticePreferences } from './lib/preferences';
 
 type SignedUploadResponse = SignedUploadUrl & { uploadKey?: string; sessionId?: string };
 
@@ -845,6 +846,66 @@ export const fetchCurrentUserProfile = async (): Promise<AuthSessionUser | null>
         span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
         logger.error('fetchCurrentUserProfile failed', { error: (error as Error).message });
         return null;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+export const getPreferencesAction = async (): Promise<PracticePreferences> => {
+  return tracer.startActiveSpan(
+    'ServerAction: getPreferencesAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'getPreferencesAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/me/preferences`, withNoStore);
+        if (!response.ok) {
+          logger.warn('getPreferencesAction non-2xx', { status: response.status });
+          span.setStatus({ code: SpanStatusCode.OK });
+          return DEFAULT_PRACTICE_PREFERENCES;
+        }
+        const payload = await parseJson<{ preferences: PracticePreferences }>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.preferences;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('getPreferencesAction failed', { error: (error as Error).message });
+        return DEFAULT_PRACTICE_PREFERENCES;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
+// Throws on non-2xx so the card can revert its optimistic state
+// (like updateProfileAction).
+export const updatePreferencesAction = async (
+  patch: Partial<PracticePreferences>
+): Promise<PracticePreferences> => {
+  return tracer.startActiveSpan(
+    'ServerAction: updatePreferencesAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'updatePreferencesAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/me/preferences`, {
+          method: 'PATCH',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(patch)
+        });
+        const payload = await parseJson<{ preferences: PracticePreferences }>(response);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return payload.preferences;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('updatePreferencesAction failed', { error: (error as Error).message });
+        throw error;
       } finally {
         span.end();
       }

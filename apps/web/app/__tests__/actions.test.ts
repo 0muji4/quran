@@ -8,8 +8,11 @@ import {
   fetchSurahAyahs,
   signInAction,
   signOutAction,
-  signUpAction
+  signUpAction,
+  getPreferencesAction,
+  updatePreferencesAction
 } from '../actions';
+import { DEFAULT_PRACTICE_PREFERENCES } from '../lib/preferences';
 import {
   mockSignedUploadUrl,
   mockScoringResult,
@@ -528,6 +531,80 @@ describe('Server Actions', () => {
           headers: expect.objectContaining({ Authorization: 'Bearer live-token' })
         })
       );
+    });
+  });
+
+  describe('getPreferencesAction', () => {
+    const preferences = {
+      referenceReciterId: 'husary-muallim',
+      defaultPlaybackSpeed: 1.25,
+      dailyReminderEnabled: true,
+      dailyReminderTime: '07:30'
+    };
+
+    it('returns the preferences from the BFF', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ preferences })
+      } as Response);
+
+      const result = await getPreferencesAction();
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/me/preferences'),
+        expect.objectContaining({ cache: 'no-store' })
+      );
+      expect(result).toEqual(preferences);
+    });
+
+    it('falls back to defaults when the BFF read fails', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Server Error',
+        json: async () => ({})
+      } as Response);
+
+      const result = await getPreferencesAction();
+
+      expect(result).toEqual(DEFAULT_PRACTICE_PREFERENCES);
+    });
+  });
+
+  describe('updatePreferencesAction', () => {
+    it('sends a PATCH with the partial patch and returns the stored preferences', async () => {
+      const stored = {
+        referenceReciterId: 'husary-muallim',
+        defaultPlaybackSpeed: 1,
+        dailyReminderEnabled: true,
+        dailyReminderTime: '08:00'
+      };
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ preferences: stored })
+      } as Response);
+
+      const result = await updatePreferencesAction({ dailyReminderEnabled: true });
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/me/preferences'),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ dailyReminderEnabled: true })
+        })
+      );
+      expect(result).toEqual(stored);
+    });
+
+    it('throws when the BFF rejects the patch', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Server Error',
+        json: async () => ({ error: 'boom' })
+      } as Response);
+
+      await expect(updatePreferencesAction({ dailyReminderEnabled: true })).rejects.toThrow('boom');
     });
   });
 });

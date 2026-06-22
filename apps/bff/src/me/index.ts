@@ -21,3 +21,12 @@ export {
   type SuggestionReason,
   type SuggestionResponse
 } from './suggestions';
+export {
+  DEFAULT_PREFERENCES,
+  KNOWN_RECITER_IDS,
+  getUserPreferences,
+  upsertUserPreferences,
+  type PracticePreferences,
+  type PracticePreferencesPatch,
+  type ReciterId
+} from './preferences';

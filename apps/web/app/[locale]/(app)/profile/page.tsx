@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentSession } from '../../../lib/session';
-import { fetchCurrentUserProfile } from '../../../actions';
+import { fetchCurrentUserProfile, getPreferencesAction } from '../../../actions';
 import { ProfileHeader } from './ProfileHeader';
 import { PracticePreferencesCard } from './PracticePreferencesCard';
 import { AccountDataCard } from './AccountDataCard';
@@ -43,7 +43,11 @@ export default async function ProfilePage() {
     redirect('/sign-in');
   }
 
-  const profile = await fetchCurrentUserProfile();
+  // Parallel so the preferences read doesn't serialise behind the profile one.
+  const [profile, preferences] = await Promise.all([
+    fetchCurrentUserProfile(),
+    getPreferencesAction()
+  ]);
   // If `/auth/me` failed (network blip, BFF down), fall back to the
   // JWT-derived session so the page still renders a usable identity
   // — just without the badges that need DB-only fields.
@@ -65,7 +69,7 @@ export default async function ProfilePage() {
         createdAt={view.createdAt ?? null}
       />
 
-      <PracticePreferencesCard />
+      <PracticePreferencesCard preferences={preferences} />
 
       <AccountDataCard email={view.email} />
 
