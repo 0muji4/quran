@@ -40,6 +40,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel,
     onSurahOpened: (String) -> Unit,
     onResume: (com.tilawah.android.storage.LastPracticed) -> Unit,
+    signedIn: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -51,6 +52,13 @@ fun LibraryScreen(
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
+    }
+
+    // The suggestion is auth-gated; re-evaluate it whenever sign-in flips
+    // so signing in after the list loaded surfaces the card (and signing
+    // out hides it) without a full reload.
+    LaunchedEffect(signedIn) {
+        viewModel.refreshSuggestion()
     }
 
     val spacing = BrandTheme.spacing
