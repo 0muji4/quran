@@ -138,11 +138,12 @@
     <string name="profile_streak_pill">%1$d-DAY STREAK</string>
     <string name="profile_preferences_section">PRACTICE PREFERENCES</string>
     <string name="profile_pref_reference_reciter">Reference reciter</string>
-    <string name="profile_pref_reference_reciter_value">Husary Mu\'allim</string>
     <string name="profile_pref_playback_speed">Playback speed</string>
-    <string name="profile_pref_playback_speed_value">1.0×</string>
     <string name="profile_pref_daily_reminder">Daily reminder</string>
-    <string name="profile_pref_daily_reminder_value">8:00 AM</string>
+    <string name="profile_pref_daily_reminder_off">Off</string>
+    <string name="profile_pref_reminder_time_title">Reminder time</string>
+    <string name="profile_pref_reminder_time_confirm">Set</string>
+    <string name="profile_pref_reminder_time_cancel">Cancel</string>
     <string name="profile_account_section">ACCOUNT</string>
     <string name="profile_account_email">Email</string>
     <string name="profile_account_email_action">Change</string>
@@ -160,5 +161,10 @@
     <string name="profile_edit_section">PROFILE</string>
     <string name="profile_edit_display_name_label">DISPLAY NAME</string>
     <string name="profile_edit_skill_level_label">SKILL LEVEL</string>
-    <string name="profile_edit_footer_hint">To change your email or password, head to Account. For reciter and playback settings, see Practice preferences.</string>
+    <string name="profile_edit_skill_level_placeholder">Choose a level</string>
+    <string name="profile_edit_footer_lead">To change your email or password, head to </string>
+    <string name="profile_edit_footer_account">Account &amp; data</string>
+    <string name="profile_edit_footer_mid">. For reciter and playback settings, see </string>
+    <string name="profile_edit_footer_prefs">Practice preferences</string>
+    <string name="profile_edit_footer_end">.</string>
 </resources>

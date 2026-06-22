@@ -150,7 +150,7 @@ private fun Header(
 private fun PracticeProgress(currentAyah: Int?, ayahCount: Int) {
     if (ayahCount <= 1) return
     val active = (currentAyah ?: 1).coerceIn(1, ayahCount)
-    if (ayahCount <= MAX_SEGMENTS) {
+    if (usesSegmentedProgress(ayahCount)) {
         ProgressSegments(active = active, ayahCount = ayahCount)
     } else {
         LongSurahProgress(active = active, ayahCount = ayahCount)
@@ -172,7 +172,7 @@ private fun ProgressSegments(active: Int, ayahCount: Int) {
                     .height(4.dp)
                     .width(if (isActive) 24.dp else 14.dp)
                     .clip(RoundedCornerShape(percent = 50))
-                    .background(if (isActive) colors.primary else colors.tile),
+                    .background(if (isActive) colors.primary else colors.track),
             )
         }
     }
@@ -194,7 +194,7 @@ private fun LongSurahProgress(active: Int, ayahCount: Int) {
                 .weight(1f)
                 .height(4.dp)
                 .clip(RoundedCornerShape(percent = 50))
-                .background(colors.tile),
+                .background(colors.track),
         ) {
             Box(
                 modifier = Modifier
@@ -250,5 +250,13 @@ private fun DonePanel(
     }
 }
 
+/**
+ * Whether progress renders as discrete segment pills (short surahs)
+ * rather than a continuous bar. This is the shared 3-platform rule —
+ * [MAX_SEGMENTS] stays in step with the iOS and web clients so a given
+ * surah looks the same everywhere.
+ */
+internal fun usesSegmentedProgress(ayahCount: Int): Boolean = ayahCount <= MAX_SEGMENTS
+
 /** Above this many ayat, segment dots wrap awkwardly — fall back to a bar. */
-private const val MAX_SEGMENTS = 12
+internal const val MAX_SEGMENTS = 12
