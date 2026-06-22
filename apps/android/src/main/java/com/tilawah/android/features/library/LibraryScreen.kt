@@ -38,7 +38,7 @@ import com.tilawah.android.designsystem.components.PrimaryButton
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
-    onSurahOpened: (String) -> Unit,
+    onSurahOpened: (SurahSummary) -> Unit,
     onResume: (com.tilawah.android.storage.LastPracticed) -> Unit,
     signedIn: Boolean = false,
     modifier: Modifier = Modifier,
@@ -87,7 +87,7 @@ fun LibraryScreen(
                     surahs = loaded.surahs,
                     onBegin = { surah ->
                         viewModel.suggestedTapped(surah, picked.reason.wire)
-                        onSurahOpened(surah.id)
+                        onSurahOpened(surah)
                     },
                     modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
                 )
@@ -114,7 +114,7 @@ fun LibraryScreen(
                     resumeSurahId = lastPracticed?.surahId,
                     onSurahOpened = { surah ->
                         viewModel.surahOpened(surah)
-                        onSurahOpened(surah.id)
+                        onSurahOpened(surah)
                     },
                 )
                 is LibraryUiState.Failed -> ErrorState(
