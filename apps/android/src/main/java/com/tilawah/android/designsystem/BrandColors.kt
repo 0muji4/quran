@@ -42,6 +42,8 @@ data class BrandColors(
     val tile: Color,
     /** Near-white pill fill for unselected filter chips. */
     val tileSoft: Color,
+    /** Pale tan badge fill on cream surfaces (surah index badge). */
+    val tanSoft: Color,
     /**
      * Pale warm fill behind progress / score tracks. Lighter than [tile]
      * so the unfilled portion of a bar reads as a recessed groove rather
@@ -76,6 +78,7 @@ val BrandColorsLight = BrandColors(
     success = Color(0xFF4F7C5C),
     tile = Color(0xFFEADBC5),
     tileSoft = Color(0xFFF8F5F1),
+    tanSoft = Color(0xFFF3EAD4),
     track = Color(0xFFEFE9DD),
     mintBg = Color(0xFFE4EEEB),
     mintInk = Color(0xFF164842),

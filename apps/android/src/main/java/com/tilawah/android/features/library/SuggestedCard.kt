@@ -1,5 +1,6 @@
 package com.tilawah.android.features.library
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.tilawah.android.R
 import com.tilawah.android.backend.Difficulty
 import com.tilawah.android.backend.SurahSuggestion
@@ -44,8 +46,10 @@ fun SuggestedCard(
     val spacing = BrandTheme.spacing
 
     Surface(
-        color = colors.card,
+        color = colors.paper,
         shape = RoundedCornerShape(spacing.cardCornerRadius),
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, colors.borderDefault),
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(spacing.cardCornerRadius)),
