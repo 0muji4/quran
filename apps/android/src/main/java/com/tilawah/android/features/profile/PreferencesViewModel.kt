@@ -17,8 +17,6 @@ import kotlinx.coroutines.launch
  * rolls back with an error message if the server rejects it. The server's
  * echo — not the local guess — becomes the source of truth so a
  * server-side normalisation (e.g. `1` → `1.0`) sticks.
- *
- * Mirrors `apps/ios/.../Features/Profile/PreferencesViewModel.swift`.
  */
 class PreferencesViewModel(
     private val client: PreferencesClient,

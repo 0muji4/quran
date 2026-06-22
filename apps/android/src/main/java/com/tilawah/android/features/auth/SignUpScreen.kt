@@ -40,11 +40,9 @@ import com.tilawah.android.features.auth.components.OAuthButtons
 import com.tilawah.android.features.auth.components.PasswordField
 
 /**
- * Sign-up screen. Matches `docs/design/Android _ Sign up.png` (back
- * chevron, eyebrow, "Create your account", lede, OAuth, divider, name,
- * email, password + helper, level cards, terms gate, primary CTA,
- * "Already have an account?" footer). Mirrors the web
- * `(auth)/sign-up/page.tsx` + `AuthForm.tsx` shape.
+ * Sign-up screen: back chevron, eyebrow, "Create your account", lede,
+ * OAuth, divider, name, email, password + helper, level cards, terms
+ * gate, primary CTA, "Already have an account?" footer.
  */
 @Composable
 fun SignUpScreen(
