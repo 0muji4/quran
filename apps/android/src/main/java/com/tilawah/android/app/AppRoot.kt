@@ -71,6 +71,7 @@ import com.tilawah.android.storage.DataStoreHistoryStore
 import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.InMemoryAuthSession
 import com.tilawah.android.storage.InMemoryHistoryStore
+import com.tilawah.android.backend.SurahSummary
 import com.tilawah.android.storage.LastPracticed
 import com.tilawah.android.storage.RemoteSyncedHistoryStore
 import com.tilawah.android.storage.SignInGatedHistoryStore
@@ -233,6 +234,17 @@ fun AppRoot(
                         practiceTarget = entry
                         selectedTab = TopLevelTab.Practice
                     },
+                    onSurahOpened = { surah ->
+                        practiceTarget = LastPracticed(
+                            surahId = surah.id,
+                            ayahNumber = 1,
+                            surahNameEn = surah.nameEn,
+                            surahNameAr = surah.nameAr,
+                            ayahCount = surah.ayahCount,
+                            practicedAt = java.time.Instant.EPOCH,
+                        )
+                        selectedTab = TopLevelTab.Practice
+                    },
                 )
                 TopLevelTab.Practice -> {
                     val activeResult = resultJobId
@@ -309,6 +321,7 @@ private fun LibraryTabHost(
     suggestionClient: SuggestionClient,
     signedInState: kotlinx.coroutines.flow.StateFlow<Boolean>,
     onResume: (LastPracticed) -> Unit,
+    onSurahOpened: (SurahSummary) -> Unit,
 ) {
     val viewModel: LibraryViewModel = viewModel(
         factory = viewModelFactory {
@@ -326,7 +339,7 @@ private fun LibraryTabHost(
     val signedIn by signedInState.collectAsStateWithLifecycle()
     LibraryScreen(
         viewModel = viewModel,
-        onSurahOpened = { /* surah-detail navigation lands when Result/Practice graph stabilises */ },
+        onSurahOpened = onSurahOpened,
         onResume = onResume,
         signedIn = signedIn,
     )
