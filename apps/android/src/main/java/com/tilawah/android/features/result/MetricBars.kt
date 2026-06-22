@@ -98,7 +98,7 @@ private fun MetricRow(
                 .fillMaxWidth()
                 .height(8.dp)
                 .clip(RoundedCornerShape(percent = 50))
-                .background(colors.tile),
+                .background(colors.track),
         ) {
             Box(
                 modifier = Modifier

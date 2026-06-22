@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.designsystem.BrandTheme
@@ -41,11 +40,9 @@ import com.tilawah.android.features.auth.components.OAuthButtons
 import com.tilawah.android.features.auth.components.PasswordField
 
 /**
- * Sign-up screen. Matches `docs/design/Android _ Sign up.png` (step
- * pill, eyebrow, "Create your account", lede, OAuth, divider, name,
- * email, password + helper, level cards, terms gate, primary CTA,
- * "Already have an account?" footer). Mirrors the web
- * `(auth)/sign-up/page.tsx` + `AuthForm.tsx` shape.
+ * Sign-up screen: back chevron, eyebrow, "Create your account", lede,
+ * OAuth, divider, name, email, password + helper, level cards, terms
+ * gate, primary CTA, "Already have an account?" footer.
  */
 @Composable
 fun SignUpScreen(
@@ -67,34 +64,22 @@ fun SignUpScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = spacing.screenHorizontal, vertical = spacing.xl),
         ) {
-            // Header: circular outlined back chevron (returns to sign-in,
-            // the only prior auth screen) on the left, and a plain
-            // right-aligned step indicator. Matches the Figma export.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            // Header: circular outlined back chevron, top-left, returning
+            // to sign-in (the only prior auth screen). A single-step flow
+            // carries no step indicator.
+            Box(
+                modifier = Modifier
+                    .size(spacing.minTapTarget)
+                    .clip(CircleShape)
+                    .border(BorderStroke(1.dp, colors.borderDefault), CircleShape)
+                    .clickable(enabled = !state.pending, onClick = onSignIn),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(spacing.minTapTarget)
-                        .clip(CircleShape)
-                        .border(BorderStroke(1.dp, colors.borderDefault), CircleShape)
-                        .clickable(enabled = !state.pending, onClick = onSignIn),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back to sign in",
-                        tint = colors.textPrimary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Text(
-                    text = "Step 1 of 1",
-                    style = BrandTheme.typography.caption,
-                    color = colors.textSecondary,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back to sign in",
+                    tint = colors.textPrimary,
+                    modifier = Modifier.size(20.dp),
                 )
             }
             copy.eyebrow?.let {

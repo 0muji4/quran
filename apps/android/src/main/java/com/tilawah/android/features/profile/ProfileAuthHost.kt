@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.AuthUser
+import com.tilawah.android.backend.PreferencesClient
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.features.auth.AuthMode
 import com.tilawah.android.features.auth.AuthViewModel
@@ -36,6 +37,7 @@ fun ProfileAuthHost(
     authApi: AuthApi,
     authSession: AuthSession,
     profileService: ProfileService,
+    preferencesClient: PreferencesClient,
     profileViewModel: ProfileViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -69,8 +71,17 @@ fun ProfileAuthHost(
             // Returning to a signed-in state automatically dismisses
             // any open auth screen.
             pendingMode = null
+            // Keyed by user id so a different identity loads its own
+            // preferences rather than inheriting the previous session's.
+            val preferencesViewModel: PreferencesViewModel = viewModel(
+                key = "preferences-${session?.user?.id}",
+                factory = viewModelFactory {
+                    initializer { PreferencesViewModel(client = preferencesClient) }
+                },
+            )
             ProfileScreen(
                 session = session,
+                preferencesViewModel = preferencesViewModel,
                 onSignInTapped = { pendingMode = AuthMode.SignIn },
                 onSignUpTapped = { pendingMode = AuthMode.SignUp },
                 onSignOutTapped = profileViewModel::signOut,

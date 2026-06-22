@@ -77,7 +77,7 @@ fun ScoreHero(
                 modifier = Modifier.size(180.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                ScoreArc(score = score, baseColor = colors.tile, scoreColor = colors.primary)
+                ScoreArc(score = score, baseColor = colors.track, scoreColor = colors.primary)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = scoreText,

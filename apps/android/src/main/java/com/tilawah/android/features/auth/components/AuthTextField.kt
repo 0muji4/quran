@@ -45,10 +45,10 @@ fun AuthTextField(
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(spacing.md),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = colors.card,
-                unfocusedContainerColor = colors.card,
+                focusedContainerColor = colors.paper,
+                unfocusedContainerColor = colors.paper,
                 focusedBorderColor = colors.primary,
-                unfocusedBorderColor = colors.tile,
+                unfocusedBorderColor = colors.borderDefault,
             ),
             modifier = Modifier
                 .fillMaxWidth()

@@ -94,7 +94,9 @@ fun SurahRow(
                 Text(
                     text = canonicalNumber.toString(),
                     style = typography.caption.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.textSecondary,
+                    // Gilded numeral on the cream badge — the AA-safe gold ink
+                    // (a brighter accent gold would drop below contrast here).
+                    color = colors.goldOnLight,
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
