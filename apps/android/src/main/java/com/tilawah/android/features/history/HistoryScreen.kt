@@ -79,9 +79,8 @@ private fun Header() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
         ) {
-            // Gold "+" ornament leading the eyebrow, matching the Figma export.
             Text(
-                text = "+",
+                text = "✦",
                 style = BrandTheme.typography.eyebrow,
                 color = BrandTheme.colors.accent,
             )
