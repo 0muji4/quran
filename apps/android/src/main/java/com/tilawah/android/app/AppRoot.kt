@@ -263,6 +263,7 @@ fun AppRoot(
                                 resultJobId = jobId
                                 resultRecordingPath = recPath
                             },
+                            onNavigateToAyah = { practiceTarget = practiceTarget.copy(ayahNumber = it) },
                         )
                     }
                 }
@@ -336,6 +337,7 @@ private fun PracticeTabHost(
     historyStore: HistoryStore,
     onNavigateBack: () -> Unit,
     onResultRequested: (jobId: String, recordingPath: String?) -> Unit,
+    onNavigateToAyah: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     val focus = remember(context) {
@@ -381,6 +383,7 @@ private fun PracticeTabHost(
         onResultRequested = { jobId ->
             onResultRequested(jobId, viewModel.lastRecording?.file?.absolutePath)
         },
+        onNavigateToAyah = onNavigateToAyah,
         onRequestPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
         hasMicPermission = hasMicPermission,
     )

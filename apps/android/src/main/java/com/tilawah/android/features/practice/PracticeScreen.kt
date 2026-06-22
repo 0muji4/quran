@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.R
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.PrimaryButton
+import com.tilawah.android.designsystem.components.SecondaryButton
 
 /**
  * Practice tab — composes header, AyahCard, TeacherReferencePanel,
@@ -42,6 +43,7 @@ fun PracticeScreen(
     viewModel: PracticeViewModel,
     onNavigateBack: () -> Unit,
     onResultRequested: (jobId: String) -> Unit,
+    onNavigateToAyah: (Int) -> Unit,
     onRequestPermission: () -> Unit,
     hasMicPermission: Boolean,
     modifier: Modifier = Modifier,
@@ -105,6 +107,43 @@ fun PracticeScreen(
                 onRecordAgain = viewModel::resetIdle,
             )
         }
+
+        val currentAyah = ayah?.ayahNumber
+        if (currentAyah != null && ayahCount > 0) {
+            AyahNavRow(
+                currentAyah = currentAyah,
+                ayahCount = ayahCount,
+                onNavigateToAyah = onNavigateToAyah,
+            )
+        }
+    }
+}
+
+// Previous / Next ayah navigation, each disabled at the surah's ends.
+@Composable
+private fun AyahNavRow(
+    currentAyah: Int,
+    ayahCount: Int,
+    onNavigateToAyah: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.sm),
+    ) {
+        SecondaryButton(
+            label = stringResource(R.string.practice_previous_ayah),
+            onClick = { onNavigateToAyah(currentAyah - 1) },
+            modifier = Modifier.weight(1f),
+            enabled = currentAyah > 1,
+            fillWidth = false,
+        )
+        SecondaryButton(
+            label = stringResource(R.string.practice_next_ayah),
+            onClick = { onNavigateToAyah(currentAyah + 1) },
+            modifier = Modifier.weight(1f),
+            enabled = currentAyah < ayahCount,
+            fillWidth = false,
+        )
     }
 }
 
