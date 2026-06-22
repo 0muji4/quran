@@ -11,6 +11,7 @@ import {
   upsertBestScore,
   upsertLastPracticed
 } from './storage';
+import { KNOWN_RECITER_IDS, getUserPreferences, upsertUserPreferences } from './preferences';
 import { getSuggestion } from './suggestions';
 
 // All handlers gate on requireAuth. Under MOCK_SESSION=true (dev / CI)
@@ -64,6 +65,25 @@ const attemptBodySchema = z.object({
     durationMs: z.number().int().nonnegative().nullable().optional(),
     createdAt: isoDateString
   })
+});
+
+// Stricter than a loose \d{2}:\d{2} so an out-of-range clock is a 400 here,
+// not a 502 from the Postgres TIME cast.
+const reminderTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected "HH:mm" (24h)');
+
+// reciter id is constrained to the known set so an unknown id is a clean
+// 400, not a dangling value the web cannot render.
+const patchPreferencesSchema = z.object({
+  body: z
+    .object({
+      referenceReciterId: z.enum(KNOWN_RECITER_IDS).optional(),
+      defaultPlaybackSpeed: z.number().min(0.5).max(2).optional(),
+      dailyReminderEnabled: z.boolean().optional(),
+      dailyReminderTime: reminderTime.optional()
+    })
+    .refine((body) => Object.keys(body).length > 0, {
+      message: 'at least one field must be present'
+    })
 });
 
 meRouter.get('/me/last-practiced', async (req: AuthedRequest, res) => {
@@ -185,5 +205,33 @@ meRouter.post('/me/attempts', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('POST /me/attempts failed', { user_id: session.id, error });
     res.status(502).json({ error: 'Failed to record attempt' });
+  }
+});
+
+meRouter.get('/me/preferences', async (req: AuthedRequest, res) => {
+  const session = requireAuth(req, res);
+  if (!session) return;
+  try {
+    const preferences = await getUserPreferences(session.id);
+    res.json({ preferences });
+  } catch (error) {
+    logger.error('GET /me/preferences failed', { user_id: session.id, error });
+    res.status(502).json({ error: 'Failed to fetch preferences' });
+  }
+});
+
+meRouter.patch('/me/preferences', async (req: AuthedRequest, res) => {
+  const validation = patchPreferencesSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const session = requireAuth(req, res);
+  if (!session) return;
+  try {
+    const preferences = await upsertUserPreferences(session.id, validation.data.body);
+    res.json({ preferences });
+  } catch (error) {
+    logger.error('PATCH /me/preferences failed', { user_id: session.id, error });
+    res.status(502).json({ error: 'Failed to update preferences' });
   }
 });
