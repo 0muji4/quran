@@ -5,7 +5,6 @@ import SwiftUI
 /// name + revelation place / ayah count metadata, Arabic name on the
 /// trailing side. Tapping the row opens the Practice tab in PR 11.
 struct SurahRow: View {
-  let index: Int
   let surah: SurahSummary
   let bestScore: Int?
 
@@ -44,8 +43,11 @@ struct SurahRow: View {
     return Text("Surah \(surah.nameEn), \(surah.revelationPlace), \(surah.ayahCount) ayahs")
   }
 
+  /// Canonical surah number (1…114) from `surah.id`, not the row's
+  /// position in the filtered list — so Ya-Sin reads "36" even when
+  /// it's the 4th row of a Mecca filter.
   private var indexBadge: some View {
-    Text("\(index)")
+    Text(surah.id)
       .font(Font.brand.caption.weight(.semibold))
       .foregroundColor(Color.brand.textSecondary)
       .frame(width: 28, height: 28)

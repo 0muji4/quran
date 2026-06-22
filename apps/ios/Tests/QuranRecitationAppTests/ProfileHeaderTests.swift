@@ -63,4 +63,12 @@ final class ProfileHeaderTests: XCTestCase {
     XCTAssertNotNil(text)
     XCTAssertTrue(text?.contains("2026") == true, "expected year in '\(text ?? "")'")
   }
+
+  // MARK: - streakText(_:)
+
+  func test_streakText_includesStarAndCount() {
+    let text = ProfileHeader.streakText(5)
+    XCTAssertTrue(text.contains("5"), "expected day count in '\(text)'")
+    XCTAssertTrue(text.contains("✦"), "expected ✦ glyph in '\(text)'")
+  }
 }

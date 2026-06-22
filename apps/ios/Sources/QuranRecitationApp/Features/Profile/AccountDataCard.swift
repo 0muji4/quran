@@ -24,34 +24,34 @@ struct AccountDataCard: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: Spacing.md) {
-      Text("profile.section.accountTitle", bundle: .module)
-        .font(Font.brand.sectionTitle)
-        .foregroundColor(Color.brand.textPrimary)
+      ProfileSectionLabel("profile.section.account")
 
-      AccountRow(
-        eyebrowKey: "profile.section.email.eyebrow",
-        primary: email,
-        helperKey: "profile.section.email.helper",
-        actionKey: "profile.section.email.cta",
-        actionA11yKey: "profile.section.email.cta.a11yDisabled",
-        action: onChangeEmail
-      )
+      VStack(alignment: .leading, spacing: Spacing.md) {
+        AccountRow(
+          eyebrowKey: "profile.section.email.eyebrow",
+          primary: email,
+          helperKey: "profile.section.email.helper",
+          actionKey: "profile.section.email.cta",
+          actionA11yKey: "profile.section.email.cta.a11yDisabled",
+          action: onChangeEmail
+        )
 
-      Divider().background(Color.brand.tile)
+        Divider().background(Color.brand.tile)
 
-      AccountRow(
-        eyebrowKey: "profile.section.password.eyebrow",
-        primary: "•••••••••••",
-        helperKey: "profile.section.password.helper",
-        actionKey: "profile.section.password.cta",
-        actionA11yKey: "profile.section.password.cta.a11yDisabled",
-        action: onUpdatePassword
-      )
+        AccountRow(
+          eyebrowKey: "profile.section.password.eyebrow",
+          primary: "•••••••••••",
+          helperKey: "profile.section.password.helper",
+          actionKey: "profile.section.password.cta",
+          actionA11yKey: "profile.section.password.cta.a11yDisabled",
+          action: onUpdatePassword
+        )
+      }
+      .padding(Spacing.lg)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(Color.brand.card)
+      .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
     }
-    .padding(Spacing.lg)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.brand.card)
-    .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
   }
 }
 
@@ -91,8 +91,10 @@ private struct AccountRow: View {
       } label: {
         Text(LocalizedStringKey(actionKey), bundle: .module)
           .font(Font.brand.caption.weight(.semibold))
+          .foregroundColor(Color.brand.primary)
       }
       .disabled(action == nil)
+      .opacity(action == nil ? 0.4 : 1)
       .accessibilityLabel(
         action == nil
           ? Text(LocalizedStringKey(actionA11yKey), bundle: .module)

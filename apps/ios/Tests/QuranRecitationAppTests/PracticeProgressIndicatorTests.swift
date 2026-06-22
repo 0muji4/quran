@@ -2,11 +2,9 @@ import XCTest
 import CoreGraphics
 @testable import QuranRecitationApp
 
-/// Pure-helper tests for the Practice progress bar indicator
-/// position. Replaces the old 10-dot row which silently went
-/// all-grey for any surah > 10 ayahs (see
-/// `docs/design/iOS _ Practice _ long surah.png` and the audit
-/// note on `PracticeView.swift`).
+/// Pure-helper tests for the Practice progress bar indicator position.
+/// Replaces the old 10-dot row which silently went all-grey for any
+/// surah > 10 ayahs.
 final class PracticeProgressIndicatorTests: XCTestCase {
   private let trackWidth: CGFloat = 250
   private let diameter: CGFloat = 10  // mirrors PracticeView.indicatorDiameter
@@ -88,5 +86,27 @@ final class PracticeProgressIndicatorTests: XCTestCase {
       trackWidth: 4
     )
     XCTAssertEqual(offset, 0)
+  }
+
+  // MARK: - Segmented vs. continuous threshold
+
+  func test_shortSurah_usesSegments() {
+    // Al-Fatihah (7) and any surah up to the 12-ayah cutoff render
+    // as discrete pill segments.
+    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 7))
+    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 1))
+  }
+
+  func test_atThreshold_stillSegmented() {
+    // The boundary is inclusive (≤ 12), matching Android's
+    // `ayahCount <= MAX_SEGMENTS`.
+    XCTAssertEqual(PracticeView.maxSegments, 12)
+    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 12))
+  }
+
+  func test_longSurah_usesContinuousBar() {
+    // One past the threshold flips to the bar; Al-Baqarah (286) too.
+    XCTAssertFalse(PracticeView.usesSegmentedProgress(ayahCount: 13))
+    XCTAssertFalse(PracticeView.usesSegmentedProgress(ayahCount: 286))
   }
 }

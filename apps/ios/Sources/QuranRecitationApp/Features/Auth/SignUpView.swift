@@ -64,18 +64,15 @@ struct SignUpView: View {
     .toolbar(.hidden, for: .navigationBar)
   }
 
+  /// Top spacer so the eyebrow clears the navigation area, rather than
+  /// butting the heading against the status bar.
   private var topBar: some View {
-    HStack {
-      Spacer()
-    }
+    Color.clear.frame(height: Spacing.lg)
   }
 
   private var heading: some View {
     VStack(alignment: .leading, spacing: Spacing.xs) {
-      Text("auth.signup.eyebrow", bundle: .module)
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.accent)
-        .textCase(.uppercase)
+      BrandEyebrow("auth.signup.eyebrow")
       Text("auth.signup.title", bundle: .module)
         .font(Font.brand.pageTitle)
         .foregroundColor(Color.brand.textPrimary)
