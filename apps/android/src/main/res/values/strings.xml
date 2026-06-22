@@ -113,7 +113,16 @@
     <string name="result_verdict_great_badge">GREAT WORK</string>
     <string name="result_verdict_midway_badge">KEEP PRACTISING</string>
     <string name="result_verdict_beginner_badge">KEEP PRACTISING</string>
-    <string name="result_score_encouragement">Strong attempt — try once more to push past 90.</string>
+    <string name="result_verdict_awaiting_headline">No score yet</string>
+    <string name="result_verdict_awaiting_subhead">Try recording the ayah to receive your pronunciation feedback.</string>
+    <string name="result_verdict_mastered_headline">Excellent recitation</string>
+    <string name="result_verdict_mastered_subhead">Your pronunciation closely matches the teacher reference. Move on whenever ready.</string>
+    <string name="result_verdict_great_headline">Great progress</string>
+    <string name="result_verdict_great_subhead">A few subtle differences remain. Listen back and refine your delivery.</string>
+    <string name="result_verdict_midway_headline">Some work to do — that\'s okay</string>
+    <string name="result_verdict_midway_subhead">Several words came through differently than expected. Try listening to the teacher slowly and reciting along before recording again.</string>
+    <string name="result_verdict_beginner_headline">Not quite there yet</string>
+    <string name="result_verdict_beginner_subhead">Slow down with the teacher reference and focus on the sounds before retrying. Small, repeated passes work best.</string>
     <string name="result_metrics_title">Metrics</string>
     <string name="result_metric_accuracy">Accuracy</string>
     <string name="result_metric_fluency">Fluency</string>

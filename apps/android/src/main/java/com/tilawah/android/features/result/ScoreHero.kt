@@ -53,7 +53,8 @@ fun ScoreHero(
     // Round (not truncate) so 0.87 reads as "87" rather than "86".
     val scoreValue = score?.let { Math.round(it * 100).toInt() }
     val scoreText = scoreValue?.toString() ?: "—"
-    val verdictBadge = stringResource(verdictBandForScore(scoreValue).badgeRes)
+    val verdictBand = verdictBandForScore(scoreValue)
+    val verdictBadge = stringResource(verdictBand.badgeRes)
     val a11y = if (scoreValue != null) {
         "Recitation score $scoreValue out of 100, $verdictBadge"
     } else {
@@ -89,12 +90,23 @@ fun ScoreHero(
                     )
                 }
             }
-            Text(
-                text = stringResource(R.string.result_score_encouragement),
-                style = typography.body,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                Text(
+                    text = stringResource(verdictBand.headlineRes),
+                    style = typography.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.textPrimary,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = stringResource(verdictBand.subheadRes),
+                    style = typography.caption,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
