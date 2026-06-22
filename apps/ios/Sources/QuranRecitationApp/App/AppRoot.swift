@@ -152,7 +152,9 @@ struct AppRoot: View {
       session: session,
       authService: authService,
       telemetry: telemetry,
-      profileService: profileService
+      profileService: profileService,
+      meClient: meClient,
+      historyStore: historyStore
     )
     .tabItem { Label("Profile", systemImage: "person.crop.circle") }
     .tag(AppTab.profile)

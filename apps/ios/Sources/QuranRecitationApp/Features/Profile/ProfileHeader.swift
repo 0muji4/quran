@@ -7,75 +7,46 @@ import SwiftUI
 /// profile sheet in PR-H3.
 struct ProfileHeader: View {
   let user: AuthenticatedUser
-  /// `nil` keeps the Edit affordance disabled — the H2 default state.
-  /// PR-H3 onward passes a closure to open the Edit Profile sheet.
+  /// Consecutive-day practice streak (from the local history store, the
+  /// same source the History tab uses). `0` hides the streak pill —
+  /// matching the web `StreakBadge`, which only renders once a streak
+  /// exists rather than showing "0-day".
+  let streakDays: Int
+  /// `nil` keeps the Edit affordance disabled — the read-only default.
+  /// A closure opens the Edit Profile sheet.
   let onEdit: (() -> Void)?
 
-  init(user: AuthenticatedUser, onEdit: (() -> Void)? = nil) {
+  init(user: AuthenticatedUser, streakDays: Int = 0, onEdit: (() -> Void)? = nil) {
     self.user = user
+    self.streakDays = streakDays
     self.onEdit = onEdit
   }
 
   var body: some View {
-    HStack(alignment: .top, spacing: Spacing.lg) {
-      avatar
+    VStack(spacing: Spacing.md) {
+      BrandAvatar(initial: Self.initial(displayName: user.displayName, email: user.email))
 
-      VStack(alignment: .leading, spacing: Spacing.xs) {
-        Text(user.displayName ?? user.email)
-          .font(Font.brand.sectionTitle)
-          .foregroundColor(Color.brand.textPrimary)
+      Text(user.displayName ?? user.email)
+        .font(Font.brand.sectionTitle)
+        .foregroundColor(Color.brand.textPrimary)
+        .multilineTextAlignment(.center)
 
-        Text(user.email)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
+      badgeRow
 
-        badgeRow
-          .padding(.top, Spacing.xs)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-
-      Button {
-        onEdit?()
-      } label: {
-        Text("profile.header.edit", bundle: .module)
-          .font(Font.brand.caption.weight(.semibold))
-      }
-      .disabled(onEdit == nil)
-      .accessibilityLabel(
-        Text(
-          onEdit == nil
-            ? LocalizedStringKey("profile.header.edit.a11yDisabled")
-            : LocalizedStringKey("profile.header.edit"),
-          bundle: .module
-        )
-      )
+      editPill
+        .padding(.top, Spacing.xs)
     }
-    .padding(Spacing.lg)
+    .frame(maxWidth: .infinity)
+    .padding(Spacing.xl)
     .background(Color.brand.card)
     .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
   }
 
   // MARK: - Subviews
 
-  private var avatar: some View {
-    Circle()
-      .fill(
-        RadialGradient(
-          colors: [Color.brand.accent, Color.brand.primary],
-          center: UnitPoint(x: 0.35, y: 0.3),
-          startRadius: 4,
-          endRadius: 80
-        )
-      )
-      .frame(width: 72, height: 72)
-      .overlay(
-        Text(Self.initial(displayName: user.displayName, email: user.email))
-          .font(.system(size: 28, design: .serif))
-          .foregroundColor(Color.brand.textOnInverse)
-      )
-      .accessibilityHidden(true)
-  }
-
+  /// Level + streak pills, centered. Falls back to the "Joined …" pill
+  /// when there's no streak yet, so a brand-new account still has a
+  /// second pill to balance the row.
   private var badgeRow: some View {
     HStack(spacing: Spacing.xs) {
       if let levelKey = Self.levelKey(user.level) {
@@ -85,7 +56,14 @@ struct ProfileHeader: View {
           foreground: Color.brand.primary
         )
       }
-      if let joined = Self.joinedText(user.createdAt) {
+      if streakDays > 0 {
+        ProfileBadge(
+          text: Self.streakText(streakDays),
+          background: Color.brand.tile,
+          foreground: Color.brand.decorative
+        )
+        .accessibilityLabel(Text(Self.streakText(streakDays)))
+      } else if let joined = Self.joinedText(user.createdAt) {
         ProfileBadge(
           text: joined,
           background: Color.brand.tile,
@@ -93,6 +71,44 @@ struct ProfileHeader: View {
         )
       }
     }
+  }
+
+  /// Outline "Edit profile" pill. Subtle hairline border on the cream
+  /// card rather than a filled CTA — the primary action on this screen
+  /// is elsewhere, so the edit affordance stays quiet.
+  private var editPill: some View {
+    Button {
+      onEdit?()
+    } label: {
+      Text("profile.header.editProfile", bundle: .module)
+        .font(Font.brand.caption.weight(.semibold))
+        .foregroundColor(Color.brand.textPrimary)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .overlay(
+          Capsule().stroke(Color.brand.textSecondary.opacity(0.35), lineWidth: 1)
+        )
+    }
+    .buttonStyle(.plain)
+    .disabled(onEdit == nil)
+    .opacity(onEdit == nil ? 0.4 : 1)
+    .accessibilityLabel(
+      Text(
+        onEdit == nil
+          ? LocalizedStringKey("profile.header.edit.a11yDisabled")
+          : LocalizedStringKey("profile.header.editProfile"),
+        bundle: .module
+      )
+    )
+  }
+
+  /// "✦ 5-day streak" — the ✦ matches the web streak badge and the
+  /// page eyebrows. Localised count so plural-aware languages can adapt.
+  static func streakText(_ days: Int) -> String {
+    let template = Bundle.module.localizedString(
+      forKey: "profile.header.streak", value: "✦ %lld-day streak", table: nil
+    )
+    return String(format: template, days)
   }
 
   // MARK: - Helpers

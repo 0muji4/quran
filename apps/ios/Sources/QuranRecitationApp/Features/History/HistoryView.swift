@@ -43,10 +43,7 @@ struct HistoryView: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: Spacing.xs) {
-      Text("history.eyebrow", bundle: .module)
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.accent)
-        .textCase(.uppercase)
+      BrandEyebrow("history.eyebrow")
       Text("history.title", bundle: .module)
         .font(Font.brand.pageTitle)
         .foregroundColor(Color.brand.textPrimary)
@@ -74,11 +71,17 @@ struct HistoryView: View {
     if visible.isEmpty {
       empty
     } else {
-      LazyVStack(spacing: Spacing.sm) {
-        ForEach(visible) { attempt in
+      LazyVStack(spacing: 0) {
+        ForEach(Array(visible.enumerated()), id: \.element.id) { index, attempt in
+          if index > 0 {
+            Divider().background(Color.brand.tile)
+          }
           AttemptRow(attempt: attempt)
         }
       }
+      .padding(.horizontal, Spacing.md)
+      .background(Color.brand.card)
+      .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
       .padding(.horizontal, Spacing.screenHorizontal)
     }
   }

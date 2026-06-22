@@ -44,17 +44,13 @@ struct LibraryView: View {
           }
           .padding(.horizontal, Spacing.screenHorizontal)
         }
+        searchPill
         chipFilter
         content
       }
       .padding(.vertical, Spacing.lg)
     }
     .background(Color.brand.surface.ignoresSafeArea())
-    .searchable(
-      text: $viewModel.query,
-      placement: .navigationBarDrawer(displayMode: .always),
-      prompt: Text("library.searchPlaceholder", bundle: .module)
-    )
     .task {
       if case .idle = viewModel.state {
         await viewModel.load()
@@ -74,14 +70,46 @@ struct LibraryView: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: Spacing.xs) {
-      Text("library.eyebrow", bundle: .module)
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.accent)
-        .textCase(.uppercase)
+      BrandEyebrow("library.eyebrow")
       Text("library.title", bundle: .module)
         .font(Font.brand.pageTitle)
         .foregroundColor(Color.brand.textPrimary)
     }
+    .padding(.horizontal, Spacing.screenHorizontal)
+  }
+
+  /// Inline search pill in the content (not the nav-bar `.searchable`
+  /// drawer) — the rounded cream field from the mock, sitting between
+  /// the Continue card and the filter chips.
+  private var searchPill: some View {
+    HStack(spacing: Spacing.sm) {
+      Image(systemName: "magnifyingglass")
+        .foregroundColor(Color.brand.textSecondary)
+      TextField(
+        "",
+        text: $viewModel.query,
+        prompt: Text("library.searchPlaceholder", bundle: .module)
+          .foregroundColor(Color.brand.textSecondary)
+      )
+      .foregroundColor(Color.brand.textPrimary)
+      .autocorrectionDisabled()
+      .textInputAutocapitalization(.never)
+      if !viewModel.query.isEmpty {
+        Button {
+          viewModel.query = ""
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+            .foregroundColor(Color.brand.textSecondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("library.searchPlaceholder", bundle: .module))
+      }
+    }
+    .padding(.horizontal, Spacing.lg)
+    .frame(minHeight: Spacing.minTapTarget)
+    .background(Color.brand.card)
+    .clipShape(Capsule())
+    .overlay(Capsule().strokeBorder(Color.brand.tile, lineWidth: 1))
     .padding(.horizontal, Spacing.screenHorizontal)
   }
 
@@ -110,9 +138,8 @@ struct LibraryView: View {
         emptyState
       } else {
         LazyVStack(spacing: Spacing.sm) {
-          ForEach(Array(visible.enumerated()), id: \.element.id) { index, surah in
+          ForEach(visible) { surah in
             SurahRow(
-              index: index + 1,
               surah: surah,
               bestScore: historyStore.bestScore(forSurah: surah.id).map { Int($0) }
             )

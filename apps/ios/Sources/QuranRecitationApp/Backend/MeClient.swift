@@ -53,6 +53,12 @@ protocol MeClient {
 
   func attempts(limit: Int) async throws -> [Attempt]
   func recordAttempt(_ attempt: Attempt) async throws -> Attempt
+
+  // Practice preferences. GET returns the full row (server substitutes
+  // defaults when the user has none); PATCH applies a partial update and
+  // echoes the merged result.
+  func preferences() async throws -> PracticePreferences
+  func updatePreferences(_ patch: PracticePreferencesPatch) async throws -> PracticePreferences
 }
 
 @MainActor
@@ -207,6 +213,42 @@ final class HTTPMeClient: MeClient {
     }
   }
 
+  // MARK: - Preferences
+
+  func preferences() async throws -> PracticePreferences {
+    var request = URLRequest(url: baseURL.appendingPathComponent("me/preferences"))
+    request.httpMethod = "GET"
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+    let (data, response) = try await http.send(request)
+    switch response.statusCode {
+    case 200..<300:
+      return try Self.decode(PreferencesResponseBody.self, from: data, operation: "me.preferences").preferences
+    default:
+      throw AppError.backendUnavailable(operation: "me.preferences")
+    }
+  }
+
+  func updatePreferences(_ patch: PracticePreferencesPatch) async throws -> PracticePreferences {
+    var request = URLRequest(url: baseURL.appendingPathComponent("me/preferences"))
+    request.httpMethod = "PATCH"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.httpBody = try Self.encode(patch, operation: "me.preferences.patch")
+
+    let (data, response) = try await http.send(request)
+    switch response.statusCode {
+    case 200..<300:
+      return try Self.decode(
+        PreferencesResponseBody.self,
+        from: data,
+        operation: "me.preferences.patch"
+      ).preferences
+    default:
+      throw AppError.backendUnavailable(operation: "me.preferences.patch")
+    }
+  }
+
   // MARK: - Codable helpers
 
   private static func encoder() -> JSONEncoder {
@@ -292,6 +334,12 @@ private struct SuggestionResponseBody: Decodable {
 /// counts) can land without breaking clients.
 private struct AttemptsResponseBody: Decodable {
   let attempts: [Attempt]
+}
+
+/// 2xx response shape for `GET` / `PATCH /me/preferences` — the row in a
+/// `preferences` envelope.
+private struct PreferencesResponseBody: Decodable {
+  let preferences: PracticePreferences
 }
 
 /// File-scoped formatters so the encoder / decoder closures (Sendable,

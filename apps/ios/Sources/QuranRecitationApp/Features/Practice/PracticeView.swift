@@ -16,7 +16,7 @@ struct PracticeView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
         topBar
-        progressDots
+        progressIndicator
         if let ayah = viewModel.ayah, let surah = viewModel.surah {
           AyahCard(
             surahNameEn: surah.nameEn,
@@ -106,58 +106,96 @@ struct PracticeView: View {
     .padding(.horizontal, Spacing.screenHorizontal)
   }
 
-  /// Bar + "currentAyah / total" indicator (see
-  /// `docs/design/iOS _ Practice _ long surah.png`). Replaces the
-  /// older 10-dot row, which silently went all-grey for any surah
-  /// with more than 10 ayahs because no dot index ever matched a
-  /// `currentAyahNumber ≥ 11`. The bar scales linearly across the
-  /// surah so the indicator works for both Al-Fatihah (7 ayahs)
-  /// and Al-Baqarah (286).
+  /// Ayah progress, hybrid: short surahs render a row of pill segments
+  /// (active = wider + emerald), long surahs collapse to a single linear
+  /// bar with an "n / total" count. Above ``maxSegments`` the segment row
+  /// would overflow the screen width, so it switches to the bar; the
+  /// threshold matches the other platforms so the cutover is identical.
   @ViewBuilder
-  private var progressDots: some View {
+  private var progressIndicator: some View {
     if let count = viewModel.surah?.ayahCount, count > 0 {
-      HStack(spacing: Spacing.md) {
-        GeometryReader { geo in
-          ZStack(alignment: .leading) {
-            Capsule()
-              .fill(Color.brand.tile)
-              .frame(height: 4)
-              .frame(maxHeight: .infinity, alignment: .center)
-            Circle()
-              .fill(Color.brand.primary)
-              .frame(width: Self.indicatorDiameter, height: Self.indicatorDiameter)
-              .offset(
-                x: Self.indicatorOffset(
-                  currentAyahNumber: viewModel.currentAyahNumber,
-                  ayahCount: count,
-                  trackWidth: geo.size.width
-                )
-              )
-          }
+      Group {
+        if Self.usesSegmentedProgress(ayahCount: count) {
+          segmentedProgress(count: count)
+        } else {
+          continuousProgress(count: count)
         }
-        .frame(height: Self.indicatorDiameter)
-
-        VStack(alignment: .trailing, spacing: -2) {
-          Text("\(viewModel.currentAyahNumber) /")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(Color.brand.textPrimary)
-          Text("\(count)")
-            .font(.system(size: 13))
-            .foregroundColor(Color.brand.textSecondary)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-          Text(
-            "practice.progress.a11y \(viewModel.currentAyahNumber) \(count)",
-            bundle: .module
-          )
-        )
       }
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(
+        Text(
+          "practice.progress.a11y \(viewModel.currentAyahNumber) \(count)",
+          bundle: .module
+        )
+      )
       .padding(.horizontal, Spacing.screenHorizontal)
     }
   }
 
-  /// Diameter of the teal indicator on the progress bar. Kept in
+  /// Short-surah mode: one rounded pill per ayah, the active ayah
+  /// rendered wider and in the primary emerald.
+  private func segmentedProgress(count: Int) -> some View {
+    let active = max(1, min(viewModel.currentAyahNumber, count))
+    return HStack(spacing: Spacing.xs) {
+      ForEach(1...count, id: \.self) { index in
+        let isActive = index == active
+        Capsule()
+          .fill(isActive ? Color.brand.primary : Color.brand.tile)
+          .frame(width: isActive ? 24 : 14, height: 4)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  /// Long-surah mode: a linear track whose indicator scales across
+  /// the surah, paired with an "n / total" count. Works for any
+  /// length (Al-Baqarah is 286 ayahs), where a segment row could not.
+  private func continuousProgress(count: Int) -> some View {
+    HStack(spacing: Spacing.md) {
+      GeometryReader { geo in
+        ZStack(alignment: .leading) {
+          Capsule()
+            .fill(Color.brand.tile)
+            .frame(height: 4)
+            .frame(maxHeight: .infinity, alignment: .center)
+          Circle()
+            .fill(Color.brand.primary)
+            .frame(width: Self.indicatorDiameter, height: Self.indicatorDiameter)
+            .offset(
+              x: Self.indicatorOffset(
+                currentAyahNumber: viewModel.currentAyahNumber,
+                ayahCount: count,
+                trackWidth: geo.size.width
+              )
+            )
+        }
+      }
+      .frame(height: Self.indicatorDiameter)
+
+      VStack(alignment: .trailing, spacing: -2) {
+        Text("\(viewModel.currentAyahNumber) /")
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundColor(Color.brand.textPrimary)
+        Text("\(count)")
+          .font(.system(size: 13))
+          .foregroundColor(Color.brand.textSecondary)
+      }
+    }
+  }
+
+  /// Surahs with at most this many ayahs render as discrete segments;
+  /// longer ones use the continuous bar. Matches Android's
+  /// `MAX_SEGMENTS` so the cutover point is identical across platforms.
+  static let maxSegments = 12
+
+  /// Whether a surah of `ayahCount` ayahs uses the segmented indicator
+  /// (vs. the continuous bar). Extracted as a pure helper so the
+  /// threshold rule is unit-testable without a rendered view.
+  static func usesSegmentedProgress(ayahCount: Int) -> Bool {
+    ayahCount <= maxSegments
+  }
+
+  /// Diameter of the emerald indicator on the continuous bar. Kept in
   /// one place so the offset math doesn't drift from the rendered
   /// circle size.
   private static let indicatorDiameter: CGFloat = 10
@@ -212,9 +250,9 @@ struct PracticeView: View {
         .labelStyle(.titleAndIcon)
         .environment(\.layoutDirection, .rightToLeft)  // icon trailing
         .font(Font.brand.body.weight(.semibold))
-        .foregroundColor(Color.brand.textOnPrimary)
+        .foregroundColor(Color.brand.textPrimary)
         .frame(maxWidth: .infinity, minHeight: Spacing.minTapTarget)
-        .background(Color.brand.primary)
+        .background(Color.brand.card)
         .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
       }
       .buttonStyle(.plain)

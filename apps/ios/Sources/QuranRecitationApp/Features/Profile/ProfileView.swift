@@ -14,16 +14,23 @@ struct ProfileView: View {
   @StateObject private var authViewModel: AuthViewModel
   @State private var path: [AuthRoute] = []
   private let profileService: ProfileService?
+  private let meClient: MeClient?
+  private let historyStore: HistoryStore?
 
   /// `profileService: nil` keeps the Profile tab in read-only mode
   /// (every CTA in the cards stays disabled). Previews and the
   /// signed-out flow can pass `nil`; production passes the live
   /// service so the Edit / Change / Update / Delete sheets work.
+  /// `meClient: nil` likewise hides the Practice Preferences card,
+  /// which needs the `/me/preferences` transport. `historyStore`
+  /// feeds the header streak pill (local source, same as History).
   init(
     session: SessionStore,
     authService: AuthService,
     telemetry: Telemetry,
-    profileService: ProfileService? = nil
+    profileService: ProfileService? = nil,
+    meClient: MeClient? = nil,
+    historyStore: HistoryStore? = nil
   ) {
     self._session = ObservedObject(wrappedValue: session)
     self._authViewModel = StateObject(
@@ -34,6 +41,8 @@ struct ProfileView: View {
       )
     )
     self.profileService = profileService
+    self.meClient = meClient
+    self.historyStore = historyStore
   }
 
   var body: some View {
@@ -65,6 +74,8 @@ struct ProfileView: View {
         user: user,
         session: session,
         profileService: profileService,
+        meClient: meClient,
+        streakDays: Self.streakDays(historyStore),
         onSignOut: { session.signOut() }
       )
     } else {
@@ -73,6 +84,14 @@ struct ProfileView: View {
         onSignUp: { path = [.signUp] }
       )
     }
+  }
+
+  /// Consecutive-day streak from the local store, or 0 when unavailable
+  /// (read-only/preview paths). Reuses `HistoryStats` so the count
+  /// always matches the History tab to the day.
+  private static func streakDays(_ store: HistoryStore?) -> Int {
+    guard let store else { return 0 }
+    return HistoryStats.compute(from: store.recentAttempts(limit: 365)).streakDays
   }
 }
 
@@ -124,6 +143,8 @@ private struct ProfileSignedInContent: View {
   /// banner without relying on the parent re-creating this view.
   @ObservedObject var session: SessionStore
   let profileService: ProfileService?
+  let meClient: MeClient?
+  let streakDays: Int
   let onSignOut: () -> Void
   @State private var editViewModel: EditProfileViewModel?
   @State private var updatePasswordViewModel: UpdatePasswordViewModel?
@@ -132,11 +153,20 @@ private struct ProfileSignedInContent: View {
 
   var body: some View {
     ScrollView {
-      VStack(spacing: Spacing.lg) {
+      VStack(alignment: .leading, spacing: Spacing.lg) {
         if session.pendingReactivationNotice {
           ReactivationBanner(onDismiss: session.acknowledgeReactivationNotice)
         }
-        ProfileHeader(user: user, onEdit: editAction)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+          BrandEyebrow("profile.page.eyebrow")
+          Text("profile.page.title", bundle: .module)
+            .font(Font.brand.pageTitle)
+            .foregroundColor(Color.brand.textPrimary)
+        }
+        ProfileHeader(user: user, streakDays: streakDays, onEdit: editAction)
+        if let meClient {
+          PreferencesSection(meClient: meClient)
+        }
         AccountDataCard(
           email: user.email,
           onChangeEmail: changeEmailAction,
@@ -146,6 +176,7 @@ private struct ProfileSignedInContent: View {
         SignOutSection(onSignOut: onSignOut)
           .padding(.top, Spacing.sm)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, Spacing.screenHorizontal)
       .padding(.vertical, Spacing.lg)
     }
@@ -201,5 +232,21 @@ private struct ProfileSignedInContent: View {
         session: session
       )
     }
+  }
+}
+
+/// Owns the `PreferencesViewModel` as a `@StateObject` so its lifetime
+/// is tied to the signed-in content (the surrounding struct can't hold
+/// an optional `@StateObject`). Rendered only when a `MeClient` is
+/// available — i.e. not in the read-only preview/signed-out paths.
+private struct PreferencesSection: View {
+  @StateObject private var viewModel: PreferencesViewModel
+
+  init(meClient: MeClient) {
+    self._viewModel = StateObject(wrappedValue: PreferencesViewModel(meClient: meClient))
+  }
+
+  var body: some View {
+    PracticePreferencesCard(viewModel: viewModel)
   }
 }

@@ -30,10 +30,17 @@ struct WordComparisonGrid: View {
         .foregroundColor(Color.brand.textPrimary)
       Spacer()
       if let werPercent {
+        // Word error rate as an emphasised chip — the one number that
+        // tells the user how far the transcript drifted from the
+        // reference, so it earns a tinted pill rather than grey text.
         Text("WER \(werPercent)%")
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
+          .font(Font.brand.caption.weight(.semibold))
+          .foregroundColor(Color.brand.accent)
           .monospacedDigit()
+          .padding(.horizontal, Spacing.sm)
+          .padding(.vertical, Spacing.xs)
+          .background(Color.brand.accent.opacity(0.14))
+          .clipShape(Capsule())
       }
     }
   }

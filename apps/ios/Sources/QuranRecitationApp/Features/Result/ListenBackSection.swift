@@ -25,6 +25,7 @@ struct ListenBackSection: View {
           tint: Color.brand.primary,
           onToggle: onToggleTeacher
         )
+        Divider().background(Color.brand.tile)
         PlaybackRow(
           title: "result.listenBack.you",
           duration: youDuration,

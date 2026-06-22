@@ -25,7 +25,9 @@ struct PracticeErrorPanel: View {
           actions
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.md)
+        .padding(.vertical, Spacing.xl)
+        .background(Color.brand.tile)
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
       }
     }
   }
