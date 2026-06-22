@@ -10,19 +10,22 @@ struct LibraryView: View {
   let historyStore: HistoryStore
   let onResume: ((LastPracticed) -> Void)?
   let onSuggestedBegin: ((SurahSummary) -> Void)?
+  let onSurahOpened: ((SurahSummary) -> Void)?
 
   init(
     viewModel: @autoclosure @escaping () -> LibraryViewModel,
     session: SessionStore,
     historyStore: HistoryStore,
     onResume: ((LastPracticed) -> Void)? = nil,
-    onSuggestedBegin: ((SurahSummary) -> Void)? = nil
+    onSuggestedBegin: ((SurahSummary) -> Void)? = nil,
+    onSurahOpened: ((SurahSummary) -> Void)? = nil
   ) {
     self._viewModel = StateObject(wrappedValue: viewModel())
     self._session = ObservedObject(wrappedValue: session)
     self.historyStore = historyStore
     self.onResume = onResume
     self.onSuggestedBegin = onSuggestedBegin
+    self.onSurahOpened = onSurahOpened
   }
 
   var body: some View {
@@ -143,7 +146,10 @@ struct LibraryView: View {
               surah: surah,
               bestScore: historyStore.bestScore(forSurah: surah.id).map { Int($0) }
             )
-            .onTapGesture { viewModel.surahOpened(surah) }
+            .onTapGesture {
+              viewModel.surahOpened(surah)
+              onSurahOpened?(surah)
+            }
           }
         }
         .padding(.horizontal, Spacing.screenHorizontal)

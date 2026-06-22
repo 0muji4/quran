@@ -116,6 +116,10 @@ struct AppRoot: View {
         onSuggestedBegin: { surah in
           practiceContext = PracticeContext(surahId: surah.id, ayahNumber: 1)
           selectedTab = .practice
+        },
+        onSurahOpened: { surah in
+          practiceContext = PracticeContext(surahId: surah.id, ayahNumber: 1)
+          selectedTab = .practice
         }
       )
     }
