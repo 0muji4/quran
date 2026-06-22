@@ -22,6 +22,15 @@ struct ResultDetailView: View {
     }
     .background(Color.brand.surface.ignoresSafeArea())
     .navigationBarBackButtonHidden(true)
+    // Pin Try-again / Continue to the bottom so they stay reachable
+    // however long the word-comparison + listen-back content scrolls.
+    // Only shown once a result has loaded — the loading/error states
+    // have no actions.
+    .safeAreaInset(edge: .bottom) {
+      if case .loaded = viewModel.state {
+        bottomActionBar
+      }
+    }
     .task { await viewModel.loadIfNeeded() }
   }
 
@@ -84,9 +93,6 @@ struct ResultDetailView: View {
         onToggleYou: {}
       )
       .padding(.horizontal, Spacing.screenHorizontal)
-      actionButtons
-        .padding(.horizontal, Spacing.screenHorizontal)
-        .padding(.top, Spacing.md)
     case .failed(let error):
       Text(error.errorDescription ?? "")
         .font(Font.brand.body)
@@ -95,7 +101,9 @@ struct ResultDetailView: View {
     }
   }
 
-  private var actionButtons: some View {
+  /// Pinned action bar. Sits on a cream surface with a hairline top
+  /// divider so it reads as a fixed footer over the scrolling content.
+  private var bottomActionBar: some View {
     HStack(spacing: Spacing.md) {
       Button {
         viewModel.tryAgainTapped()
@@ -123,6 +131,16 @@ struct ResultDetailView: View {
       .buttonStyle(.brandPrimary)
       .frame(minWidth: 180)
     }
+    .padding(.horizontal, Spacing.screenHorizontal)
+    .padding(.vertical, Spacing.md)
+    .frame(maxWidth: .infinity)
+    .background(
+      Color.brand.surface
+        .overlay(alignment: .top) {
+          Divider().background(Color.brand.tile)
+        }
+        .ignoresSafeArea(edges: .bottom)
+    )
   }
 
   private var continueLabel: LocalizedStringKey {

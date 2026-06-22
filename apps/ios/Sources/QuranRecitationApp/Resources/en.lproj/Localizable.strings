@@ -122,6 +122,8 @@
 "history.stats.bestUnknown" = "—";
 "history.stats.streak" = "Streak";
 "history.stats.days" = "days";
+"history.relative.today" = "Today · %@";
+"history.relative.yesterday" = "Yesterday";
 
 /* Accessibility */
 "library.surah.a11yHint" = "Opens Practice for this surah";
@@ -176,8 +178,13 @@
 "profile.action.signOut" = "Sign out";
 
 /* Profile tab — signed in */
+"profile.page.eyebrow" = "Your account";
+"profile.page.title" = "Profile";
 "profile.header.edit" = "Edit";
+"profile.header.editProfile" = "Edit profile";
 "profile.header.edit.a11yDisabled" = "Edit profile — coming soon";
+"profile.header.streak" = "✦ %lld-day streak";
+"profile.section.account" = "Account";
 "profile.badge.level.beginner" = "Beginner";
 "profile.badge.level.intermediate" = "Intermediate";
 "profile.badge.level.advanced" = "Advanced";
@@ -192,6 +199,14 @@
 "profile.section.password.helper" = "Rotate when you suspect a leak or every few months.";
 "profile.section.password.cta" = "Update";
 "profile.section.password.cta.a11yDisabled" = "Update password — coming soon";
+
+/* Profile tab — practice preferences */
+"profile.section.preferences" = "Practice preferences";
+"profile.preferences.reciter.label" = "Reference reciter";
+"profile.preferences.speed.label" = "Default playback speed";
+"profile.preferences.reminder.label" = "Daily reminder";
+"profile.preferences.reminder.helper" = "A gentle nudge to practise each day.";
+"profile.preferences.reminderTime.label" = "Reminder time";
 
 "profile.dangerZone.eyebrow" = "Permanent";
 "profile.dangerZone.title" = "Delete account";
@@ -208,6 +223,12 @@
 "profile.edit.displayName.helper" = "How your name appears across the app.";
 "profile.edit.level.label" = "Skill level";
 "profile.edit.level.unset" = "—";
+"profile.edit.section" = "Profile";
+"profile.edit.changePhoto" = "Change photo";
+"profile.edit.footer.lead" = "To change your **email or password**, head to ";
+"profile.edit.footer.account" = "Account & data";
+"profile.edit.footer.mid" = ". For reciter and playback settings, see ";
+"profile.edit.footer.prefs" = "Practice preferences";
 
 /* Profile tab — update password sheet */
 "profile.updatePassword.title" = "Update password";

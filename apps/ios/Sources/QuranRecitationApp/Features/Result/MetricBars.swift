@@ -13,7 +13,9 @@ struct MetricBars: View {
     BrandCard {
       VStack(spacing: Spacing.lg) {
         row(label: "result.metric.accuracy", value: accuracy)
+        Divider().background(Color.brand.tile)
         row(label: "result.metric.fluency", value: fluency)
+        Divider().background(Color.brand.tile)
         row(label: "result.metric.completeness", value: completeness)
       }
     }
@@ -21,15 +23,20 @@ struct MetricBars: View {
 
   private func row(label: LocalizedStringKey, value: Double) -> some View {
     VStack(alignment: .leading, spacing: Spacing.sm) {
-      HStack {
+      HStack(alignment: .firstTextBaseline) {
         Text(label, bundle: .module)
           .font(Font.brand.body.weight(.semibold))
           .foregroundColor(Color.brand.textPrimary)
         Spacer()
-        Text("\(Int(value)) %")
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.success)
+        // Serif numeral to echo the score-hero figure; the "%" stays
+        // smaller so the value reads as the emphasis.
+        Text("\(Int(value))")
+          .font(.system(size: 19, weight: .semibold, design: .serif))
+          .foregroundColor(Color.brand.primary)
           .monospacedDigit()
+          + Text(" %")
+          .font(Font.brand.caption.weight(.semibold))
+          .foregroundColor(Color.brand.primary)
       }
       ProgressBar(value: value, total: 100)
     }

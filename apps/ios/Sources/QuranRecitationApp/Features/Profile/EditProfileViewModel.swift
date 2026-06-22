@@ -31,6 +31,10 @@ final class EditProfileViewModel: ObservableObject, Identifiable {
     case error(String)
   }
 
+  /// The persisted initial for the sheet's avatar, captured at open
+  /// time so it doesn't flicker as the user edits the name field.
+  let avatarInitial: String
+
   private let initialDisplayName: String
   private let initialLevel: String?
   private let profileService: ProfileService
@@ -40,6 +44,7 @@ final class EditProfileViewModel: ObservableObject, Identifiable {
     let trimmed = (user.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     self.displayName = trimmed
     self.level = user.level
+    self.avatarInitial = ProfileHeader.initial(displayName: user.displayName, email: user.email)
     self.initialDisplayName = trimmed
     self.initialLevel = user.level
     self.profileService = profileService

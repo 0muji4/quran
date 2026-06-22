@@ -12,10 +12,14 @@ struct ContinueCard: View {
   var body: some View {
     BrandCard(style: .inverse) {
       VStack(alignment: .leading, spacing: Spacing.md) {
-        Text("library.continueEyebrow", bundle: .module)
-          .font(Font.brand.eyebrow)
-          .foregroundColor(Color.brand.accent)
-          .textCase(.uppercase)
+        HStack(spacing: Spacing.xs) {
+          Image(systemName: "bookmark.fill")
+            .font(.system(size: 11))
+          Text("library.continueEyebrow", bundle: .module)
+            .textCase(.uppercase)
+        }
+        .font(Font.brand.eyebrow)
+        .foregroundColor(Color.brand.accent)
 
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
           Text(entry.surahNameAr)
@@ -31,6 +35,8 @@ struct ContinueCard: View {
           .font(Font.brand.caption)
           .foregroundColor(Color.brand.textOnInverse.opacity(0.75))
 
+        progressBar
+
         Button {
           onResume(entry)
         } label: {
@@ -42,6 +48,32 @@ struct ContinueCard: View {
         .buttonStyle(.brandAccent)
       }
     }
+  }
+
+  /// Gold progress bar reading position-within-surah on the dark card —
+  /// the accent fill over a faint track, matching the mock's amber rule.
+  private var progressBar: some View {
+    GeometryReader { geo in
+      ZStack(alignment: .leading) {
+        Capsule()
+          .fill(Color.brand.textOnInverse.opacity(0.18))
+          .frame(height: 4)
+        Capsule()
+          .fill(Color.brand.accent)
+          .frame(width: geo.size.width * Self.fraction(entry), height: 4)
+      }
+      .frame(maxHeight: .infinity, alignment: .center)
+    }
+    .frame(height: 4)
+    .accessibilityHidden(true)
+  }
+
+  /// Filled fraction of the progress bar, clamped to [0, 1]. Single-ayah
+  /// surahs read as full; ayah 1 of N reads as 1/N so there's always a
+  /// visible sliver of progress.
+  static func fraction(_ entry: LastPracticed) -> CGFloat {
+    guard entry.ayahCount > 0 else { return 0 }
+    return min(1, max(0, CGFloat(entry.ayahNumber) / CGFloat(entry.ayahCount)))
   }
 
   private var progressLabel: LocalizedStringKey {

@@ -236,6 +236,80 @@ final class MeClientTests: XCTestCase {
     XCTAssertEqual(returned.id, "a1")
   }
 
+  // MARK: - Preferences
+
+  func test_preferences_unwrapsEnvelope() async throws {
+    let body = Data("""
+      {
+        "preferences": {
+          "referenceReciterId": "husary-muallim",
+          "defaultPlaybackSpeed": 1.25,
+          "dailyReminderEnabled": true,
+          "dailyReminderTime": "07:30"
+        }
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let preferences = try await client.preferences()
+
+    XCTAssertEqual(preferences.referenceReciterId, "husary-muallim")
+    XCTAssertEqual(preferences.defaultPlaybackSpeed, 1.25)
+    XCTAssertTrue(preferences.dailyReminderEnabled)
+    XCTAssertEqual(preferences.dailyReminderTime, "07:30")
+    XCTAssertEqual(spy.requests.first?.httpMethod, "GET")
+    XCTAssertEqual(spy.requests.first?.url?.path, "/me/preferences")
+  }
+
+  func test_updatePreferences_PATCHesOnlyPresentFields() async throws {
+    let body = Data("""
+      {
+        "preferences": {
+          "referenceReciterId": "husary-muallim",
+          "defaultPlaybackSpeed": 1.5,
+          "dailyReminderEnabled": false,
+          "dailyReminderTime": "08:00"
+        }
+      }
+      """.utf8)
+    let spy = TransportSpy(responses: [
+      { (body, httpResponse(status: 200)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    let returned = try await client.updatePreferences(
+      PracticePreferencesPatch(defaultPlaybackSpeed: 1.5)
+    )
+
+    let request = try XCTUnwrap(spy.requests.first)
+    XCTAssertEqual(request.httpMethod, "PATCH")
+    XCTAssertEqual(request.url?.path, "/me/preferences")
+    // The encoder must omit the unset fields so a single-field edit
+    // never clobbers a sibling column on the server.
+    let sentBody = try XCTUnwrap(request.httpBody)
+    let sentJSON = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: sentBody) as? [String: Any]
+    )
+    XCTAssertEqual(Array(sentJSON.keys), ["defaultPlaybackSpeed"])
+    XCTAssertEqual(sentJSON["defaultPlaybackSpeed"] as? Double, 1.5)
+    // The merged server echo (not the local guess) is returned.
+    XCTAssertEqual(returned.defaultPlaybackSpeed, 1.5)
+  }
+
+  func test_preferences_502_throwsBackendUnavailable() async {
+    let spy = TransportSpy(responses: [
+      { (Data(), httpResponse(status: 502)) }
+    ])
+    let client = makeClient(transport: spy.transport())
+
+    await XCTAssertThrowsErrorAsync(try await client.preferences()) { error in
+      XCTAssertEqual((error as? AppError)?.telemetryCode, "backend_unavailable")
+    }
+  }
+
   // MARK: - Helpers
 
   private static func parseISO(_ value: String) -> Date {

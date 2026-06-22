@@ -14,6 +14,8 @@ final class MockMeClient: MeClient {
   var putBestScoreResult: Result<BestScoreEntry, AppError>?
   var attemptsResult: Result<[Attempt], AppError>?
   var recordAttemptResult: Result<Attempt, AppError>?
+  var preferencesResult: Result<PracticePreferences, AppError>?
+  var updatePreferencesResult: Result<PracticePreferences, AppError>?
 
   private(set) var suggestionsCallCount = 0
   private(set) var lastPracticedCallCount = 0
@@ -22,12 +24,15 @@ final class MockMeClient: MeClient {
   private(set) var putBestScoreCallCount = 0
   private(set) var attemptsCallCount = 0
   private(set) var recordAttemptCallCount = 0
+  private(set) var preferencesCallCount = 0
+  private(set) var updatePreferencesCallCount = 0
 
   private(set) var lastPutLastPracticed: LastPracticed?
   private(set) var lastPutBestScoreKey: String?
   private(set) var lastPutBestScoreEntry: BestScoreEntry?
   private(set) var lastRecordedAttempt: Attempt?
   private(set) var lastAttemptsLimit: Int?
+  private(set) var lastPreferencesPatch: PracticePreferencesPatch?
 
   init(
     suggestionsResult: Result<SurahSuggestion, AppError>? = nil,
@@ -89,6 +94,17 @@ final class MockMeClient: MeClient {
     recordAttemptCallCount += 1
     lastRecordedAttempt = attempt
     return try Self.unwrap(recordAttemptResult, operation: "mock.me.recordAttempt")
+  }
+
+  func preferences() async throws -> PracticePreferences {
+    preferencesCallCount += 1
+    return try Self.unwrap(preferencesResult, operation: "mock.me.preferences")
+  }
+
+  func updatePreferences(_ patch: PracticePreferencesPatch) async throws -> PracticePreferences {
+    updatePreferencesCallCount += 1
+    lastPreferencesPatch = patch
+    return try Self.unwrap(updatePreferencesResult, operation: "mock.me.updatePreferences")
   }
 
   private static func unwrap<T>(_ result: Result<T, AppError>?, operation: String) throws -> T {
