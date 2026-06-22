@@ -42,6 +42,12 @@ data class BrandColors(
     val tile: Color,
     /** Near-white pill fill for unselected filter chips. */
     val tileSoft: Color,
+    /**
+     * Pale warm fill behind progress / score tracks. Lighter than [tile]
+     * so the unfilled portion of a bar reads as a recessed groove rather
+     * than a second tan band competing with the gold accents.
+     */
+    val track: Color,
     /** Pale mint surface (mashallah pill, matched word tiles). */
     val mintBg: Color,
     /** Dark-green ink legible on [mintBg]. */
@@ -70,6 +76,7 @@ val BrandColorsLight = BrandColors(
     success = Color(0xFF4F7C5C),
     tile = Color(0xFFEADBC5),
     tileSoft = Color(0xFFF8F5F1),
+    track = Color(0xFFEFE9DD),
     mintBg = Color(0xFFE4EEEB),
     mintInk = Color(0xFF164842),
     borderDefault = Color(0xFFE5DCC9),

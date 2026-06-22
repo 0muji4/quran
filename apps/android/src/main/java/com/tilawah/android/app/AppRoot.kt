@@ -45,9 +45,11 @@ import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.DefaultAuthedHttpClient
 import com.tilawah.android.backend.HistoryRemoteClient
 import com.tilawah.android.backend.HttpHistoryRemoteClient
+import com.tilawah.android.backend.HttpPreferencesClient
 import com.tilawah.android.backend.HttpProfileService
 import com.tilawah.android.backend.HttpSuggestionClient
 import com.tilawah.android.backend.OkHttpAuthApi
+import com.tilawah.android.backend.PreferencesClient
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
 import com.tilawah.android.backend.SuggestionClient
@@ -131,6 +133,9 @@ fun AppRoot(
     },
     suggestionClient: SuggestionClient = remember(authedHttp) {
         HttpSuggestionClient(http = authedHttp)
+    },
+    preferencesClient: PreferencesClient = remember(authedHttp) {
+        HttpPreferencesClient(http = authedHttp)
     },
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(TopLevelTab.Library) }
@@ -266,6 +271,7 @@ fun AppRoot(
                     authApi = authApi,
                     authSession = authSession,
                     profileService = profileService,
+                    preferencesClient = preferencesClient,
                 )
             }
         }
@@ -277,6 +283,7 @@ private fun ProfileTabHost(
     authApi: AuthApi,
     authSession: AuthSession,
     profileService: ProfileService,
+    preferencesClient: PreferencesClient,
 ) {
     val viewModel: ProfileViewModel = viewModel(
         factory = viewModelFactory {
@@ -287,6 +294,7 @@ private fun ProfileTabHost(
         authApi = authApi,
         authSession = authSession,
         profileService = profileService,
+        preferencesClient = preferencesClient,
         profileViewModel = viewModel,
     )
 }

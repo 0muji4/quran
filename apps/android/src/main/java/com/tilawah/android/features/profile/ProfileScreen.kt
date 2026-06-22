@@ -1,6 +1,7 @@
 package com.tilawah.android.features.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,15 +17,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,13 +40,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.R
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.BrandCard
@@ -55,10 +68,10 @@ import com.tilawah.android.storage.StoredSession
  * - signed-in: account summary card + Practice preferences + Account
  *   sections, mirroring `docs/design/Android _ Profile.png`.
  *
- * The signed-in layout is LEFT-aligned and scrollable. Several rows
- * (Practice preferences, "Last changed" sublabel, streak, export) are
- * UI-only placeholders with no backend yet — each is flagged with a
- * TODO so the wiring follow-up is easy to find.
+ * The signed-in layout is LEFT-aligned and scrollable. Practice
+ * preferences persist through [PreferencesViewModel]; the streak count,
+ * the "Last changed" sublabel, and Export remain UI-only placeholders
+ * with no backend yet — each is flagged with a TODO.
  *
  * Navigation between the auth screens is delegated to the caller
  * (`ProfileAuthHost`) so this composable stays stateless.
@@ -73,6 +86,9 @@ fun ProfileScreen(
     onChangeEmailTapped: () -> Unit,
     onUpdatePasswordTapped: () -> Unit,
     onDeleteAccountTapped: () -> Unit,
+    // Required whenever [session] is non-null; the signed-out shell never
+    // touches it. Defaulted so the signed-out call sites stay terse.
+    preferencesViewModel: PreferencesViewModel? = null,
     showReactivationBanner: Boolean = false,
     onAcknowledgeReactivation: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -86,6 +102,9 @@ fun ProfileScreen(
     } else {
         SignedInContent(
             session = session,
+            preferencesViewModel = checkNotNull(preferencesViewModel) {
+                "preferencesViewModel is required for the signed-in Profile"
+            },
             onSignOutTapped = onSignOutTapped,
             onEditProfileTapped = onEditProfileTapped,
             onChangeEmailTapped = onChangeEmailTapped,
@@ -139,6 +158,7 @@ private fun SignedOutContent(
 @Composable
 private fun SignedInContent(
     session: StoredSession,
+    preferencesViewModel: PreferencesViewModel,
     onSignOutTapped: () -> Unit,
     onEditProfileTapped: () -> Unit,
     onChangeEmailTapped: () -> Unit,
@@ -183,7 +203,7 @@ private fun SignedInContent(
             onEditProfileTapped = onEditProfileTapped,
         )
 
-        PracticePreferencesSection()
+        PracticePreferencesSection(viewModel = preferencesViewModel)
 
         AccountSection(
             email = session.user.email,
@@ -215,7 +235,17 @@ private fun SummaryCard(
 ) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
-    BrandCard(modifier = modifier.fillMaxWidth()) {
+    // Captured here so the draw lambda (a DrawScope, not a composable) can
+    // reach the gold without re-entering the theme.
+    val bracketColor = colors.decorative
+    BrandCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .drawWithContent {
+                drawContent()
+                drawCornerBrackets(bracketColor)
+            },
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -311,11 +341,10 @@ private fun StreakPill(days: Int, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
-        Icon(
-            imageVector = Icons.Filled.Star,
-            contentDescription = null,
-            tint = colors.goldOnLight,
-            modifier = Modifier.size(14.dp),
+        Text(
+            text = "✦",
+            style = BrandTheme.typography.eyebrow,
+            color = colors.goldOnLight,
         )
         Text(
             text = stringResource(R.string.profile_streak_pill, days),
@@ -326,36 +355,160 @@ private fun StreakPill(days: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PracticePreferencesSection(modifier: Modifier = Modifier) {
+private fun PracticePreferencesSection(
+    viewModel: PreferencesViewModel,
+    modifier: Modifier = Modifier,
+) {
     val colors = BrandTheme.colors
-    val spacing = BrandTheme.spacing
-    // TODO(profile): these preferences have no persistence/backend yet.
-    // Values are placeholders; the daily-reminder switch state is local
-    // only. Wire to a settings store when the feature lands.
-    var reminderEnabled by remember { mutableStateOf(true) }
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val prefs = uiState.preferences
 
-    SectionColumn(eyebrow = stringResource(R.string.profile_preferences_section)) {
+    // Resolve the stored row when the card first appears; the VM no-ops on
+    // repeat calls, and a failed load degrades to the rendered defaults.
+    LaunchedEffect(Unit) { viewModel.load() }
+
+    var editingTime by remember { mutableStateOf(false) }
+
+    SectionColumn(eyebrow = stringResource(R.string.profile_preferences_section), modifier = modifier) {
         BrandCard(style = BrandCardStyle.Paper, modifier = Modifier.fillMaxWidth()) {
             Column {
-                ChevronRow(
+                PrefMenuRow(
                     label = stringResource(R.string.profile_pref_reference_reciter),
-                    value = stringResource(R.string.profile_pref_reference_reciter_value),
+                    options = ReciterOption.All,
+                    selected = ReciterOption.forId(prefs.referenceReciterId),
+                    optionLabel = { it.label },
+                    onSelect = { viewModel.setReciter(it.id) },
                 )
                 RowDivider()
-                ChevronRow(
+                PrefMenuRow(
                     label = stringResource(R.string.profile_pref_playback_speed),
-                    value = stringResource(R.string.profile_pref_playback_speed_value),
+                    options = PlaybackSpeedOption.All,
+                    selected = prefs.defaultPlaybackSpeed,
+                    optionLabel = { PlaybackSpeedOption.label(it) },
+                    onSelect = { viewModel.setPlaybackSpeed(it) },
                 )
                 RowDivider()
                 SwitchRow(
                     label = stringResource(R.string.profile_pref_daily_reminder),
-                    value = stringResource(R.string.profile_pref_daily_reminder_value),
-                    checked = reminderEnabled,
-                    onCheckedChange = { reminderEnabled = it },
+                    value = if (prefs.dailyReminderEnabled) {
+                        ReminderClock.displayLabel(prefs.dailyReminderTime)
+                    } else {
+                        stringResource(R.string.profile_pref_daily_reminder_off)
+                    },
+                    checked = prefs.dailyReminderEnabled,
+                    onCheckedChange = { viewModel.setReminderEnabled(it) },
+                    // The reminder time is only meaningful while the reminder
+                    // is on, so the row opens the picker only then.
+                    onValueClick = if (prefs.dailyReminderEnabled) {
+                        { editingTime = true }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+        uiState.errorMessage?.let { message ->
+            Text(text = message, style = BrandTheme.typography.caption, color = colors.recording)
+        }
+    }
+
+    if (editingTime) {
+        ReminderTimeDialog(
+            initialTime = prefs.dailyReminderTime,
+            onConfirm = {
+                viewModel.setReminderTime(it)
+                editingTime = false
+            },
+            onDismiss = { editingTime = false },
+        )
+    }
+}
+
+/**
+ * A disclosure row whose value is chosen from a dropdown anchored to the
+ * row — used for the single-select preferences (reciter, speed). A
+ * checkmark marks the current choice.
+ */
+@Composable
+private fun <T> PrefMenuRow(
+    label: String,
+    options: List<T>,
+    selected: T,
+    optionLabel: (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    val colors = BrandTheme.colors
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ChevronRow(label = label, value = optionLabel(selected), onClick = { expanded = true })
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(optionLabel(option)) },
+                    onClick = {
+                        expanded = false
+                        if (option != selected) onSelect(option)
+                    },
+                    trailingIcon = if (option == selected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = colors.primary,
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderTimeDialog(
+    initialTime: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val colors = BrandTheme.colors
+    val (hour, minute) = ReminderClock.parse(initialTime)
+    val timeState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = false)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(ReminderClock.format(timeState.hour, timeState.minute)) }) {
+                Text(
+                    text = stringResource(R.string.profile_pref_reminder_time_confirm),
+                    color = colors.primary,
+                    style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(R.string.profile_pref_reminder_time_cancel),
+                    color = colors.textSecondary,
+                    style = BrandTheme.typography.body,
+                )
+            }
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.profile_pref_reminder_time_title),
+                style = BrandTheme.typography.sectionTitle,
+                color = colors.textPrimary,
+            )
+        },
+        text = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TimePicker(state = timeState)
+            }
+        },
+    )
 }
 
 @Composable
@@ -422,12 +575,14 @@ private fun ChevronRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -453,6 +608,7 @@ private fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    onValueClick: (() -> Unit)? = null,
 ) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
@@ -463,7 +619,9 @@ private fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .then(if (onValueClick != null) Modifier.clickable(onClick = onValueClick) else Modifier),
             verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
             Text(text = label, style = BrandTheme.typography.body, color = colors.textPrimary)
@@ -521,4 +679,28 @@ private fun RowDivider() {
             .height(1.dp)
             .background(BrandTheme.colors.borderDefault),
     )
+}
+
+/**
+ * Gold L-shaped marks just inside each rounded corner — the manuscript-
+ * frame motif on the Profile summary card. Inset by the card radius so
+ * the right angles land on the flat edge rather than over the curve.
+ */
+private fun DrawScope.drawCornerBrackets(color: Color) {
+    val inset = 16.dp.toPx()
+    val arm = 16.dp.toPx()
+    val width = 1.5.dp.toPx()
+    val right = size.width - inset
+    val bottom = size.height - inset
+    listOf(
+        // (corner x, corner y, horizontal arm dir, vertical arm dir)
+        Triple(inset, inset, 1f to 1f),
+        Triple(right, inset, -1f to 1f),
+        Triple(inset, bottom, 1f to -1f),
+        Triple(right, bottom, -1f to -1f),
+    ).forEach { (cx, cy, dir) ->
+        val (hx, vy) = dir
+        drawLine(color, Offset(cx, cy), Offset(cx + arm * hx, cy), width)
+        drawLine(color, Offset(cx, cy), Offset(cx, cy + arm * vy), width)
+    }
 }

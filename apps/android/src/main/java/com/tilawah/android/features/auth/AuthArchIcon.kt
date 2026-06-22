@@ -9,12 +9,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.tilawah.android.designsystem.BrandTheme
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Stylised arch + star drawn over a square canvas. Used as the hero
  * mark above "Welcome back" on the sign-in screen. Renders the two
- * brand arches in gold, a brown open-book / "M" doorway glyph centred
- * inside the inner arch, and a single 4-point star at the apex.
+ * brand arches in gold, a gold eight-point sunburst centred inside the
+ * inner arch, and a single 4-point star at the apex.
  *
  * Vector-only (no resource asset) so the same composable can scale to
  * any size without an extra `xxxhdpi` PNG pass.
@@ -41,27 +44,25 @@ fun AuthArchIcon(modifier: Modifier = Modifier) {
         drawPath(outer, color = colors.accent, style = stroke)
         drawPath(inner, color = colors.accent, style = stroke)
 
-        // Brown open-book / "M" doorway glyph centred inside the inner
-        // arch. Two peaked halves meeting at a centre valley with a
-        // vertical spine, reading as an open book in a doorway.
-        val bookStroke = Stroke(width = w * 0.022f)
-        val book = Path().apply {
-            // Left page: rises from the base to a peak, dipping at centre.
-            moveTo(w * 0.455f, h * 0.80f)
-            lineTo(w * 0.455f, h * 0.66f)
-            quadraticBezierTo(w * 0.478f, h * 0.69f, w * 0.50f, h * 0.69f)
-            // Right page: mirror of the left.
-            quadraticBezierTo(w * 0.522f, h * 0.69f, w * 0.545f, h * 0.66f)
-            lineTo(w * 0.545f, h * 0.80f)
+        // Gold eight-point sunburst centred inside the inner arch — the
+        // doorway's focal mark. Sixteen vertices alternating between the
+        // outer tip radius and the inner valley radius.
+        val burstCx = w * 0.50f
+        val burstCy = h * 0.62f
+        val burstOuter = w * 0.085f
+        val burstInner = burstOuter * 0.42f
+        val burst = Path().apply {
+            val tips = 8
+            for (i in 0 until tips * 2) {
+                val radius = if (i % 2 == 0) burstOuter else burstInner
+                val theta = (PI / tips * i - PI / 2).toFloat()
+                val px = burstCx + radius * cos(theta)
+                val py = burstCy + radius * sin(theta)
+                if (i == 0) moveTo(px, py) else lineTo(px, py)
+            }
+            close()
         }
-        drawPath(book, color = colors.goldOnLight, style = bookStroke)
-        // Centre spine of the book.
-        drawLine(
-            color = colors.goldOnLight,
-            start = Offset(w * 0.50f, h * 0.69f),
-            end = Offset(w * 0.50f, h * 0.80f),
-            strokeWidth = w * 0.022f,
-        )
+        drawPath(burst, color = colors.accent)
 
         // Four-point star at the apex, top-centre of the arch.
         val cx = w * 0.50f
