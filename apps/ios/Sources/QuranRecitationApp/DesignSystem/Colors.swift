@@ -40,6 +40,18 @@ extension Color.brand {
   /// Decorative star / divider gold.
   static let decorative = Color(brandHex: 0xB98B3D)
 
+  /// Pure-white card surface.
+  static let paper = Color(brandHex: 0xFFFFFF)
+
+  /// Pale tan badge fill on cream surfaces.
+  static let tanSoft = Color(brandHex: 0xF3EAD4)
+
+  /// AA-safe gold ink on light surfaces.
+  static let goldOnLight = Color(brandHex: 0x6E4F1E)
+
+  /// Hairline border on light cards.
+  static let border = Color(brandHex: 0xE5DCC9)
+
   // MARK: - Text
 
   static let textPrimary = Color(brandHex: 0x1A1311)

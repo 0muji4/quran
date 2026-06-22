@@ -88,7 +88,7 @@ fun SurahRow(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(colors.tile),
+                    .background(colors.tanSoft),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

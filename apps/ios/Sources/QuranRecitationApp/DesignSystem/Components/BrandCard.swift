@@ -6,6 +6,7 @@ import SwiftUI
 enum BrandCardStyle {
   case standard
   case inverse
+  case paper
 }
 
 /// Rounded card surface used for ayah cards, library rows, and result
@@ -26,6 +27,10 @@ struct BrandCard<Content: View>: View {
       .padding(Spacing.lg)
       .background(background)
       .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+      .overlay(
+        RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous)
+          .strokeBorder(borderColor, lineWidth: borderWidth)
+      )
       .shadow(color: shadowColor, radius: 8, x: 0, y: 2)
   }
 
@@ -33,13 +38,23 @@ struct BrandCard<Content: View>: View {
     switch style {
     case .standard: return Color.brand.card
     case .inverse:  return Color.brand.cardInverse
+    case .paper:    return Color.brand.paper
     }
+  }
+
+  private var borderColor: Color {
+    style == .paper ? Color.brand.border : Color.clear
+  }
+
+  private var borderWidth: CGFloat {
+    style == .paper ? 1 : 0
   }
 
   private var shadowColor: Color {
     switch style {
     case .standard: return Color.black.opacity(0.04)
     case .inverse:  return Color.black.opacity(0.12)
+    case .paper:    return Color.black.opacity(0.04)
     }
   }
 }

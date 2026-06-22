@@ -23,7 +23,7 @@ struct SuggestedCard: View {
 
   var body: some View {
     if let picked {
-      BrandCard {
+      BrandCard(style: .paper) {
         VStack(alignment: .leading, spacing: Spacing.md) {
           Text("library.suggestedEyebrow", bundle: .module)
             .font(Font.brand.eyebrow)
