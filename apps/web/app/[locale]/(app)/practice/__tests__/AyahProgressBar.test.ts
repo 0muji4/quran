@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { indicatorOffsetPercent } from '../AyahProgressBar';
+import { indicatorOffsetPercent, usesSegmentedProgress } from '../AyahProgressBar';
 
 describe('indicatorOffsetPercent', () => {
   it('pins ayah 1 to the left of the track', () => {
@@ -25,5 +25,17 @@ describe('indicatorOffsetPercent', () => {
 
   it('clamps an out-of-range high ayah back to the final ayah', () => {
     expect(indicatorOffsetPercent(999, 7)).toBe(100);
+  });
+});
+
+describe('usesSegmentedProgress', () => {
+  it('uses segments at or below 12 ayahs', () => {
+    expect(usesSegmentedProgress(7)).toBe(true);
+    expect(usesSegmentedProgress(12)).toBe(true);
+  });
+
+  it('falls back to the continuous bar above 12 ayahs', () => {
+    expect(usesSegmentedProgress(13)).toBe(false);
+    expect(usesSegmentedProgress(286)).toBe(false);
   });
 });
