@@ -130,10 +130,8 @@ private fun Header() {
             horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Decorative leading "+" glyph that anchors the gold eyebrow,
-            // matching the Figma header treatment.
             Text(
-                text = "+",
+                text = "✦",
                 style = typography.eyebrow,
                 color = colors.decorative,
             )

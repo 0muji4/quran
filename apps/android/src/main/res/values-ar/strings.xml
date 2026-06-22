@@ -138,7 +138,7 @@
     <string name="history_stats_streak_unit">days</string>
 
     <!-- Profile tab -->
-    <string name="profile_eyebrow">+ YOUR ACCOUNT</string>
+    <string name="profile_eyebrow">✦ YOUR ACCOUNT</string>
     <string name="profile_title">Profile</string>
     <string name="profile_streak_pill">%1$d-DAY STREAK</string>
     <string name="profile_preferences_section">PRACTICE PREFERENCES</string>
