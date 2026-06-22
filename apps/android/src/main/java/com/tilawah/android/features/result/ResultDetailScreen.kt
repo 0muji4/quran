@@ -110,7 +110,7 @@ private fun Loaded(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        ScoreHero(score = state.result.score, verdict = state.result.verdict)
+        ScoreHero(score = state.result.score)
         state.result.feedback?.let { feedback ->
             MetricBars(feedback = feedback)
             WordComparisonGrid(feedback = feedback)
