@@ -22,8 +22,8 @@ extension Color.brand {
   /// AA on it.
   static let cardInverse = Color(brandHex: 0x0E3D2B)
 
-  /// Primary action color (teal).
-  static let primary = Color(brandHex: 0x2A6F75)
+  /// Primary action color (emerald).
+  static let primary = Color(brandHex: 0x106840)
 
   /// Continue / accent (warm gold).
   static let accent = Color(brandHex: 0xC0894A)
