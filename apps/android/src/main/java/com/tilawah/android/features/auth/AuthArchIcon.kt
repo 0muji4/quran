@@ -35,11 +35,13 @@ fun AuthArchIcon(modifier: Modifier = Modifier) {
             quadraticBezierTo(w * 0.50f, h * 0.05f, w * 0.80f, h * 0.45f)
             lineTo(w * 0.80f, h * 0.85f)
         }
+        // Concentric inner arch, inset from the outer so the two run
+        // parallel (the mock's nested arches, not a narrow doorway).
         val inner = Path().apply {
-            moveTo(w * 0.42f, h * 0.85f)
-            lineTo(w * 0.42f, h * 0.62f)
-            quadraticBezierTo(w * 0.50f, h * 0.40f, w * 0.58f, h * 0.62f)
-            lineTo(w * 0.58f, h * 0.85f)
+            moveTo(w * 0.31f, h * 0.85f)
+            lineTo(w * 0.31f, h * 0.50f)
+            quadraticBezierTo(w * 0.50f, h * 0.18f, w * 0.69f, h * 0.50f)
+            lineTo(w * 0.69f, h * 0.85f)
         }
         drawPath(outer, color = colors.accent, style = stroke)
         drawPath(inner, color = colors.accent, style = stroke)
