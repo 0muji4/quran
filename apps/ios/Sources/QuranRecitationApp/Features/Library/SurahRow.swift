@@ -28,7 +28,7 @@ struct SurahRow: View {
     .padding(.vertical, Spacing.md)
     .padding(.horizontal, Spacing.lg)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.brand.card)
+    .background(Color.brand.paper)
     .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
     .accessibilityElement(children: .combine)
     .accessibilityLabel(accessibilityLabel)
@@ -49,9 +49,9 @@ struct SurahRow: View {
   private var indexBadge: some View {
     Text(surah.id)
       .font(Font.brand.caption.weight(.semibold))
-      .foregroundColor(Color.brand.textSecondary)
+      .foregroundColor(Color.brand.goldOnLight)
       .frame(width: 28, height: 28)
-      .background(Color.brand.tile)
+      .background(Color.brand.tanSoft)
       .clipShape(Circle())
   }
 

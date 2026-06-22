@@ -61,7 +61,7 @@ struct StatsGrid: View {
 
   private func textOnStyle(_ style: BrandCardStyle, secondary: Bool) -> Color {
     switch style {
-    case .standard:
+    case .standard, .paper:
       return secondary ? Color.brand.textSecondary : Color.brand.textPrimary
     case .inverse:
       return secondary
