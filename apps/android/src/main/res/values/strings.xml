@@ -108,6 +108,11 @@
     <string name="result_try_again">Try again</string>
     <string name="result_continue">Continue to next ayah</string>
     <string name="result_score_of_100">OF 100</string>
+    <string name="result_verdict_awaiting_badge">AWAITING SCORE</string>
+    <string name="result_verdict_mastered_badge">MASTERED</string>
+    <string name="result_verdict_great_badge">GREAT WORK</string>
+    <string name="result_verdict_midway_badge">KEEP PRACTISING</string>
+    <string name="result_verdict_beginner_badge">KEEP PRACTISING</string>
     <string name="result_score_encouragement">Strong attempt — try once more to push past 90.</string>
     <string name="result_metrics_title">Metrics</string>
     <string name="result_metric_accuracy">Accuracy</string>

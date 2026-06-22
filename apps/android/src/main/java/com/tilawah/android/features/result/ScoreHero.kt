@@ -43,7 +43,6 @@ import com.tilawah.android.designsystem.components.BrandCardStyle
 @Composable
 fun ScoreHero(
     score: Double?,
-    verdict: String?,
     modifier: Modifier = Modifier,
 ) {
     val colors = BrandTheme.colors
@@ -54,8 +53,9 @@ fun ScoreHero(
     // Round (not truncate) so 0.87 reads as "87" rather than "86".
     val scoreValue = score?.let { Math.round(it * 100).toInt() }
     val scoreText = scoreValue?.toString() ?: "—"
+    val verdictBadge = stringResource(verdictBandForScore(scoreValue).badgeRes)
     val a11y = if (scoreValue != null) {
-        "Recitation score $scoreValue out of 100" + (verdict?.let { ", $it" } ?: "")
+        "Recitation score $scoreValue out of 100, $verdictBadge"
     } else {
         "Recitation score not available"
     }
@@ -70,9 +70,7 @@ fun ScoreHero(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(spacing.lg),
         ) {
-            if (!verdict.isNullOrBlank()) {
-                VerdictBadge(verdict = verdict)
-            }
+            VerdictBadge(verdict = verdictBadge)
             Box(
                 modifier = Modifier.size(180.dp),
                 contentAlignment = Alignment.Center,
