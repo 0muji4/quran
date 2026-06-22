@@ -217,14 +217,14 @@
         "subhead": "Try recording the ayah to receive your pronunciation feedback."
       },
       "mastered": {
-        "badge": "MASTERED",
-        "headline": "Excellent recitation",
-        "subhead": "Your pronunciation closely matches the teacher reference. Move on whenever ready."
+        "badge": "MASHALLAH — MASTERED",
+        "headline": "Masterful recitation",
+        "subhead": "Your recitation closely matches the teacher reference — move on whenever you're ready."
       },
       "great": {
-        "badge": "GREAT WORK",
-        "headline": "Great progress",
-        "subhead": "A few subtle differences remain. Listen back and refine your delivery."
+        "badge": "MASHALLAH — WELL RECITED",
+        "headline": "Beautifully recited",
+        "subhead": "Strong attempt — try once more to push past 90."
       },
       "midway": {
         "badge": "KEEP PRACTISING",
@@ -232,7 +232,7 @@
         "subhead": "Several words came through differently than expected. Try listening to the teacher slowly and reciting along before recording again."
       },
       "beginner": {
-        "badge": "KEEP PRACTISING",
+        "badge": "KEEP GOING",
         "headline": "Not quite there yet",
         "subhead": "Slow down with the teacher reference and focus on the sounds before retrying. Small, repeated passes work best."
       }

@@ -161,9 +161,9 @@ test.describe('visual regression — desktop 1280x720', () => {
 
     // ResultDetail renders an AutoFocusHeading h1 with the verdict
     // headline (`verdictForScore(score).headline`). Seeded score 0.86
-    // maps to "Great progress" — pin to that so the snapshot waits for
-    // server-rendered HTML + h1 focus side-effect to settle.
-    await page.getByRole('heading', { level: 1, name: /great progress/i }).waitFor();
+    // maps to "Beautifully recited" — pin to that so the snapshot waits
+    // for server-rendered HTML + h1 focus side-effect to settle.
+    await page.getByRole('heading', { level: 1, name: /beautifully recited/i }).waitFor();
     await stableSnapshot(page);
 
     await expect(page).toHaveScreenshot('practice-result.png', {
