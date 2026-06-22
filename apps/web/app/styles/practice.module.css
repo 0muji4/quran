@@ -79,6 +79,26 @@
   transform: translate(-50%, -50%);
 }
 
+.progressSegments {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 120px;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.progressSegment {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--colors-border);
+}
+
+.progressSegmentActive {
+  flex-grow: 1.8;
+  background: var(--colors-green);
+}
+
 /* AyahDisplayCard ------------------------------------------------- */
 .ayahCard {
   position: relative;
