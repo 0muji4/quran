@@ -61,6 +61,8 @@
     <!-- Practice tab -->
     <string name="practice_back_a11y">Back to library</string>
     <string name="practice_more_a11y">More options</string>
+    <string name="practice_previous_ayah">‹ Previous</string>
+    <string name="practice_next_ayah">Next ›</string>
     <string name="practice_header_title">%1$s · ayah %2$d</string>
     <string name="practice_ayah_progress">Ayah %1$d of %2$d</string>
     <string name="practice_ayah_count">%1$d / %2$d</string>
