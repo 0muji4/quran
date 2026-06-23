@@ -19,6 +19,16 @@ RUN pnpm install --frozen-lockfile
 # ---- builder: produce Next.js standalone bundle ----
 FROM deps AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# NEXT_PUBLIC_* values are inlined into the client bundle at `next build`
+# time, so they must be present as build args — a runtime env var is too
+# late. Render forwards a service's env vars as build args, so setting
+# NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID on the service is enough; a rebuild is
+# required for changes to take effect. Empty by default → the Google
+# button falls back to its disabled placeholder.
+ARG NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=""
+ENV NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID
+
 COPY packages ./packages
 COPY apps/web ./apps/web
 
