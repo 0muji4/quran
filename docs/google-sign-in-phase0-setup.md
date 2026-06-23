@@ -7,7 +7,7 @@
 
 ## Summary
 
-Web 版 Google サインイン（GIS の ID トークン方式）を有効化するために必要な GCP 操作と環境変数を、既存の dev 構成（GCP プロジェクト `tilawah-499807`、Render `tilawah-dev-bff`）に合わせて具体化する。作るものは **Web アプリ用の OAuth クライアント ID を 1 つ**だけで、Client Secret もリダイレクト URI も使わない。発行した同一の Client ID を BFF（`aud` 検証用）と Web（GIS 初期化用）の 2 つの環境変数に入れる。
+Web 版 Google サインイン（GIS の認可コードフロー＋自前ボタン）を有効化するために必要な GCP 操作と環境変数を、既存の dev 構成（GCP プロジェクト `tilawah-499807`、Render `tilawah-dev-bff`）に合わせて具体化する。作るものは **Web アプリ用の OAuth クライアント 1 つ**。BFF はコード交換のため Client ID と Client Secret を、Web はボタン初期化のため Client ID を持つ。popup フローのためリダイレクト URI 登録は不要。
 
 実装は env が未設定でも安全に無効ボタンへフォールバックするため、本手順を実施するまで既存の email/password 認証は影響を受けない。
 
@@ -45,25 +45,26 @@ Google サインイン（`openid` / `email` / `profile`）は無料で、Speech-
 | Application type              | Web application                                                                                                                           |
 | Name                          | Tilawah Web（コンソール内の内部ラベルのみ。ユーザーには見えない。同一プロジェクトの他クライアントと区別するための名前）                   |
 | Authorized JavaScript origins | `http://localhost:3000`（ローカル dev）と `https://tilawah-dev-web.onrender.com`（Render dev。サービス名は実際の作成時に合わせる）の 2 つ |
-| Authorized redirect URIs      | 空（ID トークン方式では不要）                                                                                                             |
+| Authorized redirect URIs      | 空（popup の認可コードフローは `postmessage` を使うため登録不要）                                                                         |
 
-「CREATE」後に表示される **Client ID**（`xxxxxxxx.apps.googleusercontent.com`）をコピーする。Client Secret も発行されるが本方式では使わない。
+「CREATE」後に表示される **Client ID**（`xxxxxxxx.apps.googleusercontent.com`）と **Client Secret**（`GOCSPX-...`）をコピーする。Client Secret は BFF のコード交換で使う（第 4 章）。
 
 > オリジンはスキーム＋ホスト＋ポートで、パスや末尾スラッシュは付けない。独自ドメインを後で当てる場合は、そのオリジン（例 `https://app.tilawah.example`）も追記する。
 
 ## 4. 環境変数を設定
 
-発行した Client ID を**同じ値**で 2 か所に入れる。
+Web は認可コードフローの自前ボタンを使う。BFF はコードをトークンに交換するため **Client ID と Client Secret の両方**が要る。Web はボタン初期化に Client ID（`NEXT_PUBLIC_`）のみ。Client ID は BFF・Web で同値。
 
-### 4.1 BFF（`aud` 検証用）
+### 4.1 BFF（コード交換）
 
-`tilawah-dev-bff`（Render Web Service、[free-tier doc](./free-tier-verification-troubleshooting.md) A.5）の Env vars に 1 行追加する。
+`tilawah-dev-bff`（Render Web Service、[free-tier doc](./free-tier-verification-troubleshooting.md) A.5）の Env vars に 2 行追加する。Client Secret は OAuth クライアント作成画面に表示される値。
 
 ```
 GOOGLE_OAUTH_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxx
 ```
 
-ローカルは BFF を Docker、Web を CLI で動かす構成を推奨する。BFF は Docker なら DB・minio・backend がまとまり env 追加 1 行で済む。Web は `NEXT_PUBLIC_` がビルド時に焼き込まれ Docker だと build-arg 配線が要るため、CLI（`.env.local` が即反映）が楽。`compose.dev.yml` の `bff.environment` は `GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}` を読むので、値は shell の `export GOOGLE_OAUTH_CLIENT_ID=...` か untracked な `ops/docker/.env` で渡す。
+ローカルは BFF を Docker、Web を CLI で動かす構成を推奨する。BFF は Docker なら DB・minio・backend がまとまる。Web は `NEXT_PUBLIC_` がビルド時に焼き込まれ Docker だと build-arg 配線が要るため、CLI（`.env.local` が即反映）が楽。`compose.dev.yml` の `bff.environment` は `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` を `${...:-}` で読むので、値は untracked な `ops/docker/.env` か shell の `export` で渡す（どちらか空なら `/auth/google` は 503）。
 
 ```bash
 export GOOGLE_OAUTH_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
@@ -88,7 +89,7 @@ NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 ## 5. 動作確認
 
 1. BFF と Web を再起動（env を読み直すため）
-2. `http://localhost:3000` の `/sign-in` または `/sign-up` を開く。無効プレースホルダだった枠が GIS の公式ボタンに変わっていること
+2. `http://localhost:3000` の `/sign-in` または `/sign-up` を開く。Apple と揃った自前 Google ボタンが表示され、押すと Google の popup が開くこと
 3. Test users に登録した Google アカウントでサインイン → 認証済みでリダイレクトされること
 4. BFF ログに `auth.google.signup`（初回）または `auth.google.login`（2 回目以降）が出ること
 
@@ -126,7 +127,7 @@ Render Web のオリジン `https://tilawah-dev-web.onrender.com` を、OAuth �
 | ボタンが無効のまま                                        | Web に `NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID` が無い、または再起動していない                                                   | 4.2 を設定して Web を再起動                                                                                                                                                       |
 | `redirect_uri_mismatch` / ポップアップが無反応            | アクセス中のオリジンが Authorized JavaScript origins と不一致（`localhost` vs `127.0.0.1`、ポート違い、`http`/`https` 違い） | 開いている URL のオリジンを正確に登録                                                                                                                                             |
 | サインインできるのは自分だけ                              | 同意画面が `Testing`                                                                                                         | Test users に追加、または PUBLISH                                                                                                                                                 |
-| BFF が 503 `Google sign-in is not configured`             | BFF に `GOOGLE_OAUTH_CLIENT_ID` が無い                                                                                       | 4.1 を設定して BFF を再起動                                                                                                                                                       |
+| BFF が 503 `Google sign-in is not configured`             | BFF に `GOOGLE_OAUTH_CLIENT_ID` または `GOOGLE_OAUTH_CLIENT_SECRET` が無い                                                   | 4.1 の 2 つを設定して BFF を再起動                                                                                                                                                |
 | Web が `Unexpected token '<' ... is not valid JSON`       | Docker の bff が旧イメージで `/auth/google` が無く、Express が 404 HTML を返している                                         | `docker compose ... up -d --build bff` で再ビルド（`build:` はソース変更を自動再ビルドしない）                                                                                    |
 | 502 `Failed to sign in with Google`（BFF ログに `42P01`） | `oauth_identities` テーブルが未作成（新マイグレーション未適用）                                                              | `make db-migrate` で適用する                                                                                                                                                      |
 | BFF が 401 `invalid Google credential`                    | Web と BFF の Client ID が不一致（`aud` 検証に失敗）                                                                         | 両 env を同一の Client ID に揃える                                                                                                                                                |

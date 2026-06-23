@@ -60,6 +60,7 @@ export function OAuthButtons({ variant, onGoogleResult, onGoogleError }: Props) 
         <GoogleSignInButton
           clientId={GOOGLE_CLIENT_ID}
           label={googleLabel}
+          className={buttonClass}
           onResult={onGoogleResult}
           onError={onGoogleError}
         />

@@ -1,23 +1,29 @@
 'use client';
 
 import { useEffect, useRef, useTransition } from 'react';
+import { GoogleIcon } from './icons/GoogleIcon';
 import { signInWithGoogleAction, type SignInWithGoogleResult } from '../../actions';
 
-interface CredentialResponse {
-  credential?: string;
+interface CodeResponse {
+  code?: string;
 }
 
-interface GoogleAccountsId {
-  initialize(config: { client_id: string; callback: (response: CredentialResponse) => void }): void;
-  renderButton(
-    parent: HTMLElement,
-    config: { type: 'standard'; theme: string; size: string; text: string; shape: string }
-  ): void;
+interface CodeClient {
+  requestCode(): void;
+}
+
+interface GoogleOAuth2 {
+  initCodeClient(config: {
+    client_id: string;
+    scope: string;
+    ux_mode: 'popup';
+    callback: (response: CodeResponse) => void;
+  }): CodeClient;
 }
 
 declare global {
   interface Window {
-    google?: { accounts: { id: GoogleAccountsId } };
+    google?: { accounts: { oauth2: GoogleOAuth2 } };
   }
 }
 
@@ -43,19 +49,21 @@ const loadGis = (): Promise<void> => {
 interface Props {
   clientId: string;
   label: string;
+  // The shared OAuth button style, so Google matches the Apple button.
+  className: string;
   onResult: (result: SignInWithGoogleResult) => void;
   onError: () => void;
 }
 
-// Renders Google's official Sign-In button via Google Identity Services
-// and forwards the resulting ID token to the BFF through the server
-// action. The official button is used (rather than the styled fallback)
-// because GIS owns the credential popup.
-export function GoogleSignInButton({ clientId, label, onResult, onError }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [, startTransition] = useTransition();
+// A custom-styled Google button (matching the Apple button) that drives the
+// OAuth auth-code popup flow: the browser gets an auth code, the BFF
+// exchanges it for a verified identity. Using initCodeClient (rather than
+// the GIS-rendered ID-token button) is what lets us own the button markup.
+export function GoogleSignInButton({ clientId, label, className, onResult, onError }: Props) {
+  const clientRef = useRef<CodeClient | null>(null);
+  const [pending, startTransition] = useTransition();
   // Held in refs so the init effect runs once on mount rather than
-  // re-rendering the GIS button whenever a parent callback changes.
+  // re-initialising whenever a parent callback changes.
   const onResultRef = useRef(onResult);
   const onErrorRef = useRef(onError);
   onResultRef.current = onResult;
@@ -65,29 +73,25 @@ export function GoogleSignInButton({ clientId, label, onResult, onError }: Props
     let cancelled = false;
     loadGis()
       .then(() => {
-        if (cancelled || !containerRef.current || !window.google) return;
-        window.google.accounts.id.initialize({
+        if (cancelled || !window.google) return;
+        clientRef.current = window.google.accounts.oauth2.initCodeClient({
           client_id: clientId,
-          callback: ({ credential }) => {
-            if (!credential) {
+          scope: 'openid email profile',
+          ux_mode: 'popup',
+          callback: (response) => {
+            const code = response.code;
+            if (!code) {
               onErrorRef.current();
               return;
             }
             startTransition(async () => {
               try {
-                onResultRef.current(await signInWithGoogleAction({ idToken: credential }));
+                onResultRef.current(await signInWithGoogleAction({ code }));
               } catch {
                 onErrorRef.current();
               }
             });
           }
-        });
-        window.google.accounts.id.renderButton(containerRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'pill'
         });
       })
       .catch(() => onErrorRef.current());
@@ -96,5 +100,15 @@ export function GoogleSignInButton({ clientId, label, onResult, onError }: Props
     };
   }, [clientId]);
 
-  return <div ref={containerRef} aria-label={label} />;
+  const handleClick = (): void => {
+    if (clientRef.current) clientRef.current.requestCode();
+    else onErrorRef.current();
+  };
+
+  return (
+    <button type="button" className={className} onClick={handleClick} disabled={pending}>
+      <GoogleIcon />
+      <span>{label}</span>
+    </button>
+  );
 }
