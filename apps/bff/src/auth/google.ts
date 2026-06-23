@@ -9,38 +9,41 @@ export interface GoogleIdentity {
   name: string | null;
 }
 
-// Lazily built so the BFF boots (and runs password auth) without
-// GOOGLE_OAUTH_CLIENT_ID; the client is only needed on this path.
-let cachedClient: OAuth2Client | null = null;
-let cachedClientId: string | null = null;
+const getClientId = (): string | null => process.env.GOOGLE_OAUTH_CLIENT_ID ?? null;
+const getClientSecret = (): string | null => process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? null;
 
-export const getGoogleClientId = (): string | null => process.env.GOOGLE_OAUTH_CLIENT_ID ?? null;
+// Redirect URI Google expects for the popup auth-code flow
+// (google.accounts.oauth2.initCodeClient with ux_mode: 'popup').
+const REDIRECT_URI = 'postmessage';
 
-const getClient = (clientId: string): OAuth2Client => {
-  if (!cachedClient || cachedClientId !== clientId) {
-    cachedClient = new OAuth2Client(clientId);
-    cachedClientId = clientId;
-  }
-  return cachedClient;
+const toIdentity = (
+  payload: { sub?: string; email?: string; email_verified?: boolean; name?: string } | undefined
+): GoogleIdentity | null => {
+  if (!payload?.sub || !payload.email) return null;
+  return {
+    subject: payload.sub,
+    email: payload.email,
+    emailVerified: payload.email_verified === true,
+    name: payload.name ?? null
+  };
 };
 
-// Returns null on any verification failure (forged/expired/wrong-audience
-// or missing sub/email) — caller treats null as 401. Throws only when
-// Google sign-in is not configured.
-export const verifyGoogleIdToken = async (idToken: string): Promise<GoogleIdentity | null> => {
-  const clientId = getGoogleClientId();
-  if (!clientId) throw new Error('GOOGLE_OAUTH_CLIENT_ID is not configured');
+// Exchanges the browser-obtained auth code for tokens, verifies the
+// returned ID token, and returns the identity. Returns null on any failure
+// (invalid/expired code, missing id_token). Throws only when Google sign-in
+// is not configured (caller → 503). The exchange needs the client secret,
+// so this is a confidential-client flow run only on the BFF.
+export const exchangeGoogleCode = async (code: string): Promise<GoogleIdentity | null> => {
+  const clientId = getClientId();
+  const clientSecret = getClientSecret();
+  if (!clientId || !clientSecret) throw new Error('Google sign-in is not configured');
 
+  const client = new OAuth2Client({ clientId, clientSecret, redirectUri: REDIRECT_URI });
   try {
-    const ticket = await getClient(clientId).verifyIdToken({ idToken, audience: clientId });
-    const payload = ticket.getPayload();
-    if (!payload?.sub || !payload.email) return null;
-    return {
-      subject: payload.sub,
-      email: payload.email,
-      emailVerified: payload.email_verified === true,
-      name: payload.name ?? null
-    };
+    const { tokens } = await client.getToken(code);
+    if (!tokens.id_token) return null;
+    const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: clientId });
+    return toIdentity(ticket.getPayload());
   } catch {
     return null;
   }

@@ -20,7 +20,7 @@
 
 ## 2. 概要
 
-Google Identity Services（GIS）の **ID トークン方式**を採用する。ブラウザが Google から ID トークン（本人を表す署名付き JWT）を取得し、Web サーバー経由で BFF の新エンドポイント `POST /auth/google` へ渡す。BFF は Google 公式ライブラリで ID トークンを検証し、`(provider, subject)` をキーとする新テーブル `oauth_identities` でアカウントを特定する。既存アカウントとの連携は、ID トークンの `email_verified` と既存側のメール検証状態が共に成立する場合にのみ自動で行い、それ以外はパスワード再認証を求める。最終的なセッション発行は既存の JWT 発行処理をそのまま呼び、レスポンス形も既存と一致させる。
+Google Identity Services（GIS）の **認可コードフロー（popup）** を採用する。自前デザインのボタンから `initCodeClient` で認可コードを取得し、Web サーバー経由で BFF の新エンドポイント `POST /auth/google` へ渡す。BFF は Client Secret でコードをトークンに交換し、返ってきた ID トークンを Google 公式ライブラリで検証して、`(provider, subject)` をキーとする新テーブル `oauth_identities` でアカウントを特定する。既存アカウントとの連携は、ID トークンの `email_verified` と既存側のメール検証状態が共に成立する場合にのみ自動で行い、それ以外はパスワード再認証を求める。最終的なセッション発行は既存の JWT 発行処理をそのまま呼び、レスポンス形も既存と一致させる。
 
 この方向が必然である理由は、評価軸となる要件にある。本 DD は親 PRD の要件から次を導く。
 
@@ -31,16 +31,17 @@ Google Identity Services（GIS）の **ID トークン方式**を採用する。
 | R3   | Google サインインの結果を区別して記録し、運用上監視できる                                | PRD Step 3                 |
 | N1   | アカウント連携は本人性を確認できる範囲でのみ行う（乗っ取り防止）                         | PRD N1                     |
 | N2   | 既存のセッション基盤・cookie 処理を無改修で再利用する                                    | ADR 0010 / 0011 由来の制約 |
+| N3   | サインインボタンを自前デザイン（Apple ボタンと統一）にできる                             | UX フォローアップ要件      |
 
 各設計論点と要件の対応は次の通りである。
 
 | 論点 | 設計課題                                     | 対応する要件 |
 | ---- | -------------------------------------------- | ------------ |
-| Q1   | Google 認証フローの選定                      | R1           |
-| Q2   | ID トークンの検証                            | R1, N1       |
+| Q1   | Google 認証フローの選定                      | R1, N3       |
+| Q2   | 認可コードの交換と ID トークン検証           | R1, N1       |
 | Q3   | データモデル（連携の保持とパスワード非存在） | R2           |
 | Q4   | アカウント連携ポリシー                       | N1           |
-| Q5   | Web 配線とセッション接続                     | R1, N2       |
+| Q5   | Web 配線とセッション接続                     | R1, N2, N3   |
 | Q6   | 運用監視のための記録                         | R3           |
 
 PRD はユーザー体験の時系列順に要件を並べるが、本 DD は設計の依存順に論点を並べる。認証フロー（Q1）と検証（Q2）が下流の前提であり、データモデル（Q3）が決まらないと連携判定（Q4）の書き込み先を具体化できないためである。
@@ -49,23 +50,26 @@ PRD はユーザー体験の時系列順に要件を並べるが、本 DD は設
 
 ### Q1: Google 認証フローの選定
 
-**アプローチ**: 解は R1（本人特定とセッション獲得）を満たせばよい。Google API への継続アクセスは要件にない。問うべきは「本人特定だけのために、どのフローが最小の結合で済むか」である。
+**アプローチ**: 解は R1（本人特定とセッション獲得）に加え、N3（自前デザインのボタン）を満たす必要がある。Google API への継続アクセスは要件にない。問うべきは「本人特定と自前ボタンを、安全に最小コストで両立する方式は何か」である。
 
-**設計**: GIS の ID トークン方式を採用する。ブラウザが ID トークンを取得して BFF へ渡すだけで本人特定が完結し、Client Secret もリダイレクト往復も不要である。
+**設計**: GIS の **認可コードフロー（`google.accounts.oauth2.initCodeClient`, `ux_mode: 'popup'`）** を採用する。自前ボタンの押下で popup を開いて認可コードを得て、BFF が Client Secret でトークンに交換し、返る ID トークンを検証する（Q2）。popup なのでリダイレクト URI 登録は不要（`postmessage`）で、得た ID トークンは既存の検証経路にそのまま乗る。
 
-**棄却案とその問題**: Authorization Code 方式（リダイレクト型）は、Client Secret の管理、リダイレクト URI の整合、トークン交換エンドポイント、state / nonce の管理を要する。これらが提供するのは Google API への継続アクセス用トークンだが、本機能はそれを使わない。要件にない能力のために結合と運用負荷を負う点で、ADR 0010 の「不要な抽象化を避ける」方針に反する。
+**棄却案とその問題**:
 
-**根拠**: R1 を満たし、かつ最小の結合で実現する。Google API 連携が将来要件化したら本判断を再検討する（第7章）。
+- **GIS の ID トークン方式（`google.accounts.id` + `renderButton`）**。当初これを採用していた（Client Secret 不要が利点）。しかし `renderButton` は Google 製の見た目しか出せず、ログイン中は「Continue as 〇〇」のチップ表示になり、N3（Apple ボタンと統一した自前デザイン）を満たせない。N3 が要件化した時点で本方式は脱落した。
+- **トークンフロー（`initTokenClient`）**。自前ボタンは作れるが、access token しか得られず、ID トークン検証ではなく tokeninfo による `aud` 検証＋userinfo 取得という**第2の検証経路を新設**することになる。`aud` 検証を一つ落とすとトークンすり替えを許し、N1 を脅かす。既存の検証資産を再利用できない。
 
-### Q2: ID トークンの検証
+**根拠**: R1・N3 を満たし、コード交換後は既存の ID トークン検証（Q2）と連携ロジックをそのまま再利用するため、N1 への新たな攻撃面を作らない。コストは Client Secret 1 つの追加のみで、BFF が既に `JWT_SECRET` 等を持つ運用範囲に収まる。これは当初の ID トークン方式の前提（authn だけなら renderButton で十分）が N3 で崩れたことによる再決定である。
 
-**アプローチ**: ブラウザから渡る ID トークンは、クライアントの主張であって信用できない。R1（正しい本人の特定）と N1（本人性の確認）を満たすには、トークンの真正性を検証し、誰のものかを信頼できる形で確定する必要がある。
+### Q2: 認可コードの交換と ID トークン検証
 
-**設計**: ID トークンは BFF 側で検証する。Google 公式の `google-auth-library` を用い、署名・発行者（`iss`）・対象者（`aud` が自分の Client ID であること）・有効期限（`exp`）を検証する。検証で取り出すクレームは `sub`（Google の不変な本人 ID）、`email`、`email_verified`、`name` である。検証に失敗した場合はアカウントの特定・作成・連携を一切行わず、認証を拒否する。
+**アプローチ**: ブラウザから渡る認可コードは、それ自体では本人を確定しない。R1（正しい本人の特定）と N1（本人性の確認）を満たすには、コードをサーバー側でトークンに交換し、得た ID トークンの真正性を検証する必要がある。
 
-**棄却案とその問題**: 自前で JWT を検証する案は、署名アルゴリズムの取り違えや `aud` 未検証といった既知の実装ミスを招きやすく、なりすましの入口になる。公式ライブラリに委譲することでこの種の誤りを避ける。
+**設計**: BFF で `google-auth-library` の `OAuth2Client`（client id ＋ secret ＋ `redirect_uri='postmessage'`）を用い、`getToken(code)` でコードを交換する。返る ID トークンを同ライブラリで検証し（署名・`iss`・`aud` が自分の Client ID・`exp`）、`sub`・`email`・`email_verified`・`name` を取り出す。コード交換または検証に失敗した場合はアカウントの特定・作成・連携を一切行わず、認証を拒否する。
 
-**根拠**: R1 と N1 を満たす。偽造トークンを排除し、信頼できる `sub` を下流（Q3・Q4）に渡す。
+**棄却案とその問題**: 交換結果を検証せず信用する案は、万一 `aud` の異なるトークンが紛れた場合になりすましを許す。交換は TLS 越しの直接通信だが、検証は安価で既存実装を再利用できるため、省かない。
+
+**根拠**: R1 と N1 を満たす。交換と検証を BFF（Client Secret を持つ confidential client）に閉じ、信頼できる `sub` を下流（Q3・Q4）に渡す。
 
 ### Q3: データモデル（連携の保持とパスワード非存在）
 
@@ -121,7 +125,7 @@ _図1: アカウント連携の判定フロー。_
 
 **設計**: Q4 の判定後のセッション発行は、既存の発行処理（`apps/bff/src/auth/credentials.ts` の `issueAccessToken` / `issueRefreshToken`、`refresh-tokens.ts` の発行記録）をそのまま呼ぶ。`POST /auth/google` のレスポンス形は既存の成功形 `{ accessToken, refreshToken, user }` と一致させる。これにより Web 側の cookie 設定（`apps/web/app/lib/auth-cookies.ts` の `tilawah-access` / `tilawah-refresh`）は無改修で再利用でき、アクセストークンは HttpOnly cookie に入り XSS 耐性を保つ。
 
-Web 側は次を配線する。`OAuthButtons.tsx` の無効化を解除し、GIS の認証情報コールバックを接続する。新しい Server Action が ID トークンを `POST /auth/google` へ中継し、成功レスポンスを cookie に格納する。409 `link_required` の場合は「このメールは登録済みです。パスワードでログインすると Google を連携できます」を表示し、既存サインイン画面へ誘導する。文言は i18n の `auth.social.*` 配下に追加する。Apple ボタンは無効のまま据え置く。
+Web 側は次を配線する。`OAuthButtons.tsx` で、Apple ボタンと同じスタイル（`buttonClass`）の自前 Google ボタンを描画し（N3）、押下で `initCodeClient(...).requestCode()` を呼ぶ。コールバックで得た認可コードを新しい Server Action が `POST /auth/google` へ中継し、成功レスポンスを cookie に格納する。409 `link_required` の場合は「このメールは登録済みです。パスワードでログインすると Google を連携できます」を表示し、既存サインイン画面へ誘導する。文言は i18n の `auth.error.*` 配下に追加する。Client ID 未設定時は無効プレースホルダにフォールバックする。Apple ボタンは無効のまま据え置く。
 
 **棄却案とその問題**: Google 用に別のトークン形式やセッション経路を新設する案は、N2 に反する。cookie 処理・`requireAuth` ミドルウェア・リフレッシュフローを二重持ちすることになり、保守の結合が増える。レスポンス形を既存に一致させれば、これらは一切変更不要になる。
 
@@ -141,17 +145,18 @@ Web 側は次を配線する。`OAuthButtons.tsx` の無効化を解除し、GIS
 
 ```mermaid
 sequenceDiagram
-    participant U as ブラウザ (GIS)
+    participant U as ブラウザ (自前ボタン+GIS)
     participant W as Web Server Action
     participant B as BFF /auth/google
-    participant G as Google (証明書/検証)
+    participant G as Google (token/certs)
     participant DB as PostgreSQL
 
-    U->>U: Google ボタン押下 → ID トークン取得
-    U->>W: ID トークンを Server Action へ POST
-    W->>B: POST /auth/google { idToken }
-    B->>G: 署名 / iss / aud / exp を検証
-    G-->>B: payload { sub, email, email_verified, name }
+    U->>U: 自前ボタン押下 → popup で認可コード取得
+    U->>W: 認可コードを Server Action へ POST
+    W->>B: POST /auth/google { code }
+    B->>G: code をトークンに交換（client secret, postmessage）
+    G-->>B: id_token
+    B->>B: id_token を検証（署名/iss/aud/exp）→ { sub, email, email_verified }
     B->>DB: oauth_identities を (google, sub) で検索 → 図1 の判定
     alt 連携可能
         B->>B: 既存の issueAccessToken / issueRefreshToken
@@ -168,25 +173,25 @@ _図2: Web の Google サインイン経路。判定分岐の詳細は図1（Q4�
 
 ## 5. 障害シナリオとエッジケース
 
-| ケース                                                     | 起きること                         | 期待する挙動                                              | 残存リスク                              | 将来の緩和                                          |
-| ---------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------- | --------------------------------------- | --------------------------------------------------- |
-| ID トークン偽造・改ざん                                    | 検証失敗                           | 401、連携・作成しない                                     | なし                                    | —                                                   |
-| `email_verified == false`（主に Workspace / 独自ドメイン） | 自動連携経路に乗らない             | 409 link_required → パスワード再認証                      | 正規ユーザーに 1 ステップ増             | パスワード設定済みなら通常ログインで吸収            |
-| 同一メールの既存パスワードアカウント                       | 図1 のゲート通過時のみ自動連携     | 通過: 自動連携 + 記録 / 非通過: 409                       | 検証済みは現在の所有を保証しない        | 連携記録 + パスワードリセット時の全セッション無効化 |
-| 同一 `sub` の同時リクエスト（競合）                        | `(provider, subject)` 一意制約違反 | 既存 identity に解決しリトライ                            | なし                                    | —                                                   |
-| Google が後でメール変更                                    | `sub` 不変のためログイン継続可能   | 影響なし（キーが `sub`）                                  | 監査用 `email` 列が古くなる             | 連携時に `email` を更新                             |
-| パスワードリセット発生                                     | 既存フロー                         | 全アクティブセッションと pending email 変更リンクを無効化 | 未対応なら Unexpired-Session 変種が残る | リセット時の一括無効化を確実に実装                  |
-| Google 側障害（証明書 / 検証到達不可）                     | 検証不可                           | 5xx でフェイル、セッション発行しない                      | Google ログインのみ不可                 | email + password は独立経路で無影響                 |
-| `GOOGLE_OAUTH_CLIENT_ID` 未設定                            | 起動時 / 初回検証で失敗            | Google ボタンを描画しない、または明示エラー               | 設定ミス                                | 起動時の環境変数バリデーション                      |
+| ケース                                                     | 起きること                             | 期待する挙動                                              | 残存リスク                              | 将来の緩和                                          |
+| ---------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------- | --------------------------------------- | --------------------------------------------------- |
+| 認可コードが無効・期限切れ・偽造                           | コード交換または ID トークン検証が失敗 | 401、連携・作成しない                                     | なし                                    | —                                                   |
+| `email_verified == false`（主に Workspace / 独自ドメイン） | 自動連携経路に乗らない                 | 409 link_required → パスワード再認証                      | 正規ユーザーに 1 ステップ増             | パスワード設定済みなら通常ログインで吸収            |
+| 同一メールの既存パスワードアカウント                       | 図1 のゲート通過時のみ自動連携         | 通過: 自動連携 + 記録 / 非通過: 409                       | 検証済みは現在の所有を保証しない        | 連携記録 + パスワードリセット時の全セッション無効化 |
+| 同一 `sub` の同時リクエスト（競合）                        | `(provider, subject)` 一意制約違反     | 既存 identity に解決しリトライ                            | なし                                    | —                                                   |
+| Google が後でメール変更                                    | `sub` 不変のためログイン継続可能       | 影響なし（キーが `sub`）                                  | 監査用 `email` 列が古くなる             | 連携時に `email` を更新                             |
+| パスワードリセット発生                                     | 既存フロー                             | 全アクティブセッションと pending email 変更リンクを無効化 | 未対応なら Unexpired-Session 変種が残る | リセット時の一括無効化を確実に実装                  |
+| Google 側障害（証明書 / 検証到達不可）                     | 検証不可                               | 5xx でフェイル、セッション発行しない                      | Google ログインのみ不可                 | email + password は独立経路で無影響                 |
+| `GOOGLE_OAUTH_CLIENT_ID` 未設定                            | 起動時 / 初回検証で失敗                | Google ボタンを描画しない、または明示エラー               | 設定ミス                                | 起動時の環境変数バリデーション                      |
 
 ## 6. 実装スケジュール
 
 各フェーズは独立に検証可能で、前フェーズに依存する。
 
-- **Phase 0: Google Cloud 設定**。OAuth 2.0 Client ID（Web 種別）を発行し、Authorized JavaScript origins を登録、`GOOGLE_OAUTH_CLIENT_ID` を BFF・Web に配布。Client Secret は不要（Q1）。
+- **Phase 0: Google Cloud 設定**。OAuth 2.0 Client ID（Web 種別）を発行し、Authorized JavaScript origins を登録。`GOOGLE_OAUTH_CLIENT_ID` を BFF・Web に、`GOOGLE_OAUTH_CLIENT_SECRET` を BFF に配布（コード交換に必要、Q2）。popup なのでリダイレクト URI 登録は不要。
 - **Phase 1: スキーマ**。`oauth_identities` 追加のマイグレーション（up/down ペア、ADR 0012）。`password_hash` は既に nullable のため変更不要。ローカル適用確認。
-- **Phase 2: BFF `POST /auth/google`**。ID トークン検証（Q2）+ 連携判定（Q4）+ 既存 JWT 発行への接続（Q5）。単体テスト（検証成功/失敗、各分岐、409）。
-- **Phase 3: Web 配線**。GIS ボタン有効化、Server Action、409 ハンドリング、i18n。サインアップ・サインイン両画面で動作確認。
+- **Phase 2: BFF `POST /auth/google`**。コード交換＋ ID トークン検証（Q2）+ 連携判定（Q4）+ 既存 JWT 発行への接続（Q5）。単体テスト（検証成功/失敗、各分岐、409）。
+- **Phase 3: Web 配線**。自前 Google ボタン + `initCodeClient`、Server Action、409 ハンドリング、i18n。サインアップ・サインイン両画面で動作確認。
 - **Phase 4: 運用監視ログ**。Q6 の構造化ログ。4 事象の発火確認。
 
 Phase 2 と Phase 3 は、`POST /auth/google` のリクエスト/レスポンス契約を先に固めれば並行できる。
@@ -199,4 +204,4 @@ Phase 2 と Phase 3 は、`POST /auth/google` のリクエスト/レスポンス
 - **Apple サインイン**。Apple Developer Program 登録と固有要件のため先送り（ADR 0010）。きっかけ: App Store がモバイルで federated を必須化、または iOS ネイティブ対応と同時。`oauth_identities` に `provider='apple'` を足すだけで拡張できる。
 - **連携解除 / パスワード追加設定**。`password_hash` が nullable なので後方互換で追加できる。きっかけ: アカウント設定画面の整備時。
 - **連携成立通知のメール化**。本スコープでは構造化ログで代替（Q6）。きっかけ: パスワードリセット用のメール基盤（Resend / Postmark / SES 等）の導入時。
-- **Google API 連携**。Q1 で ID トークン方式を選び継続アクセス用トークンを取得していない。きっかけ: カレンダー連携等で Google API アクセスが要件化した時点。Authorization Code 方式への切り替えを再検討する。
+- **Google API 連携**。Q1 で認可コードフローを採るが、交換で得た access/refresh トークンは本人特定にのみ使い保存していない。きっかけ: カレンダー連携等で Google API アクセスが要件化した時点。スコープ追加とトークン保存を検討する。
