@@ -13,6 +13,10 @@ interface Props {
   onScopeChange: (scope: HistoryScope) => void;
 }
 
+// Matches HistoryList's breakpoint so the stats grid and the attempt rows
+// reflow at the same width on phones.
+const HISTORY_MOBILE_MQ = '@media (max-width: 640px)';
+
 const sectionWrapClass = css({ marginBottom: '6' });
 
 const headRowClass = css({
@@ -59,14 +63,17 @@ const toggleBtnActiveClass = css({
 const gridClass = css({
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '3'
+  gap: '3',
+  // Four narrow tiles overflow / wrap their labels on phones; drop to 2×2.
+  [HISTORY_MOBILE_MQ]: { gridTemplateColumns: 'repeat(2, 1fr)' }
 });
 
 const tileClass = css({
   display: 'flex',
   flexDirection: 'column',
   gap: '1',
-  padding: '5'
+  padding: '5',
+  [HISTORY_MOBILE_MQ]: { padding: '4' }
 });
 
 const eyebrowClass = css({
@@ -83,7 +90,8 @@ const bigClass = css({
   fontFamily: 'serif',
   fontSize: '[34px]',
   lineHeight: '[1.1]',
-  fontVariantNumeric: 'tabular-nums'
+  fontVariantNumeric: 'tabular-nums',
+  [HISTORY_MOBILE_MQ]: { fontSize: '[28px]' }
 });
 
 const bigOnPaperClass = css({ color: 'ink.strong' });
