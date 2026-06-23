@@ -9,6 +9,8 @@ final class MockAuthService: AuthService {
   var signInResult: Result<AuthSuccess, AppError>?
   var signUpResult: Result<AuthSuccess, AppError>?
   var refreshResult: Result<AuthTokens, AppError>?
+  var requestGoogleNonceResult: Result<String, AppError>?
+  var signInWithGoogleResult: Result<AuthSuccess, AppError>?
   /// Optional pre-await hook for `refresh` so concurrency tests can
   /// synchronise on the in-flight task before letting it complete.
   var refreshDelay: (@Sendable () async -> Void)?
@@ -16,6 +18,8 @@ final class MockAuthService: AuthService {
   private(set) var signInCallCount = 0
   private(set) var signUpCallCount = 0
   private(set) var refreshCallCount = 0
+  private(set) var requestGoogleNonceCallCount = 0
+  private(set) var signInWithGoogleCallCount = 0
   private(set) var lastSignInEmail: String?
   private(set) var lastSignInPassword: String?
   private(set) var lastSignUpEmail: String?
@@ -24,6 +28,7 @@ final class MockAuthService: AuthService {
   /// from "called with no display name" (`.some(nil)`).
   private(set) var lastSignUpDisplayName: String??
   private(set) var lastRefreshToken: String?
+  private(set) var lastGoogleIDToken: String?
 
   init(
     signInResult: Result<AuthSuccess, AppError>? = nil,
@@ -57,6 +62,17 @@ final class MockAuthService: AuthService {
       await delay()
     }
     return try Self.unwrap(refreshResult, operation: "mock.auth.refresh")
+  }
+
+  func requestGoogleNonce() async throws -> String {
+    requestGoogleNonceCallCount += 1
+    return try Self.unwrap(requestGoogleNonceResult, operation: "mock.auth.google.nonce")
+  }
+
+  func signInWithGoogle(idToken: String) async throws -> AuthSuccess {
+    signInWithGoogleCallCount += 1
+    lastGoogleIDToken = idToken
+    return try Self.unwrap(signInWithGoogleResult, operation: "mock.auth.google.signin")
   }
 
   private static func unwrap<T>(_ result: Result<T, AppError>?, operation: String) throws -> T {
