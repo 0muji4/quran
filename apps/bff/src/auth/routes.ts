@@ -9,6 +9,12 @@ import {
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
 } from './refresh-tokens';
+import { verifyGoogleIdToken } from './google';
+import {
+  createUserFromOAuth,
+  findUserByOAuthIdentity,
+  linkOAuthIdentity
+} from './oauth-identities';
 import {
   createUserWithPassword,
   findUserByEmail,
@@ -42,6 +48,22 @@ const loginSchema = z.object({
     password: z.string().min(1).max(128)
   })
 });
+
+const googleSchema = z.object({
+  body: z.object({
+    // Google ID token, verified server-side. Bounded so an oversized
+    // value is a 400 rather than work handed to the verifier.
+    idToken: z.string().min(1).max(8192)
+  })
+});
+
+// Postgres unique_violation — on the link path, a concurrent request
+// already inserted the same (provider, subject).
+const isUniqueViolation = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  (error as { code?: string }).code === '23505';
 
 interface AuthSuccess {
   accessToken: string;
@@ -401,5 +423,86 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
   } catch (error) {
     logger.error('POST /auth/login failed', { email, error });
     res.status(502).json({ error: 'Failed to sign in' });
+  }
+});
+
+/// Google sign-in (Web first). Verifies the ID token, resolves the
+/// account per DD Q4, and issues the same JWT pair as the password paths.
+authRouter.post('/auth/google', async (req: AuthedRequest, res) => {
+  const validation = googleSchema.safeParse(req);
+  if (!validation.success) {
+    return res.status(400).json({ errors: validation.error.issues });
+  }
+  const { idToken } = validation.data.body;
+
+  let identity;
+  try {
+    identity = await verifyGoogleIdToken(idToken);
+  } catch (error) {
+    // Thrown only when GOOGLE_OAUTH_CLIENT_ID is unset (misconfiguration).
+    logger.error('POST /auth/google not configured', { error });
+    return res.status(503).json({ error: 'Google sign-in is not configured' });
+  }
+  if (!identity) {
+    return res.status(401).json({ error: 'invalid Google credential' });
+  }
+
+  try {
+    // Returning Google user. `includeDeleted` reactivates a soft-deleted
+    // account on sign-in, matching the password path (ADR-0024 §4).
+    const linked = await findUserByOAuthIdentity('google', identity.subject, {
+      includeDeleted: true
+    });
+    if (linked) {
+      const reactivated = await reactivateUser(linked.id);
+      logger.info('auth.google.login', { userId: linked.id, reactivated });
+      return res.json(await issueAuthSuccess(linked, { reactivated }));
+    }
+
+    const existing = await findUserByEmail(identity.email, { includeDeleted: true });
+    if (!existing) {
+      const user = await createUserFromOAuth({
+        email: identity.email,
+        displayName: identity.name,
+        provider: 'google',
+        subject: identity.subject
+      });
+      logger.info('auth.google.signup', { userId: user.id });
+      return res.status(201).json(await issueAuthSuccess(user));
+    }
+
+    // Email exists but isn't linked. Auto-link only when Google reports it
+    // verified; otherwise an unverified Google email could claim a
+    // victim's account (N1 / Q4). Local accounts are verified at signup.
+    if (!identity.emailVerified) {
+      logger.warn('auth.google.link_required', { reason: 'email_unverified' });
+      return res.status(409).json({ error: 'link_required', provider: 'google' });
+    }
+
+    const reactivated = await reactivateUser(existing.id);
+    try {
+      await linkOAuthIdentity({
+        userId: existing.id,
+        provider: 'google',
+        subject: identity.subject,
+        email: identity.email
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        const raced = await findUserByOAuthIdentity('google', identity.subject, {
+          includeDeleted: true
+        });
+        if (raced) {
+          logger.info('auth.google.login', { userId: raced.id, raced: true });
+          return res.json(await issueAuthSuccess(raced));
+        }
+      }
+      throw error;
+    }
+    logger.info('auth.google.linked', { userId: existing.id, reactivated });
+    return res.json(await issueAuthSuccess(existing, { reactivated }));
+  } catch (error) {
+    logger.error('POST /auth/google failed', { error });
+    res.status(502).json({ error: 'Failed to sign in with Google' });
   }
 });
