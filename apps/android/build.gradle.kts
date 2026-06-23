@@ -24,6 +24,16 @@ android {
                 ?: System.getenv("BFF_BASE_URL")
                 ?: "http://10.0.2.2:4000"
         buildConfigField("String", "BFF_BASE_URL", "\"$bffBaseUrl\"")
+
+        // Web/server OAuth client ID, passed to Credential Manager as the
+        // serverClientId so the Google ID token's aud is the server client
+        // ID the BFF verifies. Empty disables the Google button (it falls
+        // back to the disabled placeholder).
+        val googleServerClientId =
+            (project.findProperty("GOOGLE_SERVER_CLIENT_ID") as String?)
+                ?: System.getenv("GOOGLE_SERVER_CLIENT_ID")
+                ?: ""
+        buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", "\"$googleServerClientId\"")
     }
 
     buildTypes {
@@ -84,6 +94,9 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.apollographql.apollo:apollo-runtime:4.0.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 

@@ -37,6 +37,20 @@ interface AuthApi {
      * drop the session and route the user back to sign-in.
      */
     suspend fun refresh(refreshToken: String): RefreshedTokens
+
+    /**
+     * `POST /auth/google/nonce`. Returns a single-use nonce to hand to
+     * the Google SDK; the BFF consumes it when verifying the ID token.
+     */
+    suspend fun requestGoogleNonce(): String
+
+    /**
+     * `POST /auth/google` with the native ID token. Returns the same
+     * session shape as password sign-in. Throws
+     * [AppError.GoogleLinkRequired] on 409 — the email already has an
+     * account and must be linked via password sign-in.
+     */
+    suspend fun signInWithGoogle(idToken: String): AuthSessionPayload
 }
 
 /**
@@ -111,7 +125,56 @@ class OkHttpAuthApi(
             throw AppError.BackendUnavailable("refresh")
         }
 
-    private suspend fun post(path: String, body: String, operation: String): AuthSessionPayload {
+    override suspend fun requestGoogleNonce(): String {
+        val request = Request.Builder()
+            .url("${baseUrl}auth/google/nonce")
+            .post(ByteArray(0).toRequestBody(JSON_MEDIA))
+            .build()
+        return withContext(Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { response ->
+                    val payload = response.body?.string().orEmpty()
+                    when (response.code) {
+                        in 200..299 -> parseNonce(payload)
+                        else -> throw AppError.BackendUnavailable("googleNonce")
+                    }
+                }
+            } catch (cause: AppError) {
+                throw cause
+            } catch (cause: IOException) {
+                throw AppError.Network(cause)
+            } catch (cause: Throwable) {
+                throw AppError.BackendUnavailable("googleNonce", cause)
+            }
+        }
+    }
+
+    override suspend fun signInWithGoogle(idToken: String): AuthSessionPayload =
+        post(
+            path = "auth/google",
+            body = json.encodeToString(
+                GoogleSignInRequest.serializer(),
+                GoogleSignInRequest(idToken),
+            ),
+            operation = "signInWithGoogle",
+            // 409 here means the email already has an account, not the
+            // signup "email in use" — steer the user to password linking.
+            conflict = AppError.GoogleLinkRequired,
+        )
+
+    private fun parseNonce(payload: String): String =
+        try {
+            json.decodeFromString(NonceResponseDto.serializer(), payload).nonce
+        } catch (_: SerializationException) {
+            throw AppError.BackendUnavailable("googleNonce")
+        }
+
+    private suspend fun post(
+        path: String,
+        body: String,
+        operation: String,
+        conflict: AppError = AppError.EmailInUse,
+    ): AuthSessionPayload {
         val request = Request.Builder()
             .url("$baseUrl$path")
             .post(body.toRequestBody(JSON_MEDIA))
@@ -124,7 +187,7 @@ class OkHttpAuthApi(
                         in 200..299 -> parseSuccess(payload, operation)
                         400 -> throw AppError.ValidationFailed(parseErrorMessage(payload) ?: "invalid input")
                         401 -> throw AppError.InvalidCredentials
-                        409 -> throw AppError.EmailInUse
+                        409 -> throw conflict
                         in 500..599 -> throw AppError.BackendUnavailable(operation)
                         else -> throw AppError.BackendUnavailable(operation)
                     }
