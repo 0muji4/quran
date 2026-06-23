@@ -30,6 +30,9 @@
 "error.emailInUse.title" = "Email already in use";
 "error.emailInUse.recovery" = "An account with this email exists. Sign in instead.";
 
+"error.googleLinkRequired.title" = "This email is already registered";
+"error.googleLinkRequired.recovery" = "Sign in with your password to link Google.";
+
 "error.validationFailed.title" = "Check your details";
 "error.validationFailed.recovery" = "Please review the fields and try again.";
 

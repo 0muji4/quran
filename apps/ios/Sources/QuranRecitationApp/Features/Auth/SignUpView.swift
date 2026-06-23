@@ -13,6 +13,25 @@ struct SignUpView: View {
   let onNavigateToSignIn: () -> Void
   let onAuthenticated: () -> Void
 
+  /// Configured only when both Google client IDs are present; otherwise
+  /// the Google button stays on its disabled placeholder.
+  private var googleClient: GoogleSignInClient? {
+    let ios = AppConfig.googleIOSClientID
+    let server = AppConfig.googleServerClientID
+    guard !ios.isEmpty, !server.isEmpty else { return nil }
+    return GoogleSignInClient(iosClientID: ios, serverClientID: server)
+  }
+
+  private func signInWithGoogle() {
+    guard let client = googleClient else { return }
+    Task {
+      await viewModel.signInWithGoogle(
+        getIdToken: { nonce in try await client.idToken(nonce: nonce) },
+        onSuccess: onAuthenticated
+      )
+    }
+  }
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
@@ -24,7 +43,11 @@ struct SignUpView: View {
         }
 
         VStack(spacing: Spacing.md) {
-          SocialButton(provider: .google)
+          SocialButton(
+            provider: .google,
+            isEnabled: googleClient != nil,
+            action: signInWithGoogle
+          )
           SocialButton(provider: .apple)
         }
 
