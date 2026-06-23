@@ -59,11 +59,11 @@
     <string name="continue_title">%1$s, ayah %2$d</string>
     <string name="continue_subtitle">Ayah %1$d of %2$d · last practiced %3$s</string>
     <string name="continue_resume">Resume ayah %1$d</string>
-
-    <!-- Suggested card (Library tab) -->
-    <string name="library_suggested_eyebrow">SUGGESTED FOR YOU</string>
-    <string name="library_suggested_meta">%1$d ayahs · %2$s</string>
-    <string name="library_suggested_begin">Begin</string>
+    <!-- Get-started variant of the Continue card, shown before the first session -->
+    <string name="continue_get_started_eyebrow">GET STARTED</string>
+    <string name="continue_empty_title">Begin your tilawah</string>
+    <string name="continue_empty_description">Pick any surah from the library below to record your first ayah.</string>
+    <string name="continue_empty_cta">Start practice</string>
 
     <!-- Practice tab -->
     <string name="practice_back_a11y">Back to library</string>

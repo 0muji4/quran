@@ -22,8 +22,8 @@ import java.io.IOException
  *
  * Kept as its own focused client rather than folded into [ProfileService]:
  * [ProfileService] fronts the unauthenticated-origin `/auth/me*` surface,
- * while this — like [SuggestionClient] — fronts the always-authenticated
- * `/me` surface. Errors cross this boundary as [AppError] (ADR 0006).
+ * while this fronts the always-authenticated `/me` surface. Errors cross
+ * this boundary as [AppError] (ADR 0006).
  */
 interface PreferencesClient {
     suspend fun preferences(): PracticePreferences

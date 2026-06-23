@@ -40,25 +40,16 @@ fun LibraryScreen(
     viewModel: LibraryViewModel,
     onSurahOpened: (SurahSummary) -> Unit,
     onResume: (com.tilawah.android.storage.LastPracticed) -> Unit,
-    signedIn: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val lastPracticed by viewModel.lastPracticed.collectAsStateWithLifecycle()
-    val suggestion by viewModel.suggestion.collectAsStateWithLifecycle()
     val bestScores by viewModel.bestScores.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
-    }
-
-    // The suggestion is auth-gated; re-evaluate it whenever sign-in flips
-    // so signing in after the list loaded surfaces the card (and signing
-    // out hides it) without a full reload.
-    LaunchedEffect(signedIn) {
-        viewModel.refreshSuggestion()
     }
 
     val spacing = BrandTheme.spacing
@@ -69,29 +60,32 @@ fun LibraryScreen(
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
         Header()
-        lastPracticed?.let { entry ->
-            ContinueCard(
-                entry = entry,
+        val loaded = state as? LibraryUiState.Loaded
+        // The Library always leads with the dark hero card: resume the last
+        // session when there is one, otherwise a get-started prompt (mirrors
+        // web's ContinueCard). The get-started variant waits for the surah
+        // list to load — a non-null `lastPracticed` resolves from local
+        // storage well before the network fetch, so this gate shows the
+        // resume card immediately and never flashes get-started first.
+        val resumeEntry = lastPracticed
+        when {
+            resumeEntry != null -> ContinueCard(
+                entry = resumeEntry,
                 onResume = {
-                    viewModel.continueTapped(entry)
-                    onResume(entry)
+                    viewModel.continueTapped(resumeEntry)
+                    onResume(resumeEntry)
                 },
                 modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
             )
-        }
-        val loaded = state as? LibraryUiState.Loaded
-        if (loaded != null) {
-            suggestion?.let { picked ->
-                SuggestedCard(
-                    suggestion = picked,
-                    surahs = loaded.surahs,
-                    onBegin = { surah ->
-                        viewModel.suggestedTapped(surah, picked.reason.wire)
+            loaded != null -> GetStartedCard(
+                onStart = {
+                    loaded.surahs.firstOrNull()?.let { surah ->
+                        viewModel.surahOpened(surah)
                         onSurahOpened(surah)
-                    },
-                    modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
-                )
-            }
+                    }
+                },
+                modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
+            )
         }
         SearchField(
             query = query,

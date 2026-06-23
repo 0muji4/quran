@@ -1,33 +1,5 @@
 import Foundation
 
-/// Personalised practice suggestion returned by `GET /me/suggestions`
-/// (ADR 0015). `reason` is informational telemetry only — the View
-/// just displays `surahId`. `difficulties` is a sparse map keyed by
-/// `surahId`; surahs without entries fall back to the ayah-count
-/// heuristic in the View layer, matching the web client's behaviour.
-struct SurahSuggestion: Equatable {
-  let surahId: String
-  let reason: SuggestionReason
-  let difficulties: [String: Difficulty]
-
-  enum SuggestionReason: String, Equatable {
-    case shortUnpracticed = "short_unpracticed"
-    case shortLowScore = "short_low_score"
-    case fallback
-    case unknown
-
-    init(wire: String) {
-      self = SuggestionReason(rawValue: wire) ?? .unknown
-    }
-  }
-
-  enum Difficulty: String, Equatable {
-    case easy
-    case medium
-    case hard
-  }
-}
-
 /// Client for the BFF `/me/*` REST surface. Every endpoint here is
 /// gated by `requireAuth` on the BFF (`apps/bff/src/me/routes.ts`),
 /// so the underlying `AuthHTTPClient` attaches the Bearer header and
@@ -39,8 +11,6 @@ struct SurahSuggestion: Equatable {
 /// is `@MainActor` for `TokenStore` / `TokenRefresher` access.
 @MainActor
 protocol MeClient {
-  func suggestions() async throws -> SurahSuggestion
-
   // Practice history surface. The wire types match
   // `apps/web/app/lib/storage-types.ts` exactly, so the Codable
   // structs in `HistoryStore.swift` round-trip without an adapter.
@@ -69,29 +39,6 @@ final class HTTPMeClient: MeClient {
   init(baseURL: URL = AppConfig.restBaseURL, http: AuthHTTPClient) {
     self.baseURL = baseURL
     self.http = http
-  }
-
-  // MARK: - Suggestions
-
-  func suggestions() async throws -> SurahSuggestion {
-    var request = URLRequest(url: baseURL.appendingPathComponent("me/suggestions"))
-    request.httpMethod = "GET"
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-    let (data, response) = try await http.send(request)
-    switch response.statusCode {
-    case 200..<300:
-      guard let payload = try? JSONDecoder().decode(SuggestionResponseBody.self, from: data) else {
-        throw AppError.backendUnavailable(operation: "me.suggestions.parse")
-      }
-      return SurahSuggestion(
-        surahId: payload.suggested.surahId,
-        reason: SurahSuggestion.SuggestionReason(wire: payload.suggested.reason),
-        difficulties: payload.difficulties.compactMapValues(SurahSuggestion.Difficulty.init(rawValue:))
-      )
-    default:
-      throw AppError.backendUnavailable(operation: "me.suggestions")
-    }
   }
 
   // MARK: - Last practiced
@@ -313,21 +260,6 @@ final class HTTPMeClient: MeClient {
 }
 
 // MARK: - Wire types
-
-/// 2xx response shape for `GET /me/suggestions`. Mirrors
-/// `apps/bff/src/me/suggestions.ts:24` — `reason` and `difficulties`
-/// stay raw strings here so a new variant added on the server (e.g.
-/// "weakest_long_surah") deserialises cleanly via the `.unknown`
-/// fallback in `SurahSuggestion.SuggestionReason`.
-private struct SuggestionResponseBody: Decodable {
-  let suggested: Suggested
-  let difficulties: [String: String]
-
-  struct Suggested: Decodable {
-    let surahId: String
-    let reason: String
-  }
-}
 
 /// 2xx response shape for `GET /me/attempts`. BFF wraps the list in
 /// an `attempts` envelope so future fields (pagination cursors, total

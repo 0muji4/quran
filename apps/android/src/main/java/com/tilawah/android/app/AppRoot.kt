@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -48,12 +47,10 @@ import com.tilawah.android.backend.HistoryRemoteClient
 import com.tilawah.android.backend.HttpHistoryRemoteClient
 import com.tilawah.android.backend.HttpPreferencesClient
 import com.tilawah.android.backend.HttpProfileService
-import com.tilawah.android.backend.HttpSuggestionClient
 import com.tilawah.android.backend.OkHttpAuthApi
 import com.tilawah.android.backend.PreferencesClient
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
-import com.tilawah.android.backend.SuggestionClient
 import com.tilawah.android.backend.TokenRefresher
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.library.LibraryScreen
@@ -132,9 +129,6 @@ fun AppRoot(
     profileService: ProfileService = remember(authedHttp) { HttpProfileService(http = authedHttp) },
     historyRemote: HistoryRemoteClient = remember(authedHttp) {
         HttpHistoryRemoteClient(http = authedHttp)
-    },
-    suggestionClient: SuggestionClient = remember(authedHttp) {
-        HttpSuggestionClient(http = authedHttp)
     },
     preferencesClient: PreferencesClient = remember(authedHttp) {
         HttpPreferencesClient(http = authedHttp)
@@ -228,8 +222,6 @@ fun AppRoot(
                     backend = backend,
                     telemetry = telemetry,
                     historyStore = historyStore,
-                    suggestionClient = suggestionClient,
-                    signedInState = signedIn,
                     onResume = { entry ->
                         practiceTarget = entry
                         selectedTab = TopLevelTab.Practice
@@ -318,8 +310,6 @@ private fun LibraryTabHost(
     backend: QuranBackend,
     telemetry: Telemetry,
     historyStore: HistoryStore,
-    suggestionClient: SuggestionClient,
-    signedInState: kotlinx.coroutines.flow.StateFlow<Boolean>,
     onResume: (LastPracticed) -> Unit,
     onSurahOpened: (SurahSummary) -> Unit,
 ) {
@@ -330,18 +320,14 @@ private fun LibraryTabHost(
                     backend = backend,
                     telemetry = telemetry,
                     historyStore = historyStore,
-                    suggestionClient = suggestionClient,
-                    isSignedIn = { signedInState.value },
                 )
             }
         },
     )
-    val signedIn by signedInState.collectAsStateWithLifecycle()
     LibraryScreen(
         viewModel = viewModel,
         onSurahOpened = onSurahOpened,
         onResume = onResume,
-        signedIn = signedIn,
     )
 }
 
