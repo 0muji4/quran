@@ -69,17 +69,33 @@ fun LibraryScreen(
         verticalArrangement = Arrangement.spacedBy(spacing.lg),
     ) {
         Header()
-        lastPracticed?.let { entry ->
-            ContinueCard(
-                entry = entry,
+        val loaded = state as? LibraryUiState.Loaded
+        // The Library always leads with the dark hero card: resume the last
+        // session when there is one, otherwise a get-started prompt (mirrors
+        // web's ContinueCard). The get-started variant waits for the surah
+        // list to load — a non-null `lastPracticed` resolves from local
+        // storage well before the network fetch, so this gate shows the
+        // resume card immediately and never flashes get-started first.
+        val resumeEntry = lastPracticed
+        when {
+            resumeEntry != null -> ContinueCard(
+                entry = resumeEntry,
                 onResume = {
-                    viewModel.continueTapped(entry)
-                    onResume(entry)
+                    viewModel.continueTapped(resumeEntry)
+                    onResume(resumeEntry)
+                },
+                modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
+            )
+            loaded != null -> GetStartedCard(
+                onStart = {
+                    loaded.surahs.firstOrNull()?.let { surah ->
+                        viewModel.surahOpened(surah)
+                        onSurahOpened(surah)
+                    }
                 },
                 modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
             )
         }
-        val loaded = state as? LibraryUiState.Loaded
         if (loaded != null) {
             suggestion?.let { picked ->
                 SuggestedCard(

@@ -74,7 +74,7 @@ fun ContinueCard(
             .padding(spacing.lg),
         verticalArrangement = Arrangement.spacedBy(spacing.md),
     ) {
-        ContinueEyebrow()
+        ContinueEyebrow(label = stringResource(R.string.continue_eyebrow))
 
         Text(
             text = buildAnnotatedString {
@@ -114,8 +114,56 @@ fun ContinueCard(
     }
 }
 
+/**
+ * Get-started variant of the Continue hero, shown when the user has no
+ * recorded session yet. Reuses the dark card shell and gold eyebrow so the
+ * Library always leads with this hero (resume once there is history),
+ * mirroring the web `ContinueCard.tsx` empty state — the surface the user
+ * pointed to as the reference. The CTA opens the first surah at ayah 1 via
+ * [onStart], matching web's `/practice/{firstSurah}/1`.
+ */
 @Composable
-private fun ContinueEyebrow() {
+fun GetStartedCard(
+    onStart: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = BrandTheme.colors
+    val typography = BrandTheme.typography
+    val spacing = BrandTheme.spacing
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(spacing.cardCornerRadius))
+            .background(colors.cardInverse)
+            .padding(spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(spacing.md),
+    ) {
+        ContinueEyebrow(label = stringResource(R.string.continue_get_started_eyebrow))
+
+        Text(
+            text = stringResource(R.string.continue_empty_title),
+            style = typography.sectionTitle.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.textOnInverse,
+        )
+
+        Text(
+            text = stringResource(R.string.continue_empty_description),
+            style = typography.caption,
+            color = colors.textOnInverse.copy(alpha = 0.75f),
+        )
+
+        PrimaryButton(
+            label = stringResource(R.string.continue_empty_cta),
+            onClick = onStart,
+            tint = PrimaryButtonTint.Accent,
+            trailingIcon = Icons.AutoMirrored.Filled.ArrowForward,
+        )
+    }
+}
+
+@Composable
+private fun ContinueEyebrow(label: String) {
     val colors = BrandTheme.colors
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
@@ -134,7 +182,7 @@ private fun ContinueEyebrow() {
             modifier = Modifier.size(14.dp),
         )
         Text(
-            text = stringResource(R.string.continue_eyebrow),
+            text = label,
             style = typography.eyebrow,
             color = colors.goldOnDark,
         )
