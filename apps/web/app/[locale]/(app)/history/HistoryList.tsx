@@ -109,7 +109,10 @@ const avatarClass = css({
   fontVariantNumeric: 'tabular-nums'
 });
 
-const infoClass = css({ flex: '1', minWidth: '[0]' });
+// Column so the serif title and the meta line stack; without an explicit
+// display the inline title/meta spans run together and wrap mid-text on
+// narrow phones ("ayah 1" + "22 Jun" → "ayah 122 Jun").
+const infoClass = css({ display: 'flex', flexDirection: 'column', flex: '1', minWidth: '[0]' });
 
 const titleClass = css({
   fontFamily: 'serif',

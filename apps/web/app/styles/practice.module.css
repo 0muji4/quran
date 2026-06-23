@@ -189,6 +189,11 @@
   .ayahLine {
     gap: var(--spacing-3);
   }
+  /* Reclaim width for the waveform on the narrowest phones; the time string
+     ("0:00 / 0:00") still fits at 64px. */
+  .waveTime {
+    min-width: 64px;
+  }
 }
 
 /* Two-panel layout ------------------------------------------------ */
@@ -362,6 +367,11 @@
   align-items: center;
   gap: 2px;
   height: 36px;
+  /* Without min-width:0 the bars' min-content width keeps the row wider than
+     the panel, pushing .waveTime past the panel's overflow:hidden edge (the
+     "0:00 / 0:0" clip on phones). Letting it shrink clips a few bars instead. */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .waveBar {
