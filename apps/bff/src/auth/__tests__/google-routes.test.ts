@@ -4,7 +4,8 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
-import { exchangeGoogleCode } from '../google';
+import { exchangeGoogleCode, verifyGoogleIdToken } from '../google';
+import { consumeNonce } from '../auth-nonces';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
@@ -12,7 +13,9 @@ import {
 } from '../oauth-identities';
 import { findUserByEmail, reactivateUser } from '../users';
 
-vi.mock('../google', () => ({ exchangeGoogleCode: vi.fn() }));
+vi.mock('../google', () => ({ exchangeGoogleCode: vi.fn(), verifyGoogleIdToken: vi.fn() }));
+
+vi.mock('../auth-nonces', () => ({ consumeNonce: vi.fn(), issueNonce: vi.fn() }));
 
 vi.mock('../oauth-identities', () => ({
   findUserByOAuthIdentity: vi.fn(),
@@ -53,6 +56,7 @@ const identity = (over: Partial<Record<string, unknown>> = {}) => ({
   email: 'a@b.com',
   emailVerified: true,
   name: 'Alice',
+  nonce: null,
   ...over
 });
 
@@ -138,9 +142,59 @@ describe('POST /auth/google', () => {
     expect(linkOAuthIdentity).not.toHaveBeenCalled();
   });
 
-  it('rejects a missing code with 400', async () => {
+  it('rejects a request with neither code nor idToken (400)', async () => {
     const res = await request(app).post('/auth/google').send({});
     expect(res.status).toBe(400);
     expect(exchangeGoogleCode).not.toHaveBeenCalled();
+    expect(verifyGoogleIdToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects a request with both code and idToken (400)', async () => {
+    const res = await request(app).post('/auth/google').send({ code: 'x', idToken: 'y' });
+    expect(res.status).toBe(400);
+  });
+
+  describe('native idToken path', () => {
+    it('logs in via a verified ID token after consuming the nonce', async () => {
+      vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity({ nonce: 'n1' }));
+      vi.mocked(consumeNonce).mockResolvedValue(true);
+      vi.mocked(findUserByOAuthIdentity).mockResolvedValue(userRow());
+
+      const res = await request(app).post('/auth/google').send({ idToken: 'tok' });
+
+      expect(res.status).toBe(200);
+      expect(consumeNonce).toHaveBeenCalledWith('n1');
+      expect(exchangeGoogleCode).not.toHaveBeenCalled();
+      expect(res.body.user.id).toBe('user-1');
+    });
+
+    it('rejects when the nonce is missing from the token (401)', async () => {
+      vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity({ nonce: null }));
+
+      const res = await request(app).post('/auth/google').send({ idToken: 'tok' });
+
+      expect(res.status).toBe(401);
+      expect(consumeNonce).not.toHaveBeenCalled();
+      expect(findUserByOAuthIdentity).not.toHaveBeenCalled();
+    });
+
+    it('rejects a replayed/unknown nonce (401)', async () => {
+      vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity({ nonce: 'used' }));
+      vi.mocked(consumeNonce).mockResolvedValue(false);
+
+      const res = await request(app).post('/auth/google').send({ idToken: 'tok' });
+
+      expect(res.status).toBe(401);
+      expect(findUserByOAuthIdentity).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid ID token (401)', async () => {
+      vi.mocked(verifyGoogleIdToken).mockResolvedValue(null);
+
+      const res = await request(app).post('/auth/google').send({ idToken: 'bad' });
+
+      expect(res.status).toBe(401);
+      expect(consumeNonce).not.toHaveBeenCalled();
+    });
   });
 });

@@ -9,7 +9,8 @@ import {
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
 } from './refresh-tokens';
-import { exchangeGoogleCode } from './google';
+import { exchangeGoogleCode, verifyGoogleIdToken } from './google';
+import { consumeNonce, issueNonce } from './auth-nonces';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
@@ -50,11 +51,17 @@ const loginSchema = z.object({
 });
 
 const googleSchema = z.object({
-  body: z.object({
-    // Auth code from the browser popup flow, exchanged server-side.
-    // Bounded so an oversized value is a 400 rather than work handed off.
-    code: z.string().min(1).max(4096)
-  })
+  // Web sends `code` (popup auth-code flow, exchanged server-side); native
+  // sends `idToken` (verified directly). Exactly one is required. Bounded so
+  // an oversized value is a 400 rather than work handed off.
+  body: z
+    .object({
+      code: z.string().min(1).max(4096).optional(),
+      idToken: z.string().min(1).max(8192).optional()
+    })
+    .refine((b) => (b.code === undefined) !== (b.idToken === undefined), {
+      message: 'exactly one of code or idToken is required'
+    })
 });
 
 // Postgres unique_violation — on the link path, a concurrent request
@@ -426,19 +433,34 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
   }
 });
 
-/// Google sign-in (Web first). Exchanges the auth code for a verified
-/// identity, resolves the account per DD Q4, and issues the same JWT pair
-/// as the password paths.
+/// Issues a single-use nonce for the native ID-token flow (DD Q3). The
+/// client passes it to the Google SDK; `/auth/google` consumes it on verify.
+authRouter.post('/auth/google/nonce', async (_req: AuthedRequest, res) => {
+  try {
+    const nonce = await issueNonce();
+    if (!nonce) {
+      return res.status(503).json({ error: 'Google sign-in is not configured' });
+    }
+    res.json({ nonce });
+  } catch (error) {
+    logger.error('POST /auth/google/nonce failed', { error });
+    res.status(502).json({ error: 'Failed to issue nonce' });
+  }
+});
+
+/// Google sign-in. Web sends an auth code (exchanged); native sends an ID
+/// token (verified directly, with a single-use nonce). Both resolve the
+/// account per DD Q4 and issue the same JWT pair as the password paths.
 authRouter.post('/auth/google', async (req: AuthedRequest, res) => {
   const validation = googleSchema.safeParse(req);
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
   }
-  const { code } = validation.data.body;
+  const { code, idToken } = validation.data.body;
 
   let identity;
   try {
-    identity = await exchangeGoogleCode(code);
+    identity = idToken ? await verifyGoogleIdToken(idToken) : await exchangeGoogleCode(code ?? '');
   } catch (error) {
     // Thrown only when the client id/secret is unset (misconfiguration).
     logger.error('POST /auth/google not configured', { error });
@@ -446,6 +468,15 @@ authRouter.post('/auth/google', async (req: AuthedRequest, res) => {
   }
   if (!identity) {
     return res.status(401).json({ error: 'invalid Google credential' });
+  }
+
+  // Native ID-token path: the token must carry a nonce we issued and have
+  // not yet consumed, else it could be a replay (DD Q3).
+  if (idToken) {
+    if (!identity.nonce || !(await consumeNonce(identity.nonce))) {
+      logger.warn('auth.google.nonce_rejected');
+      return res.status(401).json({ error: 'invalid Google credential' });
+    }
   }
 
   try {
