@@ -143,6 +143,10 @@ services:
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       JWT_SECRET: local-jwt-secret
       REFRESH_TOKEN_SECRET: local-refresh-secret
+      # Google sign-in (web). Public client ID, but kept as a substitution
+      # so the tracked file is not pinned to a GCP project — set it via
+      # shell export or ops/docker/.env. Empty = /auth/google returns 503.
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       # MOCK_SESSION only takes effect when NODE_ENV != production
       # (apps/bff/src/auth/auth.ts). The BFF Dockerfile pins
       # NODE_ENV=production for the runtime image, so override it back
