@@ -3,12 +3,18 @@
 import { useTranslations } from 'next-intl';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { AppleIcon } from './icons/AppleIcon';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import type { SignInWithGoogleResult } from '../../actions';
 import { css } from '../../../styled-system/css';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID;
 
 interface Props {
   // 'full' → "Continue with Google" (sign-up, primary placement);
   // 'compact' → "Google" (sign-in, below the email path).
   variant: 'compact' | 'full';
+  onGoogleResult: (result: SignInWithGoogleResult) => void;
+  onGoogleError: () => void;
 }
 
 const rowClass = css({
@@ -38,12 +44,11 @@ const buttonClass = css({
   _disabled: { opacity: 0.55, cursor: 'not-allowed' }
 });
 
-// Google / Apple sign-in buttons. Rendered to match the design but
-// disabled — federated auth is deferred per ADR 0010 (no OAuth client
-// config yet). The aria-label spells out why they are inert.
-// Client component because AuthForm (`'use client'`) instantiates it
-// directly; the only state we touch here is translation lookup.
-export function OAuthButtons({ variant }: Props) {
+// Google / Apple sign-in buttons. Google is live when a client ID is
+// configured (otherwise it falls back to the disabled placeholder so dev
+// without config still renders). Apple stays disabled — deferred per ADR
+// 0010.
+export function OAuthButtons({ variant, onGoogleResult, onGoogleError }: Props) {
   const t = useTranslations('auth.social');
   const googleLabel = t(variant === 'full' ? 'googleFull' : 'googleShort');
   const appleLabel = t(variant === 'full' ? 'appleFull' : 'appleShort');
@@ -51,15 +56,24 @@ export function OAuthButtons({ variant }: Props) {
 
   return (
     <div className={rowClass}>
-      <button
-        type="button"
-        className={buttonClass}
-        disabled
-        aria-label={`${googleLabel} ${comingSoon}`}
-      >
-        <GoogleIcon />
-        <span>{googleLabel}</span>
-      </button>
+      {GOOGLE_CLIENT_ID ? (
+        <GoogleSignInButton
+          clientId={GOOGLE_CLIENT_ID}
+          label={googleLabel}
+          onResult={onGoogleResult}
+          onError={onGoogleError}
+        />
+      ) : (
+        <button
+          type="button"
+          className={buttonClass}
+          disabled
+          aria-label={`${googleLabel} ${comingSoon}`}
+        >
+          <GoogleIcon />
+          <span>{googleLabel}</span>
+        </button>
+      )}
       <button
         type="button"
         className={buttonClass}

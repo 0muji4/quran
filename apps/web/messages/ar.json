@@ -65,7 +65,9 @@
       "unknown": "Something went wrong",
       "invalid_credentials": "Invalid email or password.",
       "email_in_use": "An account with this email already exists.",
-      "pending_deletion": "This account is scheduled for deletion. Sign in to restore it."
+      "pending_deletion": "This account is scheduled for deletion. Sign in to restore it.",
+      "google_link_required": "This email is already registered. Sign in with your password to link Google.",
+      "google_unavailable": "Google sign-in is currently unavailable. Please use your email and password."
     },
     "brand": {
       "wordmark": "Tilawah",
