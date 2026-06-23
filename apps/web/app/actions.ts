@@ -638,10 +638,10 @@ export const signInAction = async (input: {
   );
 };
 
-// Google sign-in (Web first). Forwards the Google ID token to the BFF,
-// which returns the same auth payload as the password paths.
-// `link_required`: email exists but Google didn't report it verified, so
-// the user must sign in with their password to link (BFF 409).
+// Google sign-in (Web first). Forwards the OAuth auth code to the BFF,
+// which exchanges it and returns the same auth payload as the password
+// paths. `link_required`: email exists but Google didn't report it verified,
+// so the user must sign in with their password to link (BFF 409).
 // `unavailable`: Google sign-in not configured server-side (503).
 export type SignInWithGoogleErrorCode = 'link_required' | 'unavailable' | 'invalid_credentials';
 
@@ -650,7 +650,7 @@ export type SignInWithGoogleResult =
   | { ok: false; error: SignInWithGoogleErrorCode };
 
 export const signInWithGoogleAction = async (input: {
-  idToken: string;
+  code: string;
 }): Promise<SignInWithGoogleResult> => {
   return tracer.startActiveSpan(
     'ServerAction: signInWithGoogleAction',

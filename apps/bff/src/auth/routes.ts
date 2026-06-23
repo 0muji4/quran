@@ -9,7 +9,7 @@ import {
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
 } from './refresh-tokens';
-import { verifyGoogleIdToken } from './google';
+import { exchangeGoogleCode } from './google';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
@@ -51,9 +51,9 @@ const loginSchema = z.object({
 
 const googleSchema = z.object({
   body: z.object({
-    // Google ID token, verified server-side. Bounded so an oversized
-    // value is a 400 rather than work handed to the verifier.
-    idToken: z.string().min(1).max(8192)
+    // Auth code from the browser popup flow, exchanged server-side.
+    // Bounded so an oversized value is a 400 rather than work handed off.
+    code: z.string().min(1).max(4096)
   })
 });
 
@@ -426,20 +426,21 @@ authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
   }
 });
 
-/// Google sign-in (Web first). Verifies the ID token, resolves the
-/// account per DD Q4, and issues the same JWT pair as the password paths.
+/// Google sign-in (Web first). Exchanges the auth code for a verified
+/// identity, resolves the account per DD Q4, and issues the same JWT pair
+/// as the password paths.
 authRouter.post('/auth/google', async (req: AuthedRequest, res) => {
   const validation = googleSchema.safeParse(req);
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
   }
-  const { idToken } = validation.data.body;
+  const { code } = validation.data.body;
 
   let identity;
   try {
-    identity = await verifyGoogleIdToken(idToken);
+    identity = await exchangeGoogleCode(code);
   } catch (error) {
-    // Thrown only when GOOGLE_OAUTH_CLIENT_ID is unset (misconfiguration).
+    // Thrown only when the client id/secret is unset (misconfiguration).
     logger.error('POST /auth/google not configured', { error });
     return res.status(503).json({ error: 'Google sign-in is not configured' });
   }
