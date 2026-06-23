@@ -49,9 +49,10 @@
 "library.continueEyebrow" = "Continue";
 "library.continueProgress" = "Ayah %d of %d • last practiced recently";
 "library.resumeAyah" = "Resume ayah %d";
-"library.suggestedEyebrow" = "Suggested for you";
-"library.suggestedMeta" = "%d ayahs • %@";
-"library.suggestedBegin" = "Begin";
+"library.getStartedEyebrow" = "Get started";
+"library.getStartedTitle" = "Begin your tilawah";
+"library.getStartedBody" = "Pick any surah from the library below to record your first ayah.";
+"library.getStartedCta" = "Start practice";
 
 /* Practice tab */
 "practice.teacher.label" = "Teacher reference";

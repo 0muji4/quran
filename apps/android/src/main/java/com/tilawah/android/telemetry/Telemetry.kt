@@ -47,7 +47,6 @@ object TelemetryEvent {
     const val LIBRARY_TAB_SELECTED = "library.tab.selected"
     const val LIBRARY_SURAH_OPENED = "library.surah.opened"
     const val LIBRARY_CONTINUE_TAPPED = "library.continue.tapped"
-    const val LIBRARY_SUGGESTED_TAPPED = "library.suggested.tapped"
 
     // Practice
     const val PRACTICE_REFERENCE_PLAYED = "practice.reference.played"
@@ -70,5 +69,4 @@ object TelemetryAttribute {
     const val NEXT_AYAH = "next_ayah"
     const val DURATION_MS = "duration_ms"
     const val ERROR_CODE = "error_code"
-    const val SUGGESTION_REASON = "suggestion_reason"
 }

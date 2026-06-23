@@ -40,25 +40,16 @@ fun LibraryScreen(
     viewModel: LibraryViewModel,
     onSurahOpened: (SurahSummary) -> Unit,
     onResume: (com.tilawah.android.storage.LastPracticed) -> Unit,
-    signedIn: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val lastPracticed by viewModel.lastPracticed.collectAsStateWithLifecycle()
-    val suggestion by viewModel.suggestion.collectAsStateWithLifecycle()
     val bestScores by viewModel.bestScores.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (state is LibraryUiState.Idle) viewModel.load()
-    }
-
-    // The suggestion is auth-gated; re-evaluate it whenever sign-in flips
-    // so signing in after the list loaded surfaces the card (and signing
-    // out hides it) without a full reload.
-    LaunchedEffect(signedIn) {
-        viewModel.refreshSuggestion()
     }
 
     val spacing = BrandTheme.spacing
@@ -95,19 +86,6 @@ fun LibraryScreen(
                 },
                 modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
             )
-        }
-        if (loaded != null) {
-            suggestion?.let { picked ->
-                SuggestedCard(
-                    suggestion = picked,
-                    surahs = loaded.surahs,
-                    onBegin = { surah ->
-                        viewModel.suggestedTapped(surah, picked.reason.wire)
-                        onSurahOpened(surah)
-                    },
-                    modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
-                )
-            }
         }
         SearchField(
             query = query,

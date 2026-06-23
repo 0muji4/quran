@@ -12,8 +12,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.QuranBackend
-import com.tilawah.android.backend.SuggestionClient
-import com.tilawah.android.backend.SurahSuggestion
 import com.tilawah.android.backend.SurahSummary
 import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.LastPracticed
@@ -32,8 +30,6 @@ class LibraryViewModel(
     private val backend: QuranBackend,
     private val telemetry: Telemetry,
     private val historyStore: HistoryStore? = null,
-    private val suggestionClient: SuggestionClient? = null,
-    private val isSignedIn: () -> Boolean = { false },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LibraryUiState>(LibraryUiState.Idle)
@@ -50,9 +46,6 @@ class LibraryViewModel(
         ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
         ?: MutableStateFlow<LastPracticed?>(null).asStateFlow()
 
-    private val _suggestion = MutableStateFlow<SurahSuggestion?>(null)
-    val suggestion: StateFlow<SurahSuggestion?> = _suggestion.asStateFlow()
-
     /**
      * Best score per surah on a 0–100 scale, keyed by `surahId`. Drives
      * the "best NN" suffix in [SurahRow]'s metadata. Snapshotted once per
@@ -68,11 +61,6 @@ class LibraryViewModel(
         viewModelScope.launch { loadInternal() }
     }
 
-    /** Re-evaluate the personalised suggestion when auth state changes. */
-    fun refreshSuggestion() {
-        viewModelScope.launch { loadSuggestion() }
-    }
-
     /** Suspending helper exposed for unit tests. */
     suspend fun loadInternal() {
         _state.value = LibraryUiState.Loading
@@ -82,7 +70,6 @@ class LibraryViewModel(
             }
             _state.value = LibraryUiState.Loaded(surahs)
             loadBestScores(surahs)
-            loadSuggestion()
         } catch (cause: AppError) {
             telemetry.error(cause, mapOf("screen" to "library"))
             _state.value = LibraryUiState.Failed(cause)
@@ -100,38 +87,6 @@ class LibraryViewModel(
             store.bestScoreForSurah(surah.id).first()
                 ?.let { surah.id to (it * 100).roundToInt() }
         }.toMap()
-    }
-
-    /**
-     * Pull a fresh personalised suggestion for the signed-in user.
-     * Anonymous users get null — the BFF requires auth, and the card
-     * stays hidden rather than leak a guest-flavoured surface. Errors
-     * surface to telemetry and leave the suggestion null so the view
-     * just hides the card.
-     */
-    private suspend fun loadSuggestion() {
-        if (suggestionClient == null || !isSignedIn()) {
-            _suggestion.value = null
-            return
-        }
-        try {
-            _suggestion.value = telemetry.measure("library.suggestion") {
-                suggestionClient.suggestions()
-            }
-        } catch (cause: AppError) {
-            telemetry.error(cause, mapOf("screen" to "library.suggestion"))
-            _suggestion.value = null
-        }
-    }
-
-    fun suggestedTapped(surah: SurahSummary, reason: String) {
-        telemetry.event(
-            TelemetryEvent.LIBRARY_SUGGESTED_TAPPED,
-            mapOf(
-                TelemetryAttribute.SURAH_ID to surah.id,
-                TelemetryAttribute.SUGGESTION_REASON to reason,
-            ),
-        )
     }
 
     fun setQuery(value: String) {
