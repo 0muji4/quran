@@ -101,20 +101,14 @@ struct AppRoot: View {
       LibraryView(
         viewModel: LibraryViewModel(
           backend: backend,
-          telemetry: telemetry,
-          meClient: meClient
+          telemetry: telemetry
         ),
-        session: session,
         historyStore: historyStore,
         onResume: { entry in
           practiceContext = PracticeContext(
             surahId: entry.surahId,
             ayahNumber: entry.ayahNumber
           )
-          selectedTab = .practice
-        },
-        onSuggestedBegin: { surah in
-          practiceContext = PracticeContext(surahId: surah.id, ayahNumber: 1)
           selectedTab = .practice
         },
         onSurahOpened: { surah in
