@@ -165,6 +165,63 @@ final class AuthViewModelTests: XCTestCase {
 
   // MARK: - Helpers
 
+  func test_signInWithGoogle_success_persistsSessionAndInvokesOnSuccess() async {
+    let expected = AuthSuccess.fixture()
+    let service = MockAuthService()
+    service.requestGoogleNonceResult = .success("nonce-1")
+    service.signInWithGoogleResult = .success(expected)
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let viewModel = AuthViewModel(authService: service, session: session, telemetry: TelemetrySpy())
+
+    var capturedNonce: String?
+    var succeeded = false
+    await viewModel.signInWithGoogle(
+      getIdToken: { nonce in
+        capturedNonce = nonce
+        return "id-token"
+      },
+      onSuccess: { succeeded = true }
+    )
+
+    XCTAssertTrue(succeeded)
+    XCTAssertFalse(viewModel.isSubmitting)
+    XCTAssertNil(viewModel.error)
+    XCTAssertEqual(capturedNonce, "nonce-1")
+    XCTAssertEqual(service.lastGoogleIDToken, "id-token")
+    XCTAssertEqual(session.currentUser, expected.user)
+  }
+
+  func test_signInWithGoogle_cancellation_isNotAnErrorAndSkipsTheCall() async {
+    let service = MockAuthService()
+    service.requestGoogleNonceResult = .success("nonce-1")
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let viewModel = AuthViewModel(authService: service, session: session, telemetry: TelemetrySpy())
+
+    var succeeded = false
+    await viewModel.signInWithGoogle(getIdToken: { _ in nil }, onSuccess: { succeeded = true })
+
+    XCTAssertFalse(succeeded)
+    XCTAssertFalse(viewModel.isSubmitting)
+    XCTAssertNil(viewModel.error)
+    XCTAssertEqual(service.signInWithGoogleCallCount, 0)
+    XCTAssertNil(session.currentUser)
+  }
+
+  func test_signInWithGoogle_linkRequired_setsErrorAndSkipsSessionSave() async {
+    let service = MockAuthService()
+    service.requestGoogleNonceResult = .success("nonce-1")
+    service.signInWithGoogleResult = .failure(.googleLinkRequired)
+    let session = SessionStore(tokenStore: InMemoryTokenStore())
+    let viewModel = AuthViewModel(authService: service, session: session, telemetry: TelemetrySpy())
+
+    var succeeded = false
+    await viewModel.signInWithGoogle(getIdToken: { _ in "id-token" }, onSuccess: { succeeded = true })
+
+    XCTAssertFalse(succeeded)
+    XCTAssertEqual(viewModel.error?.telemetryCode, "google_link_required")
+    XCTAssertNil(session.currentUser)
+  }
+
   private func makeViewModel(service: AuthService = MockAuthService()) -> AuthViewModel {
     AuthViewModel(
       authService: service,

@@ -106,6 +106,35 @@ final class AuthViewModel: ObservableObject {
     }
   }
 
+  /// Google sign-in. `getIdToken` is the GoogleSignIn SDK call (the
+  /// server-issued nonce is passed in); it returns the ID token, or nil
+  /// if the user cancels. Passed in so the view model stays free of the
+  /// SDK / UIKit and testable.
+  func signInWithGoogle(
+    getIdToken: @escaping (_ nonce: String) async throws -> String?,
+    onSuccess: @escaping () -> Void
+  ) async {
+    guard !isSubmitting else { return }
+    isSubmitting = true
+    error = nil
+    do {
+      let nonce = try await authService.requestGoogleNonce()
+      guard let idToken = try await getIdToken(nonce) else {
+        // User dismissed the Google sheet — not an error.
+        isSubmitting = false
+        return
+      }
+      let success = try await telemetry.measure("auth.google.signin") {
+        try await authService.signInWithGoogle(idToken: idToken)
+      }
+      session.completeAuthentication(success)
+      isSubmitting = false
+      onSuccess()
+    } catch {
+      handleFailure(error, screen: "google_signin")
+    }
+  }
+
   // MARK: - Helpers
 
   private func handleFailure(_ error: Error, screen: String) {
