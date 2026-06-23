@@ -81,7 +81,7 @@ NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 ```
 
 - ローカル dev: `apps/web/.env.local`
-- Render dev: `tilawah-dev-web`（backend/bff と同じ Singapore / Docker、Dockerfile Path `apps/web/Dockerfile`）の Env vars。`NEXT_PUBLIC_` 変数は **ビルド時にバンドルへ焼き込まれる**ため、値を変えたら再デプロイ（再ビルド）が必要
+- Render dev: `tilawah-dev-web` の Env vars（具体設定は第 6 章）。`NEXT_PUBLIC_` 変数は **ビルド時にバンドルへ焼き込まれる**ため、値を変えたら再デプロイ（再ビルド）が必要
 
 > Render では BFF を同一プロジェクト内のサービスとして呼べる。Web の `BFF_BASE_URL` は `https://tilawah-dev-bff.onrender.com` を指す（Android の `BFF_BASE_URL` と同じ向き先）。
 
@@ -91,6 +91,33 @@ NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 2. `http://localhost:3000` の `/sign-in` または `/sign-up` を開く。無効プレースホルダだった枠が GIS の公式ボタンに変わっていること
 3. Test users に登録した Google アカウントでサインイン → 認証済みでリダイレクトされること
 4. BFF ログに `auth.google.signup`（初回）または `auth.google.login`（2 回目以降）が出ること
+
+## 6. Render に Web をデプロイする
+
+backend / bff と同じく Render の Web Service（Docker）として Web を立てる。
+
+### 6.1 サービス設定
+
+| 項目              | 値                                                               |
+| ----------------- | ---------------------------------------------------------------- |
+| Name              | `tilawah-dev-web`                                                |
+| Region / Plan     | Singapore / Free（backend・bff と同じ）                          |
+| Runtime           | Docker、Dockerfile Path `apps/web/Dockerfile`、Root Directory 空 |
+| Health Check Path | `/healthz`                                                       |
+
+### 6.2 環境変数
+
+| 変数                                 | 種別         | 値                                                  |
+| ------------------------------------ | ------------ | --------------------------------------------------- |
+| `NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID` | **ビルド時** | Client ID（BFF の `GOOGLE_OAUTH_CLIENT_ID` と同値） |
+| `BFF_BASE_URL`                       | ランタイム   | `https://tilawah-dev-bff.onrender.com`              |
+| `PORT`                               | ランタイム   | `3000`（Dockerfile / health check と揃える）        |
+
+`NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID` はビルド時に client バンドルへ焼き込まれる。`apps/web/Dockerfile` に `ARG NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID` があり、Render は service の env を build arg として渡すため、env 設定だけで焼き込まれる。**値を変えたら再デプロイ（再ビルド）が必須**。
+
+### 6.3 GCP 側
+
+Render Web のオリジン `https://tilawah-dev-web.onrender.com` を、OAuth クライアントの **Authorized JavaScript origins に追加**する（未登録だとブラウザの GIS 呼び出しが弾かれる）。
 
 ## Appendix: つまずきポイント
 
