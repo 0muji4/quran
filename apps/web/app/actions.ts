@@ -638,6 +638,67 @@ export const signInAction = async (input: {
   );
 };
 
+// Google sign-in (Web first). Forwards the Google ID token to the BFF,
+// which returns the same auth payload as the password paths.
+// `link_required`: email exists but Google didn't report it verified, so
+// the user must sign in with their password to link (BFF 409).
+// `unavailable`: Google sign-in not configured server-side (503).
+export type SignInWithGoogleErrorCode = 'link_required' | 'unavailable' | 'invalid_credentials';
+
+export type SignInWithGoogleResult =
+  | { ok: true; user: AuthSessionUser; reactivated: boolean }
+  | { ok: false; error: SignInWithGoogleErrorCode };
+
+export const signInWithGoogleAction = async (input: {
+  idToken: string;
+}): Promise<SignInWithGoogleResult> => {
+  return tracer.startActiveSpan(
+    'ServerAction: signInWithGoogleAction',
+    { kind: SpanKind.CLIENT },
+    async (span) => {
+      try {
+        span.setAttribute('action.name', 'signInWithGoogleAction');
+        const response = await bffFetch(`${BFF_BASE_URL}/auth/google`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: jsonHeaders,
+          body: JSON.stringify(input)
+        });
+
+        if (response.status === 409) {
+          logger.warn('signInWithGoogleAction: link required');
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: 'link_required' as const };
+        }
+        if (response.status === 503) {
+          logger.warn('signInWithGoogleAction: Google sign-in unavailable');
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: 'unavailable' as const };
+        }
+        if (response.status === 401) {
+          logger.warn('signInWithGoogleAction: invalid credential');
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: 'invalid_credentials' as const };
+        }
+
+        const payload = await parseJson<AuthSuccessPayload>(response);
+        const user = await persistAuthSession(payload);
+        const reactivated = payload.reactivated === true;
+        logger.info('signInWithGoogleAction completed', { userId: user.id, reactivated });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return { ok: true as const, user, reactivated };
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        logger.error('signInWithGoogleAction failed', { error: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    }
+  );
+};
+
 export const signOutAction = async (): Promise<void> => {
   return tracer.startActiveSpan(
     'ServerAction: signOutAction',
