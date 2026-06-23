@@ -24,8 +24,7 @@ import java.io.IOException
  * [TokenRefresher] wired) handles the rotate-and-retry path on 401.
  *
  * Mirrors `apps/ios/Sources/QuranRecitationApp/Backend/MeClient.swift`
- * for the history-shaped endpoints. Suggestions live in a separate
- * client landed in a later PR.
+ * for the history-shaped endpoints.
  *
  * Errors cross this boundary as [AppError] (see ADR 0006).
  */

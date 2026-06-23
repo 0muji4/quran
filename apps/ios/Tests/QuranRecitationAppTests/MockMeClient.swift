@@ -7,7 +7,6 @@ import Foundation
 /// tests can assert on the request shape.
 @MainActor
 final class MockMeClient: MeClient {
-  var suggestionsResult: Result<SurahSuggestion, AppError>?
   var lastPracticedResult: Result<LastPracticed?, AppError>?
   var putLastPracticedResult: Result<LastPracticed, AppError>?
   var bestScoresResult: Result<[String: BestScoreEntry], AppError>?
@@ -17,7 +16,6 @@ final class MockMeClient: MeClient {
   var preferencesResult: Result<PracticePreferences, AppError>?
   var updatePreferencesResult: Result<PracticePreferences, AppError>?
 
-  private(set) var suggestionsCallCount = 0
   private(set) var lastPracticedCallCount = 0
   private(set) var putLastPracticedCallCount = 0
   private(set) var bestScoresCallCount = 0
@@ -35,7 +33,6 @@ final class MockMeClient: MeClient {
   private(set) var lastPreferencesPatch: PracticePreferencesPatch?
 
   init(
-    suggestionsResult: Result<SurahSuggestion, AppError>? = nil,
     lastPracticedResult: Result<LastPracticed?, AppError>? = nil,
     putLastPracticedResult: Result<LastPracticed, AppError>? = nil,
     bestScoresResult: Result<[String: BestScoreEntry], AppError>? = nil,
@@ -43,18 +40,12 @@ final class MockMeClient: MeClient {
     attemptsResult: Result<[Attempt], AppError>? = nil,
     recordAttemptResult: Result<Attempt, AppError>? = nil
   ) {
-    self.suggestionsResult = suggestionsResult
     self.lastPracticedResult = lastPracticedResult
     self.putLastPracticedResult = putLastPracticedResult
     self.bestScoresResult = bestScoresResult
     self.putBestScoreResult = putBestScoreResult
     self.attemptsResult = attemptsResult
     self.recordAttemptResult = recordAttemptResult
-  }
-
-  func suggestions() async throws -> SurahSuggestion {
-    suggestionsCallCount += 1
-    return try Self.unwrap(suggestionsResult, operation: "mock.me.suggestions")
   }
 
   func lastPracticed() async throws -> LastPracticed? {
@@ -113,16 +104,5 @@ final class MockMeClient: MeClient {
     case .success(let value): return value
     case .failure(let error): throw error
     }
-  }
-}
-
-extension SurahSuggestion {
-  /// Convenience fixture matching the BFF's fallback response shape.
-  static func fixture(
-    surahId: String = "112",
-    reason: SuggestionReason = .shortUnpracticed,
-    difficulties: [String: Difficulty] = [:]
-  ) -> SurahSuggestion {
-    SurahSuggestion(surahId: surahId, reason: reason, difficulties: difficulties)
   }
 }

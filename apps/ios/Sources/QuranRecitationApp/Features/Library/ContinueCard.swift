@@ -84,3 +84,45 @@ struct ContinueCard: View {
     "library.resumeAyah \(entry.ayahNumber)"
   }
 }
+
+/// Get-started variant of the Continue hero, shown when the user has no
+/// recorded session yet. Reuses the dark inverse card and gold eyebrow so
+/// the Library always leads with this hero (resume once there is history),
+/// mirroring the web `ContinueCard` empty state. The CTA opens the first
+/// surah at ayah 1 via `onStart`, matching web's `/practice/{first}/1`.
+struct GetStartedCard: View {
+  let onStart: () -> Void
+
+  var body: some View {
+    BrandCard(style: .inverse) {
+      VStack(alignment: .leading, spacing: Spacing.md) {
+        HStack(spacing: Spacing.xs) {
+          Image(systemName: "bookmark.fill")
+            .font(.system(size: 11))
+          Text("library.getStartedEyebrow", bundle: .module)
+            .textCase(.uppercase)
+        }
+        .font(Font.brand.eyebrow)
+        .foregroundColor(Color.brand.accent)
+
+        Text("library.getStartedTitle", bundle: .module)
+          .font(Font.brand.sectionTitle)
+          .foregroundColor(Color.brand.textOnInverse)
+
+        Text("library.getStartedBody", bundle: .module)
+          .font(Font.brand.caption)
+          .foregroundColor(Color.brand.textOnInverse.opacity(0.75))
+
+        Button {
+          onStart()
+        } label: {
+          HStack {
+            Text("library.getStartedCta", bundle: .module)
+            Image(systemName: "arrow.right")
+          }
+        }
+        .buttonStyle(.brandAccent)
+      }
+    }
+  }
+}

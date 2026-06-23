@@ -37,23 +37,16 @@ final class LibraryViewModel: ObservableObject {
   @Published private(set) var state: LoadState = .idle
   @Published var query: String = ""
   @Published var filter: Filter = .all
-  /// Personalised "Suggested for you" payload from `/me/suggestions`
-  /// (ADR 0015). `nil` for anonymous users and when the call fails;
-  /// the View hides the card in either case so the failure mode is
-  /// silent — Continue + surah list remain functional.
-  @Published private(set) var suggestion: SurahSuggestion?
 
   private let backend: QuranBackend
   private let telemetry: Telemetry
-  private let meClient: MeClient?
 
   /// Surahs of "Al-Ikhlas" length or shorter. Used by `.short` filter.
   private static let shortAyahCutoff = 20
 
-  init(backend: QuranBackend, telemetry: Telemetry, meClient: MeClient? = nil) {
+  init(backend: QuranBackend, telemetry: Telemetry) {
     self.backend = backend
     self.telemetry = telemetry
-    self.meClient = meClient
   }
 
   func load() async {
@@ -86,43 +79,6 @@ final class LibraryViewModel: ObservableObject {
       attributes: [
         "surah_id": entry.surahId,
         "ayah_number": String(entry.ayahNumber)
-      ]
-    )
-  }
-
-  /// Pull a fresh personalised suggestion for the signed-in user. The
-  /// caller is responsible for the sign-in gate (the View binds this
-  /// to `.task(id: session.currentUser?.id)` so it fires on sign-in
-  /// and on tab re-appearance). Failures are swallowed to `nil` — the
-  /// Suggested card is a polish surface, not a critical path.
-  func refreshSuggestion() async {
-    guard let meClient else { return }
-    do {
-      let result = try await telemetry.measure("library.suggestion") {
-        try await meClient.suggestions()
-      }
-      suggestion = result
-    } catch let error as AppError {
-      telemetry.error(error, context: ["screen": "library.suggestion"])
-      suggestion = nil
-    } catch {
-      suggestion = nil
-    }
-  }
-
-  /// Drop the cached suggestion. Called from the View when the user
-  /// signs out so the Suggested card disappears immediately rather
-  /// than lingering until the next refresh.
-  func clearSuggestion() {
-    suggestion = nil
-  }
-
-  func suggestedTapped(_ surah: SurahSummary) {
-    telemetry.event(
-      "library.suggested.tapped",
-      attributes: [
-        "surah_id": surah.id,
-        "reason": suggestion?.reason.rawValue ?? "unknown"
       ]
     )
   }
