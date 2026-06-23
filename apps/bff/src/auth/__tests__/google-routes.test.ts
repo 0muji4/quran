@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../auth';
 import { authRouter } from '../routes';
-import { verifyGoogleIdToken } from '../google';
+import { exchangeGoogleCode } from '../google';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
@@ -12,7 +12,7 @@ import {
 } from '../oauth-identities';
 import { findUserByEmail, reactivateUser } from '../users';
 
-vi.mock('../google', () => ({ verifyGoogleIdToken: vi.fn() }));
+vi.mock('../google', () => ({ exchangeGoogleCode: vi.fn() }));
 
 vi.mock('../oauth-identities', () => ({
   findUserByOAuthIdentity: vi.fn(),
@@ -73,24 +73,24 @@ describe('POST /auth/google', () => {
     app.use(authRouter);
   });
 
-  it('rejects an invalid token with 401', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(null);
-    const res = await request(app).post('/auth/google').send({ idToken: 'bad' });
+  it('rejects an invalid code with 401', async () => {
+    vi.mocked(exchangeGoogleCode).mockResolvedValue(null);
+    const res = await request(app).post('/auth/google').send({ code: 'bad' });
     expect(res.status).toBe(401);
     expect(findUserByOAuthIdentity).not.toHaveBeenCalled();
   });
 
   it('returns 503 when Google sign-in is not configured', async () => {
-    vi.mocked(verifyGoogleIdToken).mockRejectedValue(new Error('not configured'));
-    const res = await request(app).post('/auth/google').send({ idToken: 'x' });
+    vi.mocked(exchangeGoogleCode).mockRejectedValue(new Error('not configured'));
+    const res = await request(app).post('/auth/google').send({ code: 'x' });
     expect(res.status).toBe(503);
   });
 
   it('logs in a returning Google user via the existing identity', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity());
+    vi.mocked(exchangeGoogleCode).mockResolvedValue(identity());
     vi.mocked(findUserByOAuthIdentity).mockResolvedValue(userRow());
 
-    const res = await request(app).post('/auth/google').send({ idToken: 'x' });
+    const res = await request(app).post('/auth/google').send({ code: 'x' });
 
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({ id: 'user-1', email: 'a@b.com' });
@@ -99,12 +99,12 @@ describe('POST /auth/google', () => {
   });
 
   it('creates a new account when no identity and no email match', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity());
+    vi.mocked(exchangeGoogleCode).mockResolvedValue(identity());
     vi.mocked(findUserByOAuthIdentity).mockResolvedValue(null);
     vi.mocked(findUserByEmail).mockResolvedValue(null);
     vi.mocked(createUserFromOAuth).mockResolvedValue(userRow({ id: 'new-1' }));
 
-    const res = await request(app).post('/auth/google').send({ idToken: 'x' });
+    const res = await request(app).post('/auth/google').send({ code: 'x' });
 
     expect(res.status).toBe(201);
     expect(createUserFromOAuth).toHaveBeenCalled();
@@ -112,12 +112,12 @@ describe('POST /auth/google', () => {
   });
 
   it('auto-links a verified email to an existing account', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity({ emailVerified: true }));
+    vi.mocked(exchangeGoogleCode).mockResolvedValue(identity({ emailVerified: true }));
     vi.mocked(findUserByOAuthIdentity).mockResolvedValue(null);
     vi.mocked(findUserByEmail).mockResolvedValue(userRow({ id: 'existing-1' }));
     vi.mocked(linkOAuthIdentity).mockResolvedValue(undefined);
 
-    const res = await request(app).post('/auth/google').send({ idToken: 'x' });
+    const res = await request(app).post('/auth/google').send({ code: 'x' });
 
     expect(res.status).toBe(200);
     expect(linkOAuthIdentity).toHaveBeenCalledWith(
@@ -127,20 +127,20 @@ describe('POST /auth/google', () => {
   });
 
   it('requires password re-auth (409) when the email is unverified', async () => {
-    vi.mocked(verifyGoogleIdToken).mockResolvedValue(identity({ emailVerified: false }));
+    vi.mocked(exchangeGoogleCode).mockResolvedValue(identity({ emailVerified: false }));
     vi.mocked(findUserByOAuthIdentity).mockResolvedValue(null);
     vi.mocked(findUserByEmail).mockResolvedValue(userRow({ id: 'existing-1' }));
 
-    const res = await request(app).post('/auth/google').send({ idToken: 'x' });
+    const res = await request(app).post('/auth/google').send({ code: 'x' });
 
     expect(res.status).toBe(409);
     expect(res.body).toMatchObject({ error: 'link_required', provider: 'google' });
     expect(linkOAuthIdentity).not.toHaveBeenCalled();
   });
 
-  it('rejects a missing idToken with 400', async () => {
+  it('rejects a missing code with 400', async () => {
     const res = await request(app).post('/auth/google').send({});
     expect(res.status).toBe(400);
-    expect(verifyGoogleIdToken).not.toHaveBeenCalled();
+    expect(exchangeGoogleCode).not.toHaveBeenCalled();
   });
 });
