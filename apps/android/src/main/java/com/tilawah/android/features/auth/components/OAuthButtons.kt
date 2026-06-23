@@ -26,38 +26,36 @@ import com.tilawah.android.R
 import com.tilawah.android.designsystem.BrandTheme
 
 /**
- * Disabled "Continue with Google" / "Continue with Apple" buttons.
- * Provider configuration is deferred (see ADR 0010); shipping the
- * buttons in-place keeps the layout honest to the design and signals
- * the path to users — same approach as the web `OAuthButtons.tsx`.
- *
- * Both buttons are explicitly `enabled = false` but rendered at full
- * strength (the design shows active-looking buttons). Each carries its
- * provider brand mark, matching the Figma export. When OAuth lands,
- * flip the flag and pass `onGoogle` / `onApple` lambdas.
+ * "Continue with Google" / "Continue with Apple" buttons. Google is live
+ * when [onGoogle] is provided (a server client ID is configured), else it
+ * falls back to the disabled placeholder. Apple stays disabled (deferred,
+ * ADR 0010). Rendered at full strength either way to match the design —
+ * same approach as the web `OAuthButtons.tsx`.
  */
 @Composable
-fun OAuthButtons(modifier: Modifier = Modifier) {
+fun OAuthButtons(modifier: Modifier = Modifier, onGoogle: (() -> Unit)? = null) {
     val spacing = BrandTheme.spacing
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-        OAuthButton(label = "Continue with Google", iconRes = R.drawable.ic_google)
-        OAuthButton(label = "Continue with Apple", iconRes = R.drawable.ic_apple)
+        OAuthButton(label = "Continue with Google", iconRes = R.drawable.ic_google, onClick = onGoogle)
+        OAuthButton(label = "Continue with Apple", iconRes = R.drawable.ic_apple, onClick = null)
     }
 }
 
 @Composable
-private fun OAuthButton(label: String, iconRes: Int) {
+private fun OAuthButton(label: String, iconRes: Int, onClick: (() -> Unit)?) {
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
     Button(
-        onClick = {},
-        enabled = false,
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = spacing.minTapTarget),
         shape = RoundedCornerShape(spacing.radiusMd),
         border = BorderStroke(1.dp, colors.borderDefault),
         colors = ButtonDefaults.buttonColors(
+            containerColor = colors.paper,
+            contentColor = colors.textPrimary,
             disabledContainerColor = colors.paper,
             disabledContentColor = colors.textPrimary,
         ),

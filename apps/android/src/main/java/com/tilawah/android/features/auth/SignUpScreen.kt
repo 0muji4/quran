@@ -23,14 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tilawah.android.app.AppConfig
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.PrimaryButton
 import com.tilawah.android.features.auth.components.AuthDivider
@@ -55,6 +58,13 @@ fun SignUpScreen(
     val copy = AuthCopyByMode.getValue(AuthMode.SignUp)
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
+
+    val context = LocalContext.current
+    val googleClient = remember {
+        AppConfig.googleServerClientId
+            .takeIf { it.isNotBlank() }
+            ?.let { GoogleCredentialClient(context, it) }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -100,7 +110,16 @@ fun SignUpScreen(
                 color = colors.textSecondary,
             )
 
-            OAuthButtons()
+            OAuthButtons(
+                onGoogle = googleClient?.let { client ->
+                    {
+                        viewModel.signInWithGoogle(
+                            getIdToken = { nonce -> client.getIdToken(nonce) },
+                            onSuccess = onAuthenticated,
+                        )
+                    }
+                },
+            )
             AuthDivider(label = "OR WITH EMAIL")
 
             AuthTextField(
