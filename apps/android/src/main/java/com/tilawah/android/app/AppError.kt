@@ -42,6 +42,12 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
     /** BFF `POST /auth/signup` returned 409 — email already in use. */
     data object EmailInUse : AppError(message = "email already in use")
 
+    /**
+     * BFF `POST /auth/google` returned 409 — the email already has an
+     * account that must be linked by signing in with the password first.
+     */
+    data object GoogleLinkRequired : AppError(message = "google account link required")
+
     /** BFF returned 400 — request body failed Zod validation. */
     data class ValidationFailed(val reason: String) :
         AppError(message = "validation failed: $reason")
@@ -57,7 +63,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is Network, is BackendUnavailable, ScoringTimeout -> true
             AudioPermissionDenied, is AudioRecordingFailed, is AudioPlaybackFailed,
             is ReferenceUnavailable, StorageUnavailable,
-            InvalidCredentials, EmailInUse, is ValidationFailed -> false
+            InvalidCredentials, EmailInUse, GoogleLinkRequired, is ValidationFailed -> false
         }
 
     /**
@@ -77,6 +83,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             StorageUnavailable -> "storage_unavailable"
             InvalidCredentials -> "invalid_credentials"
             EmailInUse -> "email_in_use"
+            GoogleLinkRequired -> "google_link_required"
             is ValidationFailed -> "validation_failed"
         }
 
@@ -98,6 +105,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             StorageUnavailable -> R.string.error_storage_unavailable_title
             InvalidCredentials -> R.string.error_invalid_credentials_title
             EmailInUse -> R.string.error_email_in_use_title
+            GoogleLinkRequired -> R.string.error_google_link_required_title
             is ValidationFailed -> R.string.error_validation_failed_title
         }
 
@@ -114,6 +122,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             StorageUnavailable -> R.string.error_storage_unavailable_recovery
             InvalidCredentials -> R.string.error_invalid_credentials_recovery
             EmailInUse -> R.string.error_email_in_use_recovery
+            GoogleLinkRequired -> R.string.error_google_link_required_recovery
             is ValidationFailed -> R.string.error_validation_failed_recovery
         }
 }
