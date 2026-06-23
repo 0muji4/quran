@@ -58,12 +58,10 @@ class AuthViewModel(
     }
 
     /**
-     * Google sign-in. [getIdToken] runs the Credential Manager flow with
-     * the server-issued nonce and returns the ID token, or null if the
-     * user cancels. Kept as a parameter so the ViewModel stays free of
-     * Android framework types and testable. Navigation on success is the
-     * caller's; the session-flow observer flips the UI like the other
-     * paths.
+     * Google sign-in. [getIdToken] is the Credential Manager call (the
+     * server-issued nonce is passed in); it returns the ID token, or null
+     * if the user cancels. Passed in so the ViewModel stays framework-free
+     * and testable.
      */
     fun signInWithGoogle(getIdToken: suspend (nonce: String) -> String?, onSuccess: () -> Unit) {
         viewModelScope.launch { signInWithGoogleInternal(getIdToken, onSuccess) }
