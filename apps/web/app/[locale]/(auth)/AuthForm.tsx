@@ -4,7 +4,7 @@ import type { FormEvent } from 'react';
 import { useRef, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '../../../i18n/navigation';
-import { signInAction, signUpAction } from '../../actions';
+import { signInAction, signUpAction, type SignInWithGoogleResult } from '../../actions';
 import { clearLocalCache, refreshAllFromBff } from '../../lib/storage';
 import type { AuthMode } from './copy';
 import { Divider } from './Divider';
@@ -165,6 +165,43 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const t = useTranslations('auth');
   const modeT = useTranslations(`auth.${mode}`);
 
+  // Shared post-auth step for both the password and Google paths: drop
+  // any pre-auth anonymous cache, pull the authenticated view, then
+  // redirect (with the ADR-0024 §4 welcome-back flag when reactivated).
+  const completeAuth = async (reactivated: boolean): Promise<void> => {
+    clearLocalCache();
+    await refreshAllFromBff();
+    const unlocalized = redirectTo.replace(/^\/(en|ar)(?=\/|$)/, '') || '/';
+    const destination = reactivated
+      ? `${unlocalized}${unlocalized.includes('?') ? '&' : '?'}welcome-back=1`
+      : unlocalized;
+    router.replace(destination);
+    router.refresh();
+  };
+
+  const onGoogleResult = (result: SignInWithGoogleResult): void => {
+    if (result.ok) {
+      setError(null);
+      startTransition(async () => {
+        try {
+          await completeAuth(result.reactivated);
+        } catch {
+          setError(t('error.unknown'));
+        }
+      });
+      return;
+    }
+    const key =
+      result.error === 'link_required'
+        ? 'google_link_required'
+        : result.error === 'unavailable'
+          ? 'google_unavailable'
+          : 'invalid_credentials';
+    setError(t(`error.${key}`));
+  };
+
+  const onGoogleError = (): void => setError(t('error.unknown'));
+
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setError(null);
@@ -224,23 +261,7 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
           }
           reactivated = result.reactivated;
         }
-        // Drop any pre-rollout anonymous data before pulling the
-        // freshly authenticated view from the BFF.
-        clearLocalCache();
-        await refreshAllFromBff();
-        // `redirectTo` can be either an unlocalized href or a path the
-        // server already locale-prefixed; strip any leading /en or /ar so
-        // the locale-aware router doesn't double-prefix.
-        const unlocalized = redirectTo.replace(/^\/(en|ar)(?=\/|$)/, '') || '/';
-        // ADR-0024 §4: surface the welcome-back toast when sign-in just
-        // resurrected a soft-deleted account. The destination layout
-        // picks `?welcome-back=1` up via WelcomeBackToast and strips it
-        // off the URL after the toast disappears.
-        const destination = reactivated
-          ? `${unlocalized}${unlocalized.includes('?') ? '&' : '?'}welcome-back=1`
-          : unlocalized;
-        router.replace(destination);
-        router.refresh();
+        await completeAuth(reactivated);
       } catch {
         // Reached only on genuine system failures; business errors are
         // surfaced via the `{ ok: false }` branches above.
@@ -260,7 +281,11 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
 
         {mode === 'signup' && (
           <>
-            <OAuthButtons variant="full" />
+            <OAuthButtons
+              variant="full"
+              onGoogleResult={onGoogleResult}
+              onGoogleError={onGoogleError}
+            />
             <Divider label={t('divider.orWithEmail')} />
           </>
         )}
@@ -359,7 +384,11 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         {mode === 'signin' && (
           <>
             <Divider label={t('divider.or')} />
-            <OAuthButtons variant="compact" />
+            <OAuthButtons
+              variant="compact"
+              onGoogleResult={onGoogleResult}
+              onGoogleError={onGoogleError}
+            />
           </>
         )}
       </form>
