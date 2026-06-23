@@ -24,7 +24,22 @@ enum AppConfig {
   /// OSLog subsystem used by `OSLogTelemetry` (introduced in PR 3).
   static let telemetrySubsystem: String = "com.tilawah.ios"
 
+  /// iOS OAuth client ID for the GoogleSignIn SDK (`GIDConfiguration.clientID`).
+  /// Blank disables the Google button (falls back to the placeholder).
+  static let googleIOSClientID: String = optionalString(environmentKey: "GOOGLE_IOS_CLIENT_ID")
+
+  /// Web/server OAuth client ID, passed as `serverClientID` so the ID
+  /// token's `aud` is what the BFF verifies. Blank disables the button.
+  static let googleServerClientID: String =
+    optionalString(environmentKey: "GOOGLE_SERVER_CLIENT_ID")
+
   // MARK: - Helpers
+
+  /// Optional config: the env override or empty. Unlike `makeURL`, never
+  /// fatal — a missing value just turns the dependent feature off.
+  private static func optionalString(environmentKey: String) -> String {
+    ProcessInfo.processInfo.environment[environmentKey] ?? ""
+  }
 
   private static func makeURL(environmentKey: String, debugDefault: String) -> URL {
     if let override = ProcessInfo.processInfo.environment[environmentKey],

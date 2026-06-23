@@ -14,14 +14,12 @@ enum SocialProvider {
 }
 
 /// Full-width "Continue with Google / Apple" button: provider glyph
-/// plus a centered label on the `.brandSecondary` white pill.
-///
-/// Rendered to match the design but **disabled** — federated identity
-/// is deferred per ADR 0010 (no OAuth client config yet), exactly as
-/// the web client ships it. When the OAuth flow lands, drop `disabled`
-/// and pass a real `action`.
+/// plus a centered label on the `.brandSecondary` white pill. Enabled
+/// only when wired with an `action` (Google, once configured); Apple
+/// stays disabled (deferred, ADR 0010).
 struct SocialButton: View {
   let provider: SocialProvider
+  var isEnabled: Bool = false
   var action: () -> Void = {}
 
   var body: some View {
@@ -33,9 +31,9 @@ struct SocialButton: View {
       }
     }
     .buttonStyle(.brandSecondary)
-    .disabled(true)
-    .opacity(0.55)
-    .accessibilityHint(Text("Coming soon"))
+    .disabled(!isEnabled)
+    .opacity(isEnabled ? 1.0 : 0.55)
+    .accessibilityHint(Text(isEnabled ? "" : "Coming soon"))
   }
 
   @ViewBuilder

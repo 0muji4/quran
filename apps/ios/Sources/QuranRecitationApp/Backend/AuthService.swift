@@ -45,6 +45,15 @@ protocol AuthService {
   /// `.backendUnavailable` on transport / 5xx so the caller can retry
   /// without nuking the session.
   func refresh(refreshToken: String) async throws -> AuthTokens
+
+  /// `POST /auth/google/nonce`. Returns a single-use nonce to hand to the
+  /// GoogleSignIn SDK; the BFF consumes it when verifying the ID token.
+  func requestGoogleNonce() async throws -> String
+
+  /// `POST /auth/google` with the native ID token. Throws
+  /// `AppError.googleLinkRequired` on 409 — the email already has an
+  /// account that must be linked via password sign-in.
+  func signInWithGoogle(idToken: String) async throws -> AuthSuccess
 }
 
 /// Production `AuthService` backed by `URLSession`. Every failure path
@@ -109,12 +118,46 @@ final class URLSessionAuthService: AuthService {
     }
   }
 
+  func requestGoogleNonce() async throws -> String {
+    var request = URLRequest(url: baseURL.appendingPathComponent("auth/google/nonce"))
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    do {
+      let (data, response) = try await session.data(for: request)
+      guard let http = response as? HTTPURLResponse else {
+        throw AppError.network(underlying: URLError(.badServerResponse))
+      }
+      guard 200..<300 ~= http.statusCode,
+        let payload = try? JSONDecoder().decode(NonceResponseBody.self, from: data)
+      else {
+        throw AppError.backendUnavailable(operation: "auth.google.nonce")
+      }
+      return payload.nonce
+    } catch let error as AppError {
+      throw error
+    } catch {
+      throw AppError.network(underlying: error)
+    }
+  }
+
+  func signInWithGoogle(idToken: String) async throws -> AuthSuccess {
+    try await perform(
+      path: "auth/google",
+      body: GoogleSignInRequestBody(idToken: idToken),
+      operation: "auth.google",
+      // 409 here means the email already has an account, not the signup
+      // "email in use" — steer the user to password linking.
+      conflict: .googleLinkRequired
+    )
+  }
+
   // MARK: - Request plumbing
 
   private func perform<Body: Encodable>(
     path: String,
     body: Body,
-    operation: String
+    operation: String,
+    conflict: AppError = .emailInUse
   ) async throws -> AuthSuccess {
     var request = URLRequest(url: baseURL.appendingPathComponent(path))
     request.httpMethod = "POST"
@@ -136,7 +179,7 @@ final class URLSessionAuthService: AuthService {
       case 401:
         throw AppError.invalidCredentials
       case 409:
-        throw AppError.emailInUse
+        throw conflict
       default:
         throw AppError.backendUnavailable(operation: operation)
       }
@@ -212,6 +255,16 @@ private struct AuthSuccessResponse: Decodable {
 /// `POST /auth/refresh` body.
 private struct RefreshRequestBody: Encodable {
   let refreshToken: String
+}
+
+/// `POST /auth/google` body (native ID-token path).
+private struct GoogleSignInRequestBody: Encodable {
+  let idToken: String
+}
+
+/// `POST /auth/google/nonce` 2xx response.
+private struct NonceResponseBody: Decodable {
+  let nonce: String
 }
 
 /// 2xx response shape for `/auth/refresh`. Verified against

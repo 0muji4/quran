@@ -17,6 +17,9 @@ enum AppError: LocalizedError {
   case storageUnavailable
   case invalidCredentials
   case emailInUse
+  /// BFF 409 on `/auth/google` — the email already has an account that
+  /// must be linked by signing in with the password first.
+  case googleLinkRequired
   case validationFailed
 
   // MARK: - LocalizedError
@@ -38,7 +41,7 @@ enum AppError: LocalizedError {
       return true
     case .audioPermissionDenied, .audioRecordingFailed, .audioPlaybackFailed,
          .referenceUnavailable, .storageUnavailable,
-         .invalidCredentials, .emailInUse, .validationFailed:
+         .invalidCredentials, .emailInUse, .googleLinkRequired, .validationFailed:
       // Auth failures need the user to change their input (wrong
       // password, taken email, malformed field) — not a bare retry.
       return false
@@ -59,6 +62,7 @@ enum AppError: LocalizedError {
     case .storageUnavailable:    return "storage_unavailable"
     case .invalidCredentials:    return "invalid_credentials"
     case .emailInUse:            return "email_in_use"
+    case .googleLinkRequired:    return "google_link_required"
     case .validationFailed:      return "validation_failed"
     }
   }
@@ -85,6 +89,7 @@ private enum AppErrorStrings {
     case .storageUnavailable:    return "error.storageUnavailable"
     case .invalidCredentials:    return "error.invalidCredentials"
     case .emailInUse:            return "error.emailInUse"
+    case .googleLinkRequired:    return "error.googleLinkRequired"
     case .validationFailed:      return "error.validationFailed"
     }
   }
