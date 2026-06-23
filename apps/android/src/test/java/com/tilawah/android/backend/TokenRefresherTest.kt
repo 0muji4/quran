@@ -152,5 +152,10 @@ class TokenRefresherTest {
             refreshCalls += refreshToken
             return refreshResult()
         }
+
+        override suspend fun requestGoogleNonce(): String = error("requestGoogleNonce not used")
+
+        override suspend fun signInWithGoogle(idToken: String): AuthSessionPayload =
+            error("signInWithGoogle not used")
     }
 }

@@ -20,6 +20,13 @@ object AppConfig {
     val restBaseUrl: String = baseUrl
 
     /**
+     * Web/server OAuth client ID for Sign in with Google (passed to
+     * Credential Manager as `serverClientId`). Blank when unset at build
+     * time, which keeps the Google button on its disabled placeholder.
+     */
+    val googleServerClientId: String = BuildConfig.GOOGLE_SERVER_CLIENT_ID
+
+    /**
      * Logger / Trace tag for cross-platform telemetry. Mirrors the iOS
      * OSLog subsystem `com.tilawah.ios`. See `docs/telemetry.md`.
      */

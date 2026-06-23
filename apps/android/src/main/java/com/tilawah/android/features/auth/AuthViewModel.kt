@@ -57,6 +57,42 @@ class AuthViewModel(
         viewModelScope.launch { signUpInternal(onSuccess) }
     }
 
+    /**
+     * Google sign-in. [getIdToken] runs the Credential Manager flow with
+     * the server-issued nonce and returns the ID token, or null if the
+     * user cancels. Kept as a parameter so the ViewModel stays free of
+     * Android framework types and testable. Navigation on success is the
+     * caller's; the session-flow observer flips the UI like the other
+     * paths.
+     */
+    fun signInWithGoogle(getIdToken: suspend (nonce: String) -> String?, onSuccess: () -> Unit) {
+        viewModelScope.launch { signInWithGoogleInternal(getIdToken, onSuccess) }
+    }
+
+    /** Suspending helper exposed for tests. */
+    suspend fun signInWithGoogleInternal(
+        getIdToken: suspend (nonce: String) -> String?,
+        onSuccess: () -> Unit,
+    ) {
+        if (_state.value.pending) return
+        _state.update { it.copy(pending = true, error = null) }
+        try {
+            val nonce = authApi.requestGoogleNonce()
+            val idToken = getIdToken(nonce)
+            if (idToken == null) {
+                // User dismissed the Google sheet — not an error.
+                _state.update { it.copy(pending = false) }
+                return
+            }
+            val payload = authApi.signInWithGoogle(idToken)
+            authSession.save(payload)
+            _state.update { it.copy(pending = false) }
+            onSuccess()
+        } catch (cause: AppError) {
+            _state.update { it.copy(pending = false, error = cause) }
+        }
+    }
+
     /** Suspending helper exposed for tests. */
     suspend fun signInInternal(onSuccess: () -> Unit) {
         val current = _state.value

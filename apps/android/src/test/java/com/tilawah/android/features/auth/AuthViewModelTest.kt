@@ -76,6 +76,68 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `signInWithGoogle happy path persists session and signals success`() = runTest {
+        val api = FakeAuthApi(
+            googleResult = { _ ->
+                AuthSessionPayload(
+                    accessToken = "a",
+                    refreshToken = "r",
+                    user = AuthUser("u-2", "g@example.com", "Goog"),
+                )
+            },
+        )
+        val session = InMemoryAuthSession()
+        val viewModel = AuthViewModel(authApi = api, authSession = session)
+
+        var capturedNonce: String? = null
+        var success = false
+        viewModel.signInWithGoogleInternal(
+            getIdToken = { nonce ->
+                capturedNonce = nonce
+                "id-token"
+            },
+            onSuccess = { success = true },
+        )
+
+        assertTrue(success)
+        assertFalse(viewModel.state.value.pending)
+        assertNull(viewModel.state.value.error)
+        assertEquals("nonce-1", capturedNonce)
+        assertEquals("id-token", api.lastGoogleIdToken)
+        assertNotNull(session.sessionFlow().first())
+    }
+
+    @Test
+    fun `signInWithGoogle cancellation is not an error and skips the API`() = runTest {
+        val api = FakeAuthApi(googleResult = { _ -> error("should not be called") })
+        val session = InMemoryAuthSession()
+        val viewModel = AuthViewModel(authApi = api, authSession = session)
+
+        var success = false
+        viewModel.signInWithGoogleInternal(getIdToken = { null }, onSuccess = { success = true })
+
+        assertFalse(success)
+        assertFalse(viewModel.state.value.pending)
+        assertNull(viewModel.state.value.error)
+        assertNull(api.lastGoogleIdToken)
+        assertNull(session.sessionFlow().first())
+    }
+
+    @Test
+    fun `signInWithGoogle 409 surfaces link-required error and skips session save`() = runTest {
+        val api = FakeAuthApi(googleResult = { _ -> throw AppError.GoogleLinkRequired })
+        val session = InMemoryAuthSession()
+        val viewModel = AuthViewModel(authApi = api, authSession = session)
+
+        var success = false
+        viewModel.signInWithGoogleInternal(getIdToken = { "id-token" }, onSuccess = { success = true })
+
+        assertFalse(success)
+        assertEquals(AppError.GoogleLinkRequired, viewModel.state.value.error)
+        assertNull(session.sessionFlow().first())
+    }
+
+    @Test
     fun `signUp without terms surfaces termsError and skips API call`() = runTest {
         val api = FakeAuthApi(signUpResult = { _, _, _ -> error("should not be called") })
         val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
@@ -139,10 +201,15 @@ class AuthViewModelTest {
         val signUpResult: (String, String, String?) -> AuthSessionPayload = { _, _, _ ->
             error("signUp not configured")
         },
+        val googleResult: (String) -> AuthSessionPayload = {
+            error("signInWithGoogle not configured")
+        },
+        val nonce: String = "nonce-1",
     ) : AuthApi {
         var lastSignInEmail: String? = null
         var lastSignUpEmail: String? = null
         var lastSignUpDisplayName: String? = null
+        var lastGoogleIdToken: String? = null
 
         override suspend fun signIn(email: String, password: String): AuthSessionPayload {
             lastSignInEmail = email
@@ -161,6 +228,13 @@ class AuthViewModelTest {
 
         override suspend fun refresh(refreshToken: String): RefreshedTokens {
             error("refresh not configured")
+        }
+
+        override suspend fun requestGoogleNonce(): String = nonce
+
+        override suspend fun signInWithGoogle(idToken: String): AuthSessionPayload {
+            lastGoogleIdToken = idToken
+            return googleResult(idToken)
         }
     }
 }

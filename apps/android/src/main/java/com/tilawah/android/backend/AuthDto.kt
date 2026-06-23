@@ -39,6 +39,16 @@ internal data class AuthUserDto(
 )
 
 @Serializable
+internal data class GoogleSignInRequest(
+    val idToken: String,
+)
+
+@Serializable
+internal data class NonceResponseDto(
+    val nonce: String,
+)
+
+@Serializable
 internal data class RefreshTokenRequest(
     val refreshToken: String,
 )
