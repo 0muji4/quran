@@ -8,10 +8,8 @@ const NONCE_TTL_MS = 5 * 60 * 1000;
 
 const hashNonce = (nonce: string): string => createHash('sha256').update(nonce).digest('hex');
 
-// Mint a nonce, persist its hash with a short TTL, and return the raw value
-// for the client to hand to the Google SDK. Expired rows are swept on issue
-// so the table self-bounds without a separate job. Returns null if the DB is
-// unavailable.
+// Expired rows are swept on each issue so the table self-bounds without a
+// purge job. Returns null when the DB is unavailable.
 export const issueNonce = async (): Promise<string | null> => {
   const pool = getDatabasePool();
   if (!pool) return null;
@@ -25,9 +23,8 @@ export const issueNonce = async (): Promise<string | null> => {
   return nonce;
 };
 
-// Atomically consume a nonce: the single DELETE both checks validity
-// (present and unexpired) and removes it, so a replay finds nothing. Returns
-// true only if a valid nonce was consumed.
+// Single-use: the DELETE matches only an unexpired nonce and removes it, so
+// a replay finds nothing. True when one was consumed.
 export const consumeNonce = async (nonce: string): Promise<boolean> => {
   const pool = getDatabasePool();
   if (!pool) return false;
