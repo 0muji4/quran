@@ -93,3 +93,28 @@ func TestSurahService_GetAyahError(t *testing.T) {
 	_, err := svc.GetAyah(context.Background(), 1)
 	require.ErrorIs(t, err, getErr)
 }
+
+func TestSurahService_GetSurah(t *testing.T) {
+	svc := SurahService{
+		SurahRepo: stubSurahRepo{surah: domain.Surah{NameEn: "Al-Baqarah"}},
+		AyahRepo:  stubAyahRepo{},
+	}
+
+	surah, err := svc.GetSurah(context.Background(), 2)
+	require.NoError(t, err)
+	require.Equal(t, int32(2), surah.ID)
+	require.Equal(t, "Al-Baqarah", surah.NameEn)
+}
+
+func TestSurahService_ListAyahs(t *testing.T) {
+	svc := SurahService{
+		SurahRepo: stubSurahRepo{},
+		AyahRepo:  stubAyahRepo{ayah: domain.Ayah{AyahNumber: 7}},
+	}
+
+	ayahs, err := svc.ListAyahs(context.Background(), 5)
+	require.NoError(t, err)
+	require.Len(t, ayahs, 1)
+	require.Equal(t, int32(5), ayahs[0].SurahID)
+	require.Equal(t, int32(7), ayahs[0].AyahNumber)
+}

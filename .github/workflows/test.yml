@@ -65,10 +65,12 @@ jobs:
       - name: Check Go coverage threshold
         # TODO(#73): Restore the 80% threshold by adding tests in apps/backend
         # and packages/go-pkg. Until then, do not lower this value further;
-        # ratchet it up as coverage improves.
+        # ratchet it up as coverage improves. Reaching 80% needs the cmd
+        # bootstrap and internal/testutil helpers (both ~0%) either covered or
+        # factored out of the denominator.
         run: |
           chmod +x scripts/check-go-coverage.sh
-          ./scripts/check-go-coverage.sh coverage.out 48.0
+          ./scripts/check-go-coverage.sh coverage.out 65.0
 
       - name: Upload Go coverage artifact
         uses: actions/upload-artifact@v4
