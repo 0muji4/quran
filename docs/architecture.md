@@ -81,10 +81,10 @@ ADR 0011 (the web's per-attempt history was deliberately kept in a new
 `practice_attempts` table rather than the backend's `attempts`, to avoid coupling
 two unrelated write lifecycles).
 
-| Owner          | Tables                                                                                                            | Domain                                    |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **BFF**        | `users`, `refresh_tokens`, `last_practiced`, `best_scores`, `practice_attempts`, `user_preferences`               | Auth, account/profile, per-user web state |
-| **Go backend** | `surahs`, `ayahs`, `attempts`, `segment_scores`, `alignments`, `scoring_jobs`, `asr_results`, `user_data_objects` | Qur'an content, ASR scoring, audio assets |
+| Owner          | Tables                                                                                              | Domain                                    |
+| -------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **BFF**        | `users`, `refresh_tokens`, `last_practiced`, `best_scores`, `practice_attempts`, `user_preferences` | Auth, account/profile, per-user web state |
+| **Go backend** | `surahs`, `ayahs`, `scoring_jobs`, `user_data_objects`                                              | Qur'an content, ASR scoring, audio assets |
 
 > The boundary is enforced only by convention today: one DB instance, one role
 > (`app`), one shared `db/migrations` folder. There is no schema/role isolation
@@ -100,8 +100,9 @@ two unrelated write lifecycles).
 3. **Qur'an content.** Web → BFF REST → Go backend `/api/*`. Mobile → BFF GraphQL
    → Go backend. Trace context is propagated end-to-end (ADR 0016).
 4. **Record → score.** Client uploads audio (presigned PUT) → a `scoring_jobs` row
-   is created → the backend runs ASR (ADR 0019) → `asr_results` / score → the
-   client reads the result (web: result page; mobile: poll/subscribe).
+   is created → the backend runs ASR (ADR 0019) and writes the score + evaluation
+   back onto that `scoring_jobs` row → the client reads the result (web: result
+   page; mobile: poll/subscribe).
 
 ## 7. Cross-cutting concerns
 
