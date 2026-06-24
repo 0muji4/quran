@@ -51,3 +51,19 @@ func TestMemoryRepositoryAyahs(t *testing.T) {
 	require.Empty(t, emptyAyahs)
 	require.Nil(t, emptyAyahs)
 }
+
+func TestMemoryRepositoryGetByNumber(t *testing.T) {
+	repo := MemoryRepository{
+		Ayahs: []domain.Ayah{
+			{ID: 11, SurahID: 2, AyahNumber: 1},
+			{ID: 12, SurahID: 2, AyahNumber: 2},
+		},
+	}
+
+	ayah, err := repo.GetByNumber(context.Background(), 2, 2)
+	require.NoError(t, err)
+	require.Equal(t, int64(12), ayah.ID)
+
+	_, err = repo.GetByNumber(context.Background(), 2, 99)
+	require.ErrorIs(t, err, ErrAyahNotFound)
+}
