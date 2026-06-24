@@ -1,7 +1,4 @@
 -- Drop tables in reverse dependency order. Indexes go with their tables.
-DROP TABLE IF EXISTS alignments;
-DROP TABLE IF EXISTS segment_scores;
-DROP TABLE IF EXISTS attempts;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ayahs;
 DROP TABLE IF EXISTS surahs;
