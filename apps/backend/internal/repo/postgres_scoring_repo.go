@@ -16,11 +16,15 @@ func (r *PostgresRepository) Start(ctx context.Context, p StartScoringJobParams)
 	if p.UserID != "" {
 		userID = sql.NullString{String: p.UserID, Valid: true}
 	}
+	var referenceAudioKey sql.NullString
+	if p.ReferenceAudioKey != "" {
+		referenceAudioKey = sql.NullString{String: p.ReferenceAudioKey, Valid: true}
+	}
 	const query = `
 		INSERT INTO scoring_jobs (
-			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, status, created_at, updated_at
+			session_id, user_id, upload_key, surah_id, ayah_id, ayah_number, reference_audio_key, status, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, 'RUNNING', NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'RUNNING', NOW(), NOW())
 		ON CONFLICT (session_id)
 		DO UPDATE SET
 			user_id = EXCLUDED.user_id,
@@ -28,12 +32,13 @@ func (r *PostgresRepository) Start(ctx context.Context, p StartScoringJobParams)
 			surah_id = EXCLUDED.surah_id,
 			ayah_id = EXCLUDED.ayah_id,
 			ayah_number = EXCLUDED.ayah_number,
+			reference_audio_key = EXCLUDED.reference_audio_key,
 			status = 'RUNNING',
 			updated_at = NOW()
 		RETURNING created_at;
 	`
 	var createdAt time.Time
-	err := r.db.QueryRowContext(ctx, query, p.SessionID, userID, p.UploadKey, p.SurahID, p.AyahID, p.AyahNumber).Scan(&createdAt)
+	err := r.db.QueryRowContext(ctx, query, p.SessionID, userID, p.UploadKey, p.SurahID, p.AyahID, p.AyahNumber, referenceAudioKey).Scan(&createdAt)
 	return createdAt, err
 }
 

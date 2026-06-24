@@ -109,6 +109,24 @@ func TestPostgresRepository_ScoringJobLifecycle(t *testing.T) {
 		require.JSONEq(t, string(eval), string(job.Evaluation))
 	})
 
+	t.Run("Start persists reference_audio_key for the result read path", func(t *testing.T) {
+		testutil.CleanupTables(t, db)
+		testutil.SeedStandardData(t, db)
+
+		withRef := params
+		withRef.ReferenceAudioKey = "refs/1_1.mp3"
+		_, err := repository.Start(ctx, withRef)
+		require.NoError(t, err)
+
+		var stored *string
+		require.NoError(t, db.QueryRowContext(ctx,
+			`SELECT reference_audio_key FROM scoring_jobs WHERE session_id = $1`,
+			params.SessionID,
+		).Scan(&stored))
+		require.NotNil(t, stored)
+		require.Equal(t, "refs/1_1.mp3", *stored)
+	})
+
 	t.Run("MarkFailed flips status to FAILED", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
 		testutil.SeedStandardData(t, db)

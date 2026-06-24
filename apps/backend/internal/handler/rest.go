@@ -136,11 +136,12 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.Jobs.Create(r.Context(), scoring.JobInput{
-		SessionID:  req.SessionID,
-		UploadKey:  req.UploadKey,
-		SurahID:    int32(surahID),
-		AyahNumber: *req.AyahNumber,
-		UserID:     req.UserID,
+		SessionID:         req.SessionID,
+		UploadKey:         req.UploadKey,
+		SurahID:           int32(surahID),
+		AyahNumber:        *req.AyahNumber,
+		UserID:            req.UserID,
+		ReferenceAudioKey: req.ReferenceAudioKey,
 	})
 	if err != nil {
 		switch {
