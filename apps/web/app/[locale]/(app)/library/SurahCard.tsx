@@ -91,7 +91,14 @@ const metaRowClass = css({
   alignItems: 'center',
   gap: '2',
   fontSize: '[13px]',
-  color: 'ink.muted'
+  color: 'ink.muted',
+  // Wrap whole segments, never mid-phrase: when the row is too narrow
+  // (the "best score" badge + RTL name crowd it on phones) the meta used
+  // to shrink each text span and break it at its space ("7"/"ayahs",
+  // "Best score"/"0"). nowrap (inherited by the spans) keeps each phrase
+  // intact; flexWrap drops a whole segment to the next line instead.
+  flexWrap: 'wrap',
+  whiteSpace: 'nowrap'
 });
 
 const dotClass = css({
