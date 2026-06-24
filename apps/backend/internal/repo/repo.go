@@ -43,6 +43,10 @@ type StartScoringJobParams struct {
 	SurahID    int32
 	AyahID     int64
 	AyahNumber int32
+	// ReferenceAudioKey is the object-storage key of the teacher recitation
+	// for this verse. Persisted so the read path can presign a playable
+	// referenceAudioUrl without re-resolving the reference at query time.
+	ReferenceAudioKey string
 }
 
 // ScoringJob is the persisted view of a scoring job returned by Get. The
