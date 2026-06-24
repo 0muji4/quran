@@ -39,6 +39,10 @@ type JobInput struct {
 	SurahID    int32
 	AyahNumber int32
 	UserID     string
+	// ReferenceAudioKey is the teacher-recitation object key resolved by the
+	// edge before scoring; persisted with the job so the result read path can
+	// presign a playable reference URL.
+	ReferenceAudioKey string
 }
 
 // JobResult is the outcome of a successful scoring pass, ready for the
@@ -112,12 +116,13 @@ func (s *JobService) Create(ctx context.Context, in JobInput) (JobResult, error)
 	}
 
 	createdAt, err := s.Jobs.Start(ctx, repo.StartScoringJobParams{
-		SessionID:  sessionID,
-		UserID:     in.UserID,
-		UploadKey:  in.UploadKey,
-		SurahID:    in.SurahID,
-		AyahID:     ayah.ID,
-		AyahNumber: in.AyahNumber,
+		SessionID:         sessionID,
+		UserID:            in.UserID,
+		UploadKey:         in.UploadKey,
+		SurahID:           in.SurahID,
+		AyahID:            ayah.ID,
+		AyahNumber:        in.AyahNumber,
+		ReferenceAudioKey: in.ReferenceAudioKey,
 	})
 	if err != nil {
 		return JobResult{}, fmt.Errorf("scoring: start job: %w", err)

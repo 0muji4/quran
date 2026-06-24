@@ -24,9 +24,10 @@ VALUES ('00000000-0000-0000-0000-000000000001')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- Deterministic Result-page fixture for visual regression (Phase 3.4 /
--- ADR 0004). Pairs a COMPLETED scoring_jobs row with the asr_results row
--- the BFF joins on, so /practice/1/1/result/visual-baseline-fatihah-1
--- renders the same ResultDetail layout on every CI run. Surah 1 ayah 1
+-- ADR 0004). A COMPLETED scoring_jobs row whose `evaluation` blob is the
+-- source of truth the BFF maps into PronunciationFeedback, so
+-- /practice/1/1/result/visual-baseline-fatihah-1 renders a fully-populated
+-- ResultDetail (metrics + word-by-word) on every CI run. Surah 1 ayah 1
 -- is reused because its reference audio is the most likely to exist in
 -- the CI MinIO seed; the BFF degrades gracefully if it does not.
 INSERT INTO scoring_jobs (
@@ -43,7 +44,7 @@ INSERT INTO scoring_jobs (
   0.86,
   'A confident recitation with clear vowel lengths.',
   '[]'::jsonb,
-  '{}'::jsonb,
+  '{"accuracy":0.86,"fluency":0.82,"completeness":0.9,"wer":0.14,"transcript":"بسم الله الرحمن الرحيم","alignments":[{"ref_word":"بِسْمِ","hyp_word":"بِسْمِ","op":"match"},{"ref_word":"اللَّهِ","hyp_word":"اللَّهِ","op":"match"},{"ref_word":"الرَّحْمَٰنِ","hyp_word":"الرَّحْمَٰنِ","op":"match"},{"ref_word":"الرَّحِيمِ","hyp_word":"الرَّحِيمِ","op":"match"}]}'::jsonb,
   '2026-05-08T10:00:00.000Z'::timestamptz,
   '2026-05-08T10:00:00.000Z'::timestamptz
 )

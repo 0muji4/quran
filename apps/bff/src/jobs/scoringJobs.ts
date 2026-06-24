@@ -58,65 +58,41 @@ interface RawAlignment {
   op?: string | null;
 }
 
-interface RawTimestamp {
-  probability?: number | null;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const buildPronunciationFeedback = (
-  wordAlignments: RawAlignment[],
-  wordTimestamps: RawTimestamp[],
-  wer: number | null,
+// Projects the backend's persisted `evaluation` blob (accuracy / fluency /
+// completeness / wer / transcript / alignments) plus the job's overall
+// `score` into the GraphQL PronunciationFeedback the clients render. The
+// backend pre-computes every dimension, so this is a pure projection — it
+// does NOT re-derive scores from raw word timestamps (the old asr_results
+// path that left every dimension at zero). Returns null when the job has no
+// evaluation yet (still RUNNING) or failed.
+export const mapEvaluationToFeedback = (
+  evaluation: Record<string, unknown> | null,
+  overall: number | null,
   referenceAudioUrl: string | null
 ): PronunciationFeedback | null => {
-  if (
-    wordAlignments.length === 0 &&
-    wordTimestamps.length === 0 &&
-    wer === null &&
-    !referenceAudioUrl
-  ) {
-    return null;
-  }
+  if (!evaluation) return null;
 
-  const refCount = wordAlignments.filter((alignment) => alignment.ref_word).length;
-  const matchCount = wordAlignments.filter((alignment) => alignment.op === 'match').length;
-  const substituteCount = wordAlignments.filter(
-    (alignment) => alignment.op === 'substitute'
-  ).length;
-  const deleteCount = wordAlignments.filter((alignment) => alignment.op === 'delete').length;
-
-  const accuracy =
-    wer !== null
-      ? clampScore(1 - wer)
-      : clampScore(matchCount / Math.max(1, matchCount + substituteCount + deleteCount));
-  const completeness = clampScore((refCount - deleteCount) / Math.max(1, refCount));
-
-  const probabilities = wordTimestamps
-    .map((timestamp) => timestamp.probability)
-    .filter((value): value is number => typeof value === 'number');
-  const fluency = probabilities.length
-    ? clampScore(probabilities.reduce((sum, value) => sum + value, 0) / probabilities.length)
-    : 0;
-
-  const overall = clampScore((accuracy + fluency + completeness) / 3);
-
-  const normalizedAlignments: WordAlignment[] = wordAlignments.map((alignment) => ({
+  const rawAlignments = Array.isArray(evaluation.alignments)
+    ? (evaluation.alignments as RawAlignment[])
+    : [];
+  const wordAlignments: WordAlignment[] = rawAlignments.map((alignment) => ({
     refWord: alignment.ref_word ?? null,
     hypWord: alignment.hyp_word ?? null,
     op: alignment.op ?? 'match'
   }));
 
   return {
-    accuracy,
-    fluency,
-    completeness,
-    overall,
+    accuracy: clampScore(numberOrNull(evaluation.accuracy) ?? 0),
+    fluency: clampScore(numberOrNull(evaluation.fluency) ?? 0),
+    completeness: clampScore(numberOrNull(evaluation.completeness) ?? 0),
+    overall: clampScore(overall ?? 0),
     referenceAudioUrl,
-    wordAlignments: normalizedAlignments
+    transcript: typeof evaluation.transcript === 'string' ? evaluation.transcript : null,
+    wer: numberOrNull(evaluation.wer),
+    wordAlignments
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createReferenceAudioUrl = async (
   referenceAudioKey: string | null
 ): Promise<string | null> => {
@@ -222,10 +198,16 @@ export const createScoringJob = async (input: {
   });
 
   const result = await parseJson<ScoringResult>(response);
-  // The Go backend doesn't sign download URLs; enrich here so the immediate
-  // post-create response (which the web caller drops straight into the
-  // result-page redirect) already has a playable recording URL.
+  // The Go backend doesn't sign download URLs nor shape PronunciationFeedback;
+  // enrich here so the immediate post-create response (which the web caller
+  // drops straight into the result-page redirect) already has a playable
+  // recording URL and the full feedback breakdown, with no second fetch.
   result.recordingUrl = await createRecordingUrl(result.uploadKey ?? input.uploadKey);
+  result.feedback = mapEvaluationToFeedback(
+    (result.evaluation as Record<string, unknown> | null) ?? null,
+    result.score ?? null,
+    await createReferenceAudioUrl(referenceAudioKey)
+  );
   return result;
 };
 
@@ -236,25 +218,31 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
     if (response.status === 404) return null;
     const result = await parseJson<ScoringResult>(response);
     result.recordingUrl = await createRecordingUrl(result.uploadKey);
+    // The Go REST response carries the raw `evaluation` blob but no presigned
+    // reference key, so referenceAudioUrl stays null on this fallback path
+    // (clients fetch the teacher clip via /reference-audio instead).
+    result.feedback = mapEvaluationToFeedback(
+      (result.evaluation as Record<string, unknown> | null) ?? null,
+      result.score ?? null,
+      null
+    );
     return result;
   }
 
   const result = await pool.query(
     `
     SELECT
-      scoring_jobs.session_id,
-      scoring_jobs.upload_key,
-      scoring_jobs.status,
-      scoring_jobs.score,
-      scoring_jobs.verdict,
-      scoring_jobs.segments,
-      scoring_jobs.evaluation,
-      scoring_jobs.created_at,
-      asr_results.transcript,
-      asr_results.wer
+      session_id,
+      upload_key,
+      status,
+      score,
+      verdict,
+      segments,
+      evaluation,
+      reference_audio_key,
+      created_at
     FROM scoring_jobs
-    LEFT JOIN asr_results ON asr_results.session_id = scoring_jobs.session_id
-    WHERE scoring_jobs.session_id = $1
+    WHERE session_id = $1
     `,
     [jobId]
   );
@@ -263,24 +251,10 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
   const row = result.rows[0];
   const segments = parseJsonValue<unknown[]>(row.segments, []);
   const evaluation = parseJsonValue<Record<string, unknown> | null>(row.evaluation, null);
+  const score = numberOrNull(row.score);
 
-  // If asr_results exists, the job is completed
-  const hasResults = row.transcript !== null;
-  const actualStatus = hasResults ? 'COMPLETED' : row.status;
-
-  // Build feedback from asr_results if available
-  const feedback = hasResults
-    ? {
-        accuracy: row.wer !== null ? Math.max(0, Math.min(1, 1 - parseFloat(row.wer))) : 0,
-        fluency: 0, // Will be calculated from word_timestamps in future
-        completeness: 0, // Will be calculated in future
-        overall: 0, // Will be calculated in future
-        referenceAudioUrl: null,
-        wordAlignments: [],
-        transcript: row.transcript as string,
-        wer: row.wer !== null ? parseFloat(row.wer) : null
-      }
-    : null;
+  const referenceAudioUrl = await createReferenceAudioUrl(row.reference_audio_key ?? null);
+  const feedback = mapEvaluationToFeedback(evaluation, score, referenceAudioUrl);
 
   const uploadKey = row.upload_key as string;
   const recordingUrl = await createRecordingUrl(uploadKey);
@@ -289,8 +263,8 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
     jobId: row.session_id as string,
     uploadKey,
     recordingUrl,
-    status: actualStatus as ScoringResult['status'],
-    score: numberOrNull(row.score),
+    status: row.status as ScoringResult['status'],
+    score,
     verdict: row.verdict ?? null,
     segments: Array.isArray(segments) ? (segments as ScoringResult['segments']) : [],
     evaluation,
