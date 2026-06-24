@@ -68,7 +68,7 @@ jobs:
         # ratchet it up as coverage improves.
         run: |
           chmod +x scripts/check-go-coverage.sh
-          ./scripts/check-go-coverage.sh coverage.out 48.0
+          ./scripts/check-go-coverage.sh coverage.out 65.0
 
       - name: Upload Go coverage artifact
         uses: actions/upload-artifact@v4
