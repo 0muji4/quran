@@ -49,20 +49,3 @@ INSERT INTO scoring_jobs (
   '2026-05-08T10:00:00.000Z'::timestamptz
 )
 ON CONFLICT (session_id) DO NOTHING;
-
-INSERT INTO asr_results (
-  session_id, ayah_id, audio_key, expected_text_ar, transcript,
-  word_timestamps, word_alignments, wer, created_at, updated_at
-) VALUES (
-  'visual-baseline-fatihah-1',
-  (SELECT id FROM ayahs WHERE surah_id = 1 AND ayah_number = 1),
-  'visual-baseline/fatihah-1-recording.webm',
-  'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-  'بسم الله الرحمن الرحيم',
-  '[]'::jsonb,
-  '[]'::jsonb,
-  0.14,
-  '2026-05-08T10:00:00.000Z'::timestamptz,
-  '2026-05-08T10:00:00.000Z'::timestamptz
-)
-ON CONFLICT (session_id) DO NOTHING;
