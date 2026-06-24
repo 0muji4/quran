@@ -195,5 +195,41 @@ func TestRESTHandleGetSurahAyahsRepoError(t *testing.T) {
 	require.Equal(t, "failed to list ayahs\n", recorder.Body.String())
 }
 
+func TestRESTHandleListSurahs(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{
+			listFn: func(ctx context.Context) ([]domain.Surah, error) {
+				return []domain.Surah{{ID: 1, NameEn: "Al-Fatiha"}, {ID: 2, NameEn: "Al-Baqarah"}}, nil
+			},
+		},
+		AyahRepo: fakeAyahRepo{},
+	}
+
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	var result []domain.Surah
+	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
+	require.Len(t, result, 2)
+	require.Equal(t, "Al-Fatiha", result[0].NameEn)
+}
+
+func TestRESTHandleListSurahsRepoError(t *testing.T) {
+	svc := service.SurahService{
+		SurahRepo: fakeSurahRepo{
+			listFn: func(ctx context.Context) ([]domain.Surah, error) {
+				return nil, errors.New("list failed")
+			},
+		},
+		AyahRepo: fakeAyahRepo{},
+	}
+
+	recorder := serveREST(t, svc, http.MethodGet, "/api/surahs")
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code)
+	require.Equal(t, "failed to list surahs\n", recorder.Body.String())
+}
+
 var _ repo.SurahRepository = fakeSurahRepo{}
 var _ repo.AyahRepository = fakeAyahRepo{}
