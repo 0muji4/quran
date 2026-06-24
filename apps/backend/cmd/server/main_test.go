@@ -33,15 +33,13 @@ func TestEnvBool(t *testing.T) {
 	t.Setenv("ENVBOOL", "1")
 	require.True(t, envBool("ENVBOOL", false))
 
-	// Unparseable values fall back rather than panicking.
 	t.Setenv("ENVBOOL", "notabool")
 	require.True(t, envBool("ENVBOOL", true))
 	require.False(t, envBool("ENVBOOL", false))
 }
 
-// Without CHIRP_PROJECT the backend must still boot: newTranscriber returns a
-// transcriber that defers the failure to request time (ErrUnavailable) rather
-// than erroring at startup, keeping catalog/auth/history reachable.
+// Without CHIRP_PROJECT the backend still boots — scoring errors at request
+// time, not startup.
 func TestNewTranscriberUnavailableWhenChirpUnset(t *testing.T) {
 	t.Setenv("CHIRP_PROJECT", "")
 
