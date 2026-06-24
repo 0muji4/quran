@@ -60,52 +60,9 @@ CREATE INDEX IF NOT EXISTS users_deleted_at_idx
     ON users (deleted_at)
     WHERE deleted_at IS NOT NULL;
 
--- Attempts table for scoring storage.
--- Partitioning was originally intended (PARTITION BY RANGE (created_at)) but
--- never worked: PRIMARY KEY (id) does not include the partition column, which
--- Postgres rejects. The old psql-based migrator silently continued past the
--- error, so no environment ever had this table. Partitioning is deferred to a
--- future ADR (track when individual tables approach ~10 GB).
-CREATE TABLE IF NOT EXISTS attempts (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id      UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    surah_id     SMALLINT     NOT NULL REFERENCES surahs(id),
-    ayah_id      BIGINT       REFERENCES ayahs(id),
-    transcript   TEXT,
-    evaluation   JSONB        DEFAULT '{}'::jsonb,
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    CONSTRAINT attempts_per_user_surah UNIQUE (user_id, surah_id, ayah_id, created_at)
-);
-
--- Segment scores reference attempts and can carry flexible metrics.
-CREATE TABLE IF NOT EXISTS segment_scores (
-    id           BIGSERIAL PRIMARY KEY,
-    attempt_id   UUID         NOT NULL REFERENCES attempts(id) ON DELETE CASCADE,
-    segment_label TEXT        NOT NULL,
-    score        NUMERIC(6,3) NOT NULL,
-    metrics      JSONB        DEFAULT '{}'::jsonb,
-    metadata     JSONB        DEFAULT '{}'::jsonb,
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-);
-
--- Alignment information between hypothesis and reference tokens.
-CREATE TABLE IF NOT EXISTS alignments (
-    id            BIGSERIAL PRIMARY KEY,
-    attempt_id    UUID        NOT NULL REFERENCES attempts(id) ON DELETE CASCADE,
-    hypothesis    JSONB       NOT NULL,
-    reference     JSONB       NOT NULL,
-    distance      NUMERIC(8,4),
-    metadata      JSONB       DEFAULT '{}'::jsonb,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 -- Text search helpers.
 CREATE INDEX IF NOT EXISTS idx_surahs_name_en_trgm ON surahs USING GIN (name_en gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_ayahs_text_ar_trgm ON ayahs USING GIN (text_ar gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_attempts_user_created_at ON attempts (user_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_segment_scores_attempt ON segment_scores (attempt_id);
-CREATE INDEX IF NOT EXISTS idx_alignments_attempt ON alignments (attempt_id);
 
 -- Metadata lookup acceleration.
 CREATE INDEX IF NOT EXISTS idx_ayahs_metadata_gin ON ayahs USING GIN (metadata);
-CREATE INDEX IF NOT EXISTS idx_attempts_evaluation_gin ON attempts USING GIN (evaluation);
