@@ -88,7 +88,6 @@ Negative:
 
 - A first-time contributor needs Docker Compose running before `make db-migrate` works (was already true; no change).
 - Maintaining `down` migrations is a small ongoing cost; the convention is to write them as a strict inverse of the `up`, drop the column or table, and not over-engineer.
-- The pre-existing schema drift between `20251202202700_asr_results` (which already contains `word_alignments`) and `20260102120000_add_word_alignments` (which adds it defensively with `IF NOT EXISTS`) is preserved as-is, because editing an already-applied migration is forbidden by the policy. New migrations must not introduce similar drift.
 
 ## Operational
 
