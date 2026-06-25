@@ -167,7 +167,8 @@
     <string name="profile_account_email">Email</string>
     <string name="profile_account_email_action">Change</string>
     <string name="profile_account_password">Password</string>
-    <string name="profile_account_password_sublabel">Last changed 2 weeks ago</string>
+    <string name="profile_account_password_sublabel">Keep your account secure</string>
+    <string name="profile_account_password_changed">Last changed %1$s</string>
     <string name="profile_account_password_action">Update</string>
     <string name="profile_account_export">Export your data</string>
     <string name="profile_account_export_sublabel">Download all attempts</string>

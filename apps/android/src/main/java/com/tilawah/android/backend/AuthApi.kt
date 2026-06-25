@@ -224,6 +224,7 @@ class OkHttpAuthApi(
             displayName = user.displayName,
             createdAt = user.createdAt,
             level = user.level,
+            passwordChangedAt = user.passwordChangedAt,
         ),
         reactivated = reactivated == true,
     )
