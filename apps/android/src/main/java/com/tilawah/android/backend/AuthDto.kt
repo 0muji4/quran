@@ -36,6 +36,7 @@ internal data class AuthUserDto(
     val displayName: String? = null,
     val createdAt: String? = null,
     val level: String? = null,
+    val passwordChangedAt: String? = null,
 )
 
 @Serializable
@@ -88,6 +89,7 @@ data class AuthUser(
     val displayName: String?,
     val createdAt: String? = null,
     val level: String? = null,
+    val passwordChangedAt: String? = null,
 )
 
 /**

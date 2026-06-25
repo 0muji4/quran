@@ -39,7 +39,7 @@ import com.tilawah.android.designsystem.components.WaveformView
 import kotlin.math.sin
 
 /**
- * Analysing panel shown while the worker scores a recording.
+ * Analysing panel shown while the backend scores a recording.
  *
  * Layout (mirrors `docs/design/Android _ Practice _ analysing.png`):
  * a leading round light-teal "+" badge beside a bold "Analysing…"
@@ -228,7 +228,7 @@ private fun StepIcon(state: StepRowState, pulse: Float) {
 }
 
 /**
- * Static decorative waveform for the analysing tile. The worker does not
+ * Static decorative waveform for the analysing tile. The backend does not
  * stream live amplitudes during scoring, so this is a fixed sinusoidal
  * shape purely to communicate "audio is being processed".
  */

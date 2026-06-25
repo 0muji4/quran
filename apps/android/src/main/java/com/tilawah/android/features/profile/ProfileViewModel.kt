@@ -2,10 +2,14 @@ package com.tilawah.android.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tilawah.android.features.history.computeStats
 import com.tilawah.android.storage.AuthSession
+import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.StoredSession
+import java.time.Instant
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -21,10 +25,15 @@ import kotlinx.coroutines.launch
  */
 class ProfileViewModel(
     private val authSession: AuthSession,
+    historyStore: HistoryStore,
 ) : ViewModel() {
 
     val session: StateFlow<StoredSession?> = authSession.sessionFlow()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val streakDays: StateFlow<Int> = historyStore.recentAttempts()
+        .map { computeStats(it, Instant.now()).streakDays }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val reactivationNotice: StateFlow<Boolean> = authSession.reactivationNotice()
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)

@@ -30,7 +30,7 @@ sealed interface PracticeState {
         get() = this is Uploading || this is Analysing
 }
 
-/** Three-step progress shown while the worker scores a recording. */
+/** Three-step progress shown while the backend scores a recording. */
 enum class AnalysingStep {
     Transcribing,
     Comparing,
