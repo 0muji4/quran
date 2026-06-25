@@ -251,11 +251,15 @@ jobs:
       - name: Run iOS tests (if present)
         run: |
           if [ -d Tests ]; then
-            # `xcodebuild test` requires a concrete simulator destination — the
-            # `generic/platform=iOS Simulator` slug only works for `build`.
-            xcodebuild -scheme QuranRecitationApp \
-              -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
-              test
+            # `xcodebuild test` needs a concrete simulator (the generic slug is
+            # build-only). Pick the first available iPhone so a runner Xcode bump
+            # can't break a hard-coded device name (Xcode 26.5 dropped "iPhone 16").
+            sim_id=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-F-]{36}')
+            if [ -z "$sim_id" ]; then
+              echo "No available iPhone simulator on this runner" >&2
+              exit 1
+            fi
+            xcodebuild -scheme QuranRecitationApp -destination "id=$sim_id" test
           else
             echo "No iOS tests directory; skipping tests."
           fi
