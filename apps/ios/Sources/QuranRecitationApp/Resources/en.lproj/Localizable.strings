@@ -201,6 +201,7 @@
 "profile.section.email.cta.a11yDisabled" = "Change email — coming soon";
 "profile.section.password.eyebrow" = "Password";
 "profile.section.password.helper" = "Rotate when you suspect a leak or every few months.";
+"profile.section.password.lastChanged" = "Last changed %@";
 "profile.section.password.cta" = "Update";
 "profile.section.password.cta.a11yDisabled" = "Update password — coming soon";
 
