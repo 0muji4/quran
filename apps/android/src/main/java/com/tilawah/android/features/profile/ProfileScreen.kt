@@ -59,6 +59,10 @@ import com.tilawah.android.designsystem.components.BrandCardStyle
 import com.tilawah.android.designsystem.components.PrimaryButton
 import com.tilawah.android.designsystem.components.SecondaryButton
 import com.tilawah.android.storage.StoredSession
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Profile tab content. Renders one of two states keyed off the
@@ -89,6 +93,7 @@ fun ProfileScreen(
     // Required whenever [session] is non-null; the signed-out shell never
     // touches it. Defaulted so the signed-out call sites stay terse.
     preferencesViewModel: PreferencesViewModel? = null,
+    streakDays: Int = 0,
     showReactivationBanner: Boolean = false,
     onAcknowledgeReactivation: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -105,6 +110,7 @@ fun ProfileScreen(
             preferencesViewModel = checkNotNull(preferencesViewModel) {
                 "preferencesViewModel is required for the signed-in Profile"
             },
+            streakDays = streakDays,
             onSignOutTapped = onSignOutTapped,
             onEditProfileTapped = onEditProfileTapped,
             onChangeEmailTapped = onChangeEmailTapped,
@@ -159,6 +165,7 @@ private fun SignedOutContent(
 private fun SignedInContent(
     session: StoredSession,
     preferencesViewModel: PreferencesViewModel,
+    streakDays: Int,
     onSignOutTapped: () -> Unit,
     onEditProfileTapped: () -> Unit,
     onChangeEmailTapped: () -> Unit,
@@ -200,6 +207,7 @@ private fun SignedInContent(
         SummaryCard(
             displayName = displayName,
             level = session.user.level,
+            streakDays = streakDays,
             onEditProfileTapped = onEditProfileTapped,
         )
 
@@ -207,6 +215,7 @@ private fun SignedInContent(
 
         AccountSection(
             email = session.user.email,
+            passwordChangedAt = session.user.passwordChangedAt,
             onChangeEmailTapped = onChangeEmailTapped,
             onUpdatePasswordTapped = onUpdatePasswordTapped,
         )
@@ -230,6 +239,7 @@ private fun SignedInContent(
 private fun SummaryCard(
     displayName: String,
     level: String?,
+    streakDays: Int,
     onEditProfileTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -262,11 +272,8 @@ private fun SummaryCard(
                 textAlign = TextAlign.Center,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                // TODO(profile): wire skill level once the signed-in
-                // user shape always carries it; default to intermediate.
                 LevelPill(level = level)
-                // TODO(profile): streak has no backend yet — placeholder.
-                StreakPill(days = 5)
+                StreakPill(days = streakDays)
             }
             SecondaryButton(
                 label = ProfileCopy.editEntryLabel,
@@ -511,13 +518,25 @@ private fun ReminderTimeDialog(
     )
 }
 
+private val passwordChangedFormat = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US)
+
+private fun passwordChangedDate(iso: String?): String? =
+    iso?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        ?.atZone(ZoneId.systemDefault())
+        ?.toLocalDate()
+        ?.format(passwordChangedFormat)
+
 @Composable
 private fun AccountSection(
     email: String,
+    passwordChangedAt: String?,
     onChangeEmailTapped: () -> Unit,
     onUpdatePasswordTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val passwordSublabel = passwordChangedDate(passwordChangedAt)
+        ?.let { stringResource(R.string.profile_account_password_changed, it) }
+        ?: stringResource(R.string.profile_account_password_sublabel)
     SectionColumn(eyebrow = stringResource(R.string.profile_account_section), modifier = modifier) {
         BrandCard(style = BrandCardStyle.Paper, modifier = Modifier.fillMaxWidth()) {
             Column {
@@ -530,9 +549,7 @@ private fun AccountSection(
                 RowDivider()
                 ActionRow(
                     label = stringResource(R.string.profile_account_password),
-                    // TODO(profile): "Last changed" is a placeholder —
-                    // the BFF does not expose a password-changed-at yet.
-                    sublabel = stringResource(R.string.profile_account_password_sublabel),
+                    sublabel = passwordSublabel,
                     action = stringResource(R.string.profile_account_password_action),
                     onActionTapped = onUpdatePasswordTapped,
                 )

@@ -43,6 +43,7 @@ fun ProfileAuthHost(
 ) {
     val session by profileViewModel.session.collectAsStateWithLifecycle()
     val reactivationNotice by profileViewModel.reactivationNotice.collectAsStateWithLifecycle()
+    val streakDays by profileViewModel.streakDays.collectAsStateWithLifecycle()
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
     var editingUser: AuthUser? by remember { mutableStateOf(null) }
     var changeEmailFor: String? by remember { mutableStateOf(null) }
@@ -82,6 +83,7 @@ fun ProfileAuthHost(
             ProfileScreen(
                 session = session,
                 preferencesViewModel = preferencesViewModel,
+                streakDays = streakDays,
                 onSignInTapped = { pendingMode = AuthMode.SignIn },
                 onSignUpTapped = { pendingMode = AuthMode.SignUp },
                 onSignOutTapped = profileViewModel::signOut,

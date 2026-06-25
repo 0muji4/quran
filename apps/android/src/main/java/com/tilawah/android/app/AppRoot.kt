@@ -278,6 +278,7 @@ fun AppRoot(
                     authSession = authSession,
                     profileService = profileService,
                     preferencesClient = preferencesClient,
+                    historyStore = historyStore,
                 )
             }
         }
@@ -290,10 +291,11 @@ private fun ProfileTabHost(
     authSession: AuthSession,
     profileService: ProfileService,
     preferencesClient: PreferencesClient,
+    historyStore: HistoryStore,
 ) {
     val viewModel: ProfileViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { ProfileViewModel(authSession = authSession) }
+            initializer { ProfileViewModel(authSession = authSession, historyStore = historyStore) }
         },
     )
     ProfileAuthHost(
