@@ -29,6 +29,7 @@ struct AuthenticatedUser: Codable, Equatable {
   /// send the field on sign-up today so the value can be `null` for
   /// freshly created accounts as well.
   let level: String?
+  let passwordChangedAt: String?
 
   // Default-valued init so call sites that pre-date `createdAt` / `level`
   // (tests, fixtures, MockAuthService) keep compiling without a churn
@@ -38,13 +39,15 @@ struct AuthenticatedUser: Codable, Equatable {
     email: String,
     displayName: String?,
     createdAt: String? = nil,
-    level: String? = nil
+    level: String? = nil,
+    passwordChangedAt: String? = nil
   ) {
     self.id = id
     self.email = email
     self.displayName = displayName
     self.createdAt = createdAt
     self.level = level
+    self.passwordChangedAt = passwordChangedAt
   }
 }
 
