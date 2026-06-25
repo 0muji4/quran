@@ -5,6 +5,7 @@ import { panel } from '../../../../styled-system/recipes';
 
 interface Props {
   email: string;
+  passwordChangedAt: string | null;
 }
 
 const cardClass = css({
@@ -57,6 +58,17 @@ const helperClass = css({
   color: 'ink.muted'
 });
 
+const changedDateFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+});
+
+const formatChangedDate = (iso: string): string | null => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : changedDateFormatter.format(date);
+};
+
 // Disabled "Download" affordance for the export row. Export is not wired
 // to a backend yet, so it renders dimmed like the deferred OAuth / forgot
 // links rather than as a dead control.
@@ -80,7 +92,11 @@ const downloadLinkClass = css({
 // export flows land in a follow-up PR; the disabled state is
 // announced via `aria-label` so SR users get the "coming soon"
 // hint instead of a silent dead control.
-export function AccountDataCard({ email }: Props) {
+export function AccountDataCard({ email, passwordChangedAt }: Props) {
+  const changedOn = passwordChangedAt ? formatChangedDate(passwordChangedAt) : null;
+  const passwordHelper = changedOn
+    ? `Last changed ${changedOn}`
+    : 'Rotate when you suspect a leak or every few months.';
   return (
     <section
       className={cx(panel({ surface: 'paper' }).root, cardClass)}
@@ -101,7 +117,7 @@ export function AccountDataCard({ email }: Props) {
         <div className={labelStackClass}>
           <span className={eyebrowClass}>Password</span>
           <span className={primaryClass}>•••••••••••</span>
-          <span className={helperClass}>Rotate when you suspect a leak or every few months.</span>
+          <span className={helperClass}>{passwordHelper}</span>
         </div>
         <UpdatePasswordButton />
       </div>
