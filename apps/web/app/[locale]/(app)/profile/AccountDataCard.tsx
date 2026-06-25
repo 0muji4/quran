@@ -69,29 +69,7 @@ const formatChangedDate = (iso: string): string | null => {
   return Number.isNaN(date.getTime()) ? null : changedDateFormatter.format(date);
 };
 
-// Disabled "Download" affordance for the export row. Export is not wired
-// to a backend yet, so it renders dimmed like the deferred OAuth / forgot
-// links rather than as a dead control.
-// TODO(profile-export): enable once the BFF exposes a data-export endpoint.
-const downloadLinkClass = css({
-  font: '[inherit]',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  color: 'green.deep',
-  background: '[transparent]',
-  borderWidth: '[0]',
-  padding: '[0]',
-  cursor: 'not-allowed',
-  opacity: 0.55,
-  flexShrink: 0
-});
-
-// "Account & data". Phase-1 surface: Email + Password rows render
-// the current value (or a placeholder) and a disabled action link
-// labelled "Change" / "Update". The change / update / delete /
-// export flows land in a follow-up PR; the disabled state is
-// announced via `aria-label` so SR users get the "coming soon"
-// hint instead of a silent dead control.
+// "Account & data": Email and Password rows, each with its own edit sheet.
 export function AccountDataCard({ email, passwordChangedAt }: Props) {
   const changedOn = passwordChangedAt ? formatChangedDate(passwordChangedAt) : null;
   const passwordHelper = changedOn
@@ -120,16 +98,6 @@ export function AccountDataCard({ email, passwordChangedAt }: Props) {
           <span className={helperClass}>{passwordHelper}</span>
         </div>
         <UpdatePasswordButton />
-      </div>
-
-      <div className={rowClass}>
-        <div className={labelStackClass}>
-          <span className={eyebrowClass}>Export your data</span>
-          <span className={primaryClass}>Download a copy of every attempt and score</span>
-        </div>
-        <button type="button" className={downloadLinkClass} disabled title="Coming soon">
-          Download
-        </button>
       </div>
     </section>
   );
