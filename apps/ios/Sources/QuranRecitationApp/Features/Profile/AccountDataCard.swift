@@ -1,23 +1,20 @@
 import SwiftUI
 
-/// "Account & data" card on the Profile tab. Two rows: Email and
-/// Password. The right-hand "Change" / "Update" CTAs are disabled
-/// placeholders in PR-H2 — the actual sheets land in PR-H4 (password)
-/// and PR-H5 (email).
+/// "Account & data" card on the Profile tab: Email and Password rows.
 struct AccountDataCard: View {
   let email: String
-  /// `nil` keeps each row's trailing CTA disabled (the H2 default).
-  /// PR-H4 onward wires `onUpdatePassword`; PR-H5 will wire
-  /// `onChangeEmail`.
+  let passwordChangedAt: String?
   let onChangeEmail: (() -> Void)?
   let onUpdatePassword: (() -> Void)?
 
   init(
     email: String,
+    passwordChangedAt: String? = nil,
     onChangeEmail: (() -> Void)? = nil,
     onUpdatePassword: (() -> Void)? = nil
   ) {
     self.email = email
+    self.passwordChangedAt = passwordChangedAt
     self.onChangeEmail = onChangeEmail
     self.onUpdatePassword = onUpdatePassword
   }
@@ -42,6 +39,7 @@ struct AccountDataCard: View {
           eyebrowKey: "profile.section.password.eyebrow",
           primary: "•••••••••••",
           helperKey: "profile.section.password.helper",
+          helperText: Self.lastChangedText(passwordChangedAt),
           actionKey: "profile.section.password.cta",
           actionA11yKey: "profile.section.password.cta.a11yDisabled",
           action: onUpdatePassword
@@ -53,6 +51,28 @@ struct AccountDataCard: View {
       .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
     }
   }
+
+  private static func lastChangedText(_ iso: String?) -> String? {
+    guard let iso, let date = parseISO(iso) else { return nil }
+    let formatter = DateFormatter()
+    formatter.locale = Locale.current
+    formatter.setLocalizedDateFormatFromTemplate("MMM d, y")
+    let template = Bundle.module.localizedString(
+      forKey: "profile.section.password.lastChanged",
+      value: "Last changed %@",
+      table: nil
+    )
+    return String(format: template, formatter.string(from: date))
+  }
+
+  private static func parseISO(_ value: String) -> Date? {
+    let fractional = ISO8601DateFormatter()
+    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let date = fractional.date(from: value) { return date }
+    let plain = ISO8601DateFormatter()
+    plain.formatOptions = [.withInternetDateTime]
+    return plain.date(from: value)
+  }
 }
 
 /// One row inside the Account card. Two-column layout: a left stack
@@ -62,6 +82,7 @@ private struct AccountRow: View {
   let eyebrowKey: String
   let primary: String
   let helperKey: String
+  var helperText: String? = nil
   let actionKey: String
   let actionA11yKey: String
   let action: (() -> Void)?
@@ -79,10 +100,16 @@ private struct AccountRow: View {
           .font(Font.brand.body)
           .foregroundColor(Color.brand.textPrimary)
 
-        Text(LocalizedStringKey(helperKey), bundle: .module)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
-          .fixedSize(horizontal: false, vertical: true)
+        Group {
+          if let helperText {
+            Text(helperText)
+          } else {
+            Text(LocalizedStringKey(helperKey), bundle: .module)
+          }
+        }
+        .font(Font.brand.caption)
+        .foregroundColor(Color.brand.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
