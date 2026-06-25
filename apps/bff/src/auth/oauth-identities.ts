@@ -1,25 +1,8 @@
 import { getDatabasePool } from '../infra/storage';
-import { type UserLevel, type UserRow } from './users';
+import { USER_COLUMNS, mapRow, type UserRow } from './users';
 
 // Federated-identity persistence. Keyed on `(provider, subject)` — the
 // provider's stable `sub` — never email, which can change provider-side.
-
-const USER_COLUMNS = `id, email, display_name, password_hash, created_at, level, deleted_at`;
-
-const mapUserRow = (row: Record<string, unknown>): UserRow => ({
-  id: row.id as string,
-  email: row.email as string,
-  displayName: (row.display_name as string | null) ?? null,
-  passwordHash: (row.password_hash as string | null) ?? null,
-  createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at as string),
-  level: (row.level as UserLevel | null) ?? null,
-  deletedAt:
-    row.deleted_at == null
-      ? null
-      : row.deleted_at instanceof Date
-        ? row.deleted_at
-        : new Date(row.deleted_at as string)
-});
 
 export type OAuthProvider = 'google';
 
@@ -43,7 +26,7 @@ export const findUserByOAuthIdentity = async (
     [provider, subject]
   );
   if (!result.rowCount) return null;
-  return mapUserRow(result.rows[0]);
+  return mapRow(result.rows[0]);
 };
 
 // May throw 23505 on the (provider, subject) unique index when a
@@ -82,7 +65,7 @@ export const createUserFromOAuth = async (input: {
        RETURNING ${USER_COLUMNS}`,
       [input.email, input.displayName]
     );
-    const user = mapUserRow(userResult.rows[0]);
+    const user = mapRow(userResult.rows[0]);
     await client.query(
       `INSERT INTO oauth_identities (user_id, provider, subject, email)
        VALUES ($1, $2, $3, $4)`,
