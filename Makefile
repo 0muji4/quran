@@ -146,7 +146,6 @@ dev-up: ## Start all development services (infra + observability + apps)
 	@echo "  BFF:         http://localhost:4000"
 	@echo "  Backend:     http://localhost:8080"
 	@echo "  Postgres:    localhost:5432"
-	@echo "  Redis:       localhost:6379"
 	@echo "  MinIO:       http://localhost:9001 (admin/admin)"
 	@echo ""
 	@echo "Observability:"
