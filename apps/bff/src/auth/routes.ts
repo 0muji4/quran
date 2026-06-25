@@ -87,12 +87,22 @@ interface AuthSuccess {
     // sign-ups, which do not send the field). Clients render the badge
     // conditionally so a null does not produce an empty pill.
     level: UserLevel | null;
+    passwordChangedAt: string | null;
   };
   // Optional ADR-0024 §4 signal: present and `true` only when this
   // sign-in resurrected a soft-deleted row. Clients use it to surface
   // a "Welcome back — your account has been restored" toast.
   reactivated?: boolean;
 }
+
+const toUserView = (user: UserRow): AuthSuccess['user'] => ({
+  id: user.id,
+  email: user.email,
+  displayName: user.displayName,
+  createdAt: user.createdAt.toISOString(),
+  level: user.level,
+  passwordChangedAt: user.passwordChangedAt?.toISOString() ?? null
+});
 
 const issueAuthSuccess = async (
   user: UserRow,
@@ -114,13 +124,7 @@ const issueAuthSuccess = async (
   return {
     accessToken,
     refreshToken,
-    user: {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      createdAt: user.createdAt.toISOString(),
-      level: user.level
-    },
+    user: toUserView(user),
     ...(options?.reactivated ? { reactivated: true } : {})
   };
 };
@@ -213,15 +217,7 @@ authRouter.get('/auth/me', async (req: AuthedRequest, res) => {
     if (!user) {
       return res.status(404).json({ error: 'user not found' });
     }
-    res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        createdAt: user.createdAt.toISOString(),
-        level: user.level
-      }
-    });
+    res.json({ user: toUserView(user) });
   } catch (error) {
     logger.error('GET /auth/me failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to load user' });
@@ -250,15 +246,7 @@ authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
     if (!updated) {
       return res.status(404).json({ error: 'user not found' });
     }
-    res.json({
-      user: {
-        id: updated.id,
-        email: updated.email,
-        displayName: updated.displayName,
-        createdAt: updated.createdAt.toISOString(),
-        level: updated.level
-      }
-    });
+    res.json({ user: toUserView(updated) });
   } catch (error) {
     logger.error('PATCH /auth/me failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to update profile' });
@@ -295,15 +283,7 @@ authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
     // confusing 409 the user would get if their own email matched a
     // soft-deleted shadow under the UNIQUE constraint.
     if (newEmail.toLowerCase() === user.email.toLowerCase()) {
-      return res.status(200).json({
-        user: {
-          id: user.id,
-          email: user.email,
-          displayName: user.displayName,
-          createdAt: user.createdAt.toISOString(),
-          level: user.level
-        }
-      });
+      return res.status(200).json({ user: toUserView(user) });
     }
     const updated = await updateUserEmail(session.id, newEmail);
     if (updated === null) {
@@ -312,15 +292,7 @@ authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
     if (updated === 'conflict') {
       return res.status(409).json({ error: 'email already in use' });
     }
-    res.json({
-      user: {
-        id: updated.id,
-        email: updated.email,
-        displayName: updated.displayName,
-        createdAt: updated.createdAt.toISOString(),
-        level: updated.level
-      }
-    });
+    res.json({ user: toUserView(updated) });
   } catch (error) {
     logger.error('POST /auth/me/email failed', { userId: session.id, error });
     res.status(502).json({ error: 'Failed to update email' });

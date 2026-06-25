@@ -35,6 +35,7 @@ vi.mock('../users', () => ({
 // match exactly. Real users get NOW() from the DB, but the tests mock
 // the storage layer, so we just pick a deterministic moment.
 const TEST_CREATED_AT = new Date('2026-01-15T12:00:00Z');
+const TEST_PASSWORD_CHANGED_AT = new Date('2026-03-20T09:30:00Z');
 
 vi.mock('../refresh-tokens', async () => {
   const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
@@ -83,7 +84,8 @@ describe('POST /auth/signup and /auth/login', () => {
         displayName: 'Alice',
         passwordHash: 'hashed',
         createdAt: TEST_CREATED_AT,
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT
       });
 
       const res = await request(app).post('/auth/signup').send({
@@ -99,7 +101,8 @@ describe('POST /auth/signup and /auth/login', () => {
         email: 'a@b.com',
         displayName: 'Alice',
         createdAt: TEST_CREATED_AT.toISOString(),
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT.toISOString()
       });
       expect(typeof res.body.accessToken).toBe('string');
       expect(typeof res.body.refreshToken).toBe('string');
@@ -372,7 +375,8 @@ describe('POST /auth/signup and /auth/login', () => {
         displayName: 'Noor',
         passwordHash: 'h',
         createdAt: TEST_CREATED_AT,
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT
       });
 
       // Mint an access token the same way the production code path does
@@ -387,7 +391,8 @@ describe('POST /auth/signup and /auth/login', () => {
         email: 'me@example.com',
         displayName: 'Noor',
         createdAt: TEST_CREATED_AT.toISOString(),
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT.toISOString()
       });
       expect(findUserById).toHaveBeenCalledWith('user-5');
     });
@@ -418,7 +423,8 @@ describe('POST /auth/signup and /auth/login', () => {
         displayName: 'New Name',
         passwordHash: 'h',
         createdAt: TEST_CREATED_AT,
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT
       });
 
       const res = await request(app)
@@ -432,7 +438,8 @@ describe('POST /auth/signup and /auth/login', () => {
         email: 'edit@example.com',
         displayName: 'New Name',
         createdAt: TEST_CREATED_AT.toISOString(),
-        level: 'intermediate'
+        level: 'intermediate',
+        passwordChangedAt: TEST_PASSWORD_CHANGED_AT.toISOString()
       });
       expect(updateUserProfile).toHaveBeenCalledWith('user-6', { displayName: 'New Name' });
     });
