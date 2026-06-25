@@ -99,7 +99,7 @@ adb logcat | rg com.tilawah.android
 
 ## Verification (end-to-end)
 
-1. `docker compose up` (BFF + worker + Postgres + Redis + MinIO).
+1. `docker compose up` (BFF + Postgres + MinIO).
 2. Launch the Pixel 6 / API 34 emulator from Android Studio.
 3. `./gradlew :apps:android:installDebug`.
 4. **Library tab**: surahs load → search "Fatihah" → tap row.
