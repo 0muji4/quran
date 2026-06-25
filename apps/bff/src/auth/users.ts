@@ -17,6 +17,7 @@ export interface UserRow {
   // the field on sign-up. Clients render the badge conditionally so
   // null does not produce an empty pill.
   level: UserLevel | null;
+  passwordChangedAt: Date | null;
   // Soft-delete marker per ADR-0024. `null` = live; non-null = the
   // account is in the 30-day grace window. Live reads filter this
   // out at the SQL layer; the only callers that see a non-null
@@ -24,15 +25,21 @@ export interface UserRow {
   deletedAt: Date | null;
 }
 
-const USER_COLUMNS = `id, email, display_name, password_hash, created_at, level, deleted_at`;
+export const USER_COLUMNS = `id, email, display_name, password_hash, created_at, level, password_changed_at, deleted_at`;
 
-const mapRow = (row: Record<string, unknown>): UserRow => ({
+export const mapRow = (row: Record<string, unknown>): UserRow => ({
   id: row.id as string,
   email: row.email as string,
   displayName: (row.display_name as string | null) ?? null,
   passwordHash: (row.password_hash as string | null) ?? null,
   createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at as string),
   level: isUserLevel(row.level) ? row.level : null,
+  passwordChangedAt:
+    row.password_changed_at == null
+      ? null
+      : row.password_changed_at instanceof Date
+        ? row.password_changed_at
+        : new Date(row.password_changed_at as string),
   deletedAt:
     row.deleted_at == null
       ? null
@@ -184,7 +191,7 @@ export const updateUserPassword = async (id: string, passwordHash: string): Prom
   // `deleted_at IS NULL` filter is the safety net in case the
   // upstream read gating is bypassed.
   const result = await pool.query(
-    `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL`,
+    `UPDATE users SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL`,
     [passwordHash, id]
   );
   return (result.rowCount ?? 0) > 0;
@@ -251,8 +258,8 @@ export const createUserWithPassword = async (input: {
   if (!pool) throw new Error('database not configured');
   const result = await pool.query(
     `
-    INSERT INTO users (email, display_name, password_hash, level)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO users (email, display_name, password_hash, level, password_changed_at)
+    VALUES ($1, $2, $3, $4, NOW())
     RETURNING ${USER_COLUMNS}
     `,
     [input.email, input.displayName, input.passwordHash, input.level]
