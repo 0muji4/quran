@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// Modal sheet that drives `PATCH /auth/me`. Brand-styled: a cream
-/// surface (not the default grouped-table grey), a centred gradient
-/// avatar with a "Change photo" affordance, "PROFILE"-overlined
+/// surface (not the default grouped-table grey), "PROFILE"-overlined
 /// disclosure rows for the two editable fields, and a footer that points
 /// at the other Profile sections for everything not edited here. Cancel
 /// dismisses without persisting; Save persists then dismisses on success,
@@ -15,8 +14,6 @@ struct EditProfileSheet: View {
     NavigationStack {
       ScrollView {
         VStack(spacing: Spacing.xl) {
-          avatarSection
-
           VStack(alignment: .leading, spacing: Spacing.md) {
             ProfileSectionLabel("profile.edit.section")
             fieldsCard
@@ -70,19 +67,6 @@ struct EditProfileSheet: View {
   }
 
   // MARK: - Sections
-
-  private var avatarSection: some View {
-    VStack(spacing: Spacing.sm) {
-      BrandAvatar(initial: viewModel.avatarInitial, size: 96, showsCompass: true)
-      // Photo upload isn't built yet (no avatar storage on the backend).
-      // TODO(profile-photo): wire to an image picker + upload once the
-      // avatar-asset endpoint lands; until then the affordance is shown
-      // per the design but inert.
-      Text("profile.edit.changePhoto", bundle: .module)
-        .font(Font.brand.caption.weight(.semibold))
-        .foregroundColor(Color.brand.primary)
-    }
-  }
 
   private var fieldsCard: some View {
     VStack(spacing: Spacing.md) {
