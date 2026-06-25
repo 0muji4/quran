@@ -105,9 +105,6 @@ internal fun EditProfileScreenContent(
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing
     val canSubmit = state.canSubmit(initialDisplayName, initialLevel)
-    // Monogram tracks the live field, not the initial value, so the
-    // avatar updates as the user types.
-    val avatarName = state.displayName.takeIf { it.isNotBlank() } ?: initialDisplayName
 
     Column(
         modifier = modifier
@@ -122,23 +119,6 @@ internal fun EditProfileScreenContent(
             saveEnabled = canSubmit,
             saving = state.isSubmitting,
         )
-
-        // Centered avatar + "Change photo" link.
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.sm),
-        ) {
-            GradientAvatar(name = avatarName, size = 96.dp, monogramFontSize = 36)
-            // TODO(profile): no photo upload backend yet — link is inert.
-            TextButton(onClick = {}, enabled = !state.isSubmitting) {
-                Text(
-                    text = stringResource(R.string.profile_edit_change_photo),
-                    color = colors.primary,
-                    style = BrandTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
-                )
-            }
-        }
 
         // PROFILE: the two editable fields in one grouped card, then a
         // footer pointing at the sibling sections for everything not
