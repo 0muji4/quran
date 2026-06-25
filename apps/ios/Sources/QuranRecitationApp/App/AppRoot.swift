@@ -213,21 +213,3 @@ private struct PracticeNavigationStack: View {
     }
   }
 }
-
-private struct ComingSoonView: View {
-  let title: String
-  let systemImage: String
-
-  var body: some View {
-    VStack(spacing: Spacing.lg) {
-      Image(systemName: systemImage)
-        .font(.system(size: 40))
-        .foregroundColor(Color.brand.textSecondary)
-      Text("\(title) coming soon")
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.brand.surface)
-  }
-}

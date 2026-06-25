@@ -134,9 +134,7 @@ private struct ProfileSignedOutContent: View {
 }
 
 /// Signed-in shell: header card + Account & data card + danger zone +
-/// Sign out. The action CTAs inside the cards are disabled placeholders
-/// in PR-H2 — Edit (H3), Update password (H4), Change email (H5), and
-/// Delete account (H6) wire them up over subsequent stacked PRs.
+/// Sign out.
 private struct ProfileSignedInContent: View {
   let user: AuthenticatedUser
   /// Observed so `pendingReactivationNotice` toggles re-render the
@@ -169,6 +167,7 @@ private struct ProfileSignedInContent: View {
         }
         AccountDataCard(
           email: user.email,
+          passwordChangedAt: user.passwordChangedAt,
           onChangeEmail: changeEmailAction,
           onUpdatePassword: updatePasswordAction
         )
