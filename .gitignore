@@ -48,7 +48,7 @@ coverage.html
 # OS
 Thumbs.db
 
-# Worker
+# Python
 .venv
 
 # Playwright

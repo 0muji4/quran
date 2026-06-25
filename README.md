@@ -9,11 +9,9 @@ A cross-platform pronunciation practice app for Quran recitation. Provides guide
 | Web              | React + TypeScript (Next.js / App Router)          |
 | BFF              | TypeScript (Express + GraphQL + RSC-friendly REST) |
 | Backend          | Go                                                 |
-| Worker           | Python (faster-whisper) / Go (placeholder)         |
 | Mobile           | Android (Kotlin / Compose), iOS (Swift / Apollo)   |
 | Database         | PostgreSQL                                         |
 | Object Storage   | S3-compatible (MinIO)                              |
-| Cache / Queue    | Redis                                              |
 | Containers / Dev | Docker Compose                                     |
 | Observability    | OpenTelemetry, Jaeger, Prometheus, Loki, Grafana   |
 
