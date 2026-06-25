@@ -73,9 +73,7 @@ import java.util.Locale
  *   sections, mirroring `docs/design/Android _ Profile.png`.
  *
  * The signed-in layout is LEFT-aligned and scrollable. Practice
- * preferences persist through [PreferencesViewModel]; the streak count,
- * the "Last changed" sublabel, and Export remain UI-only placeholders
- * with no backend yet — each is flagged with a TODO.
+ * preferences persist through [PreferencesViewModel].
  *
  * Navigation between the auth screens is delegated to the caller
  * (`ProfileAuthHost`) so this composable stays stateless.
@@ -552,14 +550,6 @@ private fun AccountSection(
                     sublabel = passwordSublabel,
                     action = stringResource(R.string.profile_account_password_action),
                     onActionTapped = onUpdatePasswordTapped,
-                )
-                RowDivider()
-                ActionRow(
-                    label = stringResource(R.string.profile_account_export),
-                    sublabel = stringResource(R.string.profile_account_export_sublabel),
-                    action = stringResource(R.string.profile_account_export_action),
-                    // TODO(profile): data export has no backend yet.
-                    onActionTapped = {},
                 )
             }
         }
