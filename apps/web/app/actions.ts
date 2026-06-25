@@ -505,6 +505,7 @@ export interface AuthSessionUser {
   // because clients that don't gather the field on sign-up (iOS today)
   // produce a `null` here.
   level?: UserLevel | null;
+  passwordChangedAt?: string | null;
 }
 
 interface AuthSuccessPayload {

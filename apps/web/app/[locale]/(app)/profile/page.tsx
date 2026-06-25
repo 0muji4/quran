@@ -51,7 +51,7 @@ export default async function ProfilePage() {
   // If `/auth/me` failed (network blip, BFF down), fall back to the
   // JWT-derived session so the page still renders a usable identity
   // — just without the badges that need DB-only fields.
-  const view = profile ?? { ...session, createdAt: null, level: null };
+  const view = profile ?? { ...session, createdAt: null, level: null, passwordChangedAt: null };
 
   return (
     <div className={pageClass}>
@@ -71,7 +71,7 @@ export default async function ProfilePage() {
 
       <PracticePreferencesCard preferences={preferences} />
 
-      <AccountDataCard email={view.email} />
+      <AccountDataCard email={view.email} passwordChangedAt={view.passwordChangedAt ?? null} />
 
       <SignOutSection />
     </div>
