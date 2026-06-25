@@ -108,6 +108,7 @@ class DataStoreAuthSession(
                         displayName = user.displayName,
                         createdAt = user.createdAt,
                         level = user.level,
+                        passwordChangedAt = user.passwordChangedAt,
                     ),
                 )
                 prefs[sessionKey] = json.encodeToString(StoredSession.serializer(), updated)

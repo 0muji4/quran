@@ -77,6 +77,7 @@ data class StoredAuthUser(
     val displayName: String? = null,
     val createdAt: String? = null,
     val level: String? = null,
+    val passwordChangedAt: String? = null,
 )
 
 fun AuthSessionPayload.toStored(): StoredSession = StoredSession(
@@ -88,6 +89,7 @@ fun AuthSessionPayload.toStored(): StoredSession = StoredSession(
         displayName = user.displayName,
         createdAt = user.createdAt,
         level = user.level,
+        passwordChangedAt = user.passwordChangedAt,
     ),
 )
 
@@ -97,4 +99,5 @@ fun StoredSession.toAuthUser(): AuthUser = AuthUser(
     displayName = user.displayName,
     createdAt = user.createdAt,
     level = user.level,
+    passwordChangedAt = user.passwordChangedAt,
 )
