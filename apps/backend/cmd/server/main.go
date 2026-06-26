@@ -27,7 +27,6 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Initialize telemetry (OTEL + logger + metrics)
 	if err := telemetry.Init(ctx); err != nil {
 		log.Printf("telemetry init failed: %v", err)
 	}
@@ -86,8 +85,6 @@ func main() {
 		port = "8080"
 	}
 
-	// Wrap mux with OTEL middleware. Use a local name that does not
-	// shadow the imported `handler` package.
 	rootHandler := middleware.OTEL(mux)
 
 	server := &http.Server{
@@ -101,8 +98,7 @@ func main() {
 	}
 }
 
-// newObjectStore wires the S3-compatible object store from env. The local
-// dev defaults match docker-compose.dev.yml.
+// newObjectStore builds the object store from env.
 func newObjectStore(ctx context.Context, logger interface {
 	Info(msg string, args ...any)
 }) (*minio.Store, error) {
@@ -127,9 +123,7 @@ func newObjectStore(ctx context.Context, logger interface {
 	return store, nil
 }
 
-// newTranscriber wires the Chirp transcriber when CHIRP_PROJECT is set,
-// and otherwise substitutes the unavailable transcriber so the backend
-// still boots and serves non-scoring endpoints.
+// newTranscriber builds the Chirp transcriber, or the unavailable one when CHIRP_PROJECT is unset.
 func newTranscriber(ctx context.Context, logger *slog.Logger) (transcribe.Transcriber, error) {
 	cfg := chirp.Config{
 		Project:      os.Getenv("CHIRP_PROJECT"),

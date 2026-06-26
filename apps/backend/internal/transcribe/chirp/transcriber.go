@@ -14,13 +14,13 @@ import (
 	"quran-project/apps/backend/internal/transcribe"
 )
 
+// Config configures the Speech v2 recognizer.
 type Config struct {
-	Project      string  // required
-	Location     string  // Speech v2 location; defaults to "global"
-	LanguageCode string  // BCP-47; defaults to "ar-SA"
-	Model        string  // defaults to "chirp_2"
-	PhraseBoost  float32 // ExpectedText bias when adaptation is on; defaults to 15
-	// DisablePhraseBoost drops the SpeechAdaptation hint for models that reject it.
+	Project            string
+	Location           string
+	LanguageCode       string
+	Model              string
+	PhraseBoost        float32
 	DisablePhraseBoost bool
 }
 
@@ -39,10 +39,9 @@ func (c *Config) applyDefaults() {
 	}
 }
 
-// recognizeFunc is the seam used by tests to substitute the GCP client.
 type recognizeFunc func(context.Context, *speechpb.RecognizeRequest) (*speechpb.RecognizeResponse, error)
 
-// Transcriber implements transcribe.Transcriber against Google Cloud Speech v2.
+// Transcriber is a Speech v2-backed transcribe.Transcriber.
 type Transcriber struct {
 	cfg       Config
 	recognize recognizeFunc
@@ -56,8 +55,6 @@ func NewTranscriber(ctx context.Context, cfg Config) (*Transcriber, error) {
 	}
 	cfg.applyDefaults()
 
-	// chirp_2 isn't served at the global endpoint, so a non-global Location
-	// must also target its matching <region>-speech.googleapis.com host.
 	var clientOpts []option.ClientOption
 	if cfg.Location != "" && cfg.Location != "global" {
 		clientOpts = append(clientOpts, option.WithEndpoint(
@@ -85,8 +82,6 @@ func (t *Transcriber) Close() error {
 	return t.close()
 }
 
-// Transcribe sends one synchronous Recognize call. The audio is buffered into
-// memory because Speech v2's non-streaming endpoint takes inline bytes.
 func (t *Transcriber) Transcribe(ctx context.Context, req transcribe.Request) (transcribe.Result, error) {
 	if req.Audio == nil {
 		return transcribe.Result{}, fmt.Errorf("transcribe: Request.Audio is nil")
@@ -105,8 +100,6 @@ func (t *Transcriber) Transcribe(ctx context.Context, req transcribe.Request) (t
 }
 
 func (t *Transcriber) buildRequest(expectedText string, audio []byte) *speechpb.RecognizeRequest {
-	// "_" is the inline recognizer alias: config travels with the request
-	// instead of being persisted server-side.
 	recognizer := fmt.Sprintf("projects/%s/locations/%s/recognizers/_", t.cfg.Project, t.cfg.Location)
 
 	config := &speechpb.RecognitionConfig{
@@ -130,10 +123,6 @@ func (t *Transcriber) buildRequest(expectedText string, audio []byte) *speechpb.
 	}
 }
 
-// featuresForModel returns the RecognitionFeatures the configured model can
-// actually honour. chirp_3 (and its variants) reject per-word confidence and
-// time-offset requests; chirp_2 / chirp / latest_* accept both. Callers that
-// rely on per-word metadata must pick a model that exposes it.
 func featuresForModel(model string) *speechpb.RecognitionFeatures {
 	if strings.HasPrefix(model, "chirp_3") {
 		return &speechpb.RecognitionFeatures{}
@@ -144,8 +133,6 @@ func featuresForModel(model string) *speechpb.RecognitionFeatures {
 	}
 }
 
-// buildAdaptation turns the expected ayah text into a single inline phrase
-// set with each unique word boosted. Returns nil when there is nothing to boost.
 func buildAdaptation(expectedText string, boost float32) *speechpb.SpeechAdaptation {
 	words := uniqueWords(expectedText)
 	if len(words) == 0 {
@@ -179,7 +166,6 @@ func uniqueWords(text string) []string {
 	return out
 }
 
-// parseResponse joins the top alternative of each result into one transcript.
 func parseResponse(resp *speechpb.RecognizeResponse) transcribe.Result {
 	var transcripts []string
 	var words []transcribe.Word

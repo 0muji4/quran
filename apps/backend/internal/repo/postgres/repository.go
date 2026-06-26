@@ -52,7 +52,6 @@ func (r *Repository) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 			return nil, err
 		}
 
-		// Parse JSONB metadata
 		if len(metadataJSON) > 0 {
 			if err := json.Unmarshal(metadataJSON, &s.Metadata); err != nil {
 				return nil, err
@@ -98,7 +97,6 @@ func (r *Repository) GetSurah(ctx context.Context, id int32) (domain.Surah, erro
 		return domain.Surah{}, err
 	}
 
-	// Parse JSONB metadata
 	if len(metadataJSON) > 0 {
 		if err := json.Unmarshal(metadataJSON, &s.Metadata); err != nil {
 			return domain.Surah{}, err
@@ -144,7 +142,6 @@ func (r *Repository) ListBySurah(ctx context.Context, surahID int32) ([]domain.A
 			return nil, err
 		}
 
-		// Handle nullable fields
 		if textEN.Valid {
 			a.TextEn = textEN.String
 		}
@@ -152,7 +149,6 @@ func (r *Repository) ListBySurah(ctx context.Context, surahID int32) ([]domain.A
 			a.Transliteration = transliteration.String
 		}
 
-		// Parse JSONB metadata
 		if len(metadataJSON) > 0 {
 			if err := json.Unmarshal(metadataJSON, &a.Metadata); err != nil {
 				return nil, err
@@ -169,9 +165,7 @@ func (r *Repository) ListBySurah(ctx context.Context, surahID int32) ([]domain.A
 	return ayahs, nil
 }
 
-// GetByNumber returns a single ayah by its (surahID, ayahNumber) pair,
-// returning domain.ErrAyahNotFound when no row matches. This avoids loading an
-// entire surah just to resolve one verse.
+// GetByNumber returns the ayah for (surahID, ayahNumber), or domain.ErrAyahNotFound.
 func (r *Repository) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
 	query := `
 		SELECT id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at
@@ -249,7 +243,6 @@ func (r *Repository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error)
 		return domain.Ayah{}, err
 	}
 
-	// Handle nullable fields
 	if textEN.Valid {
 		a.TextEn = textEN.String
 	}
@@ -257,7 +250,6 @@ func (r *Repository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error)
 		a.Transliteration = transliteration.String
 	}
 
-	// Parse JSONB metadata
 	if len(metadataJSON) > 0 {
 		if err := json.Unmarshal(metadataJSON, &a.Metadata); err != nil {
 			return domain.Ayah{}, err
