@@ -7,35 +7,28 @@ import (
 	"quran-project/apps/backend/internal/repo"
 )
 
-// SurahService orchestrates surah and ayah retrieval.
+// SurahService reads surahs and ayahs.
 type SurahService struct {
 	SurahRepo repo.SurahRepository
 	AyahRepo  repo.AyahRepository
 }
 
-// ListSurahs returns all available surahs.
 func (s SurahService) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 	return s.SurahRepo.ListSurahs(ctx)
 }
 
-// GetSurah fetches a single surah.
 func (s SurahService) GetSurah(ctx context.Context, id int32) (domain.Surah, error) {
 	return s.SurahRepo.GetSurah(ctx, id)
 }
 
-// ListAyahs returns ayahs for a surah.
 func (s SurahService) ListAyahs(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
 	return s.AyahRepo.ListBySurah(ctx, surahID)
 }
 
-// GetAyah fetches a single ayah by id.
 func (s SurahService) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
 	return s.AyahRepo.GetAyah(ctx, id)
 }
 
-// GetAyahByNumber fetches a single ayah by its (surahID, ayahNumber) pair.
-// This satisfies scoring.AyahLookup so the scoring use case can resolve a
-// verse without listing an entire surah.
 func (s SurahService) GetAyahByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
 	return s.AyahRepo.GetByNumber(ctx, surahID, ayahNumber)
 }

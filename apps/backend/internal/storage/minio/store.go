@@ -17,10 +17,9 @@ type Config struct {
 	Endpoint  string
 	AccessKey string
 	SecretKey string
-	UseSSL    bool // must be true for any non-localhost target
+	UseSSL    bool
 	Bucket    string
-	// Region defaults to "us-east-1". R2 expects "auto"; AWS S3 a real region.
-	Region string
+	Region    string
 }
 
 type Store struct {
@@ -57,8 +56,6 @@ func (s *Store) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("storage: get object: %w", err)
 	}
-	// minio-go defers existence checks to first read, so Stat here to map a
-	// missing key onto the sentinel instead of failing later.
 	if _, statErr := obj.Stat(); statErr != nil {
 		_ = obj.Close()
 		if errResp := minioclient.ToErrorResponse(statErr); errResp.Code == "NoSuchKey" || errResp.StatusCode == 404 {
@@ -69,8 +66,7 @@ func (s *Store) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	return obj, nil
 }
 
-// EnsureBucket creates the bucket if absent (dev convenience; production
-// buckets are pre-provisioned).
+// EnsureBucket creates the bucket if absent.
 func (s *Store) EnsureBucket(ctx context.Context) error {
 	exists, err := s.client.BucketExists(ctx, s.bucket)
 	if err != nil {
@@ -85,7 +81,7 @@ func (s *Store) EnsureBucket(ctx context.Context) error {
 	return nil
 }
 
-// Put is used only by tests; production uploads arrive via presigned PUTs.
+// Put uploads a blob at key.
 func (s *Store) Put(ctx context.Context, key string, body io.Reader, size int64, contentType string) error {
 	if _, err := s.client.PutObject(ctx, s.bucket, key, body, size, minioclient.PutObjectOptions{
 		ContentType: contentType,
