@@ -67,6 +67,7 @@ export function WordByWord({ wordAlignments, wer }: Props) {
           <p className={styles.wordCompareSubtitle}>
             {t('werLabel')} <span className={styles.wordCompareWer}>{formatWer(wer)}</span>
           </p>
+          <p className={styles.wordCompareNote}>{t('note')}</p>
         </div>
         <ul className={styles.wordCompareLegend} aria-label={t('legendAriaLabel')}>
           <li>
