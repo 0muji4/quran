@@ -18,16 +18,11 @@ import (
 // REST exposes the HTTP surface for surahs, ayahs, and recitation scoring.
 type REST struct {
 	SurahService service.SurahService
-	// Jobs orchestrates recitation scoring. It is nil in environments that
-	// do not configure scoring (the handlers guard for that), keeping the
-	// transport layer free of *sql.DB and the scoring pipeline details.
+	// Jobs is nil when scoring is not configured.
 	Jobs *scoring.JobService
 }
 
-// Register wires endpoints onto provided mux under /api using Go 1.22+
-// method+wildcard patterns. The {id} / {sessionID} segments are read
-// back inside each handler via r.PathValue, replacing the previous
-// hand-rolled path parser in handleGetSurah.
+// Register wires the API endpoints onto mux.
 func (h REST) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/surahs", h.handleListSurahs)
 	mux.HandleFunc("GET /api/surahs/{id}", h.handleGetSurah)
@@ -76,9 +71,8 @@ func (h REST) handleListSurahAyahs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, toAyahResponses(ayahs))
 }
 
-// parseSurahID extracts and validates the {id} path value. It writes
-// a 400 response and returns ok=false when the segment cannot be
-// parsed as an int32; handlers should return early in that case.
+// parseSurahID reads the {id} path value, writing a 400 and returning false
+// when it is not an int32.
 func parseSurahID(w http.ResponseWriter, r *http.Request) (int32, bool) {
 	raw := r.PathValue("id")
 	id, err := strconv.Atoi(raw)
@@ -109,8 +103,7 @@ type scoringJobResponse struct {
 	CreatedAt  time.Time       `json:"createdAt"`
 }
 
-// emptyJSONArray is the default `segments` payload; the column defaults to
-// '[]'::jsonb so the API always returns an array rather than null.
+// emptyJSONArray is the default `segments` payload.
 var emptyJSONArray = json.RawMessage("[]")
 
 func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
@@ -149,10 +142,6 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "ayah not found", http.StatusNotFound)
 		case errors.Is(err, storage.ErrObjectNotFound):
 			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
-		// Surface the "transcriber not configured" case as 503 so the
-		// caller can tell a missing-CHIRP_PROJECT deploy apart from a
-		// real internal failure. Dev compose and e2e CI hit this path
-		// until the env var is wired.
 		case errors.Is(err, transcribe.ErrUnavailable):
 			writeError(w, r, http.StatusServiceUnavailable, "transcriber not configured (CHIRP_PROJECT)", err)
 		default:
@@ -224,18 +213,11 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		// Body is already partially flushed; nothing actionable for
-		// the client. Surface the failure so encoder regressions on
-		// new response shapes are not silently dropped (Google
-		// Decisions: don't ignore errors).
 		telemetry.Logger().Warn("rest: encode response failed", "error", err)
 	}
 }
 
-// writeError sends a sanitised message to the client and logs the
-// underlying error with request context. Internal error text must not
-// leak into the response body, per Google Best Practices "Errors at
-// the API boundary".
+// writeError logs err and sends a sanitized status message to the client.
 func writeError(w http.ResponseWriter, r *http.Request, status int, msg string, err error) {
 	if err != nil {
 		telemetry.Logger().ErrorContext(r.Context(), msg,

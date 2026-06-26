@@ -11,9 +11,7 @@ import (
 	"quran-project/apps/backend/internal/repo"
 )
 
-// Start inserts (or refreshes) the scoring_jobs row for the session in
-// RUNNING state and returns the row's created_at timestamp. The status
-// string must match the scoring_jobs_status_check CHECK constraint.
+// Start upserts the RUNNING scoring_jobs row and returns its created_at.
 func (r *Repository) Start(ctx context.Context, p repo.StartScoringJobParams) (time.Time, error) {
 	var userID sql.NullString
 	if p.UserID != "" {
@@ -45,8 +43,7 @@ func (r *Repository) Start(ctx context.Context, p repo.StartScoringJobParams) (t
 	return createdAt, err
 }
 
-// Complete flips the job to COMPLETED with the final overall score and the
-// pre-marshaled evaluation JSON.
+// Complete marks the job COMPLETED with the score and evaluation JSON.
 func (r *Repository) Complete(ctx context.Context, sessionID string, score float64, evaluation json.RawMessage) error {
 	_, err := r.db.ExecContext(
 		ctx,
@@ -58,8 +55,7 @@ func (r *Repository) Complete(ctx context.Context, sessionID string, score float
 	return err
 }
 
-// MarkFailed flips the job to FAILED. Callers may ignore the returned error
-// so it does not mask the original failure that triggered the call.
+// MarkFailed marks the job FAILED.
 func (r *Repository) MarkFailed(ctx context.Context, sessionID string) error {
 	_, err := r.db.ExecContext(
 		ctx,
@@ -69,8 +65,7 @@ func (r *Repository) MarkFailed(ctx context.Context, sessionID string) error {
 	return err
 }
 
-// Get loads the persisted scoring job for the session, returning
-// domain.ErrScoringJobNotFound when no row exists.
+// Get returns the job or domain.ErrScoringJobNotFound.
 func (r *Repository) Get(ctx context.Context, sessionID string) (repo.ScoringJob, error) {
 	const query = `
 		SELECT session_id, upload_key, status, score, verdict, evaluation, segments, created_at

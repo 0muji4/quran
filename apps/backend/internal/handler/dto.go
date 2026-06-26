@@ -6,9 +6,6 @@ import (
 	"quran-project/apps/backend/internal/domain"
 )
 
-// Wire DTOs own the JSON contract for surah/ayah reads, keeping the tags off
-// the domain entities.
-
 type surahResponse struct {
 	ID              int32          `json:"id"`
 	NameAr          string         `json:"name_ar"`

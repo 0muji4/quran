@@ -1,5 +1,4 @@
-// Package unavailable is a null transcriber for when no Speech-to-Text
-// backend is configured, letting the process boot and serve other endpoints.
+// Package unavailable is a null transcribe.Transcriber for when none is configured.
 package unavailable
 
 import (
