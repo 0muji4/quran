@@ -18,12 +18,13 @@ import (
 )
 
 // Result is the full per-recitation output: the raw transcript, the
-// alignment against the expected text, the word error rate, and the
-// pronunciation score breakdown.
+// alignment against the expected text, the word and character error
+// rates, and the pronunciation score breakdown.
 type Result struct {
 	Transcript string
 	Alignments []arabic.Alignment
 	WER        float64
+	CER        float64
 	Score      arabic.PronunciationScore
 }
 
@@ -72,12 +73,14 @@ func (e *Engine) Score(ctx context.Context, audioKey, expectedText string) (Resu
 
 	alignments := arabic.Align(expectedText, tr.Transcript)
 	wer := arabic.WER(expectedText, tr.Transcript)
+	cer := arabic.CER(expectedText, tr.Transcript)
 	score := arabic.ScorePronunciation(alignments, wordConfidences(tr.Words), &wer)
 
 	return Result{
 		Transcript: tr.Transcript,
 		Alignments: alignments,
 		WER:        wer,
+		CER:        cer,
 		Score:      score,
 	}, nil
 }
