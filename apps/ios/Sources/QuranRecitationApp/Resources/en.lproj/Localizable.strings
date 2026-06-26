@@ -97,10 +97,11 @@
 "result.verdict.beginner.headline" = "Not quite there yet";
 "result.verdict.beginner.subhead" = "Slow down with the teacher reference and focus on the sounds before retrying. Small, repeated passes work best.";
 "result.metric.accuracy" = "Accuracy";
-"result.metric.fluency" = "Fluency";
+"result.metric.characterMatch" = "Character match";
 "result.metric.completeness" = "Completeness";
 "result.words.title" = "Word comparison";
 "result.words.empty" = "Word-level alignment isn't available yet for this attempt.";
+"result.words.note" = "This is what the recognizer heard from your audio. Differences may come from the recognizer rather than your recitation — use it as a guide, not a verdict.";
 "result.words.a11y.match" = "matched";
 "result.words.a11y.sub" = "substituted";
 "result.words.a11y.ins" = "inserted";

@@ -8,7 +8,7 @@ public extension QuranSchema {
     public static let operationName: String = "ScoringJob"
     public static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"query ScoringJob($jobId: ID!) { scoringJob(jobId: $jobId) { __typename jobId status score verdict segments { __typename label score } feedback { __typename accuracy fluency completeness overall referenceAudioUrl transcript wer wordAlignments { __typename refWord hypWord op } } } }"#
+        #"query ScoringJob($jobId: ID!) { scoringJob(jobId: $jobId) { __typename jobId status score verdict segments { __typename label score } feedback { __typename accuracy completeness overall referenceAudioUrl transcript wer cer wordAlignments { __typename refWord hypWord op } } } }"#
       ))
 
     public var jobId: ID
@@ -93,12 +93,12 @@ public extension QuranSchema {
           public static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
             .field("accuracy", Double.self),
-            .field("fluency", Double.self),
             .field("completeness", Double.self),
             .field("overall", Double.self),
             .field("referenceAudioUrl", String?.self),
             .field("transcript", String?.self),
             .field("wer", Double?.self),
+            .field("cer", Double?.self),
             .field("wordAlignments", [WordAlignment].self),
           ] }
           public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
@@ -106,12 +106,12 @@ public extension QuranSchema {
           ] }
 
           public var accuracy: Double { __data["accuracy"] }
-          public var fluency: Double { __data["fluency"] }
           public var completeness: Double { __data["completeness"] }
           public var overall: Double { __data["overall"] }
           public var referenceAudioUrl: String? { __data["referenceAudioUrl"] }
           public var transcript: String? { __data["transcript"] }
           public var wer: Double? { __data["wer"] }
+          public var cer: Double? { __data["cer"] }
           public var wordAlignments: [WordAlignment] { __data["wordAlignments"] }
 
           /// ScoringJob.Feedback.WordAlignment

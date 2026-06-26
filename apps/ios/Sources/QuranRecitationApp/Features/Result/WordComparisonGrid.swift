@@ -18,6 +18,10 @@ struct WordComparisonGrid: View {
             .foregroundColor(Color.brand.textSecondary)
         } else {
           flow
+          Text("result.words.note", bundle: .module)
+            .font(Font.brand.caption)
+            .foregroundColor(Color.brand.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
         }
       }
     }
