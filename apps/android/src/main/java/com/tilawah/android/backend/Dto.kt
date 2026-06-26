@@ -62,12 +62,12 @@ data class WordAlignment(
 
 data class PronunciationFeedback(
     val accuracy: Double,
-    val fluency: Double,
     val completeness: Double,
     val overall: Double,
     val referenceAudioUrl: String?,
     val transcript: String?,
     val wer: Double?,
+    val cer: Double?,
     val wordAlignments: List<WordAlignment>,
 )
 

@@ -10,12 +10,12 @@ query GetScoringJob($jobId: ID!) {
     }
     feedback {
       accuracy
-      fluency
       completeness
       overall
       referenceAudioUrl
       transcript
       wer
+      cer
       wordAlignments {
         refWord
         hypWord
