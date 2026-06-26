@@ -14,9 +14,11 @@ import (
 	"quran-project/apps/backend/internal/repo/postgres"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
-	"quran-project/apps/backend/internal/storage"
+	"quran-project/apps/backend/internal/storage/minio"
 	"quran-project/apps/backend/internal/telemetry"
 	"quran-project/apps/backend/internal/transcribe"
+	"quran-project/apps/backend/internal/transcribe/chirp"
+	"quran-project/apps/backend/internal/transcribe/unavailable"
 	"quran-project/packages/go-pkg/db"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -100,12 +102,11 @@ func main() {
 }
 
 // newObjectStore wires the S3-compatible object store from env. The local
-// dev defaults match docker-compose.dev.yml so a developer can `make
-// dev-up` without setting anything.
+// dev defaults match docker-compose.dev.yml.
 func newObjectStore(ctx context.Context, logger interface {
 	Info(msg string, args ...any)
-}) (*storage.MinIOStore, error) {
-	cfg := storage.Config{
+}) (*minio.Store, error) {
+	cfg := minio.Config{
 		Endpoint:  envOr("OBJECT_STORE_ENDPOINT", "minio:9000"),
 		AccessKey: envOr("OBJECT_STORE_ACCESS_KEY", "minio"),
 		SecretKey: envOr("OBJECT_STORE_SECRET_KEY", "minio123"),
@@ -113,7 +114,7 @@ func newObjectStore(ctx context.Context, logger interface {
 		Bucket:    envOr("OBJECT_STORE_BUCKET", "uploads"),
 		Region:    os.Getenv("OBJECT_STORE_REGION"),
 	}
-	store, err := storage.NewMinIOStore(cfg)
+	store, err := minio.NewStore(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -126,16 +127,11 @@ func newObjectStore(ctx context.Context, logger interface {
 	return store, nil
 }
 
-// newTranscriber wires the Chirp transcriber when `CHIRP_PROJECT` is
-// configured. When it is empty (dev `docker compose`, e2e CI, any
-// environment that legitimately does not exercise scoring) the backend
-// still boots: we log a warning and substitute an [UnavailableTranscriber]
-// that errors at request time with [transcribe.ErrUnavailable]. That keeps
-// the catalog, auth, and history endpoints reachable while any actual
-// scoring call surfaces a clear "not configured" error instead of taking
-// the whole process down at startup.
+// newTranscriber wires the Chirp transcriber when CHIRP_PROJECT is set,
+// and otherwise substitutes the unavailable transcriber so the backend
+// still boots and serves non-scoring endpoints.
 func newTranscriber(ctx context.Context, logger *slog.Logger) (transcribe.Transcriber, error) {
-	cfg := transcribe.ChirpConfig{
+	cfg := chirp.Config{
 		Project:      os.Getenv("CHIRP_PROJECT"),
 		Location:     os.Getenv("CHIRP_LOCATION"),
 		LanguageCode: os.Getenv("CHIRP_LANGUAGE_CODE"),
@@ -143,9 +139,9 @@ func newTranscriber(ctx context.Context, logger *slog.Logger) (transcribe.Transc
 	}
 	if cfg.Project == "" {
 		logger.Warn("CHIRP_PROJECT unset — scoring endpoints will return transcribe.ErrUnavailable until the env var is set")
-		return transcribe.NewUnavailableTranscriber(), nil
+		return unavailable.NewTranscriber(), nil
 	}
-	return transcribe.NewChirpTranscriber(ctx, cfg)
+	return chirp.NewTranscriber(ctx, cfg)
 }
 
 func envOr(key, fallback string) string {
