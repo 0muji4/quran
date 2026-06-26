@@ -73,7 +73,7 @@ func TestRESTHandleGetSurah(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 
-	var result domain.Surah
+	var result surahResponse
 	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
 	require.Equal(t, int32(1), result.ID)
 	require.Equal(t, "Al-Fatiha", result.NameEn)
@@ -161,7 +161,7 @@ func TestRESTHandleGetSurahAyahs(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 
-	var result []domain.Ayah
+	var result []ayahResponse
 	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
 	require.Len(t, result, 1)
 	require.Equal(t, int32(2), result[0].SurahID)
@@ -209,7 +209,7 @@ func TestRESTHandleListSurahs(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 
-	var result []domain.Surah
+	var result []surahResponse
 	require.NoError(t, json.NewDecoder(recorder.Body).Decode(&result))
 	require.Len(t, result, 2)
 	require.Equal(t, "Al-Fatiha", result[0].NameEn)

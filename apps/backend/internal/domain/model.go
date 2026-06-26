@@ -3,26 +3,30 @@ package domain
 import "time"
 
 // Surah captures high-level metadata about a chapter of the Quran.
+//
+// Entities carry no serialization tags: the transport shape is owned by
+// the delivery layer (handler DTOs), so the domain stays independent of
+// any wire format.
 type Surah struct {
-	ID              int32          `json:"id"`
-	NameAr          string         `json:"name_ar"`
-	NameEn          string         `json:"name_en"`
-	RevelationPlace string         `json:"revelation_place"`
-	AyahCount       int32          `json:"ayah_count"`
-	Metadata        map[string]any `json:"metadata,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	ID              int32
+	NameAr          string
+	NameEn          string
+	RevelationPlace string
+	AyahCount       int32
+	Metadata        map[string]any
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Ayah represents a verse with multilingual content.
 type Ayah struct {
-	ID              int64          `json:"id"`
-	SurahID         int32          `json:"surah_id"`
-	AyahNumber      int32          `json:"ayah_number"`
-	TextAr          string         `json:"text_ar"`
-	TextEn          string         `json:"text_en,omitempty"`
-	Transliteration string         `json:"transliteration,omitempty"`
-	Metadata        map[string]any `json:"metadata,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	ID              int64
+	SurahID         int32
+	AyahNumber      int32
+	TextAr          string
+	TextEn          string
+	Transliteration string
+	Metadata        map[string]any
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
