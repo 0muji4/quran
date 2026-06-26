@@ -25,8 +25,8 @@ describe('MetricCard', () => {
   });
 
   it('marks an unscored metric with a textual valuetext and no valuenow', () => {
-    renderMetric({ kind: 'fluency', value: null });
-    const bar = screen.getByRole('progressbar', { name: /fluency/i });
+    renderMetric({ kind: 'characterMatch', value: null });
+    const bar = screen.getByRole('progressbar', { name: /character match/i });
     expect(bar).not.toHaveAttribute('aria-valuenow');
     expect(bar).toHaveAttribute('aria-valuetext', 'No score yet');
   });

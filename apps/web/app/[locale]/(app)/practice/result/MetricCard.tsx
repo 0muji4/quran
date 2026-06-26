@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import styles from '../../../../styles/practice.module.css';
 
-type MetricKind = 'accuracy' | 'fluency' | 'completeness';
+type MetricKind = 'accuracy' | 'characterMatch' | 'completeness';
 
 interface Props {
   kind: MetricKind;
