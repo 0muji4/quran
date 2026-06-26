@@ -1,3 +1,5 @@
+// Package repo defines the persistence ports; adapters live in subpackages
+// (repo/postgres, repo/memory) so the use cases never depend on a driver.
 package repo
 
 import (
@@ -7,13 +9,6 @@ import (
 
 	"quran-project/apps/backend/internal/domain"
 )
-
-// This package defines the persistence ports (interfaces and their
-// parameter/result types) consumed by the use-case layer. Concrete adapters
-// live in subpackages (repo/postgres, repo/memory) and depend on this
-// package, so the use cases never compile-depend on a database driver.
-// Not-found sentinels live in the domain (domain.ErrAyahNotFound,
-// domain.ErrScoringJobNotFound).
 
 // SurahRepository defines storage operations for surah metadata.
 type SurahRepository interface {

@@ -1,5 +1,4 @@
-// Package memory is an in-memory adapter for the repo ports, used in tests
-// and adapter-free environments. It depends inward on repo and domain.
+// Package memory is an in-memory adapter for the repo ports, used in tests.
 package memory
 
 import (

@@ -6,9 +6,8 @@ import (
 	"quran-project/apps/backend/internal/domain"
 )
 
-// Wire DTOs own the JSON contract for surah/ayah reads. Keeping the tags
-// here (rather than on domain entities) lets the API shape evolve without
-// touching the domain, and keeps the domain free of transport concerns.
+// Wire DTOs own the JSON contract for surah/ayah reads, keeping the tags off
+// the domain entities.
 
 type surahResponse struct {
 	ID              int32          `json:"id"`
