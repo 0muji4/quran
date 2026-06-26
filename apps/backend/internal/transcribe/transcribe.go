@@ -9,6 +9,7 @@ package transcribe
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 )
@@ -41,3 +42,7 @@ type Word struct {
 type Transcriber interface {
 	Transcribe(ctx context.Context, req Request) (Result, error)
 }
+
+// ErrUnavailable reports that no transcriber is configured, so consumers can
+// map it to a 503 with errors.Is.
+var ErrUnavailable = errors.New("transcribe: transcriber not configured")

@@ -1,6 +1,6 @@
 //go:build integration
 
-package storage_test
+package minio_test
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"quran-project/apps/backend/internal/storage"
+	"quran-project/apps/backend/internal/storage/minio"
 	"quran-project/apps/backend/internal/testutil"
 )
 
@@ -21,7 +22,7 @@ import (
 // passes. MinIO inside testcontainers needs a few hundred ms after its
 // container reports "ready" before its HTTP listener accepts requests
 // without reset; without this loop the first call here flakes.
-func waitForReady(t *testing.T, store *storage.MinIOStore) {
+func waitForReady(t *testing.T, store *minio.Store) {
 	t.Helper()
 	deadline := time.Now().Add(15 * time.Second)
 	var lastErr error
@@ -43,7 +44,7 @@ func TestMinIOStoreRoundTrip(t *testing.T) {
 	defer cleanup()
 
 	const bucket = "round-trip-bucket"
-	store, err := storage.NewMinIOStore(storage.Config{
+	store, err := minio.NewStore(minio.Config{
 		Endpoint:  endpoint,
 		AccessKey: accessKey,
 		SecretKey: secretKey,
@@ -76,7 +77,7 @@ func TestMinIOStoreGetMissingReturnsErrObjectNotFound(t *testing.T) {
 	endpoint, accessKey, secretKey, cleanup := testutil.SetupTestMinIO(t)
 	defer cleanup()
 
-	store, err := storage.NewMinIOStore(storage.Config{
+	store, err := minio.NewStore(minio.Config{
 		Endpoint:  endpoint,
 		AccessKey: accessKey,
 		SecretKey: secretKey,
