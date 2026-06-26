@@ -2,11 +2,10 @@ package domain
 
 import "time"
 
+// Entities carry no serialization tags; the wire shape is owned by the
+// delivery layer (handler DTOs).
+
 // Surah captures high-level metadata about a chapter of the Quran.
-//
-// Entities carry no serialization tags: the transport shape is owned by
-// the delivery layer (handler DTOs), so the domain stays independent of
-// any wire format.
 type Surah struct {
 	ID              int32
 	NameAr          string
