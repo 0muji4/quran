@@ -213,12 +213,12 @@ class ApolloQuranBackend(
             feedback = feedback?.let { f ->
                 PronunciationFeedback(
                     accuracy = f.accuracy,
-                    fluency = f.fluency,
                     completeness = f.completeness,
                     overall = f.overall,
                     referenceAudioUrl = f.referenceAudioUrl,
                     transcript = f.transcript,
                     wer = f.wer,
+                    cer = f.cer,
                     wordAlignments = f.wordAlignments.map {
                         WordAlignment(it.refWord, it.hypWord, it.op)
                     },
@@ -236,12 +236,12 @@ class ApolloQuranBackend(
             feedback = feedback?.let { f ->
                 PronunciationFeedback(
                     accuracy = f.accuracy,
-                    fluency = f.fluency,
                     completeness = f.completeness,
                     overall = f.overall,
                     referenceAudioUrl = f.referenceAudioUrl,
                     transcript = f.transcript,
                     wer = f.wer,
+                    cer = f.cer,
                     wordAlignments = f.wordAlignments.map {
                         WordAlignment(it.refWord, it.hypWord, it.op)
                     },
