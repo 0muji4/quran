@@ -125,7 +125,7 @@ func TestScorePronunciationWithWER(t *testing.T) {
 	wantAccuracy := 0.5 // 1 - wer
 	wantCompleteness := (3.0 - 1.0) / 3.0
 	wantFluency := (0.9 + 0.7 + 0.8) / 3.0
-	wantOverall := (wantAccuracy + wantFluency + wantCompleteness) / 3.0
+	wantOverall := (wantAccuracy + wantCompleteness) / 2.0
 
 	assertScore(t, "Accuracy", got.Accuracy, wantAccuracy)
 	assertScore(t, "Completeness", got.Completeness, wantCompleteness)

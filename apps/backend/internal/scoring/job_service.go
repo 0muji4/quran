@@ -26,6 +26,7 @@ type Evaluation struct {
 	Fluency      float64            `json:"fluency"`
 	Completeness float64            `json:"completeness"`
 	WER          float64            `json:"wer"`
+	CER          float64            `json:"cer"`
 	Transcript   string             `json:"transcript"`
 	Alignments   []arabic.Alignment `json:"alignments"`
 }
@@ -140,6 +141,7 @@ func (s *JobService) Create(ctx context.Context, in JobInput) (JobResult, error)
 		Fluency:      result.Score.Fluency,
 		Completeness: result.Score.Completeness,
 		WER:          result.WER,
+		CER:          result.CER,
 		Transcript:   result.Transcript,
 		Alignments:   result.Alignments,
 	}
