@@ -85,6 +85,11 @@ fun WordComparisonGrid(
                     }
                 }
             }
+            Text(
+                text = stringResource(R.string.result_words_note),
+                style = typography.caption,
+                color = colors.textSecondary,
+            )
         }
     }
 }

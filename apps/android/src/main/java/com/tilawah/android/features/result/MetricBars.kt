@@ -27,10 +27,12 @@ import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.BrandCard
 
 /**
- * Accuracy / Fluency / Completeness bars surfaced by the scoring backend.
- * Each row pairs a label with a large serif teal percent and a full-width
- * teal progress track — all three share the same teal accent so the card
- * reads as one cohesive metric block. Mirrors
+ * Accuracy / Character match / Completeness bars surfaced by the scoring
+ * backend. Each row pairs a label with a large serif teal percent and a
+ * full-width teal progress track — all three share the same teal accent
+ * so the card reads as one cohesive metric block. Character match is
+ * `1 − CER`; chirp_3 gives no per-word confidence, so the former Fluency
+ * row was always zero and has been dropped. Mirrors
  * `docs/design/Android _ Result detail`.
  */
 @Composable
@@ -45,8 +47,8 @@ fun MetricBars(
                 fraction = feedback.accuracy.toFloat(),
             )
             MetricRow(
-                label = stringResource(R.string.result_metric_fluency),
-                fraction = feedback.fluency.toFloat(),
+                label = stringResource(R.string.result_metric_character_match),
+                fraction = (feedback.cer?.let { 1 - it } ?: feedback.overall).toFloat(),
             )
             MetricRow(
                 label = stringResource(R.string.result_metric_completeness),
