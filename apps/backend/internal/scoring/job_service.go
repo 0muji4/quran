@@ -71,7 +71,7 @@ const markFailedTimeout = 5 * time.Second
 // JobService orchestrates one scoring request end to end: resolve the verse,
 // open the job row, run the Engine, and persist the result. It owns no
 // transport concerns — the HTTP handler decodes the request, maps the
-// sentinel errors that surface here (repo.ErrAyahNotFound,
+// sentinel errors that surface here (domain.ErrAyahNotFound,
 // storage.ErrObjectNotFound, transcribe.ErrUnavailable) to status codes, and
 // encodes the result.
 type JobService struct {
@@ -107,7 +107,7 @@ func (s *JobService) Create(ctx context.Context, in JobInput) (JobResult, error)
 
 	ayah, err := s.Ayahs.GetAyahByNumber(ctx, in.SurahID, in.AyahNumber)
 	if err != nil {
-		// repo.ErrAyahNotFound flows through unchanged for the handler.
+		// domain.ErrAyahNotFound flows through unchanged for the handler.
 		return JobResult{}, err
 	}
 
@@ -165,7 +165,7 @@ func (s *JobService) Create(ctx context.Context, in JobInput) (JobResult, error)
 }
 
 // Get returns the persisted job for the session, or
-// repo.ErrScoringJobNotFound when none exists.
+// domain.ErrScoringJobNotFound when none exists.
 func (s *JobService) Get(ctx context.Context, sessionID string) (repo.ScoringJob, error) {
 	return s.Jobs.Get(ctx, sessionID)
 }

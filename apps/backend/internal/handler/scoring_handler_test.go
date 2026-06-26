@@ -115,7 +115,7 @@ func TestRESTHandleGetScoringJob(t *testing.T) {
 func TestRESTHandleGetScoringJobNotFound(t *testing.T) {
 	jobs := scoring.NewJobService(fakeAyahLookup{}, fakeScoringRepo{
 		getFn: func(_ context.Context, _ string) (repo.ScoringJob, error) {
-			return repo.ScoringJob{}, repo.ErrScoringJobNotFound
+			return repo.ScoringJob{}, domain.ErrScoringJobNotFound
 		},
 	}, nil)
 
@@ -149,7 +149,7 @@ func TestRESTHandleCreateScoringJobAyahNotFound(t *testing.T) {
 	// lets us assert the handler's 404 mapping with a nil Engine.
 	jobs := scoring.NewJobService(fakeAyahLookup{
 		fn: func(_ context.Context, _, _ int32) (domain.Ayah, error) {
-			return domain.Ayah{}, repo.ErrAyahNotFound
+			return domain.Ayah{}, domain.ErrAyahNotFound
 		},
 	}, fakeScoringRepo{}, nil)
 

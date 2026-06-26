@@ -1,4 +1,7 @@
-package repo
+// Package postgres is the PostgreSQL adapter for the repo ports. It depends
+// inward on repo (the port package) and domain; the use-case layer depends
+// only on the ports, never on this driver-bound package.
+package postgres
 
 import (
 	"context"
@@ -9,18 +12,19 @@ import (
 	"quran-project/apps/backend/internal/domain"
 )
 
-// PostgresRepository implements SurahRepository and AyahRepository using PostgreSQL.
-type PostgresRepository struct {
+// Repository implements repo.SurahRepository, repo.AyahRepository, and
+// repo.ScoringJobRepository using PostgreSQL.
+type Repository struct {
 	db *sql.DB
 }
 
-// NewPostgresRepository creates a new PostgreSQL-backed repository.
-func NewPostgresRepository(db *sql.DB) *PostgresRepository {
-	return &PostgresRepository{db: db}
+// NewRepository creates a new PostgreSQL-backed repository.
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{db: db}
 }
 
 // ListSurahs returns all surahs ordered by ID.
-func (r *PostgresRepository) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
+func (r *Repository) ListSurahs(ctx context.Context) ([]domain.Surah, error) {
 	query := `
 		SELECT id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at
 		FROM surahs
@@ -70,7 +74,7 @@ func (r *PostgresRepository) ListSurahs(ctx context.Context) ([]domain.Surah, er
 }
 
 // GetSurah returns a single surah by ID.
-func (r *PostgresRepository) GetSurah(ctx context.Context, id int32) (domain.Surah, error) {
+func (r *Repository) GetSurah(ctx context.Context, id int32) (domain.Surah, error) {
 	query := `
 		SELECT id, name_ar, name_en, revelation_place, ayah_count, metadata, created_at, updated_at
 		FROM surahs
@@ -109,7 +113,7 @@ func (r *PostgresRepository) GetSurah(ctx context.Context, id int32) (domain.Sur
 }
 
 // ListBySurah returns all ayahs for a given surah, ordered by ayah number.
-func (r *PostgresRepository) ListBySurah(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
+func (r *Repository) ListBySurah(ctx context.Context, surahID int32) ([]domain.Ayah, error) {
 	query := `
 		SELECT id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at
 		FROM ayahs
@@ -170,9 +174,9 @@ func (r *PostgresRepository) ListBySurah(ctx context.Context, surahID int32) ([]
 }
 
 // GetByNumber returns a single ayah by its (surahID, ayahNumber) pair,
-// returning ErrAyahNotFound when no row matches. This avoids loading an
+// returning domain.ErrAyahNotFound when no row matches. This avoids loading an
 // entire surah just to resolve one verse.
-func (r *PostgresRepository) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
+func (r *Repository) GetByNumber(ctx context.Context, surahID, ayahNumber int32) (domain.Ayah, error) {
 	query := `
 		SELECT id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at
 		FROM ayahs
@@ -197,7 +201,7 @@ func (r *PostgresRepository) GetByNumber(ctx context.Context, surahID, ayahNumbe
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.Ayah{}, ErrAyahNotFound
+			return domain.Ayah{}, domain.ErrAyahNotFound
 		}
 		return domain.Ayah{}, err
 	}
@@ -219,7 +223,7 @@ func (r *PostgresRepository) GetByNumber(ctx context.Context, surahID, ayahNumbe
 }
 
 // GetAyah returns a single ayah by ID.
-func (r *PostgresRepository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
+func (r *Repository) GetAyah(ctx context.Context, id int64) (domain.Ayah, error) {
 	query := `
 		SELECT id, surah_id, ayah_number, text_ar, text_en, transliteration, metadata, created_at, updated_at
 		FROM ayahs
