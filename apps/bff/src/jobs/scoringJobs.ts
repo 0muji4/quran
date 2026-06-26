@@ -89,6 +89,7 @@ export const mapEvaluationToFeedback = (
     referenceAudioUrl,
     transcript: typeof evaluation.transcript === 'string' ? evaluation.transcript : null,
     wer: numberOrNull(evaluation.wer),
+    cer: numberOrNull(evaluation.cer),
     wordAlignments
   };
 };
