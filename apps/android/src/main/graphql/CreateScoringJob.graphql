@@ -10,12 +10,12 @@ mutation CreateScoringJob($input: CreateScoringJobInput!) {
     }
     feedback {
       accuracy
-      fluency
       completeness
       overall
       referenceAudioUrl
       transcript
       wer
+      cer
       wordAlignments {
         refWord
         hypWord
