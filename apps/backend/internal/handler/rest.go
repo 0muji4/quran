@@ -43,7 +43,7 @@ func (h REST) handleListSurahs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, surahs)
+	writeJSON(w, toSurahResponses(surahs))
 }
 
 func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (h REST) handleGetSurah(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, surah)
+	writeJSON(w, toSurahResponse(surah))
 }
 
 func (h REST) handleListSurahAyahs(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +73,7 @@ func (h REST) handleListSurahAyahs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, ayahs)
+	writeJSON(w, toAyahResponses(ayahs))
 }
 
 // parseSurahID extracts and validates the {id} path value. It writes
