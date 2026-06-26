@@ -1,6 +1,4 @@
-// Package postgres is the PostgreSQL adapter for the repo ports. It depends
-// inward on repo (the port package) and domain; the use-case layer depends
-// only on the ports, never on this driver-bound package.
+// Package postgres is the PostgreSQL adapter for the repo ports.
 package postgres
 
 import (
@@ -12,13 +10,11 @@ import (
 	"quran-project/apps/backend/internal/domain"
 )
 
-// Repository implements repo.SurahRepository, repo.AyahRepository, and
-// repo.ScoringJobRepository using PostgreSQL.
+// Repository implements the repo.* repositories using PostgreSQL.
 type Repository struct {
 	db *sql.DB
 }
 
-// NewRepository creates a new PostgreSQL-backed repository.
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
