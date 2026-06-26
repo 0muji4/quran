@@ -42,6 +42,7 @@ type PronunciationFeedback {
   wordAlignments: [WordAlignment!]!
   transcript: String
   wer: Float
+  cer: Float
 }
 
 enum ScoringStatus {

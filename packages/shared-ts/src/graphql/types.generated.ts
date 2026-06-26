@@ -57,6 +57,7 @@ export interface MutationGetSignedUploadUrlArgs {
 export interface PronunciationFeedback {
   __typename?: 'PronunciationFeedback';
   accuracy: Scalars['Float']['output'];
+  cer?: Maybe<Scalars['Float']['output']>;
   completeness: Scalars['Float']['output'];
   fluency: Scalars['Float']['output'];
   overall: Scalars['Float']['output'];
@@ -334,6 +335,7 @@ export type PronunciationFeedbackResolvers<
     ResolversParentTypes['PronunciationFeedback']
 > = {
   accuracy?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  cer?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   completeness?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   fluency?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   overall?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
