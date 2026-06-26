@@ -84,7 +84,10 @@ export async function ResultDetail({
 
       <section className={styles.metricsRow} aria-label={t('metricsAriaLabel')}>
         <MetricCard kind="accuracy" value={feedback?.accuracy} />
-        <MetricCard kind="fluency" value={feedback?.fluency} />
+        <MetricCard
+          kind="characterMatch"
+          value={typeof feedback?.cer === 'number' ? 1 - feedback.cer : null}
+        />
         <MetricCard kind="completeness" value={feedback?.completeness} />
       </section>
 
