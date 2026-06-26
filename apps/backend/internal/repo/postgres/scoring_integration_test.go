@@ -1,6 +1,6 @@
 //go:build integration
 
-package repo_test
+package postgres_test
 
 import (
 	"context"
@@ -9,7 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"quran-project/apps/backend/internal/domain"
 	"quran-project/apps/backend/internal/repo"
+	"quran-project/apps/backend/internal/repo/postgres"
 	"quran-project/apps/backend/internal/testutil"
 )
 
@@ -19,7 +21,7 @@ func TestPostgresRepository_GetByNumber(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	t.Run("returns the matching ayah", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
@@ -39,7 +41,7 @@ func TestPostgresRepository_GetByNumber(t *testing.T) {
 
 		_, err := repository.GetByNumber(context.Background(), 1, 999)
 
-		require.ErrorIs(t, err, repo.ErrAyahNotFound)
+		require.ErrorIs(t, err, domain.ErrAyahNotFound)
 	})
 }
 
@@ -49,7 +51,7 @@ func TestPostgresRepository_ScoringJobLifecycle(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 	ctx := context.Background()
 
 	params := repo.StartScoringJobParams{
@@ -146,6 +148,6 @@ func TestPostgresRepository_ScoringJobLifecycle(t *testing.T) {
 		testutil.SeedStandardData(t, db)
 
 		_, err := repository.Get(ctx, "does-not-exist")
-		require.ErrorIs(t, err, repo.ErrScoringJobNotFound)
+		require.ErrorIs(t, err, domain.ErrScoringJobNotFound)
 	})
 }

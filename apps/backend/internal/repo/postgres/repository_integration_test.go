@@ -1,6 +1,6 @@
 //go:build integration
 
-package repo_test
+package postgres_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"quran-project/apps/backend/internal/repo"
+	"quran-project/apps/backend/internal/repo/postgres"
 	"quran-project/apps/backend/internal/testutil"
 )
 
@@ -18,7 +18,7 @@ func TestPostgresRepository_List(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	t.Run("returns empty list when no surahs exist", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
@@ -84,7 +84,7 @@ func TestPostgresRepository_GetSurah(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	t.Run("returns surah when it exists", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
@@ -133,7 +133,7 @@ func TestPostgresRepository_ListBySurah(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	t.Run("returns all ayahs for a surah ordered by ayah number", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
@@ -208,7 +208,7 @@ func TestPostgresRepository_GetAyah(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	t.Run("returns ayah when it exists", func(t *testing.T) {
 		testutil.CleanupTables(t, db)
@@ -267,7 +267,7 @@ func TestPostgresRepository_ConcurrentAccess(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	testutil.CleanupTables(t, db)
 	testutil.SeedStandardData(t, db)
@@ -297,7 +297,7 @@ func TestPostgresRepository_ContextCancellation(t *testing.T) {
 	db, cleanup := testutil.SetupTestDB(t)
 	defer cleanup()
 
-	repository := repo.NewPostgresRepository(db)
+	repository := postgres.NewRepository(db)
 
 	testutil.CleanupTables(t, db)
 	testutil.SeedStandardData(t, db)

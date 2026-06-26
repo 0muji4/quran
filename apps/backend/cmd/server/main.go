@@ -11,7 +11,7 @@ import (
 
 	"quran-project/apps/backend/internal/handler"
 	"quran-project/apps/backend/internal/middleware"
-	"quran-project/apps/backend/internal/repo"
+	"quran-project/apps/backend/internal/repo/postgres"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/storage"
@@ -48,7 +48,7 @@ func main() {
 		log.Fatalf("db connect failed: %v", err)
 	}
 
-	repository := repo.NewPostgresRepository(dbConn)
+	repository := postgres.NewRepository(dbConn)
 	svc := service.SurahService{
 		SurahRepo: repository,
 		AyahRepo:  repository,

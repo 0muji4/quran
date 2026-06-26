@@ -1,4 +1,4 @@
-package repo
+package memory
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestMemoryRepositorySurahs(t *testing.T) {
-	repo := MemoryRepository{
+	repo := Repository{
 		Surahs: []domain.Surah{{ID: 1, NameEn: "Al-Fatiha"}},
 	}
 
@@ -29,7 +29,7 @@ func TestMemoryRepositorySurahs(t *testing.T) {
 }
 
 func TestMemoryRepositoryAyahs(t *testing.T) {
-	repo := MemoryRepository{
+	repo := Repository{
 		Ayahs: []domain.Ayah{{ID: 11, SurahID: 2, AyahNumber: 1}},
 	}
 
@@ -53,7 +53,7 @@ func TestMemoryRepositoryAyahs(t *testing.T) {
 }
 
 func TestMemoryRepositoryGetByNumber(t *testing.T) {
-	repo := MemoryRepository{
+	repo := Repository{
 		Ayahs: []domain.Ayah{
 			{ID: 11, SurahID: 2, AyahNumber: 1},
 			{ID: 12, SurahID: 2, AyahNumber: 2},
@@ -65,5 +65,5 @@ func TestMemoryRepositoryGetByNumber(t *testing.T) {
 	require.Equal(t, int64(12), ayah.ID)
 
 	_, err = repo.GetByNumber(context.Background(), 2, 99)
-	require.ErrorIs(t, err, ErrAyahNotFound)
+	require.ErrorIs(t, err, domain.ErrAyahNotFound)
 }
