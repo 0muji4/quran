@@ -16,7 +16,8 @@ type PronunciationScore struct {
 //     matches / (matches + substitutes + deletes).
 //   - completeness = (ref_count - delete_count) / ref_count.
 //   - fluency = mean of probabilities (0 when none are supplied).
-//   - overall = mean of the three above.
+//   - overall = mean of accuracy and completeness; fluency is excluded
+//     because chirp_3 returns no per-word confidence (always 0).
 //
 // probabilities should contain confidence values for recognised words only;
 // callers filter out words without a confidence. Passing nil or an empty
@@ -63,7 +64,7 @@ func ScorePronunciation(alignments []Alignment, probabilities []float64, wer *fl
 		fluency = clamp(sum / float64(len(probabilities)))
 	}
 
-	overall := clamp((accuracy + fluency + completeness) / 3.0)
+	overall := clamp((accuracy + completeness) / 2.0)
 	return PronunciationScore{
 		Accuracy:     accuracy,
 		Fluency:      fluency,
