@@ -1,4 +1,5 @@
-package transcribe
+// Package chirp adapts Google Cloud Speech-to-Text v2 to transcribe.Transcriber.
+package chirp
 
 import (
 	"context"
@@ -9,29 +10,21 @@ import (
 	speech "cloud.google.com/go/speech/apiv2"
 	"cloud.google.com/go/speech/apiv2/speechpb"
 	"google.golang.org/api/option"
+
+	"quran-project/apps/backend/internal/transcribe"
 )
 
-// ChirpConfig configures the Google Cloud Speech-to-Text v2 (Chirp 2) backend.
-type ChirpConfig struct {
-	// Project is the Google Cloud project ID. Required.
-	Project string
-	// Location is the Speech v2 location, e.g. "global" or "us-central1".
-	// Chirp 2 is not available in every region; default is "global".
-	Location string
-	// LanguageCode is the BCP-47 code passed to the recognizer.
-	// Defaults to "ar-SA" — Modern Standard Arabic, closest fit for Quranic recitation.
-	LanguageCode string
-	// Model overrides the recognition model. Defaults to "chirp_2".
-	Model string
-	// PhraseBoost is the bias applied to ExpectedText tokens when adaptation
-	// is enabled. Google recommends 10–20; defaults to 15.
-	PhraseBoost float32
-	// DisablePhraseBoost turns off the SpeechAdaptation hint. Useful if the
-	// chosen model rejects adaptation requests.
+type Config struct {
+	Project      string  // required
+	Location     string  // Speech v2 location; defaults to "global"
+	LanguageCode string  // BCP-47; defaults to "ar-SA"
+	Model        string  // defaults to "chirp_2"
+	PhraseBoost  float32 // ExpectedText bias when adaptation is on; defaults to 15
+	// DisablePhraseBoost drops the SpeechAdaptation hint for models that reject it.
 	DisablePhraseBoost bool
 }
 
-func (c *ChirpConfig) applyDefaults() {
+func (c *Config) applyDefaults() {
 	if c.Location == "" {
 		c.Location = "global"
 	}
@@ -49,26 +42,22 @@ func (c *ChirpConfig) applyDefaults() {
 // recognizeFunc is the seam used by tests to substitute the GCP client.
 type recognizeFunc func(context.Context, *speechpb.RecognizeRequest) (*speechpb.RecognizeResponse, error)
 
-// ChirpTranscriber implements Transcriber against Google Cloud Speech v2.
-type ChirpTranscriber struct {
-	cfg       ChirpConfig
+// Transcriber implements transcribe.Transcriber against Google Cloud Speech v2.
+type Transcriber struct {
+	cfg       Config
 	recognize recognizeFunc
 	close     func() error
 }
 
-// NewChirpTranscriber opens a Speech v2 client using Application Default
-// Credentials and returns a transcriber bound to it. The caller must call
-// Close when done.
-func NewChirpTranscriber(ctx context.Context, cfg ChirpConfig) (*ChirpTranscriber, error) {
+// NewTranscriber opens a Speech v2 client via ADC; the caller must Close it.
+func NewTranscriber(ctx context.Context, cfg Config) (*Transcriber, error) {
 	if cfg.Project == "" {
-		return nil, fmt.Errorf("transcribe: ChirpConfig.Project is required")
+		return nil, fmt.Errorf("transcribe: Config.Project is required")
 	}
 	cfg.applyDefaults()
 
-	// Speech v2 uses a per-region API endpoint when Location is not
-	// "global". chirp_2 is not available at the global endpoint, so deploys
-	// that want chirp_2 must pick a supported region (e.g. asia-southeast1)
-	// AND connect to the matching <region>-speech.googleapis.com host.
+	// chirp_2 isn't served at the global endpoint, so a non-global Location
+	// must also target its matching <region>-speech.googleapis.com host.
 	var clientOpts []option.ClientOption
 	if cfg.Location != "" && cfg.Location != "global" {
 		clientOpts = append(clientOpts, option.WithEndpoint(
@@ -79,7 +68,7 @@ func NewChirpTranscriber(ctx context.Context, cfg ChirpConfig) (*ChirpTranscribe
 	if err != nil {
 		return nil, fmt.Errorf("transcribe: open speech client: %w", err)
 	}
-	return &ChirpTranscriber{
+	return &Transcriber{
 		cfg: cfg,
 		recognize: func(ctx context.Context, req *speechpb.RecognizeRequest) (*speechpb.RecognizeResponse, error) {
 			return client.Recognize(ctx, req)
@@ -89,7 +78,7 @@ func NewChirpTranscriber(ctx context.Context, cfg ChirpConfig) (*ChirpTranscribe
 }
 
 // Close releases the underlying client.
-func (t *ChirpTranscriber) Close() error {
+func (t *Transcriber) Close() error {
 	if t.close == nil {
 		return nil
 	}
@@ -98,24 +87,24 @@ func (t *ChirpTranscriber) Close() error {
 
 // Transcribe sends one synchronous Recognize call. The audio is buffered into
 // memory because Speech v2's non-streaming endpoint takes inline bytes.
-func (t *ChirpTranscriber) Transcribe(ctx context.Context, req Request) (Result, error) {
+func (t *Transcriber) Transcribe(ctx context.Context, req transcribe.Request) (transcribe.Result, error) {
 	if req.Audio == nil {
-		return Result{}, fmt.Errorf("transcribe: Request.Audio is nil")
+		return transcribe.Result{}, fmt.Errorf("transcribe: Request.Audio is nil")
 	}
 	audioBytes, err := io.ReadAll(req.Audio)
 	if err != nil {
-		return Result{}, fmt.Errorf("transcribe: read audio: %w", err)
+		return transcribe.Result{}, fmt.Errorf("transcribe: read audio: %w", err)
 	}
 
 	rpcReq := t.buildRequest(req.ExpectedText, audioBytes)
 	resp, err := t.recognize(ctx, rpcReq)
 	if err != nil {
-		return Result{}, fmt.Errorf("transcribe: recognize: %w", err)
+		return transcribe.Result{}, fmt.Errorf("transcribe: recognize: %w", err)
 	}
 	return parseResponse(resp), nil
 }
 
-func (t *ChirpTranscriber) buildRequest(expectedText string, audio []byte) *speechpb.RecognizeRequest {
+func (t *Transcriber) buildRequest(expectedText string, audio []byte) *speechpb.RecognizeRequest {
 	// "_" is the inline recognizer alias: config travels with the request
 	// instead of being persisted server-side.
 	recognizer := fmt.Sprintf("projects/%s/locations/%s/recognizers/_", t.cfg.Project, t.cfg.Location)
@@ -190,12 +179,10 @@ func uniqueWords(text string) []string {
 	return out
 }
 
-// parseResponse collapses Speech v2 results into a single transcript by
-// joining the top alternative of each result. Word-level metadata is
-// flattened in the same order.
-func parseResponse(resp *speechpb.RecognizeResponse) Result {
+// parseResponse joins the top alternative of each result into one transcript.
+func parseResponse(resp *speechpb.RecognizeResponse) transcribe.Result {
 	var transcripts []string
-	var words []Word
+	var words []transcribe.Word
 	for _, result := range resp.GetResults() {
 		alts := result.GetAlternatives()
 		if len(alts) == 0 {
@@ -206,7 +193,7 @@ func parseResponse(resp *speechpb.RecognizeResponse) Result {
 			transcripts = append(transcripts, t)
 		}
 		for _, w := range top.GetWords() {
-			words = append(words, Word{
+			words = append(words, transcribe.Word{
 				Text:       w.GetWord(),
 				Start:      w.GetStartOffset().AsDuration(),
 				End:        w.GetEndOffset().AsDuration(),
@@ -214,11 +201,10 @@ func parseResponse(resp *speechpb.RecognizeResponse) Result {
 			})
 		}
 	}
-	return Result{
+	return transcribe.Result{
 		Transcript: strings.Join(transcripts, " "),
 		Words:      words,
 	}
 }
 
-// Compile-time assertion that ChirpTranscriber implements Transcriber.
-var _ Transcriber = (*ChirpTranscriber)(nil)
+var _ transcribe.Transcriber = (*Transcriber)(nil)

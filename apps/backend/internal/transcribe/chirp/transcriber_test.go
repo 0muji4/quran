@@ -1,4 +1,4 @@
-package transcribe
+package chirp
 
 import (
 	"bytes"
@@ -11,17 +11,19 @@ import (
 
 	"cloud.google.com/go/speech/apiv2/speechpb"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"quran-project/apps/backend/internal/transcribe"
 )
 
-func newTestTranscriber(t *testing.T, fn recognizeFunc) *ChirpTranscriber {
+func newTestTranscriber(t *testing.T, fn recognizeFunc) *Transcriber {
 	t.Helper()
-	cfg := ChirpConfig{Project: "p"}
+	cfg := Config{Project: "p"}
 	cfg.applyDefaults()
-	return &ChirpTranscriber{cfg: cfg, recognize: fn}
+	return &Transcriber{cfg: cfg, recognize: fn}
 }
 
 func TestApplyDefaults(t *testing.T) {
-	cfg := ChirpConfig{Project: "p"}
+	cfg := Config{Project: "p"}
 	cfg.applyDefaults()
 	if cfg.Location != "global" || cfg.LanguageCode != "ar-SA" || cfg.Model != "chirp_2" || cfg.PhraseBoost != 15 {
 		t.Errorf("unexpected defaults: %+v", cfg)
@@ -65,9 +67,9 @@ func TestBuildRequestPhraseBoost(t *testing.T) {
 }
 
 func TestBuildRequestDisablePhraseBoost(t *testing.T) {
-	cfg := ChirpConfig{Project: "p", DisablePhraseBoost: true}
+	cfg := Config{Project: "p", DisablePhraseBoost: true}
 	cfg.applyDefaults()
-	tr := &ChirpTranscriber{cfg: cfg}
+	tr := &Transcriber{cfg: cfg}
 
 	req := tr.buildRequest("بسم الله", []byte("a"))
 	if a := req.GetConfig().GetAdaptation(); a != nil {
@@ -84,9 +86,9 @@ func TestBuildRequestEmptyExpectedText(t *testing.T) {
 }
 
 func TestBuildRequestChirp3SkipsWordFeatures(t *testing.T) {
-	cfg := ChirpConfig{Project: "p", Model: "chirp_3"}
+	cfg := Config{Project: "p", Model: "chirp_3"}
 	cfg.applyDefaults()
-	tr := &ChirpTranscriber{cfg: cfg}
+	tr := &Transcriber{cfg: cfg}
 
 	req := tr.buildRequest("", []byte("a"))
 	feat := req.GetConfig().GetFeatures()
@@ -149,7 +151,7 @@ func TestTranscribePropagatesError(t *testing.T) {
 	tr := newTestTranscriber(t, func(context.Context, *speechpb.RecognizeRequest) (*speechpb.RecognizeResponse, error) {
 		return nil, sentinel
 	})
-	_, err := tr.Transcribe(context.Background(), Request{Audio: strings.NewReader("a")})
+	_, err := tr.Transcribe(context.Background(), transcribe.Request{Audio: strings.NewReader("a")})
 	if !errors.Is(err, sentinel) {
 		t.Errorf("err = %v, want wrap of sentinel", err)
 	}
@@ -157,7 +159,7 @@ func TestTranscribePropagatesError(t *testing.T) {
 
 func TestTranscribeNilAudio(t *testing.T) {
 	tr := newTestTranscriber(t, nil)
-	if _, err := tr.Transcribe(context.Background(), Request{}); err == nil {
+	if _, err := tr.Transcribe(context.Background(), transcribe.Request{}); err == nil {
 		t.Error("expected error for nil audio")
 	}
 }
@@ -172,7 +174,7 @@ func TestTranscribeRoundTrip(t *testing.T) {
 			},
 		}, nil
 	})
-	result, err := tr.Transcribe(context.Background(), Request{
+	result, err := tr.Transcribe(context.Background(), transcribe.Request{
 		Audio:        strings.NewReader("audio-bytes"),
 		ExpectedText: "hello",
 	})
