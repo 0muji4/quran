@@ -138,7 +138,7 @@ func TestJobServiceCreateDefaultsSessionToUploadKey(t *testing.T) {
 
 func TestJobServiceCreateAyahNotFound(t *testing.T) {
 	ayahLookup := fakeAyahLookup{fn: func(_ context.Context, _, _ int32) (domain.Ayah, error) {
-		return domain.Ayah{}, repo.ErrAyahNotFound
+		return domain.Ayah{}, domain.ErrAyahNotFound
 	}}
 	jobs := &fakeJobRepo{startFn: func(_ context.Context, _ repo.StartScoringJobParams) (time.Time, error) {
 		t.Fatal("Start should not be called when the ayah is missing")
@@ -149,7 +149,7 @@ func TestJobServiceCreateAyahNotFound(t *testing.T) {
 	svc := scoring.NewJobService(ayahLookup, jobs, engine)
 	_, err := svc.Create(context.Background(), scoring.JobInput{UploadKey: "k", SurahID: 1, AyahNumber: 99})
 
-	require.ErrorIs(t, err, repo.ErrAyahNotFound)
+	require.ErrorIs(t, err, domain.ErrAyahNotFound)
 	require.Empty(t, jobs.failedSessions)
 }
 

@@ -1,4 +1,4 @@
-package repo
+package postgres
 
 import (
 	"context"
@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"quran-project/apps/backend/internal/domain"
+	"quran-project/apps/backend/internal/repo"
 )
 
 // Start inserts (or refreshes) the scoring_jobs row for the session in
 // RUNNING state and returns the row's created_at timestamp. The status
 // string must match the scoring_jobs_status_check CHECK constraint.
-func (r *PostgresRepository) Start(ctx context.Context, p StartScoringJobParams) (time.Time, error) {
+func (r *Repository) Start(ctx context.Context, p repo.StartScoringJobParams) (time.Time, error) {
 	var userID sql.NullString
 	if p.UserID != "" {
 		userID = sql.NullString{String: p.UserID, Valid: true}
@@ -44,7 +47,7 @@ func (r *PostgresRepository) Start(ctx context.Context, p StartScoringJobParams)
 
 // Complete flips the job to COMPLETED with the final overall score and the
 // pre-marshaled evaluation JSON.
-func (r *PostgresRepository) Complete(ctx context.Context, sessionID string, score float64, evaluation json.RawMessage) error {
+func (r *Repository) Complete(ctx context.Context, sessionID string, score float64, evaluation json.RawMessage) error {
 	_, err := r.db.ExecContext(
 		ctx,
 		`UPDATE scoring_jobs
@@ -57,7 +60,7 @@ func (r *PostgresRepository) Complete(ctx context.Context, sessionID string, sco
 
 // MarkFailed flips the job to FAILED. Callers may ignore the returned error
 // so it does not mask the original failure that triggered the call.
-func (r *PostgresRepository) MarkFailed(ctx context.Context, sessionID string) error {
+func (r *Repository) MarkFailed(ctx context.Context, sessionID string) error {
 	_, err := r.db.ExecContext(
 		ctx,
 		`UPDATE scoring_jobs SET status = 'FAILED', updated_at = NOW() WHERE session_id = $1`,
@@ -67,15 +70,15 @@ func (r *PostgresRepository) MarkFailed(ctx context.Context, sessionID string) e
 }
 
 // Get loads the persisted scoring job for the session, returning
-// ErrScoringJobNotFound when no row exists.
-func (r *PostgresRepository) Get(ctx context.Context, sessionID string) (ScoringJob, error) {
+// domain.ErrScoringJobNotFound when no row exists.
+func (r *Repository) Get(ctx context.Context, sessionID string) (repo.ScoringJob, error) {
 	const query = `
 		SELECT session_id, upload_key, status, score, verdict, evaluation, segments, created_at
 		FROM scoring_jobs
 		WHERE session_id = $1
 	`
 	var (
-		job           ScoringJob
+		job           repo.ScoringJob
 		score         sql.NullFloat64
 		verdict       sql.NullString
 		evaluationRaw []byte
@@ -92,10 +95,10 @@ func (r *PostgresRepository) Get(ctx context.Context, sessionID string) (Scoring
 		&job.CreatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return ScoringJob{}, ErrScoringJobNotFound
+		return repo.ScoringJob{}, domain.ErrScoringJobNotFound
 	}
 	if err != nil {
-		return ScoringJob{}, err
+		return repo.ScoringJob{}, err
 	}
 	if score.Valid {
 		job.Score = &score.Float64
@@ -112,4 +115,4 @@ func (r *PostgresRepository) Get(ctx context.Context, sessionID string) (Scoring
 	return job, nil
 }
 
-var _ ScoringJobRepository = (*PostgresRepository)(nil)
+var _ repo.ScoringJobRepository = (*Repository)(nil)

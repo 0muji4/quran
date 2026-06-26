@@ -3,20 +3,17 @@ package repo
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"quran-project/apps/backend/internal/domain"
 )
 
-// ErrAyahNotFound is returned when a verse lookup matches no row. Callers
-// (for example HTTP handlers) can map it to a 404 with errors.Is.
-var ErrAyahNotFound = errors.New("ayah not found")
-
-// ErrScoringJobNotFound is returned by ScoringJobRepository.Get when no row
-// exists for the session, so callers can map it to a 404 without depending
-// on database/sql sentinels leaking through the abstraction.
-var ErrScoringJobNotFound = errors.New("scoring job not found")
+// This package defines the persistence ports (interfaces and their
+// parameter/result types) consumed by the use-case layer. Concrete adapters
+// live in subpackages (repo/postgres, repo/memory) and depend on this
+// package, so the use cases never compile-depend on a database driver.
+// Not-found sentinels live in the domain (domain.ErrAyahNotFound,
+// domain.ErrScoringJobNotFound).
 
 // SurahRepository defines storage operations for surah metadata.
 type SurahRepository interface {

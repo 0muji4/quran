@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"quran-project/apps/backend/internal/repo"
+	"quran-project/apps/backend/internal/domain"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
 	"quran-project/apps/backend/internal/storage"
@@ -145,7 +145,7 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, repo.ErrAyahNotFound):
+		case errors.Is(err, domain.ErrAyahNotFound):
 			http.Error(w, "ayah not found", http.StatusNotFound)
 		case errors.Is(err, storage.ErrObjectNotFound):
 			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
@@ -195,7 +195,7 @@ func (h REST) handleGetScoringJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	job, err := h.Jobs.Get(r.Context(), sessionID)
-	if errors.Is(err, repo.ErrScoringJobNotFound) {
+	if errors.Is(err, domain.ErrScoringJobNotFound) {
 		http.NotFound(w, r)
 		return
 	}
