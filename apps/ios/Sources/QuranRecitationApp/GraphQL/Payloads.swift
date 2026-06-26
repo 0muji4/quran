@@ -80,12 +80,12 @@ public struct WordAlignmentPayload: Hashable {
 
 public struct PronunciationFeedbackPayload: Hashable {
   public let accuracy: Double
-  public let fluency: Double
   public let completeness: Double
   public let overall: Double
   public let referenceAudioUrl: String?
   public let transcript: String?
   public let wer: Double?
+  public let cer: Double?
   public let wordAlignments: [WordAlignmentPayload]
 }
 
@@ -106,12 +106,12 @@ public struct ScoringResultPayload {
     feedback = data.feedback.map { fb in
       PronunciationFeedbackPayload(
         accuracy: fb.accuracy,
-        fluency: fb.fluency,
         completeness: fb.completeness,
         overall: fb.overall,
         referenceAudioUrl: fb.referenceAudioUrl,
         transcript: fb.transcript,
         wer: fb.wer,
+        cer: fb.cer,
         wordAlignments: fb.wordAlignments.map {
           WordAlignmentPayload(refWord: $0.refWord, hypWord: $0.hypWord, op: $0.op)
         }
@@ -128,12 +128,12 @@ public struct ScoringResultPayload {
     feedback = data.feedback.map { fb in
       PronunciationFeedbackPayload(
         accuracy: fb.accuracy,
-        fluency: fb.fluency,
         completeness: fb.completeness,
         overall: fb.overall,
         referenceAudioUrl: fb.referenceAudioUrl,
         transcript: fb.transcript,
         wer: fb.wer,
+        cer: fb.cer,
         wordAlignments: fb.wordAlignments.map {
           WordAlignmentPayload(refWord: $0.refWord, hypWord: $0.hypWord, op: $0.op)
         }

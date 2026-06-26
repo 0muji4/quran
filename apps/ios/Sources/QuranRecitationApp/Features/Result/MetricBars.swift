@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Three stacked metric rows from `docs/design/iOS _ Result detail.png`:
-/// Accuracy, Fluency, Completeness. Values are 0…100 and come from
-/// `PronunciationFeedbackPayload`. Renders even when feedback is missing
-/// — falls back to using the overall score for all three so the user
-/// still sees the row treatment.
+/// Three stacked metric rows: Accuracy, Character match, Completeness.
+/// Feedback values are 0…1 fractions, scaled to the 0…100 the row
+/// renders; the fallback overall score is already 0…100. Character match
+/// is `1 − CER` — chirp_3 returns no per-word confidence, so the former
+/// Fluency row was always zero and has been dropped. Renders even when
+/// feedback is missing by falling back to the overall score.
 struct MetricBars: View {
   let feedback: PronunciationFeedbackPayload?
   let fallbackScore: Double?
@@ -14,7 +15,7 @@ struct MetricBars: View {
       VStack(spacing: Spacing.lg) {
         row(label: "result.metric.accuracy", value: accuracy)
         Divider().background(Color.brand.tile)
-        row(label: "result.metric.fluency", value: fluency)
+        row(label: "result.metric.characterMatch", value: characterMatch)
         Divider().background(Color.brand.tile)
         row(label: "result.metric.completeness", value: completeness)
       }
@@ -43,14 +44,14 @@ struct MetricBars: View {
   }
 
   private var accuracy: Double {
-    feedback?.accuracy ?? fallbackScore ?? 0
+    feedback.map { $0.accuracy * 100 } ?? fallbackScore ?? 0
   }
 
-  private var fluency: Double {
-    feedback?.fluency ?? fallbackScore ?? 0
+  private var characterMatch: Double {
+    feedback?.cer.map { (1 - $0) * 100 } ?? fallbackScore ?? 0
   }
 
   private var completeness: Double {
-    feedback?.completeness ?? fallbackScore ?? 0
+    feedback.map { $0.completeness * 100 } ?? fallbackScore ?? 0
   }
 }
