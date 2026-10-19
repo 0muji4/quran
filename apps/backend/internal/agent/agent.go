@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"quran-project/apps/backend/internal/lsp"
+	"quran-project/apps/backend/internal/workspace"
 
 	"google.golang.org/genai"
 )
@@ -17,11 +18,20 @@ const model = "gemini-2.5-flash"
 type L5Agent struct {
 	client   *genai.Client
 	analyzer lsp.CodeAnalyzer
+	reader   workspace.FileReader
+	differ   workspace.DiffProvider
 	history  []*genai.Content
 	rootPath string
 }
 
-func NewL5Agent(ctx context.Context, apiKey string, rootPath string, analyzer lsp.CodeAnalyzer) (*L5Agent, error) {
+func NewL5Agent(
+	ctx context.Context,
+	apiKey string,
+	rootPath string,
+	analyzer lsp.CodeAnalyzer,
+	reader workspace.FileReader,
+	differ workspace.DiffProvider,
+) (*L5Agent, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
 		Backend: genai.BackendGeminiAPI,
@@ -33,6 +43,8 @@ func NewL5Agent(ctx context.Context, apiKey string, rootPath string, analyzer ls
 	return &L5Agent{
 		client:   client,
 		analyzer: analyzer,
+		reader:   reader,
+		differ:   differ,
 		rootPath: rootPath,
 	}, nil
 }
@@ -66,6 +78,28 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 						Required: []string{"file_path", "line", "character"},
 					},
 				},
+				{
+					Name:        "read_file",
+					Description: "指定されたファイルの内容を読み取ります。コードの中身を確認したいときに使用してください。",
+					Parameters: &genai.Schema{
+						Type: genai.TypeObject,
+						Properties: map[string]*genai.Schema{
+							"file_path": {
+								Type:        genai.TypeString,
+								Description: "対象のファイルパス（プロジェクトルートからの相対パス）",
+							},
+						},
+						Required: []string{"file_path"},
+					},
+				},
+				{
+					Name:        "get_diff",
+					Description: "現在のGit差分（git diff HEAD）を取得します。コードレビューや変更内容の確認に使用してください。",
+					Parameters: &genai.Schema{
+						Type:       genai.TypeObject,
+						Properties: map[string]*genai.Schema{},
+					},
+				},
 			},
 		},
 	}
@@ -73,51 +107,65 @@ func (a *L5Agent) Run(ctx context.Context, userQuery string) (string, error) {
 	config := &genai.GenerateContentConfig{
 		Tools: tools,
 		SystemInstruction: genai.NewContentFromText(
-			"あなたはGoogleのL5ソフトウェアエンジニアです。Go言語のエキスパートとして振る舞ってください。コードの変更や関数について聞かれたときは、必ず「find_references」ツールを使って影響範囲を確認してから回答してください。推測で回答することは許されません。「事実はコードにある」が信条です。",
+			"あなたはGoogleのL5ソフトウェアエンジニアです。Go言語のエキスパートとして振る舞ってください。"+
+				"コードの変更や関数について聞かれたときは、必ずツールを使って事実を確認してから回答してください。"+
+				"推測で回答することは許されません。「事実はコードにある」が信条です。"+
+				"ファイルの中身を確認するには「read_file」、参照検索には「find_references」、Git差分の確認には「get_diff」を使ってください。",
 			"user",
 		),
 	}
 
-	// ReAct Loop (最大3往復まで許可)
-	for i := 0; i < 3; i++ {
+	// ReAct Loop (最大5往復まで許可)
+	for i := 0; i < 5; i++ {
 		fmt.Println("Thinking...")
 		resp, err := a.client.Models.GenerateContent(ctx, model, a.history, config)
 		if err != nil {
 			return "", err
 		}
 
-		// Function Call の確認
 		functionCalls := resp.FunctionCalls()
 		if len(functionCalls) == 0 {
 			return resp.Text(), nil
 		}
 
-		// モデルの応答を履歴に追加
 		a.history = append(a.history, resp.Candidates[0].Content)
 
-		// ツール呼び出しの処理
 		var responseParts []*genai.Part
 		for _, call := range functionCalls {
-			if call.Name == "find_references" {
-				fmt.Println("Calling Tool: find_references")
+			var resultText string
+			var execErr error
 
+			switch call.Name {
+			case "find_references":
 				filePath, _ := call.Args["file_path"].(string)
 				line := int(call.Args["line"].(float64))
 				char := int(call.Args["character"].(float64))
+				fmt.Printf("Calling Tool: find_references(%s, %d, %d)\n", filePath, line, char)
+				resultText, execErr = a.executeFindReferences(filePath, line, char)
 
-				resultText, err := a.executeFindReferences(filePath, line, char)
-				if err != nil {
-					resultText = fmt.Sprintf("Error: %v", err)
+			case "read_file":
+				filePath, _ := call.Args["file_path"].(string)
+				fmt.Printf("Calling Tool: read_file(%s)\n", filePath)
+				resultText, execErr = a.reader.ReadFile(filePath)
+
+			case "get_diff":
+				fmt.Println("Calling Tool: get_diff")
+				resultText, execErr = a.differ.Diff()
+				if resultText == "" && execErr == nil {
+					resultText = "No changes detected (working tree is clean)."
 				}
-
-				responseParts = append(responseParts, genai.NewPartFromFunctionResponse(
-					"find_references",
-					map[string]any{"result": resultText},
-				))
 			}
+
+			if execErr != nil {
+				resultText = fmt.Sprintf("Error: %v", execErr)
+			}
+
+			responseParts = append(responseParts, genai.NewPartFromFunctionResponse(
+				call.Name,
+				map[string]any{"result": resultText},
+			))
 		}
 
-		// ツール結果を履歴に追加
 		a.history = append(a.history, &genai.Content{
 			Role:  "tool",
 			Parts: responseParts,
