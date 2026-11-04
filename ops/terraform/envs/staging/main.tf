@@ -5,6 +5,7 @@ locals {
     backend = {
       image                 = var.container_images.backend
       container_port        = 8080
+      http2_enabled         = true
       cpu                   = "1"
       memory                = "512Mi"
       min_instances         = 0
@@ -15,6 +16,7 @@ locals {
     bff = {
       image                 = var.container_images.bff
       container_port        = 4000
+      http2_enabled         = false
       cpu                   = "1"
       memory                = "512Mi"
       min_instances         = 0
@@ -25,6 +27,7 @@ locals {
     web = {
       image                 = var.container_images.web
       container_port        = 3000
+      http2_enabled         = false
       cpu                   = "1"
       memory                = "512Mi"
       min_instances         = 0
@@ -150,6 +153,7 @@ module "service" {
   name                  = "quran-${local.env}-${each.key}"
   image                 = each.value.image
   container_port        = each.value.container_port
+  http2_enabled         = each.value.http2_enabled
   cpu                   = each.value.cpu
   memory                = each.value.memory
   min_instances         = each.value.min_instances

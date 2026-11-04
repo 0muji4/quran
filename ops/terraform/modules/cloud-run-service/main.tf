@@ -23,6 +23,7 @@ resource "google_cloud_run_v2_service" "this" {
       image = var.image
 
       ports {
+        name           = var.http2_enabled ? "h2c" : "http1"
         container_port = var.container_port
       }
 
