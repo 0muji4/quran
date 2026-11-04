@@ -20,12 +20,14 @@ See `apps/bff/src/server/app.ts`, `apps/bff/src/rest/`, and `apps/bff/src/graphq
 
 ## Environment Variables
 
-| Variable                              | Default                 | Purpose                            |
-| ------------------------------------- | ----------------------- | ---------------------------------- |
-| `PORT`                                | `4000`                  | Listen port                        |
-| `BACKEND_URL`                         | `http://localhost:8080` | Upstream Go backend URL            |
-| `JWT_SECRET` / `REFRESH_TOKEN_SECRET` | —                       | Auth secrets                       |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`         | —                       | OTLP collector endpoint (optional) |
+| Variable                              | Default                 | Purpose                                |
+| ------------------------------------- | ----------------------- | -------------------------------------- |
+| `PORT`                                | `4000`                  | Listen port                            |
+| `BACKEND_URL`                         | `http://localhost:8080` | Upstream Go backend URL (REST)         |
+| `BACKEND_GRPC_ADDR`                   | —                       | Backend gRPC `host:port`; unset = REST |
+| `BACKEND_GRPC_TLS`                    | `true`                  | `false` allows cleartext gRPC          |
+| `JWT_SECRET` / `REFRESH_TOKEN_SECRET` | —                       | Auth secrets                           |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`         | —                       | OTLP collector endpoint (optional)     |
 
 ## Local Development
 

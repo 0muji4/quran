@@ -8,6 +8,7 @@ import {
   recordUploadKey
 } from '../infra';
 import { fetchWithTracing } from '../infra/backendClient';
+import { getBackendGrpc } from '../infra/backendGrpc';
 
 const secondsFromNow = (seconds: number): string =>
   new Date(Date.now() + seconds * 1000).toISOString();
@@ -190,15 +191,18 @@ export const createScoringJob = async (input: {
     referenceAudioKey: payload.referenceAudioKey
   });
 
-  const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const result = await parseJson<ScoringResult>(response);
+  const grpc = getBackendGrpc();
+  const result = grpc
+    ? await grpc.createScoringJob(payload)
+    : await parseJson<ScoringResult>(
+        await fetchWithTracing(`${backendUrl}/api/scoring-jobs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+      );
   // The Go backend doesn't sign download URLs nor shape PronunciationFeedback;
   // enrich here so the immediate post-create response (which the web caller
   // drops straight into the result-page redirect) already has a playable
@@ -212,12 +216,20 @@ export const createScoringJob = async (input: {
   return result;
 };
 
+const fetchScoringJobFromBackend = async (jobId: string): Promise<ScoringResult | null> => {
+  const grpc = getBackendGrpc();
+  if (grpc) return grpc.getScoringJob(jobId);
+
+  const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs/${jobId}`);
+  if (response.status === 404) return null;
+  return parseJson<ScoringResult>(response);
+};
+
 export const getScoringJob = async (jobId: string): Promise<ScoringResult | null> => {
   const pool = getDatabasePool();
   if (!pool) {
-    const response = await fetchWithTracing(`${backendUrl}/api/scoring-jobs/${jobId}`);
-    if (response.status === 404) return null;
-    const result = await parseJson<ScoringResult>(response);
+    const result = await fetchScoringJobFromBackend(jobId);
+    if (!result) return null;
     result.recordingUrl = await createRecordingUrl(result.uploadKey);
     // The Go REST response carries the raw `evaluation` blob but no presigned
     // reference key, so referenceAudioUrl stays null on this fallback path

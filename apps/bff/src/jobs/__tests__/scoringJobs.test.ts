@@ -15,6 +15,10 @@ vi.mock('../../infra/backendClient', () => ({
   fetchWithTracing: vi.fn()
 }));
 
+vi.mock('../../infra/backendGrpc', () => ({
+  getBackendGrpc: vi.fn(() => null)
+}));
+
 import { createScoringJob, getScoringJob, mapEvaluationToFeedback } from '../scoringJobs';
 
 // A representative completed-job evaluation blob, matching the backend's
@@ -213,5 +217,63 @@ describe('createScoringJob immediate response', () => {
     expect(result.feedback?.wordAlignments).toHaveLength(3);
     expect(result.feedback?.referenceAudioUrl).toBe('https://uploads.local/refs/1_1.mp3');
     expect(result.recordingUrl).toBe('https://uploads.local/uploads/rec.opus');
+  });
+});
+
+describe('scoring over gRPC', () => {
+  const grpcJob = {
+    jobId: 'job-1',
+    uploadKey: 'uploads/rec.opus',
+    status: 'COMPLETED',
+    score: 0.88,
+    segments: [],
+    evaluation,
+    createdAt: '2026-06-01T00:00:00.000Z'
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('creates the job through the gRPC client when it is configured', async () => {
+    const { ensureReferenceAudio } = await import('../../infra');
+    const { fetchWithTracing } = await import('../../infra/backendClient');
+    const { getBackendGrpc } = await import('../../infra/backendGrpc');
+    vi.mocked(ensureReferenceAudio).mockResolvedValue({ key: 'refs/1_1.mp3' } as never);
+    const create = vi.fn().mockResolvedValue({ ...grpcJob });
+    vi.mocked(getBackendGrpc).mockReturnValueOnce({ createScoringJob: create } as never);
+
+    const result = await createScoringJob({
+      sessionId: 'session-1',
+      uploadKey: 'uploads/rec.opus',
+      surahId: '1',
+      ayahNumber: 1,
+      userId: 'user-1'
+    });
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'session-1', referenceAudioKey: 'refs/1_1.mp3' })
+    );
+    expect(fetchWithTracing).not.toHaveBeenCalled();
+    expect(result.feedback?.overall).toBe(0.88);
+    expect(result.recordingUrl).toBe('https://uploads.local/uploads/rec.opus');
+  });
+
+  it('reads the job through the gRPC client when there is no database', async () => {
+    const { getDatabasePool } = await import('../../infra');
+    const { getBackendGrpc } = await import('../../infra/backendGrpc');
+    vi.mocked(getDatabasePool).mockReturnValue(null);
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ ...grpcJob })
+      .mockResolvedValueOnce(null);
+    vi.mocked(getBackendGrpc).mockReturnValue({ getScoringJob: get } as never);
+
+    const found = await getScoringJob('job-1');
+    const missing = await getScoringJob('missing');
+
+    expect(found?.feedback?.accuracy).toBe(0.9);
+    expect(missing).toBeNull();
+    vi.mocked(getBackendGrpc).mockReturnValue(null);
   });
 });
