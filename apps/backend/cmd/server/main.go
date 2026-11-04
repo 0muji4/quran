@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"quran-project/apps/backend/internal/handler"
 	"quran-project/apps/backend/internal/middleware"
@@ -22,6 +23,11 @@ import (
 	"quran-project/packages/go-pkg/db"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+)
+
+const (
+	readHeaderTimeout = 10 * time.Second
+	idleTimeout       = 2 * time.Minute
 )
 
 func main() {
@@ -85,11 +91,16 @@ func main() {
 		port = "8080"
 	}
 
-	rootHandler := middleware.OTEL(mux)
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
 
 	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: rootHandler,
+		Addr:              ":" + port,
+		Handler:           handler.Multiplex(handler.NewGRPCServer(svc, jobs), middleware.OTEL(mux)),
+		Protocols:         protocols,
+		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	logger.Info("backend listening", "addr", server.Addr)

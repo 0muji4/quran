@@ -1,6 +1,6 @@
 # Backend (Go)
 
-Go HTTP server that serves Surah / Ayah data and accepts ASR scoring jobs. Listens on `:8080` and is the upstream that BFF proxies to.
+Go server that serves Surah / Ayah data and accepts ASR scoring jobs. Listens on `:8080` and is the upstream that BFF proxies to. gRPC and REST share this port because Cloud Run exposes one port per service. The [gRPC decision record](../../docs/adr/0025-grpc-between-bff-and-backend.md) explains the design.
 
 ## Endpoints
 
@@ -12,6 +12,10 @@ Go HTTP server that serves Surah / Ayah data and accepts ASR scoring jobs. Liste
 | GET    | `/api/surahs/{id}/ayahs` | List Ayahs for a Surah |
 
 Scoring-related endpoints live under `internal/`.
+
+## gRPC
+
+`schemas/proto/quran/v1` defines `quran.v1.SurahService` and `quran.v1.ScoringService`, served over cleartext HTTP/2 on the same port. After editing a schema, run `make proto-gen` and commit the generated code.
 
 ## Environment Variables
 

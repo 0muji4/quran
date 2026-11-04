@@ -25,7 +25,7 @@ func (m *Repository) GetSurah(_ context.Context, id int32) (domain.Surah, error)
 			return surah, nil
 		}
 	}
-	return domain.Surah{}, errors.New("surah not found")
+	return domain.Surah{}, domain.ErrSurahNotFound
 }
 
 func (m *Repository) ListBySurah(_ context.Context, surahID int32) ([]domain.Ayah, error) {
