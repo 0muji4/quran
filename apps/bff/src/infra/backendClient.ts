@@ -3,7 +3,9 @@
  */
 
 import { context, propagation } from '@opentelemetry/api';
+import type { Ayah, Surah } from '../gen/quran/v1/surah';
 import { telemetry } from '../telemetry/telemetry';
+import { getBackendGrpc } from './backendGrpc';
 
 const tracer = telemetry.tracer;
 
@@ -89,10 +91,36 @@ export interface AyahRecord {
   metadata?: Record<string, unknown>;
 }
 
+const fromProtoAyah = (ayah: Ayah): AyahRecord => ({
+  id: `${ayah.surahId}:${ayah.ayahNumber}`,
+  surahId: String(ayah.surahId),
+  ayahNumber: ayah.ayahNumber,
+  textAr: ayah.textAr,
+  textEn: ayah.textEn || undefined,
+  transliteration: ayah.transliteration || undefined,
+  metadata: ayah.metadata
+});
+
+const fromProtoSurah = (surah: Surah, ayahs: AyahRecord[]): SurahRecord => ({
+  id: String(surah.id),
+  nameAr: surah.nameAr,
+  nameEn: surah.nameEn,
+  revelationPlace: surah.revelationPlace,
+  ayahCount: surah.ayahCount,
+  metadata: surah.metadata,
+  ayahs
+});
+
 /**
  * Fetch all surahs from the backend API
  */
 export const fetchSurahsFromBackend = async (): Promise<SurahRecord[]> => {
+  const grpc = getBackendGrpc();
+  if (grpc) {
+    const surahs = await grpc.listSurahs();
+    return surahs.map((surah) => fromProtoSurah(surah, []));
+  }
+
   const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs`);
 
   if (!response.ok) {
@@ -117,6 +145,12 @@ export const fetchSurahsFromBackend = async (): Promise<SurahRecord[]> => {
  * Fetch a specific surah by ID from the backend API
  */
 export const fetchSurahFromBackend = async (surahId: string): Promise<SurahRecord | null> => {
+  const grpc = getBackendGrpc();
+  if (grpc) {
+    const [surah, ayahs] = await Promise.all([grpc.getSurah(surahId), grpc.listAyahs(surahId)]);
+    return surah && fromProtoSurah(surah, ayahs.map(fromProtoAyah));
+  }
+
   const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs/${surahId}`);
 
   if (response.status === 404) {
@@ -161,6 +195,12 @@ export const fetchSurahFromBackend = async (surahId: string): Promise<SurahRecor
  * Fetch ayahs for a specific surah from the backend API
  */
 export const fetchAyahsFromBackend = async (surahId: string): Promise<AyahRecord[]> => {
+  const grpc = getBackendGrpc();
+  if (grpc) {
+    const ayahs = await grpc.listAyahs(surahId);
+    return ayahs.map(fromProtoAyah);
+  }
+
   const response = await fetchWithTracing(`${BACKEND_URL}/api/surahs/${surahId}/ayahs`);
 
   if (response.status === 404) {
@@ -191,6 +231,12 @@ export const fetchAyahFromBackend = async (
   surahId: string,
   ayahNumber: number
 ): Promise<AyahRecord | null> => {
+  const grpc = getBackendGrpc();
+  if (grpc) {
+    const ayah = await grpc.getAyah(surahId, ayahNumber);
+    return ayah && fromProtoAyah(ayah);
+  }
+
   const ayahs = await fetchAyahsFromBackend(surahId);
   return ayahs.find((ayah) => ayah.ayahNumber === ayahNumber) ?? null;
 };

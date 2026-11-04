@@ -31,6 +31,10 @@ vi.mock('../../infra/backendClient', () => ({
   fetchAyahFromBackend: vi.fn()
 }));
 
+vi.mock('../../infra/backendGrpc', () => ({
+  getBackendGrpc: vi.fn(() => null)
+}));
+
 let schema: GraphQLSchema;
 
 beforeAll(async () => {
