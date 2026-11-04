@@ -55,6 +55,15 @@ go:
   - 'go.work.sum'
   - 'scripts/check-go-coverage.sh'
 
+proto:
+  - *shared
+  - 'schemas/proto/**'
+  - 'buf.yaml'
+  - 'buf.gen.yaml'
+  - 'apps/backend/go.mod'
+  - 'apps/backend/internal/gen/**'
+  - 'apps/bff/src/gen/**'
+
 db:
   - *shared
   - 'db/**'

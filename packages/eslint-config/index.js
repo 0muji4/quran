@@ -10,7 +10,7 @@ import globals from 'globals';
 export default [
   // Global ignores
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**']
+    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**', '**/src/gen/**']
   },
 
   // Base ESLint recommended config

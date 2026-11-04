@@ -11,6 +11,7 @@ export default defineConfig({
       exclude: [
         'src/**/__tests__/**',
         'src/**/*.test.ts',
+        'src/gen/**', // Exclude protoc-generated code
         'src/server/**' // Exclude server entry points
       ],
       thresholds: {
