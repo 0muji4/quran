@@ -140,6 +140,8 @@ services:
       - 'localhost:host-gateway'
     environment:
       BACKEND_URL: http://backend:8080
+      BACKEND_GRPC_ADDR: backend:8080
+      BACKEND_GRPC_TLS: 'false'
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       JWT_SECRET: local-jwt-secret
       REFRESH_TOKEN_SECRET: local-refresh-secret

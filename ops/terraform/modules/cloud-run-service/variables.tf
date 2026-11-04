@@ -29,6 +29,12 @@ variable "container_port" {
   default     = 8080
 }
 
+variable "http2_enabled" {
+  description = "If true, Cloud Run forwards requests to the container as cleartext HTTP/2 (h2c). Required for gRPC."
+  type        = bool
+  default     = false
+}
+
 variable "env" {
   description = "Plain environment variables forwarded to the container."
   type        = map(string)

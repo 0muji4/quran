@@ -46,6 +46,8 @@ js:
   # so attaching here is sufficient — no separate `e2e` filter needed.
   - 'e2e/**'
   - 'playwright.config.ts'
+  # e2e boots the stack from ops/docker/compose.dev.yml.
+  - 'ops/docker/**'
 
 go:
   - *shared
