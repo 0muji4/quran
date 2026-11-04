@@ -92,7 +92,7 @@ func (r *Repository) GetSurah(ctx context.Context, id int32) (domain.Surah, erro
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.Surah{}, errors.New("surah not found")
+			return domain.Surah{}, domain.ErrSurahNotFound
 		}
 		return domain.Surah{}, err
 	}

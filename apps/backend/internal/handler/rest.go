@@ -10,9 +10,7 @@ import (
 	"quran-project/apps/backend/internal/domain"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
-	"quran-project/apps/backend/internal/storage"
 	"quran-project/apps/backend/internal/telemetry"
-	"quran-project/apps/backend/internal/transcribe"
 )
 
 // REST exposes the HTTP surface for surahs, ayahs, and recitation scoring.
@@ -137,16 +135,11 @@ func (h REST) handleCreateScoringJob(w http.ResponseWriter, r *http.Request) {
 		ReferenceAudioKey: req.ReferenceAudioKey,
 	})
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrAyahNotFound):
-			http.Error(w, "ayah not found", http.StatusNotFound)
-		case errors.Is(err, storage.ErrObjectNotFound):
-			writeError(w, r, http.StatusNotFound, "audio upload not found", err)
-		case errors.Is(err, transcribe.ErrUnavailable):
-			writeError(w, r, http.StatusServiceUnavailable, "transcriber not configured (CHIRP_PROJECT)", err)
-		default:
-			writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
+		if failure, ok := findScoringFailure(err); ok {
+			writeError(w, r, failure.httpStatus, failure.message, err)
+			return
 		}
+		writeError(w, r, http.StatusInternalServerError, "failed to score recitation", err)
 		return
 	}
 
