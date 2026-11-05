@@ -78,7 +78,7 @@ func SetupTestMinIO(t *testing.T) (endpoint, accessKey, secretKey string, cleanu
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "docker.io/minio/minio:latest",
+		Image:        "quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z",
 		ExposedPorts: []string{"9000/tcp"},
 		Env: map[string]string{
 			"MINIO_ROOT_USER":     "minioadmin",
