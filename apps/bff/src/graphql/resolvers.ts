@@ -1,7 +1,12 @@
 import { GraphQLScalarType, Kind, valueFromASTUntyped, GraphQLError } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
 import { fetchSurahsFromBackend, fetchSurahFromBackend, fetchAyahFromBackend } from '../infra';
-import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
+import {
+  createScoringJob,
+  createSignedUploadUrl,
+  getScoringJob,
+  ScoringQuotaExceededError
+} from '../jobs';
 import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
 const JSONObjectScalar = new GraphQLScalarType({
@@ -24,6 +29,15 @@ const DateTimeScalar = new GraphQLScalarType({
   parseLiteral: (ast) => (ast.kind === Kind.STRING ? ast.value : null)
 });
 
+const requireSession = (context: GraphQLContext): NonNullable<GraphQLContext['session']> => {
+  if (!context.session) {
+    throw new GraphQLError('authentication required', {
+      extensions: { code: 'UNAUTHENTICATED' }
+    });
+  }
+  return context.session;
+};
+
 export const resolvers: Resolvers<GraphQLContext> = {
   JSONObject: JSONObjectScalar,
   DateTime: DateTimeScalar,
@@ -36,15 +50,20 @@ export const resolvers: Resolvers<GraphQLContext> = {
     },
     surah: async (_parent, args) => fetchSurahFromBackend(args.id),
     ayah: async (_parent, args) => fetchAyahFromBackend(args.surahId, args.ayahNumber),
-    scoringJob: async (_parent, args) => getScoringJob(args.jobId)
+    scoringJob: async (_parent, args, context) => {
+      requireSession(context);
+      return getScoringJob(args.jobId);
+    }
   },
   Mutation: {
     getSignedUploadUrl: (_parent, { input }, context) =>
       createSignedUploadUrl({
         ...input,
-        userId: context.session?.id ?? null
+        userId: requireSession(context).id
       }),
     createScoringJob: async (_parent, { input }, context) => {
+      const session = requireSession(context);
+
       // Validate surahId
       const surahIdValidation = surahIdSchema.safeParse(input.surahId);
       if (!surahIdValidation.success) {
@@ -69,12 +88,19 @@ export const resolvers: Resolvers<GraphQLContext> = {
         }
       }
 
-      return createScoringJob({
-        uploadKey: input.uploadKey,
-        surahId: input.surahId,
-        ayahNumber: input.ayahNumber ?? null,
-        userId: context.session?.id ?? null
-      });
+      try {
+        return await createScoringJob({
+          uploadKey: input.uploadKey,
+          surahId: input.surahId,
+          ayahNumber: input.ayahNumber ?? null,
+          userId: session.id
+        });
+      } catch (error) {
+        if (error instanceof ScoringQuotaExceededError) {
+          throw new GraphQLError(error.message, { extensions: { code: 'RATE_LIMITED' } });
+        }
+        throw error;
+      }
     }
   },
   Surah: {

@@ -12,7 +12,12 @@ import {
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
 } from '../auth/refresh-tokens';
-import { createScoringJob, createSignedUploadUrl, getScoringJob } from '../jobs';
+import {
+  createScoringJob,
+  createSignedUploadUrl,
+  getScoringJob,
+  ScoringQuotaExceededError
+} from '../jobs';
 import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra';
 import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
 import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
@@ -124,6 +129,10 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
       userId: session.id
     });
   } catch (error) {
+    if (error instanceof ScoringQuotaExceededError) {
+      res.status(429).json({ error: error.message });
+      return;
+    }
     res.status(502).json({ error: 'Failed to create scoring job' });
     scoringRequestDuration.record(Date.now() - startedAt, {
       route: '/scoring-jobs',

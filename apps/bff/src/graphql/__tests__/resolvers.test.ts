@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
 import { resolvers } from '../resolvers';
 import type { SurahRecord, AyahRecord } from '../../infra/backendClient';
+import { ScoringQuotaExceededError } from '../../jobs/scoringQuota';
 
 /**
  * Returns a defined resolver entry, throwing if it is absent. Replaces
@@ -30,11 +31,15 @@ vi.mock('../../infra', () => ({
 }));
 
 // Mock the jobs module
-vi.mock('../../jobs', () => ({
-  createScoringJob: vi.fn(),
-  createSignedUploadUrl: vi.fn(),
-  getScoringJob: vi.fn()
-}));
+vi.mock('../../jobs', async () => {
+  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
+  return {
+    createScoringJob: vi.fn(),
+    createSignedUploadUrl: vi.fn(),
+    getScoringJob: vi.fn(),
+    ScoringQuotaExceededError
+  };
+});
 
 const mockSurahs: SurahRecord[] = [
   {
@@ -314,38 +319,15 @@ describe('GraphQL Resolvers', () => {
       expect(result).toEqual(mockUploadUrl);
     });
 
-    it('creates signed upload URL without user session', async () => {
+    it('rejects a request without a session', async () => {
       const { createSignedUploadUrl } = await import('../../jobs');
-      const mockUploadUrl = {
-        sessionId: 'session-456',
-        uploadKey: 'uploads/anonymous.opus',
-        url: 'https://example.com/upload',
-        fields: { key: 'uploads/anonymous.opus' },
-        expiresAt: new Date().toISOString()
-      };
-      vi.mocked(createSignedUploadUrl).mockResolvedValue(mockUploadUrl);
+      const context: GraphQLContext = { session: null, requestId: 'test-request' };
+      const input = { filename: 'anonymous.opus', contentType: 'audio/opus' };
 
-      const input = {
-        filename: 'anonymous.opus',
-        contentType: 'audio/opus'
-      };
-
-      const contextWithoutSession: GraphQLContext = {
-        session: null,
-        requestId: 'test-request'
-      };
-
-      const result = await getResolver('Mutation', 'getSignedUploadUrl')(
-        null,
-        { input },
-        contextWithoutSession
+      expect(() => getResolver('Mutation', 'getSignedUploadUrl')(null, { input }, context)).toThrow(
+        'authentication required'
       );
-
-      expect(createSignedUploadUrl).toHaveBeenCalledWith({
-        ...input,
-        userId: null
-      });
-      expect(result).toEqual(mockUploadUrl);
+      expect(createSignedUploadUrl).not.toHaveBeenCalled();
     });
   });
 
@@ -411,40 +393,25 @@ describe('GraphQL Resolvers', () => {
       expect(result).toEqual(mockJob);
     });
 
-    it('uses null userId when session is null', async () => {
+    it('rejects a request without a session', async () => {
       const { createScoringJob } = await import('../../jobs');
-      const mockJob = {
-        jobId: 'job-anonymous',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        pronunciationFeedback: null
-      };
-      vi.mocked(createScoringJob).mockResolvedValue(mockJob);
+      const context: GraphQLContext = { session: null, requestId: 'test-request' };
+      const input = { uploadKey: 'uploads/anonymous.opus', surahId: '1', ayahNumber: 1 };
 
-      const input = {
-        uploadKey: 'uploads/anonymous.opus',
-        surahId: '1',
-        ayahNumber: 1
-      };
+      await expect(
+        getResolver('Mutation', 'createScoringJob')(null, { input }, context)
+      ).rejects.toThrow('authentication required');
+      expect(createScoringJob).not.toHaveBeenCalled();
+    });
 
-      const contextWithoutSession: GraphQLContext = {
-        session: null,
-        requestId: 'test-request'
-      };
+    it('reports the scoring job limit as RATE_LIMITED', async () => {
+      const { createScoringJob } = await import('../../jobs');
+      vi.mocked(createScoringJob).mockRejectedValue(new ScoringQuotaExceededError());
+      const input = { uploadKey: 'uploads/test.opus', surahId: '1', ayahNumber: 1 };
 
-      const result = await getResolver('Mutation', 'createScoringJob')(
-        null,
-        { input },
-        contextWithoutSession
-      );
-
-      expect(createScoringJob).toHaveBeenCalledWith({
-        uploadKey: 'uploads/anonymous.opus',
-        surahId: '1',
-        ayahNumber: 1,
-        userId: null
-      });
-      expect(result).toEqual(mockJob);
+      await expect(
+        getResolver('Mutation', 'createScoringJob')(null, { input }, mockContext)
+      ).rejects.toMatchObject({ extensions: { code: 'RATE_LIMITED' } });
     });
   });
 
