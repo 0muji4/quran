@@ -78,13 +78,13 @@ func SetupTestMinIO(t *testing.T) (endpoint, accessKey, secretKey string, cleanu
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "docker.io/minio/minio:latest",
+		Image:        "docker.io/bitnamilegacy/minio:2025.7.23-debian-12-r5",
 		ExposedPorts: []string{"9000/tcp"},
 		Env: map[string]string{
 			"MINIO_ROOT_USER":     "minioadmin",
 			"MINIO_ROOT_PASSWORD": "minioadmin",
 		},
-		Cmd: []string{"server", "/data"},
+		Cmd: []string{"minio", "server", "/bitnami/minio/data"},
 	}
 
 	minioContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
