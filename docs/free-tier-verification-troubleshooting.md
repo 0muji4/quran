@@ -243,7 +243,7 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
 - Env vars:
 
   ```
-  DATABASE_URL=<same as backend>
+  DATABASE_URL=<same as backend, with sslmode=verify-full>
   BACKEND_URL=https://tilawah-dev-backend.onrender.com
   OBJECT_STORE_ENDPOINT=<account-id>.r2.cloudflarestorage.com
   OBJECT_STORE_ACCESS_KEY=<same as backend>
