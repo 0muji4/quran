@@ -228,7 +228,11 @@ const fetchScoringJobFromBackend = async (jobId: string): Promise<ScoringResult 
   return parseJson<ScoringResult>(response);
 };
 
-export const getScoringJob = async (jobId: string): Promise<ScoringResult | null> => {
+/** Returns the user's scoring job, or null when it is missing or belongs to someone else. */
+export const getScoringJob = async (
+  jobId: string,
+  userId: string
+): Promise<ScoringResult | null> => {
   const pool = getDatabasePool();
   if (!pool) {
     const result = await fetchScoringJobFromBackend(jobId);
@@ -258,9 +262,9 @@ export const getScoringJob = async (jobId: string): Promise<ScoringResult | null
       reference_audio_key,
       created_at
     FROM scoring_jobs
-    WHERE session_id = $1
+    WHERE session_id = $1 AND user_id = $2
     `,
-    [jobId]
+    [jobId, userId]
   );
 
   if (result.rowCount === 0) return null;

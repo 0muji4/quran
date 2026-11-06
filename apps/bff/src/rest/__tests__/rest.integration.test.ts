@@ -311,7 +311,7 @@ describe('REST API Integration', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockJob);
-      expect(getScoringJob).toHaveBeenCalledWith('job-789');
+      expect(getScoringJob).toHaveBeenCalledWith('job-789', MOCK_SESSION_USER_ID);
     });
 
     it('returns 404 when job not found', async () => {

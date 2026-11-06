@@ -271,7 +271,7 @@ describe('GraphQL Resolvers', () => {
         mockContext
       );
 
-      expect(getScoringJob).toHaveBeenCalledWith('job-123');
+      expect(getScoringJob).toHaveBeenCalledWith('job-123', 'test-user');
       expect(result).toEqual(mockJob);
     });
 

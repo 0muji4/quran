@@ -51,8 +51,7 @@ export const resolvers: Resolvers<GraphQLContext> = {
     surah: async (_parent, args) => fetchSurahFromBackend(args.id),
     ayah: async (_parent, args) => fetchAyahFromBackend(args.surahId, args.ayahNumber),
     scoringJob: async (_parent, args, context) => {
-      requireSession(context);
-      return getScoringJob(args.jobId);
+      return getScoringJob(args.jobId, requireSession(context).id);
     }
   },
   Mutation: {
