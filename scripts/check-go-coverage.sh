@@ -9,8 +9,8 @@ if [ ! -f "$COVERAGE_FILE" ]; then
   exit 1
 fi
 
-# カバレッジ率を計算
-COVERAGE=$(go tool cover -func="$COVERAGE_FILE" | grep total | awk '{print $3}' | sed 's/%//')
+# 生成コードを除外してカバレッジ率を計算
+COVERAGE=$(go tool cover -func=<(grep -v '/internal/gen/' "$COVERAGE_FILE") | grep total | awk '{print $3}' | sed 's/%//')
 
 echo "Total coverage: ${COVERAGE}%"
 echo "Threshold: ${THRESHOLD}%"

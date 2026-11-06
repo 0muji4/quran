@@ -1,4 +1,4 @@
-.PHONY: help install lint test go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
+.PHONY: help install lint test proto-lint proto-gen proto-check go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -55,6 +55,20 @@ bff-test:
 bff-test-coverage:
 	@echo "Running BFF tests with coverage..."
 	@pnpm --filter @quran-project/bff test --coverage
+
+proto-lint: ## Lint protobuf schemas
+	@pnpm exec buf lint
+
+proto-gen: ## Generate Go and TypeScript code from protobuf schemas
+	@pnpm exec buf generate
+
+proto-check: proto-lint proto-gen ## Fail when generated protobuf code is stale
+	@stale=$$(git status --porcelain -- apps/backend/internal/gen apps/bff/src/gen); \
+	if [ -n "$$stale" ]; then \
+		echo "Generated protobuf code is stale; run make proto-gen:"; \
+		echo "$$stale"; \
+		exit 1; \
+	fi
 
 go-test-integration:
 	@echo "Running Go integration tests..."

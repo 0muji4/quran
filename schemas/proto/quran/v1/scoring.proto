@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package quran.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "quran-project/apps/backend/internal/gen/quran/v1;quranpb";
+
+// ScoringService scores recitations.
+service ScoringService {
+  // CreateScoringJob scores one recitation synchronously.
+  rpc CreateScoringJob(CreateScoringJobRequest) returns (CreateScoringJobResponse);
+  // GetScoringJob returns a stored job, or NOT_FOUND.
+  rpc GetScoringJob(GetScoringJobRequest) returns (GetScoringJobResponse);
+}
+
+// ScoringStatus mirrors the scoring_jobs.status column.
+enum ScoringStatus {
+  SCORING_STATUS_UNSPECIFIED = 0;
+  SCORING_STATUS_QUEUED = 1;
+  SCORING_STATUS_RUNNING = 2;
+  SCORING_STATUS_COMPLETED = 3;
+  SCORING_STATUS_FAILED = 4;
+}
+
+// ScoringJob is one recitation scoring attempt.
+message ScoringJob {
+  string session_id = 1;
+  string upload_key = 2;
+  ScoringStatus status = 3;
+  optional double score = 4;
+  google.protobuf.ListValue segments = 5;
+  optional string verdict = 6;
+  google.protobuf.Struct evaluation = 7;
+  google.protobuf.Timestamp create_time = 8;
+}
+
+// CreateScoringJobRequest is the input of CreateScoringJob.
+message CreateScoringJobRequest {
+  string session_id = 1;
+  string upload_key = 2;
+  int32 surah_id = 3;
+  int32 ayah_number = 4;
+  string user_id = 5;
+  string reference_audio_key = 6;
+}
+
+// CreateScoringJobResponse is the output of CreateScoringJob.
+message CreateScoringJobResponse {
+  ScoringJob job = 1;
+}
+
+// GetScoringJobRequest is the input of GetScoringJob.
+message GetScoringJobRequest {
+  string session_id = 1;
+}
+
+// GetScoringJobResponse is the output of GetScoringJob.
+message GetScoringJobResponse {
+  ScoringJob job = 1;
+}
