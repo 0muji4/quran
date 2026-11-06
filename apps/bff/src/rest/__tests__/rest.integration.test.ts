@@ -7,11 +7,15 @@ import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
 import { expectZodPathError } from '../../__tests__/zodAssertions';
 
 // Mock dependencies
-vi.mock('../../jobs', () => ({
-  createSignedUploadUrl: vi.fn(),
-  createScoringJob: vi.fn(),
-  getScoringJob: vi.fn()
-}));
+vi.mock('../../jobs', async () => {
+  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
+  return {
+    createSignedUploadUrl: vi.fn(),
+    createScoringJob: vi.fn(),
+    getScoringJob: vi.fn(),
+    ScoringQuotaExceededError
+  };
+});
 
 vi.mock('../../infra', () => ({
   deleteUserData: vi.fn()
@@ -235,6 +239,19 @@ describe('REST API Integration', () => {
 
       expect(response.status).toBe(400);
       expectZodPathError(response.body, ['body', 'ayahNumber']);
+    });
+
+    it('returns 429 when the scoring job limit is reached', async () => {
+      const { createScoringJob, ScoringQuotaExceededError } = await import('../../jobs');
+      vi.mocked(createScoringJob).mockRejectedValue(new ScoringQuotaExceededError());
+
+      const response = await request(app).post('/scoring-jobs').send({
+        uploadKey: 'uploads/test.opus',
+        surahId: '1',
+        ayahNumber: 1
+      });
+
+      expect(response.status).toBe(429);
     });
 
     it('returns 502 when createScoringJob fails', async () => {

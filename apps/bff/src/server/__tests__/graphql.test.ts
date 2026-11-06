@@ -1,6 +1,7 @@
 import type { GraphQLSchema } from 'graphql';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { getGraphQLParameters, processRequest } from 'graphql-helix';
+import { graphqlHttpStatus } from '../../graphql/httpStatus';
 
 const mockSurahs = vi.hoisted(() => [
   {
@@ -66,6 +67,36 @@ describe('GraphQL helix integration', () => {
     if (result.type === 'RESPONSE') {
       expect(result.status).toBe(200);
       expect(result.payload).toEqual({ data: { __typename: 'Query' } });
+    }
+  });
+
+  it.each([
+    [
+      'createScoringJob',
+      'mutation { createScoringJob(input: { uploadKey: "k", surahId: "1" }) { jobId } }'
+    ],
+    [
+      'getSignedUploadUrl',
+      'mutation { getSignedUploadUrl(input: { filename: "a.webm", contentType: "audio/webm" }) { url } }'
+    ],
+    ['scoringJob', '{ scoringJob(jobId: "job-1") { jobId } }']
+  ])('rejects %s without a session', async (_name, queryText) => {
+    const request = createRequest(queryText);
+    const { operationName, query, variables } = getGraphQLParameters(request);
+
+    const result = await processRequest({
+      operationName,
+      query,
+      variables,
+      request,
+      schema,
+      contextFactory: () => ({ session: null, requestId: 'test-request' })
+    });
+
+    expect(result.type).toBe('RESPONSE');
+    if (result.type === 'RESPONSE') {
+      expect(result.payload.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+      expect(graphqlHttpStatus(result.status, result.payload)).toBe(401);
     }
   });
 

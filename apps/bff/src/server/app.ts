@@ -10,6 +10,7 @@ import {
   shouldRenderGraphiQL
 } from 'graphql-helix';
 import { authMiddleware, authRouter, buildContext, type AuthedRequest } from '../auth';
+import { graphqlHttpStatus } from '../graphql/httpStatus';
 import { resolvers } from '../graphql';
 import { meRouter } from '../me';
 import { rscRouter, restRouter } from '../rest';
@@ -78,7 +79,7 @@ export const createApp = () => {
 
     if (result.type === 'RESPONSE') {
       result.headers.forEach(({ name, value }) => res.setHeader(name, value));
-      res.status(result.status).json(result.payload);
+      res.status(graphqlHttpStatus(result.status, result.payload)).json(result.payload);
     } else if (result.type === 'MULTIPART_RESPONSE') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const multipartResult = result as any;

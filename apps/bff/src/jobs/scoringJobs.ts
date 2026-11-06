@@ -9,6 +9,7 @@ import {
 } from '../infra';
 import { fetchWithTracing } from '../infra/backendClient';
 import { getBackendGrpc } from '../infra/backendGrpc';
+import { consumeScoringQuota } from './scoringQuota';
 
 const secondsFromNow = (seconds: number): string =>
   new Date(Date.now() + seconds * 1000).toISOString();
@@ -149,6 +150,8 @@ export const createScoringJob = async (input: {
   ayahNumber?: number | null;
   userId?: string | null;
 }): Promise<ScoringResult> => {
+  if (input.userId) consumeScoringQuota(input.userId);
+
   const sessionId =
     input.sessionId ??
     (await findSessionIdForUploadKey({
