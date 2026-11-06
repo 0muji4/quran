@@ -33,11 +33,13 @@ vi.mock('../../infra', () => ({
 // Mock the jobs module
 vi.mock('../../jobs', async () => {
   const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
+  const { UploadNotFoundError } = await import('../../jobs/errors');
   return {
     createScoringJob: vi.fn(),
     createSignedUploadUrl: vi.fn(),
     getScoringJob: vi.fn(),
-    ScoringQuotaExceededError
+    ScoringQuotaExceededError,
+    UploadNotFoundError
   };
 });
 

@@ -16,7 +16,8 @@ import {
   createScoringJob,
   createSignedUploadUrl,
   getScoringJob,
-  ScoringQuotaExceededError
+  ScoringQuotaExceededError,
+  UploadNotFoundError
 } from '../jobs';
 import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra';
 import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
@@ -131,6 +132,10 @@ restRouter.post('/scoring-jobs', async (req: AuthedRequest, res) => {
   } catch (error) {
     if (error instanceof ScoringQuotaExceededError) {
       res.status(429).json({ error: error.message });
+      return;
+    }
+    if (error instanceof UploadNotFoundError) {
+      res.status(404).json({ error: error.message });
       return;
     }
     res.status(502).json({ error: 'Failed to create scoring job' });

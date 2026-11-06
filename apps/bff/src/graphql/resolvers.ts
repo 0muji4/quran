@@ -5,7 +5,8 @@ import {
   createScoringJob,
   createSignedUploadUrl,
   getScoringJob,
-  ScoringQuotaExceededError
+  ScoringQuotaExceededError,
+  UploadNotFoundError
 } from '../jobs';
 import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
@@ -97,6 +98,9 @@ export const resolvers: Resolvers<GraphQLContext> = {
       } catch (error) {
         if (error instanceof ScoringQuotaExceededError) {
           throw new GraphQLError(error.message, { extensions: { code: 'RATE_LIMITED' } });
+        }
+        if (error instanceof UploadNotFoundError) {
+          throw new GraphQLError(error.message, { extensions: { code: 'NOT_FOUND' } });
         }
         throw error;
       }

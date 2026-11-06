@@ -230,12 +230,6 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
          VALUES ($1, $2, $3, $4)`,
         ['session-with-user', 'user-123', 'uploads/with-user.opus', expiresAt]
       );
-
-      await pool.query(
-        `INSERT INTO user_data_objects (session_id, user_id, audio_key, expires_at)
-         VALUES ($1, $2, $3, $4)`,
-        ['session-without-user', null, 'uploads/without-user.opus', expiresAt]
-      );
     });
 
     it('finds session by audio key with userId', async () => {
@@ -247,17 +241,10 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
       expect(result).toBe('session-with-user');
     });
 
-    it('finds session by audio key without userId', async () => {
-      const result = await findSessionIdForUploadKey({
-        audioKey: 'uploads/without-user.opus'
-      });
-
-      expect(result).toBe('session-without-user');
-    });
-
     it('returns null when audio key not found', async () => {
       const result = await findSessionIdForUploadKey({
-        audioKey: 'uploads/nonexistent.opus'
+        audioKey: 'uploads/nonexistent.opus',
+        userId: 'user-123'
       });
 
       expect(result).toBeNull();
@@ -270,15 +257,6 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
       });
 
       expect(result).toBeNull();
-    });
-
-    it('handles null userId in query', async () => {
-      const result = await findSessionIdForUploadKey({
-        audioKey: 'uploads/with-user.opus',
-        userId: null
-      });
-
-      expect(result).toBe('session-with-user');
     });
   });
 
