@@ -170,7 +170,7 @@ restRouter.get('/scoring-jobs/:jobId', async (req: AuthedRequest, res) => {
 
   let job: JobResponse | null;
   try {
-    job = await getScoringJob(jobId);
+    job = await getScoringJob(jobId, session.id);
   } catch (error) {
     res.status(502).json({ error: 'Failed to fetch scoring job' });
     scoringRequestDuration.record(Date.now() - startedAt, {

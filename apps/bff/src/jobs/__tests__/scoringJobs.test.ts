@@ -124,12 +124,24 @@ describe('getScoringJob (pool path)', () => {
     ...overrides
   });
 
+  it('queries only the jobs owned by the user', async () => {
+    const { getDatabasePool } = await import('../../infra');
+    const query = vi.fn().mockResolvedValue({ rowCount: 0, rows: [] });
+    vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
+
+    expect(await getScoringJob('job-1', 'someone-else')).toBeNull();
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toContain('user_id = $2');
+    expect(params).toEqual(['job-1', 'someone-else']);
+  });
+
   it('returns populated feedback mapped from scoring_jobs.evaluation, with status straight from the row', async () => {
     const { getDatabasePool } = await import('../../infra');
     const query = vi.fn().mockResolvedValue({ rowCount: 1, rows: [makeRow()] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
-    const result = await getScoringJob('job-1');
+    const result = await getScoringJob('job-1', 'user-1');
 
     expect(result).not.toBeNull();
     expect(result?.status).toBe('COMPLETED');
@@ -149,7 +161,7 @@ describe('getScoringJob (pool path)', () => {
     const query = vi.fn().mockResolvedValue({ rowCount: 1, rows: [makeRow()] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
-    await getScoringJob('job-1');
+    await getScoringJob('job-1', 'user-1');
 
     const sql = String(query.mock.calls[0][0]);
     expect(sql).not.toMatch(/asr_results/i);
@@ -163,7 +175,7 @@ describe('getScoringJob (pool path)', () => {
     });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
-    const result = await getScoringJob('job-1');
+    const result = await getScoringJob('job-1', 'user-1');
 
     expect(result?.status).toBe('RUNNING');
     expect(result?.feedback).toBeNull();
@@ -174,7 +186,7 @@ describe('getScoringJob (pool path)', () => {
     const query = vi.fn().mockResolvedValue({ rowCount: 0, rows: [] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
-    expect(await getScoringJob('missing')).toBeNull();
+    expect(await getScoringJob('missing', 'user-1')).toBeNull();
   });
 });
 
@@ -269,8 +281,8 @@ describe('scoring over gRPC', () => {
       .mockResolvedValueOnce(null);
     vi.mocked(getBackendGrpc).mockReturnValue({ getScoringJob: get } as never);
 
-    const found = await getScoringJob('job-1');
-    const missing = await getScoringJob('missing');
+    const found = await getScoringJob('job-1', 'user-1');
+    const missing = await getScoringJob('missing', 'user-1');
 
     expect(found?.feedback?.accuracy).toBe(0.9);
     expect(missing).toBeNull();

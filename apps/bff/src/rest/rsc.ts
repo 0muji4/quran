@@ -63,7 +63,7 @@ rscRouter.get('/scores/:sessionId', async (req: AuthedRequest, res) => {
   if (!session) return;
   let job;
   try {
-    job = await getScoringJob(sessionId);
+    job = await getScoringJob(sessionId, session.id);
   } catch (error) {
     res.status(502).json({ error: 'Scores unavailable' });
     scoresRequestDuration.record(Date.now() - startedAt, {
