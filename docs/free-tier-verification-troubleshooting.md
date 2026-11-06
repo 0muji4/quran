@@ -69,7 +69,7 @@ Chirp 3 は `us` または `eu` の multi-region endpoint のみで提供され�
 
 `ApolloQuranBackend.derivedUploadKey()` が `substringAfterLast('/')` でファイル名末尾だけを取っていた。R2 上のキーは `uploads/<timestamp>-<filename>` で slash を含むが、Android は `<filename>` だけを `createScoringJob` mutation に送るため、BFF の `findSessionIdForUploadKey` が `user_data_objects.audio_key` でヒットせず、500 "Session ID not found for upload key" が 154 ms で返る。
 
-ローカル開発 (MinIO + bucket 直下の flat key) では再現せず、R2 にデプロイして `MINIO_UPLOAD_PREFIX=uploads/` を入れた瞬間に初めて顕在化した。curl で BFF を直接叩いて bucket prefix 付きの key で `createScoringJob` を実行すると成功するため、Android の path 抽出が単独で壊れていることが切り分けられた。
+ローカル開発 (MinIO + bucket 直下の flat key) では再現せず、R2 にデプロイして `OBJECT_STORE_UPLOAD_PREFIX=uploads/` を入れた瞬間に初めて顕在化した。curl で BFF を直接叩いて bucket prefix 付きの key で `createScoringJob` を実行すると成功するため、Android の path 抽出が単独で壊れていることが切り分けられた。
 
 修正は path から先頭 1 セグメント (bucket 名) のみ落とし、その先 (`uploads/...`) を保持する形に変更した (PR #439)。Apollo wrapper が原因例外を `BackendUnavailable(cause=null)` に丸めるため、Android 側ログだけでは何が起きているか分からず、BFF の HTTP request log (`status=500 path=/graphql duration_ms=154`) と curl の手動再現の組合せで切り分ける必要があった。例外ラッパーで `cause` を握り潰している箇所は、根本原因切り分けのコストを大幅に上げるので、将来的な改善対象である。
 
@@ -89,11 +89,11 @@ Apollo Kotlin v4 は HTTP interceptor を `addHttpInterceptor` でビルダー�
 
 これも、Speech v2 がサポートする encoding の一覧を選定フェーズで確認していなかったという、選定漏れに起因する。iOS 側も同じく `kAudioFormatMPEG4AAC` で `.m4a` を録音して `Content-Type: audio/m4a` でアップロードしており、本検証では Android しか実機で叩いていないだけで、iOS で同じフローを実行すれば同様に Chirp で復号に失敗する。iOS 側の修正は本ドキュメントの「8. iOS 側の状況」を参照。
 
-### 3.6 BFF の MINIO_EXTERNAL_ENDPOINT に scheme を付けてしまった (設定ミス、コード変更なし)
+### 3.6 BFF の OBJECT_STORE_EXTERNAL_ENDPOINT に scheme を付けてしまった (設定ミス、コード変更なし)
 
-`MINIO_EXTERNAL_ENDPOINT=https://...r2.cloudflarestorage.com` のように scheme 付きで env var を設定すると、`apps/bff/src/infra/storage.ts` の `endpoint.split(':')[0]` がスキーマ部分 (`https`) をホスト名にする。presigned URL 生成が即失敗し、Android は `getSignedUploadUrl` の data null として `BackendUnavailable` を受け取る。
+`OBJECT_STORE_EXTERNAL_ENDPOINT=https://...r2.cloudflarestorage.com` のように scheme 付きで env var を設定すると、`apps/bff/src/infra/storage.ts` の `endpoint.split(':')[0]` がスキーマ部分 (`https`) をホスト名にする。presigned URL 生成が即失敗し、Android は `getSignedUploadUrl` の data null として `BackendUnavailable` を受け取る。
 
-修正は env var を host:port のみで設定 (`<account>.r2.cloudflarestorage.com`) し、HTTPS は `MINIO_SECURE=true` 側で表現するだけ。コード側は変更なし、設定ドキュメントの不備として処理した。
+修正は env var を host:port のみで設定 (`<account>.r2.cloudflarestorage.com`) し、HTTPS は `OBJECT_STORE_USE_SSL=true` 側で表現するだけ。コード側は変更なし、設定ドキュメントの不備として処理した。
 
 これは minio-go の URL parsing の癖を知らないと再発するので、[[minio-endpoint-host-only]] として記憶化している。
 
@@ -245,13 +245,13 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
   ```
   DATABASE_URL=<same as backend>
   BACKEND_URL=https://tilawah-dev-backend.onrender.com
-  MINIO_ENDPOINT=<account-id>.r2.cloudflarestorage.com
-  MINIO_ACCESS_KEY=<same as backend>
-  MINIO_SECRET_KEY=<same as backend>
-  MINIO_BUCKET=tilawah-dev-uploads
-  MINIO_SECURE=true
-  MINIO_EXTERNAL_ENDPOINT=<account-id>.r2.cloudflarestorage.com  ← scheme なし
-  MINIO_UPLOAD_PREFIX=uploads/
+  OBJECT_STORE_ENDPOINT=<account-id>.r2.cloudflarestorage.com
+  OBJECT_STORE_ACCESS_KEY=<same as backend>
+  OBJECT_STORE_SECRET_KEY=<same as backend>
+  OBJECT_STORE_BUCKET=tilawah-dev-uploads
+  OBJECT_STORE_USE_SSL=true
+  OBJECT_STORE_EXTERNAL_ENDPOINT=<account-id>.r2.cloudflarestorage.com  ← scheme なし
+  OBJECT_STORE_UPLOAD_PREFIX=uploads/
   JWT_SECRET=<openssl rand -hex 32>
   REFRESH_TOKEN_SECRET=<openssl rand -hex 32>
   NODE_ENV=production

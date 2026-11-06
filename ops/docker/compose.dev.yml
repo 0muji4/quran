@@ -27,8 +27,7 @@ services:
       # docker-library/postgres#37 + #1259.
       - postgres_data:/var/lib/postgresql
 
-  # S3-compatible storage. RustFS replaces the archived MinIO server; clients
-  # keep the MINIO_* settings because they only depend on the S3 protocol.
+  # S3-compatible storage. RustFS replaces the archived MinIO server.
   minio:
     image: rustfs/rustfs:1.0.4
     restart: unless-stopped
@@ -162,14 +161,14 @@ services:
       # baseline (db/seed.sql) cannot be rendered.
       NODE_ENV: development
       MOCK_SESSION: 'true'
-      MINIO_ENDPOINT: minio:9000
-      MINIO_EXTERNAL_ENDPOINT: localhost:9000
-      MINIO_ACCESS_KEY: minio
-      MINIO_SECRET_KEY: minio123
-      MINIO_BUCKET: quran-alignments
-      MINIO_SECURE: 'false'
-      MINIO_UPLOAD_PREFIX: uploads/
-      MINIO_APPLY_BUCKET_POLICY: 'true'
+      OBJECT_STORE_ENDPOINT: minio:9000
+      OBJECT_STORE_EXTERNAL_ENDPOINT: localhost:9000
+      OBJECT_STORE_ACCESS_KEY: minio
+      OBJECT_STORE_SECRET_KEY: minio123
+      OBJECT_STORE_BUCKET: quran-alignments
+      OBJECT_STORE_USE_SSL: 'false'
+      OBJECT_STORE_UPLOAD_PREFIX: uploads/
+      OBJECT_STORE_APPLY_BUCKET_POLICY: 'true'
       SIGNED_URL_TTL_SECONDS: '900'
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-bff

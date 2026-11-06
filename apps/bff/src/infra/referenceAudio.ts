@@ -76,7 +76,7 @@ export const ensureReferenceAudio = async (
   ayahNumber: number
 ): Promise<ReferenceAudioResult> => {
   const key = referenceAudioKey(surahId, ayahNumber);
-  const bucket = process.env.MINIO_BUCKET;
+  const bucket = process.env.OBJECT_STORE_BUCKET;
   const internal = getMinioClient();
   const external = getMinioClientForPresignedUrls();
 

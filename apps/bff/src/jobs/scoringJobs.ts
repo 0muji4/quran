@@ -12,7 +12,7 @@ import { getBackendGrpc } from '../infra/backendGrpc';
 
 const secondsFromNow = (seconds: number): string =>
   new Date(Date.now() + seconds * 1000).toISOString();
-const uploadPrefix = (): string => process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';
+const uploadPrefix = (): string => process.env.OBJECT_STORE_UPLOAD_PREFIX ?? 'uploads/';
 const uploadTtlSeconds = (): number => Number(process.env.SIGNED_URL_TTL_SECONDS ?? '900');
 
 const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8080';
@@ -100,7 +100,7 @@ const createReferenceAudioUrl = async (
 ): Promise<string | null> => {
   if (!referenceAudioKey) return null;
   const client = getMinioClientForPresignedUrls();
-  const bucket = process.env.MINIO_BUCKET;
+  const bucket = process.env.OBJECT_STORE_BUCKET;
   const expiresIn = uploadTtlSeconds();
 
   if (client && bucket) {
@@ -116,7 +116,7 @@ const createReferenceAudioUrl = async (
 const createRecordingUrl = async (uploadKey: string | null): Promise<string | null> => {
   if (!uploadKey) return null;
   const client = getMinioClientForPresignedUrls();
-  const bucket = process.env.MINIO_BUCKET;
+  const bucket = process.env.OBJECT_STORE_BUCKET;
   const expiresIn = uploadTtlSeconds();
 
   if (client && bucket) {
@@ -303,7 +303,7 @@ export const createSignedUploadUrl = async (input: {
   const expiresIn = uploadTtlSeconds();
   const expiresAt = secondsFromNow(expiresIn);
   const client = getMinioClientForPresignedUrls();
-  const bucket = process.env.MINIO_BUCKET;
+  const bucket = process.env.OBJECT_STORE_BUCKET;
 
   if (client && bucket) {
     const url = await client.presignedPutObject(bucket, uploadKey, expiresIn);

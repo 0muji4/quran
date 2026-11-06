@@ -33,7 +33,7 @@ public struct SignedUploadPayload {
   /// final filename and made `createScoringJob` fail with
   /// "Session ID not found for upload key" on S3-style deployments
   /// where the key contains slashes (Cloudflare R2 with
-  /// `MINIO_UPLOAD_PREFIX=uploads/`). Mirrors the Android fix landed
+  /// `OBJECT_STORE_UPLOAD_PREFIX=uploads/`). Mirrors the Android fix landed
   /// in PR #439.
   static func derivedUploadKey(from urlString: String) -> String {
     guard let path = URL(string: urlString)?.path else { return "" }
