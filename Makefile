@@ -1,4 +1,4 @@
-.PHONY: help install lint test proto-lint proto-gen proto-check go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell minio-cors format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
+.PHONY: help install lint test proto-lint proto-gen proto-check go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -135,17 +135,6 @@ db-status:
 db-shell:
 	@docker exec -it $$(docker compose -f ops/docker/compose.dev.yml ps -q postgres) \
 		psql -U app -d app
-
-minio-cors:
-	@echo "Setting MinIO CORS configuration..."
-	@docker run --rm --network $$(docker compose -f ops/docker/compose.dev.yml ps | head -2 | tail -1 | awk '{print $$NF}' | sed 's/_.*//') \
-		-v $$(pwd)/ops/docker/minio-cors.json:/tmp/cors.json \
-		minio/mc:latest \
-		sh -c " \
-			mc alias set local http://minio:9000 minio minio123 && \
-			mc anonymous set download local/quran-alignments/uploads && \
-			echo 'CORS setup complete (note: mc does not support CORS directly, BFF will handle it)' \
-		"
 
 ## Development Environment
 
