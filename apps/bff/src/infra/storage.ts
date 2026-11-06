@@ -26,11 +26,11 @@ export const resetDatabasePool = async (): Promise<void> => {
 
 export const getMinioClient = (): MinioClient | null => {
   if (minio) return minio;
-  const endpoint = process.env.MINIO_ENDPOINT;
-  const accessKey = process.env.MINIO_ACCESS_KEY;
-  const secretKey = process.env.MINIO_SECRET_KEY;
+  const endpoint = process.env.OBJECT_STORE_ENDPOINT;
+  const accessKey = process.env.OBJECT_STORE_ACCESS_KEY;
+  const secretKey = process.env.OBJECT_STORE_SECRET_KEY;
   if (!endpoint || !accessKey || !secretKey) return null;
-  const secure = process.env.MINIO_SECURE?.toLowerCase() === 'true';
+  const secure = process.env.OBJECT_STORE_USE_SSL?.toLowerCase() === 'true';
   minio = new MinioClient({
     endPoint: endpoint.split(':')[0],
     port: endpoint.includes(':') ? Number(endpoint.split(':')[1]) : undefined,
@@ -44,11 +44,11 @@ export const getMinioClient = (): MinioClient | null => {
 export const getMinioClientForPresignedUrls = (): MinioClient | null => {
   if (minioExternal) return minioExternal;
   // Use external endpoint for presigned URLs so signature matches the URL host
-  const endpoint = process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT;
-  const accessKey = process.env.MINIO_ACCESS_KEY;
-  const secretKey = process.env.MINIO_SECRET_KEY;
+  const endpoint = process.env.OBJECT_STORE_EXTERNAL_ENDPOINT || process.env.OBJECT_STORE_ENDPOINT;
+  const accessKey = process.env.OBJECT_STORE_ACCESS_KEY;
+  const secretKey = process.env.OBJECT_STORE_SECRET_KEY;
   if (!endpoint || !accessKey || !secretKey) return null;
-  const secure = process.env.MINIO_SECURE?.toLowerCase() === 'true';
+  const secure = process.env.OBJECT_STORE_USE_SSL?.toLowerCase() === 'true';
   minioExternal = new MinioClient({
     endPoint: endpoint.split(':')[0],
     port: endpoint.includes(':') ? Number(endpoint.split(':')[1]) : undefined,
@@ -60,9 +60,9 @@ export const getMinioClientForPresignedUrls = (): MinioClient | null => {
 };
 
 export const ensureBucketPolicy = async (): Promise<void> => {
-  const bucket = process.env.MINIO_BUCKET;
-  const uploadPrefix = process.env.MINIO_UPLOAD_PREFIX ?? 'uploads/';
-  const applyPolicy = process.env.MINIO_APPLY_BUCKET_POLICY === 'true';
+  const bucket = process.env.OBJECT_STORE_BUCKET;
+  const uploadPrefix = process.env.OBJECT_STORE_UPLOAD_PREFIX ?? 'uploads/';
+  const applyPolicy = process.env.OBJECT_STORE_APPLY_BUCKET_POLICY === 'true';
   const client = getMinioClient();
   if (!client || !bucket) return;
 
@@ -171,7 +171,7 @@ export const deleteUserData = async (input: {
     [input.sessionId, input.userId]
   );
 
-  const bucket = process.env.MINIO_BUCKET;
+  const bucket = process.env.OBJECT_STORE_BUCKET;
   const client = getMinioClient();
   if (bucket && client) {
     await client.removeObject(bucket, audioKey);

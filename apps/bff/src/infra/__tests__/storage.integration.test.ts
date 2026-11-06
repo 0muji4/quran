@@ -56,12 +56,12 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
 
     // Set environment variables for the storage module
     process.env.DATABASE_URL = `postgresql://${pool.options.user}:${pool.options.password}@${pool.options.host}:${pool.options.port}/${pool.options.database}`;
-    process.env.MINIO_ENDPOINT = `${minioClient.host}:${minioClient.port}`;
-    process.env.MINIO_ACCESS_KEY = minioClient.accessKey;
-    process.env.MINIO_SECRET_KEY = minioClient.secretKey;
-    process.env.MINIO_BUCKET = bucket;
-    process.env.MINIO_SECURE = 'false';
-    process.env.MINIO_APPLY_BUCKET_POLICY = 'false'; // Skip policy for faster tests
+    process.env.OBJECT_STORE_ENDPOINT = `${minioClient.host}:${minioClient.port}`;
+    process.env.OBJECT_STORE_ACCESS_KEY = minioClient.accessKey;
+    process.env.OBJECT_STORE_SECRET_KEY = minioClient.secretKey;
+    process.env.OBJECT_STORE_BUCKET = bucket;
+    process.env.OBJECT_STORE_USE_SSL = 'false';
+    process.env.OBJECT_STORE_APPLY_BUCKET_POLICY = 'false'; // Skip policy for faster tests
 
     // Create bucket for tests
     await minioClient.makeBucket(bucket, '');
@@ -116,7 +116,7 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
   describe('ensureBucketPolicy', () => {
     it('creates bucket if it does not exist', async () => {
       const newBucket = `test-new-bucket-${Date.now()}`;
-      process.env.MINIO_BUCKET = newBucket;
+      process.env.OBJECT_STORE_BUCKET = newBucket;
 
       await ensureBucketPolicy();
 
@@ -125,16 +125,16 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
 
       // Cleanup
       await minioClient.removeBucket(newBucket);
-      process.env.MINIO_BUCKET = bucket;
+      process.env.OBJECT_STORE_BUCKET = bucket;
     });
 
     it('does not throw if bucket already exists', async () => {
       await expect(ensureBucketPolicy()).resolves.not.toThrow();
     });
 
-    it('applies bucket policy when MINIO_APPLY_BUCKET_POLICY is true', async () => {
-      process.env.MINIO_APPLY_BUCKET_POLICY = 'true';
-      process.env.MINIO_UPLOAD_PREFIX = 'uploads/';
+    it('applies bucket policy when OBJECT_STORE_APPLY_BUCKET_POLICY is true', async () => {
+      process.env.OBJECT_STORE_APPLY_BUCKET_POLICY = 'true';
+      process.env.OBJECT_STORE_UPLOAD_PREFIX = 'uploads/';
 
       await ensureBucketPolicy();
 
@@ -142,7 +142,7 @@ describe.skipIf(!postgresAvailable)('storage integration', () => {
       expect(policy).toBeDefined();
       expect(policy).toContain('uploads/*');
 
-      process.env.MINIO_APPLY_BUCKET_POLICY = 'false';
+      process.env.OBJECT_STORE_APPLY_BUCKET_POLICY = 'false';
     });
   });
 

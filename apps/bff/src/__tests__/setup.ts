@@ -74,10 +74,10 @@ export const setupTestMinIO = (): {
   const bucket = `test-bucket-${randomUUID()}`;
 
   const client = new MinioClient({
-    endPoint: process.env.TEST_MINIO_ENDPOINT?.split(':')[0] || 'localhost',
-    port: parseInt(process.env.TEST_MINIO_ENDPOINT?.split(':')[1] || '9000'),
-    accessKey: process.env.TEST_MINIO_ACCESS_KEY || 'minio',
-    secretKey: process.env.TEST_MINIO_SECRET_KEY || 'minio123',
+    endPoint: process.env.TEST_OBJECT_STORE_ENDPOINT?.split(':')[0] || 'localhost',
+    port: parseInt(process.env.TEST_OBJECT_STORE_ENDPOINT?.split(':')[1] || '9000'),
+    accessKey: process.env.TEST_OBJECT_STORE_ACCESS_KEY || 'minio',
+    secretKey: process.env.TEST_OBJECT_STORE_SECRET_KEY || 'minio123',
     useSSL: false
   });
 

@@ -298,7 +298,7 @@ _Fig 3. スコアリングシーケンス。実線が Phase 1 範囲、Note が 
 ### 5.1 Common Prerequisites
 
 - 模範音声の reciter は **Husary Mu'allim 128kbps** に固定する（Phase 1）。reciter ピッカーは Phase 4 以降。
-- MinIO バケット名は既存 `MINIO_BUCKET` を流用し、prefix `reference-audio/` で論理分離する。
+- MinIO バケット名は既存 `OBJECT_STORE_BUCKET` を流用し、prefix `reference-audio/` で論理分離する。
 - 模範音声のオブジェクトキー命名規則: `reference-audio/{surahId:03d}{ayahNumber:03d}.mp3`（例: `reference-audio/002001.mp3`）。
 
 ### 5.2 `refAudioKey` (shared-ts)
