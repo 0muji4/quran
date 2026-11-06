@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Cormorant_Garamond, Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -13,15 +12,17 @@ import { WebTelemetryInit } from '../telemetry/WebTelemetryInit';
 import '../../styled-system/styles.css';
 import '../globals.css';
 
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
+// Self-hosted so the build does not depend on fonts.googleapis.com.
+const cormorant = localFont({
+  src: [
+    { path: '../fonts/cormorant-garamond-latin-variable.woff2', weight: '500 700', style: 'normal' }
+  ],
   variable: '--font-cormorant',
   display: 'swap'
 });
 
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: [{ path: '../fonts/inter-latin-variable.woff2', weight: '100 900', style: 'normal' }],
   variable: '--font-inter',
   display: 'swap'
 });

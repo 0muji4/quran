@@ -1,17 +1,21 @@
 # Self-hosted fonts
 
-This directory holds the pre-subsetted Amiri Quran woff2 files used by
-`apps/web/app/layout.tsx` via `next/font/local`. Phase 4.3-D / ADR 0020.
+This directory holds the woff2 files loaded through `next/font/local` in
+`apps/web/app/[locale]/layout.tsx`. Self-hosting keeps the web build independent
+of Google Fonts.
 
 ## Files
 
 - `amiri-quran-subset-regular.woff2` — Quran-glyph subset of `Amiri-Regular.ttf`
 - `amiri-quran-subset-bold.woff2` — Quran-glyph subset of `Amiri-Bold.ttf`
-- `OFL.txt` — SIL Open Font License v1.1, distributed alongside the woff2 files per OFL §"Distribution"
+- `OFL.txt` — SIL Open Font License v1.1, distributed alongside the Amiri woff2 files per OFL §"Distribution"
+- `cormorant-garamond-latin-variable.woff2` — Latin variable font from Google Fonts (`v21`)
+- `inter-latin-variable.woff2` — Latin variable font from Google Fonts (`v20`)
+- `OFL-cormorant-garamond.txt`, `OFL-inter.txt` — their SIL Open Font License v1.1 texts
 
-## Regenerating
+## Regenerating Amiri
 
-The woff2 files are committed binaries; production builds do not need
+The Amiri woff2 files are committed binaries; production builds do not need
 the subsetting toolchain. Regenerate when:
 
 - Upstream Amiri ships a new release (bump `AMIRI_VERSION` in the script)
