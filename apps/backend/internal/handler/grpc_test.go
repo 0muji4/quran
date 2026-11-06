@@ -15,10 +15,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"quran-project/apps/backend/internal/domain"
 	quranpb "quran-project/apps/backend/internal/gen/quran/v1"
+	"quran-project/apps/backend/internal/middleware"
 	"quran-project/apps/backend/internal/repo"
 	"quran-project/apps/backend/internal/scoring"
 	"quran-project/apps/backend/internal/service"
@@ -48,6 +50,32 @@ func startServer(t *testing.T, svc service.SurahService, jobs *scoring.JobServic
 	t.Cleanup(func() { _ = conn.Close() })
 
 	return listener.Addr().String(), conn
+}
+
+func TestGRPCRequiresBearerToken(t *testing.T) {
+	svc := surahService()
+	protocols := new(http.Protocols)
+	protocols.SetUnencryptedHTTP2(true)
+	server := &http.Server{
+		Handler:   middleware.RequireBearerToken("secret", Multiplex(NewGRPCServer(svc, nil), http.NotFoundHandler())),
+		Protocols: protocols,
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	go func() { _ = server.Serve(listener) }()
+	t.Cleanup(func() { _ = server.Close() })
+
+	conn, err := grpc.NewClient(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	client := quranpb.NewSurahServiceClient(conn)
+
+	_, err = client.ListSurahs(context.Background(), &quranpb.ListSurahsRequest{})
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
+
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Bearer secret")
+	_, err = client.ListSurahs(ctx, &quranpb.ListSurahsRequest{})
+	require.NoError(t, err)
 }
 
 func surahService() service.SurahService {

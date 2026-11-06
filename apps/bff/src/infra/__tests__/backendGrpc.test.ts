@@ -50,6 +50,7 @@ const notFound = <T>(callback: sendUnaryData<T>): void =>
 
 let lastCreate: CreateScoringJobRequest | undefined;
 let lastTraceparent: unknown;
+let lastAuthorization: unknown;
 let failAyahs = false;
 
 const surahImpl: SurahServiceServer = {
@@ -63,6 +64,7 @@ const surahImpl: SurahServiceServer = {
   },
   listAyahs: (call, callback) => {
     lastTraceparent = call.metadata.get('traceparent')[0];
+    lastAuthorization = call.metadata.get('authorization')[0];
     if (failAyahs) {
       callback({ code: status.INTERNAL, details: 'boom' }, null);
       return;
@@ -209,6 +211,15 @@ describe('backend gRPC client', () => {
 
   it('rejects non-numeric surah ids', async () => {
     await expect(fetchAyahsFromBackend('abc')).rejects.toThrow('Invalid surah id: abc');
+  });
+
+  it('sends the backend token as metadata', async () => {
+    process.env.BACKEND_AUTH_TOKEN = 'secret';
+
+    await fetchAyahsFromBackend('1');
+
+    expect(lastAuthorization).toBe('Bearer secret');
+    delete process.env.BACKEND_AUTH_TOKEN;
   });
 
   it('propagates trace context as metadata', async () => {

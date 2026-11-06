@@ -26,6 +26,7 @@ import {
   type Surah
 } from '../gen/quran/v1/surah';
 import { telemetry } from '../telemetry/telemetry';
+import { backendAuthorization } from './backendAuth';
 
 const READ_DEADLINE_MS = 10_000;
 // Exceeds the backend's 30s scoring.DefaultJobTimeout so its status arrives first.
@@ -62,6 +63,8 @@ const callUnary = <Request, Response>(
     propagation.inject(context.active(), carrier);
     const metadata = new Metadata();
     Object.entries(carrier).forEach(([key, value]) => metadata.set(key, value));
+    const authorization = backendAuthorization();
+    if (authorization) metadata.set('authorization', authorization);
 
     span.setAttribute('rpc.system', 'grpc');
     span.setAttribute('rpc.method', path);

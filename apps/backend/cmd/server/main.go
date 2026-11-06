@@ -47,6 +47,11 @@ func main() {
 	logger := telemetry.Logger()
 	logger.Info("Starting quran-backend service")
 
+	authToken := os.Getenv("BACKEND_AUTH_TOKEN")
+	if authToken == "" {
+		log.Fatal("BACKEND_AUTH_TOKEN is required")
+	}
+
 	dbConn, err := db.Connect(ctx, db.Config{
 		DSN:        os.Getenv("DATABASE_URL"),
 		DriverName: "pgx",
@@ -97,7 +102,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              ":" + port,
-		Handler:           handler.Multiplex(handler.NewGRPCServer(svc, jobs), middleware.OTEL(mux)),
+		Handler:           middleware.RequireBearerToken(authToken, handler.Multiplex(handler.NewGRPCServer(svc, jobs), middleware.OTEL(mux))),
 		Protocols:         protocols,
 		ReadHeaderTimeout: readHeaderTimeout,
 		IdleTimeout:       idleTimeout,

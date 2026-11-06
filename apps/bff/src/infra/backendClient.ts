@@ -5,6 +5,7 @@
 import { context, propagation } from '@opentelemetry/api';
 import type { Ayah, Surah } from '../gen/quran/v1/surah';
 import { telemetry } from '../telemetry/telemetry';
+import { backendAuthorization } from './backendAuth';
 import { getBackendGrpc } from './backendGrpc';
 
 const tracer = telemetry.tracer;
@@ -46,6 +47,8 @@ export const fetchWithTracing = async (
       // Inject trace context into request headers
       const headers: Record<string, string> = {};
       propagation.inject(context.active(), headers);
+      const authorization = backendAuthorization();
+      if (authorization) headers.authorization = authorization;
 
       const response = await fetch(url, {
         ...options,
