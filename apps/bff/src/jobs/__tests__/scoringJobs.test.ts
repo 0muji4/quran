@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // scoringJobs.ts reaches object storage and Postgres through ../infra and the
 // Go backend through ../infra/backendClient. Mock both so these are pure unit
@@ -19,6 +19,8 @@ vi.mock('../../infra/backendGrpc', () => ({
   getBackendGrpc: vi.fn(() => null)
 }));
 
+import { getDatabasePool } from '../../infra';
+import { UploadNotFoundError } from '../errors';
 import { createScoringJob, getScoringJob, mapEvaluationToFeedback } from '../scoringJobs';
 
 // A representative completed-job evaluation blob, matching the backend's
@@ -103,6 +105,36 @@ describe('mapEvaluationToFeedback', () => {
     expect(feedback?.overall).toBe(0);
     expect(feedback?.transcript).toBeNull();
     expect(feedback?.wer).toBeNull();
+  });
+});
+
+afterEach(() => {
+  vi.mocked(getDatabasePool).mockReset();
+});
+
+describe('createScoringJob upload ownership', () => {
+  const input = { uploadKey: 'uploads/rec.opus', surahId: '1', ayahNumber: 1, userId: 'user-1' };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const { getDatabasePool } = await import('../../infra');
+    vi.mocked(getDatabasePool).mockReturnValue({ query: vi.fn() } as never);
+  });
+
+  it('rejects an upload the user does not own', async () => {
+    const { findSessionIdForUploadKey } = await import('../../infra');
+    vi.mocked(findSessionIdForUploadKey).mockResolvedValue(null);
+
+    await expect(createScoringJob(input)).rejects.toBeInstanceOf(UploadNotFoundError);
+  });
+
+  it('rejects a session id that does not match the upload', async () => {
+    const { findSessionIdForUploadKey } = await import('../../infra');
+    vi.mocked(findSessionIdForUploadKey).mockResolvedValue('own-session');
+
+    await expect(createScoringJob({ ...input, sessionId: 'other-session' })).rejects.toBeInstanceOf(
+      UploadNotFoundError
+    );
   });
 });
 

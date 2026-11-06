@@ -9,11 +9,13 @@ import { expectZodPathError } from '../../__tests__/zodAssertions';
 // Mock dependencies
 vi.mock('../../jobs', async () => {
   const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
+  const { UploadNotFoundError } = await import('../../jobs/errors');
   return {
     createSignedUploadUrl: vi.fn(),
     createScoringJob: vi.fn(),
     getScoringJob: vi.fn(),
-    ScoringQuotaExceededError
+    ScoringQuotaExceededError,
+    UploadNotFoundError
   };
 });
 
@@ -239,6 +241,19 @@ describe('REST API Integration', () => {
 
       expect(response.status).toBe(400);
       expectZodPathError(response.body, ['body', 'ayahNumber']);
+    });
+
+    it('returns 404 for an upload the user does not own', async () => {
+      const { createScoringJob, UploadNotFoundError } = await import('../../jobs');
+      vi.mocked(createScoringJob).mockRejectedValue(new UploadNotFoundError());
+
+      const response = await request(app).post('/scoring-jobs').send({
+        uploadKey: 'uploads/other-user.opus',
+        surahId: '1',
+        ayahNumber: 1
+      });
+
+      expect(response.status).toBe(404);
     });
 
     it('returns 429 when the scoring job limit is reached', async () => {

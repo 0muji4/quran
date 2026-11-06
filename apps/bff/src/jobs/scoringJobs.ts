@@ -9,6 +9,7 @@ import {
 } from '../infra';
 import { fetchWithTracing } from '../infra/backendClient';
 import { getBackendGrpc } from '../infra/backendGrpc';
+import { UploadNotFoundError } from './errors';
 import { consumeScoringQuota } from './scoringQuota';
 
 const secondsFromNow = (seconds: number): string =>
@@ -143,25 +144,37 @@ const createRecordingUrl = async (uploadKey: string | null): Promise<string | nu
  * @returns Promise resolving to ScoringResult with job details and status
  * @throws Error if session ID cannot be found for the upload key
  */
+/** Returns the session for an upload the user owns, or throws UploadNotFoundError. */
+const resolveOwnedSessionId = async (input: {
+  sessionId?: string | null;
+  uploadKey: string;
+  userId: string;
+}): Promise<string> => {
+  if (!getDatabasePool()) {
+    if (!input.sessionId) throw new UploadNotFoundError();
+    return input.sessionId;
+  }
+
+  const owned = await findSessionIdForUploadKey({
+    audioKey: input.uploadKey,
+    userId: input.userId
+  });
+  if (!owned || (input.sessionId && input.sessionId !== owned)) {
+    throw new UploadNotFoundError();
+  }
+  return owned;
+};
+
 export const createScoringJob = async (input: {
   sessionId?: string | null;
   uploadKey: string;
   surahId: string;
   ayahNumber?: number | null;
-  userId?: string | null;
+  userId: string;
 }): Promise<ScoringResult> => {
-  if (input.userId) consumeScoringQuota(input.userId);
+  consumeScoringQuota(input.userId);
 
-  const sessionId =
-    input.sessionId ??
-    (await findSessionIdForUploadKey({
-      audioKey: input.uploadKey,
-      userId: input.userId ?? null
-    }));
-
-  if (!sessionId) {
-    throw new Error('Session ID not found for upload key');
-  }
+  const sessionId = await resolveOwnedSessionId(input);
 
   let referenceAudioKey: string | null = null;
   if (typeof input.ayahNumber === 'number') {
@@ -184,7 +197,7 @@ export const createScoringJob = async (input: {
     sessionId,
     surahId: input.surahId,
     ayahNumber: typeof input.ayahNumber === 'number' ? input.ayahNumber : null,
-    userId: input.userId ?? null,
+    userId: input.userId,
     referenceAudioKey
   };
   console.log('Creating scoring job', {

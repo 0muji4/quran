@@ -116,30 +116,18 @@ export const recordUploadKey = async (input: {
 
 export const findSessionIdForUploadKey = async (input: {
   audioKey: string;
-  userId?: string | null;
+  userId: string;
 }): Promise<string | null> => {
   const connection = getPool();
   if (!connection) return null;
-
-  if (input.userId) {
-    const result = await connection.query(
-      `
-      SELECT session_id
-      FROM user_data_objects
-      WHERE audio_key = $1 AND user_id = $2
-      `,
-      [input.audioKey, input.userId]
-    );
-    return result.rowCount && result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
-  }
 
   const result = await connection.query(
     `
     SELECT session_id
     FROM user_data_objects
-    WHERE audio_key = $1
+    WHERE audio_key = $1 AND user_id = $2
     `,
-    [input.audioKey]
+    [input.audioKey, input.userId]
   );
   return result.rowCount && result.rowCount > 0 ? (result.rows[0].session_id as string) : null;
 };
