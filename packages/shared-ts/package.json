@@ -23,12 +23,12 @@
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-resolvers": "^4.5.2",
     "@quran-project/eslint-config": "workspace:*",
-    "@types/node": "^20.19.41",
-    "eslint": "^9.39.4",
+    "@types/node": "^20.19.43",
+    "eslint": "^9.39.5",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.7"
   },
   "dependencies": {
-    "graphql": "^16.14.0"
+    "graphql": "^16.15.0"
   }
 }

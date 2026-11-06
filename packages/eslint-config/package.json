@@ -10,18 +10,21 @@
     "prettier.config.cjs"
   ],
   "dependencies": {
-    "@eslint/js": "^9.39.4",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
-    "eslint": "^9.39.4",
+    "@eslint/js": "^9.39.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^9.39.5",
     "eslint-config-prettier": "^9.1.2",
-    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^15.15.0",
     "prettier": "^3.8.3"
   },
   "peerDependencies": {
-    "typescript": ">=5.0.0"
+    "typescript": ">=5.0.0 <6.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

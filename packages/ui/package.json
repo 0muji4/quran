@@ -40,17 +40,17 @@
     "react": "^18.3.1"
   },
   "devDependencies": {
-    "@pandacss/dev": "^1.11.1",
+    "@pandacss/dev": "^1.12.2",
     "@quran-project/eslint-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/node": "^20.19.41",
-    "@types/react": "^18.3.29",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
-    "eslint": "^9.39.4",
+    "eslint": "^9.39.5",
     "jsdom": "^25.0.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.7"
   }
 }
