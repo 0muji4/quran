@@ -227,6 +227,7 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
   CHIRP_LOCATION=us
   CHIRP_LANGUAGE_CODE=ar-SA
   GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/gcp-sa.json
+  BACKEND_AUTH_TOKEN=<random secret, same as bff>
   OBJECT_STORE_ENDPOINT=<account-id>.r2.cloudflarestorage.com
   OBJECT_STORE_ACCESS_KEY=...
   OBJECT_STORE_SECRET_KEY=...
@@ -245,6 +246,7 @@ iOS 側の動作確認は、3 修正を入れた後に Android と同じ Render 
   ```
   DATABASE_URL=<same as backend, with sslmode=verify-full>
   BACKEND_URL=https://tilawah-dev-backend.onrender.com
+  BACKEND_AUTH_TOKEN=<same as backend>
   OBJECT_STORE_ENDPOINT=<account-id>.r2.cloudflarestorage.com
   OBJECT_STORE_ACCESS_KEY=<same as backend>
   OBJECT_STORE_SECRET_KEY=<same as backend>

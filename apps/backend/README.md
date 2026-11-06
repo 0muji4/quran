@@ -19,11 +19,12 @@ Scoring-related endpoints live under `internal/`.
 
 ## Environment Variables
 
-| Variable                      | Default | Purpose                            |
-| ----------------------------- | ------- | ---------------------------------- |
-| `PORT`                        | `8080`  | Listen port                        |
-| `DATABASE_URL`                | —       | Postgres DSN (required)            |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | —       | OTLP collector endpoint (optional) |
+| Variable                      | Default | Purpose                                   |
+| ----------------------------- | ------- | ----------------------------------------- |
+| `PORT`                        | `8080`  | Listen port                               |
+| `DATABASE_URL`                | —       | Postgres DSN (required)                   |
+| `BACKEND_AUTH_TOKEN`          | —       | Bearer token callers must send (required) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | —       | OTLP collector endpoint (optional)        |
 
 ## Build / Run
 

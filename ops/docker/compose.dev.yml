@@ -122,6 +122,7 @@ services:
       SERVICE_VERSION: '0.1.0'
       LOG_LEVEL: info
       LOG_FORMAT: json
+      BACKEND_AUTH_TOKEN: local-backend-token
     ports:
       - '8080:8080'
 
@@ -142,6 +143,7 @@ services:
       BACKEND_URL: http://backend:8080
       BACKEND_GRPC_ADDR: backend:8080
       BACKEND_GRPC_TLS: 'false'
+      BACKEND_AUTH_TOKEN: local-backend-token
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       JWT_SECRET: local-jwt-secret
       REFRESH_TOKEN_SECRET: local-refresh-secret
