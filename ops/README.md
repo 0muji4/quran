@@ -75,12 +75,6 @@ If you prefer `sql-migrate`, drop a `dbconfig.yml` at the repo root and run:
 make sql-migrate-dry-run
 ```
 
-## MinIO CORS
-
-```bash
-make minio-cors
-```
-
 ## Troubleshooting
 
 - **Port conflict**: check whether 4000 / 6379 / 5432 / 8080 is held by another host process with `lsof -iTCP:<port> -sTCP:LISTEN`.
