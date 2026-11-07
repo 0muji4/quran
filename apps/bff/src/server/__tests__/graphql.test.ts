@@ -1,16 +1,14 @@
-import type { GraphQLSchema } from 'graphql';
+import type { Express } from 'express';
+import request from 'supertest';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { getGraphQLParameters, processRequest } from 'graphql-helix';
-import { graphqlHttpStatus } from '../../graphql/httpStatus';
 
-const mockSurahs = vi.hoisted(() => [
+const mockSurahs = [
   {
     id: '1',
     nameAr: 'الفاتحة',
     nameEn: 'Al-Fatiha',
     revelationPlace: 'Meccan',
     ayahCount: 7,
-    metadata: { hizb: 1 },
     ayahs: []
   },
   {
@@ -19,12 +17,11 @@ const mockSurahs = vi.hoisted(() => [
     nameEn: 'Al-Baqarah',
     revelationPlace: 'Medinan',
     ayahCount: 286,
-    metadata: { hizb: 2 },
     ayahs: []
   }
-]);
+];
 
-const fetchSurahsFromBackend = vi.fn().mockResolvedValue(mockSurahs);
+const fetchSurahsFromBackend = vi.fn();
 
 vi.mock('../../infra/backendClient', () => ({
   fetchSurahsFromBackend,
@@ -36,38 +33,44 @@ vi.mock('../../infra/backendGrpc', () => ({
   getBackendGrpc: vi.fn(() => null)
 }));
 
-let schema: GraphQLSchema;
+let app: Express;
 
 beforeAll(async () => {
-  ({ schema } = await import('../app'));
+  const { createApp } = await import('../app');
+  app = createApp();
 });
 
-const createRequest = (query: string) => ({
-  body: { query },
-  headers: {},
-  method: 'POST',
-  query: {}
-});
+const post = (body: object) => request(app).post('/graphql').send(body);
 
-describe('GraphQL helix integration', () => {
-  it('processes a basic GraphQL request', async () => {
-    const request = createRequest('{ __typename }');
-    const { operationName, query, variables } = getGraphQLParameters(request);
+// Every client depends on this contract. Android and iOS refresh tokens only
+// on HTTP 401, so these tests pin status codes and error shapes over HTTP.
+describe('POST /graphql', () => {
+  it('returns data with 200', async () => {
+    const res = await post({ query: '{ __typename }' });
 
-    const result = await processRequest({
-      operationName,
-      query,
-      variables,
-      request,
-      schema,
-      contextFactory: () => ({ session: null, requestId: 'test-request' })
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/json');
+    expect(res.body).toEqual({ data: { __typename: 'Query' } });
+  });
+
+  it('passes variables and operationName', async () => {
+    const res = await post({
+      query: 'query A { __typename } query B($s: Boolean!) { __typename @skip(if: $s) }',
+      operationName: 'B',
+      variables: { s: true }
     });
 
-    expect(result.type).toBe('RESPONSE');
-    if (result.type === 'RESPONSE') {
-      expect(result.status).toBe(200);
-      expect(result.payload).toEqual({ data: { __typename: 'Query' } });
-    }
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ data: {} });
+  });
+
+  it('answers an unauthenticated field with 401 and the error code', async () => {
+    const res = await post({ query: '{ scoringJob(jobId: "job-1") { jobId } }' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.errors[0].extensions.code).toBe('UNAUTHENTICATED');
+    expect(res.body.errors[0].message).toBe('authentication required');
+    expect(res.body.extensions).toBeUndefined();
   });
 
   it.each([
@@ -80,69 +83,59 @@ describe('GraphQL helix integration', () => {
       'mutation { getSignedUploadUrl(input: { filename: "a.webm", contentType: "audio/webm" }) { url } }'
     ],
     ['scoringJob', '{ scoringJob(jobId: "job-1") { jobId } }']
-  ])('rejects %s without a session', async (_name, queryText) => {
-    const request = createRequest(queryText);
-    const { operationName, query, variables } = getGraphQLParameters(request);
+  ])('rejects %s without a session', async (_name, query) => {
+    const res = await post({ query });
 
-    const result = await processRequest({
-      operationName,
-      query,
-      variables,
-      request,
-      schema,
-      contextFactory: () => ({ session: null, requestId: 'test-request' })
-    });
-
-    expect(result.type).toBe('RESPONSE');
-    if (result.type === 'RESPONSE') {
-      expect(result.payload.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
-      expect(graphqlHttpStatus(result.status, result.payload)).toBe(401);
-    }
+    expect(res.status).toBe(401);
+    expect(res.body.errors[0].extensions.code).toBe('UNAUTHENTICATED');
   });
 
-  it('returns surahs data from the resolver', async () => {
-    // Clear any previous calls
-    fetchSurahsFromBackend.mockClear();
+  it('returns surahs from the resolver', async () => {
+    fetchSurahsFromBackend.mockResolvedValueOnce(mockSurahs);
 
-    const queryText =
-      'query SurahList($limit: Int, $offset: Int) { surahs(limit: $limit, offset: $offset) { id nameEn nameAr ayahCount revelationPlace metadata } }';
-    const request = {
-      ...createRequest(queryText),
-      body: {
-        query: queryText,
-        variables: { limit: 1, offset: 1 },
-        operationName: 'SurahList'
-      }
-    };
-    const { operationName, query, variables } = getGraphQLParameters(request);
-
-    const result = await processRequest({
-      operationName,
-      query,
-      variables,
-      request,
-      schema,
-      contextFactory: () => ({ session: null, requestId: 'test-request' })
+    const res = await post({
+      query:
+        'query SurahList($limit: Int, $offset: Int) { surahs(limit: $limit, offset: $offset) { id nameEn } }',
+      operationName: 'SurahList',
+      variables: { limit: 1, offset: 1 }
     });
 
-    expect(fetchSurahsFromBackend).toHaveBeenCalledTimes(1);
-    expect(result.type).toBe('RESPONSE');
-    if (result.type === 'RESPONSE') {
-      expect(result.status).toBe(200);
-      expect(result.payload).toEqual({
-        data: {
-          surahs: [
-            {
-              id: '2',
-              nameEn: 'Al-Baqarah',
-              nameAr: 'البقرة',
-              ayahCount: 286,
-              revelationPlace: 'Medinan',
-              metadata: { hizb: 2 }
-            }
-          ]
-        }
-      });
-    }
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ data: { surahs: [{ id: '2', nameEn: 'Al-Baqarah' }] } });
+  });
+
+  it.each([
+    ['json', 'application/json'],
+    ['apollo', 'application/graphql-response+json, application/json;q=0.9']
+  ])('reports a resolver failure with 200 for %s clients', async (_name, accept) => {
+    fetchSurahsFromBackend.mockRejectedValueOnce(new Error('internal detail'));
+
+    const res = await post({ query: '{ surahs { id } }' }).set('Accept', accept);
+
+    expect(res.status).toBe(200);
+    expect(res.body.errors).toHaveLength(1);
+    expect(res.body.errors[0].message).toBe('Unexpected error.');
+    expect(JSON.stringify(res.body)).not.toContain('internal detail');
+  });
+
+  it('rejects a syntax error with 400', async () => {
+    const res = await post({ query: '{' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toContain('Syntax Error');
+  });
+
+  it('rejects an unknown field with 400', async () => {
+    const res = await post({ query: '{ nope }' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].message).toContain('Cannot query field');
+  });
+
+  it('rejects a request with no query with 400', async () => {
+    const res = await post({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors).toHaveLength(1);
   });
 });
