@@ -1,6 +1,6 @@
 # .github/filters.yml
 #
-# Path filters consumed by dorny/paths-filter@v3 in .github/workflows/ci.yml.
+# Path filters consumed by dorny/paths-filter@v4 in .github/workflows/ci.yml.
 # Each top-level key is a "stack". A downstream job runs only when its
 # stack's filter matched the diff.
 #
