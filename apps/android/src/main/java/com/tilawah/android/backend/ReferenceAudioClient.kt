@@ -28,9 +28,7 @@ class ReferenceAudioClient(
                 when (response.code) {
                     503 -> throw AppError.ReferenceUnavailable(surahId, ayah)
                     in 200..299 -> {
-                        val body = response.body?.string()
-                            ?: throw AppError.BackendUnavailable("reference-audio")
-                        val json = JSONObject(body)
+                        val json = JSONObject(response.body.string())
                         ReferenceAudio(
                             signedUrl = json.getString("url"),
                             expiresAt = json.getString("expiresAt"),

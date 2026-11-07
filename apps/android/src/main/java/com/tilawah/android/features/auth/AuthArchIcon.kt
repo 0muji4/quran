@@ -32,7 +32,7 @@ fun AuthArchIcon(modifier: Modifier = Modifier) {
         val outer = Path().apply {
             moveTo(w * 0.20f, h * 0.85f)
             lineTo(w * 0.20f, h * 0.45f)
-            quadraticBezierTo(w * 0.50f, h * 0.05f, w * 0.80f, h * 0.45f)
+            quadraticTo(w * 0.50f, h * 0.05f, w * 0.80f, h * 0.45f)
             lineTo(w * 0.80f, h * 0.85f)
         }
         // Concentric inner arch, inset from the outer so the two run
@@ -40,7 +40,7 @@ fun AuthArchIcon(modifier: Modifier = Modifier) {
         val inner = Path().apply {
             moveTo(w * 0.31f, h * 0.85f)
             lineTo(w * 0.31f, h * 0.50f)
-            quadraticBezierTo(w * 0.50f, h * 0.18f, w * 0.69f, h * 0.50f)
+            quadraticTo(w * 0.50f, h * 0.18f, w * 0.69f, h * 0.50f)
             lineTo(w * 0.69f, h * 0.85f)
         }
         drawPath(outer, color = colors.accent, style = stroke)

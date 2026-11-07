@@ -155,7 +155,7 @@ class HttpHistoryRemoteClient(
             throw AppError.BackendUnavailable(operation, cause)
         }
         return response.use { resp ->
-            val payload = resp.body?.string().orEmpty()
+            val payload = resp.body.string()
             when (resp.code) {
                 in 200..299 -> parseSuccess(payload, operation)
                 400 -> throw AppError.ValidationFailed(parseErrorMessage(payload) ?: "invalid input")

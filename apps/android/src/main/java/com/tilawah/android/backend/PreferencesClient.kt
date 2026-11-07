@@ -69,7 +69,7 @@ class HttpPreferencesClient(
             throw AppError.BackendUnavailable(operation, cause)
         }
         return response.use { resp ->
-            val payload = resp.body?.string().orEmpty()
+            val payload = resp.body.string()
             when (resp.code) {
                 in 200..299 -> parse(payload, operation)
                 401 -> throw AppError.InvalidCredentials
