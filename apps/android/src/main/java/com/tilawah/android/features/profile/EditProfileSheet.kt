@@ -58,8 +58,8 @@ import com.tilawah.android.designsystem.components.BrandCardStyle
  * only the internal presentation changed from `ModalBottomSheet` to a
  * full-bleed [Surface].
  *
- * Driven by [EditProfileViewModel]; the parent host owns the show /
- * hide flag and the ViewModel lifetime.
+ * Driven by [EditProfileViewModel]. [ProfileViewModel] owns the show /
+ * hide flag and the parent host owns the ViewModel lifetime.
  */
 @Composable
 fun EditProfileSheet(
@@ -71,9 +71,13 @@ fun EditProfileSheet(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // System back behaves like Cancel, but is suppressed mid-save so a
+    // System back behaves like Cancel, but does nothing mid-save so a
     // half-applied PATCH can't leave the host in an inconsistent state.
-    BackHandler(enabled = !state.isSubmitting, onBack = onDismiss)
+    // The handler stays enabled while saving: a disabled one passes back
+    // to the Activity's default handling, which leaves the app.
+    BackHandler {
+        if (!state.isSubmitting) onDismiss()
+    }
 
     Surface(
         color = BrandTheme.colors.surface,
