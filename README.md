@@ -59,10 +59,19 @@ Default published ports: Web 3000 / BFF 4000 / Backend 8080 / Postgres 5432 / Mi
 
 ```bash
 make ci                  # format / lint / test / build / Go fmt / Go test
-make test-coverage-all   # Go + TS coverage (80% threshold)
+make test-coverage-all   # Go + TS coverage
 ```
 
-Coverage thresholds are **80% for lines / functions / branches / statements**. CI checks coverage on every PR and retains reports for 30 days. Per-package coverage details live in each domain README.
+The coverage target is **80% for lines / functions / branches / statements**. CI enforces lower interim thresholds and retains reports for 30 days. These thresholds only go up (Go: #73, JS: #567):
+
+| Package       | Lines / statements | Branches | Functions |
+| ------------- | ------------------ | -------- | --------- |
+| Go            | 65% (total)        | —        | —         |
+| `apps/bff`    | 66%                | 83%      | 63%       |
+| `apps/web`    | 46%                | 79%      | 65%       |
+| `packages/ui` | 12%                | 61%      | 30%       |
+
+The BFF integration suites skip themselves when Postgres is unreachable, and the BFF thresholds assume they ran. Start Postgres and the object store before running BFF coverage locally. Per-package coverage details live in each domain README.
 
 ## Repository Layout
 

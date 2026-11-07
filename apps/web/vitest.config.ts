@@ -22,13 +22,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/__tests__/**', 'src/**/*.test.ts'],
+      include: ['app/**/*.{ts,tsx}', 'i18n/**/*.ts', 'instrumentation.ts', 'middleware.ts'],
+      exclude: ['**/__tests__/**', '**/*.test.{ts,tsx}', '**/*.d.ts'],
+      // TODO(#567): Restore the 80% thresholds by adding tests. Until then, do
+      // not lower these values; ratchet them up as coverage improves.
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80
+        lines: 46,
+        functions: 65,
+        branches: 79,
+        statements: 46
       }
     }
   },

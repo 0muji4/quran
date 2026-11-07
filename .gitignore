@@ -31,6 +31,9 @@ bin/
 coverage.txt
 coverage.html
 
+# Vitest coverage reports
+coverage/
+
 # IDE
 .vscode/
 .idea/

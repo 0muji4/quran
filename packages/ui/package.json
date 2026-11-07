@@ -32,6 +32,7 @@
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../ui/.prettierignore ../ui",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
@@ -47,6 +48,7 @@
     "@types/node": "^26.6.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9.39.5",
     "jsdom": "^25.0.1",
     "react-dom": "^18.3.1",

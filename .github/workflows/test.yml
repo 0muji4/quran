@@ -134,13 +134,20 @@ jobs:
         run: pnpm install
 
       - name: Run BFF tests with coverage
-        run: pnpm --filter @quran-project/bff run --if-present test:coverage
+        # The integration suites probe Postgres and skip themselves when the
+        # probe fails. Their default role is `app`, which this service lacks.
+        env:
+          TEST_POSTGRES_USER: postgres
+          TEST_POSTGRES_PASSWORD: postgres
+        run: pnpm --filter @quran-project/bff run test:coverage
 
       - name: Upload BFF coverage artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: bff-coverage
           path: apps/bff/coverage/
+          if-no-files-found: error
           retention-days: 30
 
   web-tests:
@@ -165,13 +172,15 @@ jobs:
         run: pnpm install
 
       - name: Run Web tests with coverage
-        run: pnpm --filter @quran-project/web run --if-present test:coverage
+        run: pnpm --filter @quran-project/web run test:coverage
 
       - name: Upload Web coverage artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: web-coverage
           path: apps/web/coverage/
+          if-no-files-found: error
           retention-days: 30
 
   ui-tests:
@@ -196,11 +205,13 @@ jobs:
         run: pnpm install
 
       - name: Run UI tests with coverage
-        run: pnpm --filter @quran-project/ui run --if-present test:coverage
+        run: pnpm --filter @quran-project/ui run test:coverage
 
       - name: Upload UI coverage artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ui-coverage
           path: packages/ui/coverage/
+          if-no-files-found: error
           retention-days: 30
