@@ -160,12 +160,14 @@ export function DeleteAccountButton() {
   const [pending, startTransition] = useTransition();
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
+  const openDialog = (): void => {
+    setConfirmText('');
+    setError(null);
+    setOpen(true);
+  };
+
   useEffect(() => {
-    if (open) {
-      setConfirmText('');
-      setError(null);
-      firstFieldRef.current?.focus();
-    }
+    if (open) firstFieldRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
@@ -204,7 +206,7 @@ export function DeleteAccountButton() {
 
   return (
     <>
-      <button type="button" className={triggerClass} onClick={() => setOpen(true)}>
+      <button type="button" className={triggerClass} onClick={openDialog}>
         Delete account
       </button>
       {open && (

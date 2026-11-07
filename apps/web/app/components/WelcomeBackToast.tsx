@@ -22,11 +22,13 @@ function WelcomeBackToastInner() {
   const searchParams = useSearchParams();
   const welcomeBack = searchParams.get('welcome-back') === '1';
   const [visible, setVisible] = useState(welcomeBack);
+  const [prevWelcomeBack, setPrevWelcomeBack] = useState(welcomeBack);
   const t = useTranslations('auth.welcomeBack');
 
-  useEffect(() => {
+  if (welcomeBack !== prevWelcomeBack) {
+    setPrevWelcomeBack(welcomeBack);
     setVisible(welcomeBack);
-  }, [welcomeBack]);
+  }
 
   useEffect(() => {
     if (!visible && welcomeBack) {

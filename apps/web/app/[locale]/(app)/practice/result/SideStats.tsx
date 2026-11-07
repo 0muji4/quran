@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useStoredValue } from '../../../../hooks/useLocalStorageState';
 import styles from '../../../../styles/practice.module.css';
 import { getAttemptsForToday, getBestScore } from '../../../../lib/storage';
 
@@ -19,16 +19,21 @@ const formatDuration = (ms: number | null | undefined): string => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
-  const [personalBest, setPersonalBest] = useState<number | null>(null);
-  const [attemptsToday, setAttemptsToday] = useState<number>(0);
-  const t = useTranslations('result.sideStats');
+const EMPTY_STATS: { personalBest: number | null; attemptsToday: number } = {
+  personalBest: null,
+  attemptsToday: 0
+};
 
-  useEffect(() => {
-    const best = getBestScore(surahId, ayahNumber);
-    setPersonalBest(best?.score ?? null);
-    setAttemptsToday(getAttemptsForToday(surahId, ayahNumber).length);
-  }, [surahId, ayahNumber]);
+export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
+  const [{ personalBest, attemptsToday }] = useStoredValue(
+    () => ({
+      personalBest: getBestScore(surahId, ayahNumber)?.score ?? null,
+      attemptsToday: getAttemptsForToday(surahId, ayahNumber).length
+    }),
+    EMPTY_STATS,
+    `${surahId}:${ayahNumber}`
+  );
+  const t = useTranslations('result.sideStats');
 
   return (
     <dl className={styles.sideStats}>

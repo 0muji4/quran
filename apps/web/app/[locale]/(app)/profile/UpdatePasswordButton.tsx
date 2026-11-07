@@ -148,14 +148,16 @@ export function UpdatePasswordButton() {
 
   // Wipe drafts on every open so a Cancel → reopen never leaves a
   // stale current/new password sitting in component state.
+  const openDialog = (): void => {
+    setCurrent('');
+    setNext('');
+    setConfirm('');
+    setError(null);
+    setOpen(true);
+  };
+
   useEffect(() => {
-    if (open) {
-      setCurrent('');
-      setNext('');
-      setConfirm('');
-      setError(null);
-      firstFieldRef.current?.focus();
-    }
+    if (open) firstFieldRef.current?.focus();
   }, [open]);
 
   // Esc closes the modal.
@@ -201,7 +203,7 @@ export function UpdatePasswordButton() {
 
   return (
     <>
-      <button type="button" className={triggerClass} onClick={() => setOpen(true)}>
+      <button type="button" className={triggerClass} onClick={openDialog}>
         Update
       </button>
       {open && (

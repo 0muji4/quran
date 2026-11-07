@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/navigation';
 import { fetchScoringJob } from '../../../actions';
+import { useStoredValue } from '../../../hooks/useLocalStorageState';
 import { getRecentAttempts, type Attempt } from '../../../lib/storage';
 import { HistoryFilterChips } from './HistoryFilterChips';
 import { HistoryStatsGrid } from './HistoryStatsGrid';
@@ -232,10 +233,26 @@ interface Props {
   signedIn: boolean;
 }
 
+interface AttemptsSnapshot {
+  attempts: Attempt[];
+  readAt: number;
+}
+
+const readAttempts = (): AttemptsSnapshot => ({
+  attempts: getRecentAttempts(),
+  readAt: Date.now()
+});
+
 export function HistoryList({ signedIn }: Props) {
-  const [attempts, setAttempts] = useState<Attempt[] | null>(null);
+  const [snapshot, refreshAttempts] = useStoredValue<AttemptsSnapshot | null>(
+    readAttempts,
+    null,
+    signedIn
+  );
+  const attempts = snapshot?.attempts ?? null;
   const [filter, setFilter] = useState<HistoryFilter>(ALL_FILTER);
   const [scope, setScope] = useState<HistoryScope>('week');
+  const [scopeChangedAt, setScopeChangedAt] = useState(0);
   const [sort, setSort] = useState<HistorySort>('recent');
   // Inline playback state. `playingId` is the attempt currently sounding;
   // `loadingId` covers the fetch of its (lazily presigned) recording URL;
@@ -250,31 +267,35 @@ export function HistoryList({ signedIn }: Props) {
   const t = useTranslations('history');
 
   useEffect(() => {
-    setAttempts(getRecentAttempts());
-  }, [signedIn]);
-
-  useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        setAttempts(getRecentAttempts());
+        refreshAttempts();
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, []);
+  }, [refreshAttempts]);
+
+  const handleScopeChange = (next: HistoryScope) => {
+    setScope(next);
+    setScopeChangedAt(Date.now());
+  };
 
   // Attempts within the active range — drives the Attempts / Average /
   // Best tiles. Streak ignores the toggle (a streak is inherently
   // all-time), so it is read from a separate lifetime computation below.
+  // The week ends at the latest read or scope change, which keeps the render
+  // pure and still moves the window forward on either action.
+  const scopeNow = Math.max(snapshot?.readAt ?? 0, scopeChangedAt);
   const scopedAttempts = useMemo(() => {
     const all = attempts ?? [];
     if (scope === 'lifetime') return all;
-    const weekStart = Date.now() - MS_PER_WEEK;
+    const weekStart = scopeNow - MS_PER_WEEK;
     return all.filter((a) => {
       const at = new Date(a.createdAt).getTime();
       return Number.isFinite(at) && at >= weekStart;
     });
-  }, [attempts, scope]);
+  }, [attempts, scope, scopeNow]);
 
   const stats = useMemo(() => {
     if (!attempts) return null;
@@ -373,7 +394,7 @@ export function HistoryList({ signedIn }: Props) {
           stats={stats}
           attemptCount={scopedAttempts.length}
           scope={scope}
-          onScopeChange={setScope}
+          onScopeChange={handleScopeChange}
         />
       )}
       <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />

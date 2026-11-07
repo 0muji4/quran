@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useLocalStorageState } from '../../../hooks/useLocalStorageState';
 import type { SurahSummary } from '../../../lib/types';
 import { getBestScores, getLastPracticed } from '../../../lib/storage';
 import { SurahCard } from './SurahCard';
@@ -14,6 +14,8 @@ interface Snapshot {
   bestScores: Record<string, number>; // surahId → max best across ayahs (rounded to int)
   lastPracticedSurahId: string | null;
 }
+
+const EMPTY_SNAPSHOT: Snapshot = { bestScores: {}, lastPracticedSurahId: null };
 
 const GRID_MOBILE_MQ = '@media (max-width: 760px)';
 
@@ -47,20 +49,7 @@ const buildSnapshot = (): Snapshot => {
 };
 
 export function SurahGrid({ surahs }: Props) {
-  const [snapshot, setSnapshot] = useState<Snapshot>({
-    bestScores: {},
-    lastPracticedSurahId: null
-  });
-
-  useEffect(() => {
-    setSnapshot(buildSnapshot());
-    const onStorage = () => setSnapshot(buildSnapshot());
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', onStorage);
-      return () => window.removeEventListener('storage', onStorage);
-    }
-    return undefined;
-  }, []);
+  const [snapshot] = useLocalStorageState(buildSnapshot, EMPTY_SNAPSHOT);
 
   if (surahs.length === 0) {
     return <p className={emptyClass}>No surahs match your search.</p>;

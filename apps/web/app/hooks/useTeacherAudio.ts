@@ -37,9 +37,11 @@ export function useTeacherAudio(surahId: number, ayahNumber: number): UseTeacher
     loop: false
   });
 
-  // Reset & fetch when ayah changes.
-  useEffect(() => {
-    let cancelled = false;
+  // Reset when the ayah changes. Rate and loop carry over.
+  const ayahKey = `${surahId}:${ayahNumber}`;
+  const [loadedAyahKey, setLoadedAyahKey] = useState(ayahKey);
+  if (ayahKey !== loadedAyahKey) {
+    setLoadedAyahKey(ayahKey);
     setState((prev) => ({
       ...prev,
       url: null,
@@ -48,6 +50,10 @@ export function useTeacherAudio(surahId: number, ayahNumber: number): UseTeacher
       currentTime: 0,
       isPlaying: false
     }));
+  }
+
+  useEffect(() => {
+    let cancelled = false;
 
     fetchReferenceAudioUrl(surahId, ayahNumber)
       .then((res) => {
