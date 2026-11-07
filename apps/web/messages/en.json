@@ -133,9 +133,7 @@
     "surahCard": {
       "the": "The {meaning}",
       "ayahs": "{count} ayahs",
-      "bestScore": "Best score {score}",
-      "ariaLabel": "{name}, {place}, {count} ayahs",
-      "ariaLabelWithScore": "{name}, {place}, {count} ayahs, best score {score}"
+      "bestScore": "Best score {score}"
     },
     "error": {
       "title": "Couldn't load the surah list",
