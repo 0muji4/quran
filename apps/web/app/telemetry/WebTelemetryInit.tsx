@@ -9,7 +9,7 @@ import { initWebVitals } from './web-vitals';
 // functions no-op after the first call. Rendering nothing keeps this
 // component out of the DOM tree.
 //
-// Order matters: initWebTelemetry registers the WebTracerProvider that
+// Order matters: initWebTelemetry registers the TracerProvider that
 // initWebVitals uses to emit its spans. If the OTel endpoint is unset
 // both calls fall back to no-op behaviour (the global no-op tracer +
 // an early-return guard) so dev / preview builds stay silent.

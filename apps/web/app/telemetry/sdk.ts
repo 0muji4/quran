@@ -33,10 +33,12 @@ export async function initTelemetry(): Promise<void> {
 
   sdk = new NodeSDK({
     traceExporter,
-    metricReader: new PeriodicExportingMetricReader({
-      exporter: metricExporter,
-      exportIntervalMillis: 10000 // 10秒間隔（BFF/Backendと統一）
-    }),
+    metricReaders: [
+      new PeriodicExportingMetricReader({
+        exporter: metricExporter,
+        exportIntervalMillis: 10000 // 10秒間隔（BFF/Backendと統一）
+      })
+    ],
     resource
   });
 

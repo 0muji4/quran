@@ -1,10 +1,15 @@
 'use client';
 
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator
+} from '@opentelemetry/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { BatchSpanProcessor, StackContextManager, TracerProvider } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-import { trace, type Tracer } from '@opentelemetry/api';
+import { context, propagation, trace, type Tracer } from '@opentelemetry/api';
 
 // Phase 4.4 (ADR 0016). Browser-side OTel tracer wiring.
 //
@@ -39,16 +44,22 @@ export const initWebTelemetry = (): void => {
     url: `${endpoint.replace(/\/$/, '')}/v1/traces`
   });
 
-  const provider = new WebTracerProvider({
+  const provider = new TracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: BROWSER_SERVICE_NAME,
       [ATTR_SERVICE_VERSION]: process.env.NEXT_PUBLIC_SERVICE_VERSION ?? '0.0.0',
       'service.namespace': 'quran-project'
     }),
-    spanProcessors: [new BatchSpanProcessor(exporter)]
+    spanProcessors: [new BatchSpanProcessor({ exporter })]
   });
 
-  provider.register();
+  trace.setGlobalTracerProvider(provider);
+  context.setGlobalContextManager(new StackContextManager().enable());
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()]
+    })
+  );
   initialised = true;
 };
 
