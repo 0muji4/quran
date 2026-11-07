@@ -1,8 +1,11 @@
 package com.tilawah.android
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.tilawah.android.app.AppConfig
@@ -21,6 +24,10 @@ import com.tilawah.android.telemetry.TraceTelemetry
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // BrandTheme is light-only, so the bars need dark icons even when
+        // the system is in dark mode, which rules out the default auto style.
+        val lightBars = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = lightBars, navigationBarStyle = lightBars)
         val telemetry: Telemetry = TraceTelemetry(tag = AppConfig.TELEMETRY_SUBSYSTEM)
         val authApi: AuthApi = OkHttpAuthApi()
         // Mirrors the HistoryStore fallback in AppRoot: degrade to a
