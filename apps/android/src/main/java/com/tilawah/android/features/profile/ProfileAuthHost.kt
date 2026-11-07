@@ -3,7 +3,7 @@ package com.tilawah.android.features.profile
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,7 +43,10 @@ fun ProfileAuthHost(
     val reactivationNotice by profileViewModel.reactivationNotice.collectAsStateWithLifecycle()
     val streakDays by profileViewModel.streakDays.collectAsStateWithLifecycle()
     val activeSheet by profileViewModel.activeSheet.collectAsStateWithLifecycle()
-    var pendingMode: AuthMode? by remember { mutableStateOf(null) }
+    // Saveable so a rotation keeps the auth screen open. A tab switch
+    // still resets it: the tab leaves the composition, and that is the
+    // way out of these screens, which have no back action.
+    var pendingMode: AuthMode? by rememberSaveable { mutableStateOf<AuthMode?>(null) }
 
     val authViewModel: AuthViewModel = viewModel(
         factory = viewModelFactory {
@@ -88,7 +91,7 @@ fun ProfileAuthHost(
                 is ProfileSheet.EditProfile -> {
                     val user = sheet.user
                     val editViewModel: EditProfileViewModel = viewModel(
-                        key = "edit-profile-${user.id}",
+                        viewModelStoreOwner = profileViewModel.sheetViewModels,
                         factory = viewModelFactory {
                             initializer {
                                 EditProfileViewModel(
@@ -110,7 +113,7 @@ fun ProfileAuthHost(
                 is ProfileSheet.ChangeEmail -> {
                     val currentEmail = sheet.currentEmail
                     val changeEmailViewModel: ChangeEmailViewModel = viewModel(
-                        key = "change-email-$currentEmail",
+                        viewModelStoreOwner = profileViewModel.sheetViewModels,
                         factory = viewModelFactory {
                             initializer {
                                 ChangeEmailViewModel(
@@ -129,7 +132,7 @@ fun ProfileAuthHost(
 
                 ProfileSheet.UpdatePassword -> {
                     val updatePasswordViewModel: UpdatePasswordViewModel = viewModel(
-                        key = "update-password-${session?.user?.id}",
+                        viewModelStoreOwner = profileViewModel.sheetViewModels,
                         factory = viewModelFactory {
                             initializer {
                                 UpdatePasswordViewModel(profileService = profileService)
@@ -144,7 +147,7 @@ fun ProfileAuthHost(
 
                 ProfileSheet.DeleteAccount -> {
                     val deleteAccountViewModel: DeleteAccountViewModel = viewModel(
-                        key = "delete-account-${session?.user?.id}",
+                        viewModelStoreOwner = profileViewModel.sheetViewModels,
                         factory = viewModelFactory {
                             initializer {
                                 DeleteAccountViewModel(
