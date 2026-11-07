@@ -1,5 +1,6 @@
 import { Client as MinioClient } from 'minio';
 import { Pool } from 'pg';
+import { logger } from '../telemetry/logger';
 
 let pool: Pool | null = null;
 let minio: MinioClient | null = null;
@@ -10,6 +11,12 @@ const getPool = (): Pool | null => {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) return null;
   pool = new Pool({ connectionString });
+  // pg emits this when the server drops an idle client, as Neon does when it
+  // suspends. Without a listener it becomes an uncaught exception. The pool
+  // replaces the client on the next query.
+  pool.on('error', (error) => {
+    logger.warn('idle postgres connection error', { error: error.message });
+  });
   return pool;
 };
 
