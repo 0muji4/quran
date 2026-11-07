@@ -154,13 +154,15 @@ export function ChangeEmailButton({ currentEmail }: Props) {
   const [pending, startTransition] = useTransition();
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
+  const openDialog = (): void => {
+    setNewEmail('');
+    setCurrentPassword('');
+    setError(null);
+    setOpen(true);
+  };
+
   useEffect(() => {
-    if (open) {
-      setNewEmail('');
-      setCurrentPassword('');
-      setError(null);
-      firstFieldRef.current?.focus();
-    }
+    if (open) firstFieldRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
@@ -210,7 +212,7 @@ export function ChangeEmailButton({ currentEmail }: Props) {
 
   return (
     <>
-      <button type="button" className={triggerClass} onClick={() => setOpen(true)}>
+      <button type="button" className={triggerClass} onClick={openDialog}>
         Change
       </button>
       {open && (

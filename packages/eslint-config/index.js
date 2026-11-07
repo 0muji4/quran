@@ -84,12 +84,7 @@ export default [
       'react-hooks': reactHooksPlugin
     },
     rules: {
-      ...reactHooksPlugin.configs.recommended.rules,
-      // Existing code needs component changes to comply, so these report
-      // without failing lint.
-      'react-hooks/purity': 'warn',
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn'
+      ...reactHooksPlugin.configs.recommended.rules
     }
   },
 

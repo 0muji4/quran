@@ -16,14 +16,16 @@ export function CompletionToast() {
   const searchParams = useSearchParams();
   const completed = searchParams.get('completed');
   const [visible, setVisible] = useState(Boolean(completed));
+  const [prevCompleted, setPrevCompleted] = useState(completed);
   const t = useTranslations('library.completion');
 
   // Sync visibility back on whenever the query param re-arrives so a
   // user who completes another surah after dismissing the previous
   // toast sees the new one.
-  useEffect(() => {
+  if (completed !== prevCompleted) {
+    setPrevCompleted(completed);
     setVisible(Boolean(completed));
-  }, [completed]);
+  }
 
   // Strip the param once the toast is no longer visible so a
   // back/forward or refresh doesn't replay it.

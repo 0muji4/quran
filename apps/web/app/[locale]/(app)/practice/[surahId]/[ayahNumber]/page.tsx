@@ -75,7 +75,11 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
 
       <div className={styles.panels}>
         <TeacherPanel surahId={Number(surah.id)} ayahNumber={selectedAyah.ayahNumber} />
-        <RecorderPanel surah={surah} ayah={selectedAyah} />
+        <RecorderPanel
+          key={`${surah.id}:${selectedAyah.ayahNumber}`}
+          surah={surah}
+          ayah={selectedAyah}
+        />
       </div>
 
       <div className={styles.navRow}>

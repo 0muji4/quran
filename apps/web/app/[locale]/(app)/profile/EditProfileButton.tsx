@@ -216,15 +216,17 @@ export function EditProfileButton({ displayName, email, level }: Props) {
 
   // Reset modal state whenever it opens so a Cancel → re-open doesn't
   // carry over a stale draft.
+  const openDialog = (): void => {
+    setNameValue(displayName ?? email);
+    setLevelValue(level ?? 'beginner');
+    setError(null);
+    setOpen(true);
+  };
+
+  // Focus the first field for keyboard users.
   useEffect(() => {
-    if (open) {
-      setNameValue(displayName ?? email);
-      setLevelValue(level ?? 'beginner');
-      setError(null);
-      // Focus the first field for keyboard users.
-      firstFieldRef.current?.focus();
-    }
-  }, [open, displayName, email, level]);
+    if (open) firstFieldRef.current?.focus();
+  }, [open]);
 
   // Esc closes the modal — table-stakes affordance.
   useEffect(() => {
@@ -271,12 +273,7 @@ export function EditProfileButton({ displayName, email, level }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        className={buttonClass}
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-      >
+      <button type="button" className={buttonClass} onClick={openDialog} aria-haspopup="dialog">
         Edit profile
       </button>
       {open && (

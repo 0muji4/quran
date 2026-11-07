@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '../../../../i18n/navigation';
+import { useStoredValue } from '../../../hooks/useLocalStorageState';
 import { useRecorder } from '../../../hooks/useRecorder';
 import { trackUiEvent } from '../../../telemetry/use-ui-event';
 import { useScoringJob } from '../../../hooks/useScoringJob';
@@ -23,6 +24,8 @@ import {
 import type { AyahRecord, SurahSummary } from '../../../lib/types';
 import styles from '../../../styles/practice.module.css';
 
+// Render with a `key` per ayah: navigating between ayahs relies on the remount
+// to drop the recording, the scoring job, and the panel state.
 interface Props {
   surah: SurahSummary;
   ayah: AyahRecord;
@@ -47,6 +50,15 @@ const STUCK_HINT_AT_MS = 30_000;
 // reason ("Recording was 0.6 s — too short to score").
 const MIN_RECORDING_MS = 1_000;
 
+const findLastScoredAttempt = (surahId: string, ayahNumber: number): Attempt | null =>
+  getRecentAttempts().find(
+    (a) =>
+      a.surahId === surahId &&
+      a.ayahNumber === ayahNumber &&
+      a.status === 'COMPLETED' &&
+      typeof a.score === 'number'
+  ) ?? null;
+
 export function RecorderPanel({ surah, ayah }: Props) {
   const recorder = useRecorder();
   const job = useScoringJob();
@@ -54,56 +66,36 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const t = useTranslations('practice.recorder');
   const liveStatusT = useTranslations('practice.recorder.liveStatus');
   // The footer ("Last attempt: N / 100") reflects the most recent
-  // completed scoring for this ayah, refreshed on mount, on ayah
-  // navigation, and after each new attempt lands.
-  const [lastAttempt, setLastAttempt] = useState<Attempt | null>(null);
+  // completed scoring for this ayah, refreshed on mount and after each
+  // new attempt lands.
+  const [lastAttempt, refreshLastAttempt] = useStoredValue(
+    () => findLastScoredAttempt(surah.id, ayah.ayahNumber),
+    null
+  );
   const [scoringElapsedMs, setScoringElapsedMs] = useState(0);
+  const [elapsedStage, setElapsedStage] = useState(job.stage);
   const [tooShortReason, setTooShortReason] = useState<string | null>(null);
+  // Retained so the user can replay their attempt from the error card. Cleared
+  // on a fresh start and on the auto-redirect to the result page.
+  const [lastBlob, setLastBlob] = useState<Blob | null>(null);
 
   // Captured at the moment of stop. useRecorder resets elapsedMs to 0 once
   // the recorder finalizes, so we snapshot before invoking stop.
   const lastDurationMsRef = useRef<number | null>(null);
-  // Retained so the user can replay their attempt from the error card. Cleared
-  // on a fresh start, on ayah navigation, and on the auto-redirect to the
-  // result page.
-  const lastBlobRef = useRef<Blob | null>(null);
   const navigatedJobIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const match = getRecentAttempts().find(
-      (a) =>
-        a.surahId === surah.id &&
-        a.ayahNumber === ayah.ayahNumber &&
-        a.status === 'COMPLETED' &&
-        typeof a.score === 'number'
-    );
-    setLastAttempt(match ?? null);
-  }, [surah.id, ayah.ayahNumber]);
-
-  // Reset state when navigating ayahs.
-  useEffect(() => {
-    job.reset();
-    recorder.cancel();
-    lastDurationMsRef.current = null;
-    lastBlobRef.current = null;
-    navigatedJobIdRef.current = null;
-    setScoringElapsedMs(0);
-    setTooShortReason(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [surah.id, ayah.ayahNumber]);
 
   // Track time spent in the upload/scoring window so AnalysingCard can advance
   // its checklist and the stuck-cancel CTA can appear at 30s. The ticker only
-  // runs while the panel is busy and resets each time the user re-enters that
-  // window.
+  // runs while the panel is busy and resets on every stage change.
+  if (job.stage !== elapsedStage) {
+    setElapsedStage(job.stage);
+    setScoringElapsedMs(0);
+  }
+
   useEffect(() => {
     const isBusy = job.stage === 'uploading' || job.stage === 'scoring';
-    if (!isBusy) {
-      setScoringElapsedMs(0);
-      return;
-    }
+    if (!isBusy) return;
     const startedAt = Date.now();
-    setScoringElapsedMs(0);
     const id = setInterval(() => {
       setScoringElapsedMs(Date.now() - startedAt);
     }, 250);
@@ -137,18 +129,17 @@ export function RecorderPanel({ surah, ayah }: Props) {
     };
     recordAttempt(attempt);
     if (completed && score !== null) {
-      // Promote the in-memory snapshot too — otherwise the footer
-      // stays frozen on the mount-time read until the user
-      // navigates ayahs.
-      setLastAttempt(attempt);
+      // Re-read so the footer does not stay frozen on the mount-time
+      // read until the user navigates ayahs.
+      refreshLastAttempt();
     }
 
     if (completed && navigatedJobIdRef.current !== job.job.jobId) {
       navigatedJobIdRef.current = job.job.jobId;
-      lastBlobRef.current = null;
+      setLastBlob(null);
       router.push(`/practice/${surah.id}/${ayah.ayahNumber}/result/${job.job.jobId}`);
     }
-  }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber, router]);
+  }, [job.stage, job.job, surah.id, surah.nameEn, ayah.ayahNumber, router, refreshLastAttempt]);
 
   const stage = job.stage; // 'idle' | 'uploading' | 'scoring' | 'done' | 'error'
   const isRecording = recorder.isRecording;
@@ -172,7 +163,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
 
   const handleStart = useCallback(async () => {
     setTooShortReason(null);
-    lastBlobRef.current = null;
+    setLastBlob(null);
     job.reset();
     navigatedJobIdRef.current = null;
     setLastPracticed({
@@ -196,7 +187,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
     lastDurationMsRef.current = elapsedAtStop;
     const blob = await recorder.stop();
     if (!blob) return;
-    lastBlobRef.current = blob;
+    setLastBlob(blob);
     trackUiEvent('web.ui.recording_stopped', {
       surahId: surah.id,
       ayahNumber: ayah.ayahNumber,
@@ -221,22 +212,21 @@ export function RecorderPanel({ surah, ayah }: Props) {
     job.reset();
     recorder.cancel();
     lastDurationMsRef.current = null;
-    lastBlobRef.current = null;
+    setLastBlob(null);
     navigatedJobIdRef.current = null;
     setScoringElapsedMs(0);
     setTooShortReason(null);
   }, [job, recorder, surah.id, ayah.ayahNumber]);
 
   const handleReplay = useCallback(() => {
-    const blob = lastBlobRef.current;
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
+    if (!lastBlob) return;
+    const url = URL.createObjectURL(lastBlob);
     const audio = new Audio(url);
     const release = () => URL.revokeObjectURL(url);
     audio.addEventListener('ended', release);
     audio.addEventListener('error', release);
     void audio.play().catch(release);
-  }, []);
+  }, [lastBlob]);
 
   const handleRecordAgain = useCallback(() => {
     void handleStart();
@@ -328,7 +318,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
         ) : isScoringError ? (
           <ScoringErrorCard
             reasons={errorReasons}
-            canReplay={!!lastBlobRef.current}
+            canReplay={lastBlob !== null}
             onReplay={handleReplay}
             onRecordAgain={handleRecordAgain}
           />
