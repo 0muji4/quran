@@ -2,7 +2,7 @@
   "name": "quran-project",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "pnpm@8.15.9",
+  "packageManager": "pnpm@12.18.0",
   "dependencies": {
     "globals": "^15.15.0"
   },
@@ -30,17 +30,5 @@
     "@quran-project/eslint-config": "workspace:*",
     "eslint": "^9.39.5",
     "tsx": "^4.23.15"
-  },
-  "pnpm": {
-    "overrides": {
-      "@opentelemetry/api": "1.9.1",
-      "@opentelemetry/core": "^2.12.0",
-      "@opentelemetry/propagator-jaeger": "^2.12.0",
-      "esbuild": "^0.25.0",
-      "lodash": "^4.18.1",
-      "postcss": "^8.5.10",
-      "tinypool": "^2.1.2",
-      "vite": "^6.4.2"
-    }
   }
 }

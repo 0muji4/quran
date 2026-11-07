@@ -17,7 +17,7 @@ These tests run against the **full Docker Compose stack** with real services:
 ## Prerequisites
 
 - **Docker** and **Docker Compose** installed
-- **Node.js 20+** and **pnpm 8.15.9**
+- **Node.js 26+** and **pnpm 12.18.0**
 - **Playwright browsers** installed (see setup below)
 
 ## Setup
