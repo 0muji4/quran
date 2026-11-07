@@ -1,4 +1,5 @@
 import { defineRecipe } from '@pandacss/dev';
+import type { RecipeConfig } from '@pandacss/types';
 
 // Per-attempt status indicator on the history list. Replaces the
 // .statusPill / .statusPillCompleted / .statusPillFailed trio.
@@ -7,7 +8,7 @@ import { defineRecipe } from '@pandacss/dev';
 // escape so the migrated history rows match the legacy CSS exactly.
 // The failed variant pairs `color.red` text with a bracket-escaped
 // rgba tint that has no equivalent token yet.
-export const statusPill = defineRecipe({
+export const statusPill: RecipeConfig = defineRecipe({
   className: 'statusPill',
   description: 'Per-attempt status badge on the history list.',
   base: {

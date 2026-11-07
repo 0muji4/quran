@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev';
+import type { SlotRecipeConfig } from '@pandacss/types';
 
 // Tilawah card / panel surface. Collapses .panel (practice),
 // .continue, .suggested, .surahCard, and the auth brand panel into one
@@ -14,7 +15,7 @@ import { defineSlotRecipe } from '@pandacss/dev';
 // Off-grid metrics ([11px], [0.18em], [4px], [12px], etc.) use Panda's
 // bracket escape so the recipe matches the legacy CSS byte-for-byte
 // during PR 7-10 migrations. Wider use of tokens can come later.
-export const panel = defineSlotRecipe({
+export const panel: SlotRecipeConfig = defineSlotRecipe({
   className: 'panel',
   description: 'Card / panel surface used across library, practice, and auth.',
   slots: ['root', 'badge', 'title', 'subtitle', 'body', 'footer'],
