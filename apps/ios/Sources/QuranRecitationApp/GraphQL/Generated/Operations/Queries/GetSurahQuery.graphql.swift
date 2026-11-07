@@ -2,9 +2,10 @@
 // This file was automatically generated and should not be edited.
 
 @_exported import ApolloAPI
+@_spi(Execution) @_spi(Unsafe) import ApolloAPI
 
 public extension QuranSchema {
-  class GetSurahQuery: GraphQLQuery {
+  nonisolated struct GetSurahQuery: GraphQLQuery {
     public static let operationName: String = "GetSurah"
     public static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
@@ -17,17 +18,17 @@ public extension QuranSchema {
       self.id = id
     }
 
-    public var __variables: Variables? { ["id": id] }
+    @_spi(Unsafe) public var __variables: Variables? { ["id": id] }
 
-    public struct Data: QuranSchema.SelectionSet {
-      public let __data: DataDict
-      public init(_dataDict: DataDict) { __data = _dataDict }
+    nonisolated public struct Data: QuranSchema.SelectionSet {
+      @_spi(Unsafe) public let __data: DataDict
+      @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-      public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
-      public static var __selections: [ApolloAPI.Selection] { [
+      @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
+      @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
         .field("surah", Surah?.self, arguments: ["id": .variable("id")]),
       ] }
-      public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+      @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         GetSurahQuery.Data.self
       ] }
 
@@ -36,12 +37,12 @@ public extension QuranSchema {
       /// Surah
       ///
       /// Parent Type: `Surah`
-      public struct Surah: QuranSchema.SelectionSet {
-        public let __data: DataDict
-        public init(_dataDict: DataDict) { __data = _dataDict }
+      nonisolated public struct Surah: QuranSchema.SelectionSet {
+        @_spi(Unsafe) public let __data: DataDict
+        @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-        public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Surah }
-        public static var __selections: [ApolloAPI.Selection] { [
+        @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Surah }
+        @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("id", QuranSchema.ID.self),
           .field("nameAr", String.self),
@@ -49,7 +50,7 @@ public extension QuranSchema {
           .field("revelationPlace", String.self),
           .field("ayahCount", Int.self),
         ] }
-        public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+        @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           GetSurahQuery.Data.Surah.self
         ] }
 

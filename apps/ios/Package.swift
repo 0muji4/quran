@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.1
 import PackageDescription
 
 let package = Package(
@@ -9,8 +9,8 @@ let package = Package(
     .executable(name: "QuranRecitationApp", targets: ["QuranRecitationApp"])
   ],
   dependencies: [
-    .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "1.25.5"),
-    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "9.0.0")
+    .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "2.5.0"),
+    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.1.0")
   ],
   targets: [
     .executableTarget(
@@ -34,5 +34,6 @@ let package = Package(
       ],
       path: "Tests/QuranRecitationAppTests"
     )
-  ]
+  ],
+  swiftLanguageModes: [.v5]
 )

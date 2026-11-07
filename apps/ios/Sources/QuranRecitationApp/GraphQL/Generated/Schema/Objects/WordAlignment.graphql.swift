@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let WordAlignment = ApolloAPI.Object(
+  nonisolated static let WordAlignment = ApolloAPI.Object(
     typename: "WordAlignment",
     implementedInterfaces: [],
     keyFields: nil

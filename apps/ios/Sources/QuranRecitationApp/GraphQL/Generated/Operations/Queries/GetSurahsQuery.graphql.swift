@@ -2,43 +2,44 @@
 // This file was automatically generated and should not be edited.
 
 @_exported import ApolloAPI
+@_spi(Execution) @_spi(Unsafe) import ApolloAPI
 
 public extension QuranSchema {
-  class GetSurahsQuery: GraphQLQuery {
+  nonisolated struct GetSurahsQuery: GraphQLQuery {
     public static let operationName: String = "GetSurahs"
     public static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
         #"query GetSurahs($limit: Int, $offset: Int) { surahs(limit: $limit, offset: $offset) { __typename id nameAr nameEn revelationPlace ayahCount } }"#
       ))
 
-    public var limit: GraphQLNullable<Int>
-    public var offset: GraphQLNullable<Int>
+    public var limit: GraphQLNullable<Int32>
+    public var offset: GraphQLNullable<Int32>
 
     public init(
-      limit: GraphQLNullable<Int>,
-      offset: GraphQLNullable<Int>
+      limit: GraphQLNullable<Int32>,
+      offset: GraphQLNullable<Int32>
     ) {
       self.limit = limit
       self.offset = offset
     }
 
-    public var __variables: Variables? { [
+    @_spi(Unsafe) public var __variables: Variables? { [
       "limit": limit,
       "offset": offset
     ] }
 
-    public struct Data: QuranSchema.SelectionSet {
-      public let __data: DataDict
-      public init(_dataDict: DataDict) { __data = _dataDict }
+    nonisolated public struct Data: QuranSchema.SelectionSet {
+      @_spi(Unsafe) public let __data: DataDict
+      @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-      public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
-      public static var __selections: [ApolloAPI.Selection] { [
+      @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
+      @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
         .field("surahs", [Surah].self, arguments: [
           "limit": .variable("limit"),
           "offset": .variable("offset")
         ]),
       ] }
-      public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+      @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         GetSurahsQuery.Data.self
       ] }
 
@@ -47,12 +48,12 @@ public extension QuranSchema {
       /// Surah
       ///
       /// Parent Type: `Surah`
-      public struct Surah: QuranSchema.SelectionSet {
-        public let __data: DataDict
-        public init(_dataDict: DataDict) { __data = _dataDict }
+      nonisolated public struct Surah: QuranSchema.SelectionSet {
+        @_spi(Unsafe) public let __data: DataDict
+        @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-        public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Surah }
-        public static var __selections: [ApolloAPI.Selection] { [
+        @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Surah }
+        @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("id", QuranSchema.ID.self),
           .field("nameAr", String.self),
@@ -60,7 +61,7 @@ public extension QuranSchema {
           .field("revelationPlace", String.self),
           .field("ayahCount", Int.self),
         ] }
-        public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+        @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           GetSurahsQuery.Data.Surah.self
         ] }
 

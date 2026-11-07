@@ -3,16 +3,16 @@
 
 import ApolloAPI
 
-public protocol QuranSchema_SelectionSet: ApolloAPI.SelectionSet & ApolloAPI.RootSelectionSet
+nonisolated public protocol QuranSchema_SelectionSet: ApolloAPI.SelectionSet & ApolloAPI.RootSelectionSet
 where Schema == QuranSchema.SchemaMetadata {}
 
-public protocol QuranSchema_InlineFragment: ApolloAPI.SelectionSet & ApolloAPI.InlineFragment
+nonisolated public protocol QuranSchema_InlineFragment: ApolloAPI.SelectionSet & ApolloAPI.InlineFragment
 where Schema == QuranSchema.SchemaMetadata {}
 
-public protocol QuranSchema_MutableSelectionSet: ApolloAPI.MutableRootSelectionSet
+nonisolated public protocol QuranSchema_MutableSelectionSet: ApolloAPI.MutableRootSelectionSet
 where Schema == QuranSchema.SchemaMetadata {}
 
-public protocol QuranSchema_MutableInlineFragment: ApolloAPI.MutableSelectionSet & ApolloAPI.InlineFragment
+nonisolated public protocol QuranSchema_MutableInlineFragment: ApolloAPI.MutableSelectionSet & ApolloAPI.InlineFragment
 where Schema == QuranSchema.SchemaMetadata {}
 
 public extension QuranSchema {
@@ -24,7 +24,7 @@ public extension QuranSchema {
 
   typealias MutableInlineFragment = QuranSchema_MutableInlineFragment
 
-  enum SchemaMetadata: ApolloAPI.SchemaMetadata {
+  nonisolated enum SchemaMetadata: ApolloAPI.SchemaMetadata {
     public static let configuration: any ApolloAPI.SchemaConfiguration.Type = SchemaConfiguration.self
 
     private static let objectTypeMap: [String: ApolloAPI.Object] = [
@@ -39,13 +39,13 @@ public extension QuranSchema {
       "WordAlignment": QuranSchema.Objects.WordAlignment
     ]
 
-    public static func objectType(forTypename typename: String) -> ApolloAPI.Object? {
+    @_spi(Execution) public static func objectType(forTypename typename: String) -> ApolloAPI.Object? {
       objectTypeMap[typename]
     }
   }
 
-  enum Objects {}
-  enum Interfaces {}
-  enum Unions {}
+  nonisolated enum Objects {}
+  nonisolated enum Interfaces {}
+  nonisolated enum Unions {}
 
 }

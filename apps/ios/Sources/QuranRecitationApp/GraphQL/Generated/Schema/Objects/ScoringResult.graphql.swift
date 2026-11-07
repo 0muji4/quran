@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let ScoringResult = ApolloAPI.Object(
+  nonisolated static let ScoringResult = ApolloAPI.Object(
     typename: "ScoringResult",
     implementedInterfaces: [],
     keyFields: nil
