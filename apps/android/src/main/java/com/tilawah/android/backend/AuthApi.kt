@@ -97,7 +97,7 @@ class OkHttpAuthApi(
         return withContext(Dispatchers.IO) {
             try {
                 httpClient.newCall(request).execute().use { response ->
-                    val payload = response.body?.string().orEmpty()
+                    val payload = response.body.string()
                     when (response.code) {
                         in 200..299 -> parseRefresh(payload)
                         400 -> throw AppError.ValidationFailed(parseErrorMessage(payload) ?: "invalid input")
@@ -133,7 +133,7 @@ class OkHttpAuthApi(
         return withContext(Dispatchers.IO) {
             try {
                 httpClient.newCall(request).execute().use { response ->
-                    val payload = response.body?.string().orEmpty()
+                    val payload = response.body.string()
                     when (response.code) {
                         in 200..299 -> parseNonce(payload)
                         else -> throw AppError.BackendUnavailable("googleNonce")
@@ -182,7 +182,7 @@ class OkHttpAuthApi(
         return withContext(Dispatchers.IO) {
             try {
                 httpClient.newCall(request).execute().use { response ->
-                    val payload = response.body?.string().orEmpty()
+                    val payload = response.body.string()
                     when (response.code) {
                         in 200..299 -> parseSuccess(payload, operation)
                         400 -> throw AppError.ValidationFailed(parseErrorMessage(payload) ?: "invalid input")
