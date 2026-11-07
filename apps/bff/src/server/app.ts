@@ -1,16 +1,11 @@
 import { readFileSync } from 'fs';
 import path from 'path';
-import express from 'express';
+import express, { type Response } from 'express';
 import cors from 'cors';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import {
-  getGraphQLParameters,
-  processRequest,
-  renderGraphiQL,
-  shouldRenderGraphiQL
-} from 'graphql-helix';
+import { createYoga } from 'graphql-yoga';
 import { authMiddleware, authRouter, buildContext, type AuthedRequest } from '../auth';
-import { graphqlHttpStatus } from '../graphql/httpStatus';
+import { graphqlHttpStatusPlugin } from '../graphql/httpStatus';
 import { resolvers } from '../graphql';
 import { meRouter } from '../me';
 import { rscRouter, restRouter } from '../rest';
@@ -50,69 +45,17 @@ export const createApp = () => {
   app.use(authRouter);
   app.use(restRouter);
   app.use(meRouter);
-  app.all('/graphql', async (req: AuthedRequest, res) => {
-    const request = {
-      body: req.body,
-      headers: req.headers,
-      method: req.method,
-      query: req.query
-    };
-
-    if (shouldRenderGraphiQL(request)) {
-      res.send(
-        renderGraphiQL({
-          endpoint: '/graphql'
-        })
-      );
-      return;
-    }
-
-    const { operationName, query, variables } = getGraphQLParameters(request);
-    const result = await processRequest({
-      operationName,
-      query,
-      variables,
-      request,
-      schema,
-      contextFactory: () => buildContext(req)
-    });
-
-    if (result.type === 'RESPONSE') {
-      result.headers.forEach(({ name, value }) => res.setHeader(name, value));
-      res.status(graphqlHttpStatus(result.status, result.payload)).json(result.payload);
-    } else if (result.type === 'MULTIPART_RESPONSE') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const multipartResult = result as any;
-      res.writeHead(multipartResult.status ?? 200, {
-        Connection: 'keep-alive',
-        'Content-Type': 'multipart/mixed; boundary="-"',
-        'Transfer-Encoding': 'chunked',
-        ...Object.fromEntries(multipartResult.headers)
-      });
-
-      for await (const chunk of multipartResult.subscriptions) {
-        const payload = `---\nContent-Type: application/json\n\n${JSON.stringify(chunk)}\n`;
-        res.write(payload);
-      }
-
-      res.write('-----\n');
-      res.end();
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pushResult = result as any;
-      res.writeHead(pushResult.status ?? 200, {
-        Connection: 'keep-alive',
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        ...Object.fromEntries(pushResult.headers)
-      });
-
-      for await (const chunk of pushResult.subscribe(req.signal)) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-      }
-
-      res.end();
-    }
+  const yoga = createYoga<{ req: AuthedRequest; res: Response }>({
+    schema,
+    context: ({ req }) => buildContext(req),
+    // Express already applies CORS, and nothing here takes file uploads.
+    cors: false,
+    multipart: false,
+    landingPage: false,
+    plugins: [graphqlHttpStatusPlugin()]
+  });
+  app.use(yoga.graphqlEndpoint, (req: AuthedRequest, res) => {
+    void yoga(req, res);
   });
 
   app.use('/rsc', rscRouter);

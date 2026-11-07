@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     exclude: [...configDefaults.exclude, '**/dist/**'],
     environment: 'node',
+    // Yoga checks errors with instanceof. Bundling these keeps every import on
+    // one copy of graphql, as the CommonJS build already does.
+    server: {
+      deps: { inline: ['graphql-yoga', /@graphql-tools\//, /@envelop\//, /@graphql-yoga\//] }
+    },
     include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
     // bcryptjs is pure JS, and coverage slows it past the 5s default on busy
     // runners.
