@@ -1,7 +1,6 @@
 package com.tilawah.android.features.profile
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,7 +11,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.tilawah.android.backend.AuthApi
-import com.tilawah.android.backend.AuthUser
 import com.tilawah.android.backend.PreferencesClient
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.features.auth.AuthMode
@@ -44,22 +42,8 @@ fun ProfileAuthHost(
     val session by profileViewModel.session.collectAsStateWithLifecycle()
     val reactivationNotice by profileViewModel.reactivationNotice.collectAsStateWithLifecycle()
     val streakDays by profileViewModel.streakDays.collectAsStateWithLifecycle()
+    val activeSheet by profileViewModel.activeSheet.collectAsStateWithLifecycle()
     var pendingMode: AuthMode? by remember { mutableStateOf(null) }
-    var editingUser: AuthUser? by remember { mutableStateOf(null) }
-    var changeEmailFor: String? by remember { mutableStateOf(null) }
-    var updatingPassword by remember { mutableStateOf(false) }
-    var deletingAccount by remember { mutableStateOf(false) }
-
-    // Drop open sheets automatically if the session disappears under
-    // us (sign-out from another path, token eviction, etc.).
-    LaunchedEffect(session) {
-        if (session == null) {
-            editingUser = null
-            changeEmailFor = null
-            updatingPassword = false
-            deletingAccount = false
-        }
-    }
 
     val authViewModel: AuthViewModel = viewModel(
         factory = viewModelFactory {
@@ -87,86 +71,96 @@ fun ProfileAuthHost(
                 onSignInTapped = { pendingMode = AuthMode.SignIn },
                 onSignUpTapped = { pendingMode = AuthMode.SignUp },
                 onSignOutTapped = profileViewModel::signOut,
-                onEditProfileTapped = { editingUser = session?.toAuthUser() },
-                onChangeEmailTapped = { changeEmailFor = session?.user?.email },
-                onUpdatePasswordTapped = { updatingPassword = true },
-                onDeleteAccountTapped = { deletingAccount = true },
+                onEditProfileTapped = {
+                    session?.let { profileViewModel.showSheet(ProfileSheet.EditProfile(it.toAuthUser())) }
+                },
+                onChangeEmailTapped = {
+                    session?.let { profileViewModel.showSheet(ProfileSheet.ChangeEmail(it.user.email)) }
+                },
+                onUpdatePasswordTapped = { profileViewModel.showSheet(ProfileSheet.UpdatePassword) },
+                onDeleteAccountTapped = { profileViewModel.showSheet(ProfileSheet.DeleteAccount) },
                 showReactivationBanner = reactivationNotice,
                 onAcknowledgeReactivation = profileViewModel::acknowledgeReactivationNotice,
                 modifier = modifier,
             )
 
-            editingUser?.let { user ->
-                val editViewModel: EditProfileViewModel = viewModel(
-                    key = "edit-profile-${user.id}",
-                    factory = viewModelFactory {
-                        initializer {
-                            EditProfileViewModel(
-                                initialUser = user,
-                                profileService = profileService,
-                                authSession = authSession,
-                            )
-                        }
-                    },
-                )
-                EditProfileSheet(
-                    viewModel = editViewModel,
-                    initialDisplayName = (user.displayName ?: "").trim(),
-                    initialLevel = user.level,
-                    onDismiss = { editingUser = null },
-                )
-            }
+            when (val sheet = activeSheet) {
+                is ProfileSheet.EditProfile -> {
+                    val user = sheet.user
+                    val editViewModel: EditProfileViewModel = viewModel(
+                        key = "edit-profile-${user.id}",
+                        factory = viewModelFactory {
+                            initializer {
+                                EditProfileViewModel(
+                                    initialUser = user,
+                                    profileService = profileService,
+                                    authSession = authSession,
+                                )
+                            }
+                        },
+                    )
+                    EditProfileSheet(
+                        viewModel = editViewModel,
+                        initialDisplayName = (user.displayName ?: "").trim(),
+                        initialLevel = user.level,
+                        onDismiss = profileViewModel::dismissSheet,
+                    )
+                }
 
-            changeEmailFor?.let { currentEmail ->
-                val changeEmailViewModel: ChangeEmailViewModel = viewModel(
-                    key = "change-email-$currentEmail",
-                    factory = viewModelFactory {
-                        initializer {
-                            ChangeEmailViewModel(
-                                currentEmail = currentEmail,
-                                profileService = profileService,
-                                authSession = authSession,
-                            )
-                        }
-                    },
-                )
-                ChangeEmailSheet(
-                    viewModel = changeEmailViewModel,
-                    onDismiss = { changeEmailFor = null },
-                )
-            }
+                is ProfileSheet.ChangeEmail -> {
+                    val currentEmail = sheet.currentEmail
+                    val changeEmailViewModel: ChangeEmailViewModel = viewModel(
+                        key = "change-email-$currentEmail",
+                        factory = viewModelFactory {
+                            initializer {
+                                ChangeEmailViewModel(
+                                    currentEmail = currentEmail,
+                                    profileService = profileService,
+                                    authSession = authSession,
+                                )
+                            }
+                        },
+                    )
+                    ChangeEmailSheet(
+                        viewModel = changeEmailViewModel,
+                        onDismiss = profileViewModel::dismissSheet,
+                    )
+                }
 
-            if (updatingPassword) {
-                val updatePasswordViewModel: UpdatePasswordViewModel = viewModel(
-                    key = "update-password-${session?.user?.id}",
-                    factory = viewModelFactory {
-                        initializer {
-                            UpdatePasswordViewModel(profileService = profileService)
-                        }
-                    },
-                )
-                UpdatePasswordSheet(
-                    viewModel = updatePasswordViewModel,
-                    onDismiss = { updatingPassword = false },
-                )
-            }
+                ProfileSheet.UpdatePassword -> {
+                    val updatePasswordViewModel: UpdatePasswordViewModel = viewModel(
+                        key = "update-password-${session?.user?.id}",
+                        factory = viewModelFactory {
+                            initializer {
+                                UpdatePasswordViewModel(profileService = profileService)
+                            }
+                        },
+                    )
+                    UpdatePasswordSheet(
+                        viewModel = updatePasswordViewModel,
+                        onDismiss = profileViewModel::dismissSheet,
+                    )
+                }
 
-            if (deletingAccount) {
-                val deleteAccountViewModel: DeleteAccountViewModel = viewModel(
-                    key = "delete-account-${session?.user?.id}",
-                    factory = viewModelFactory {
-                        initializer {
-                            DeleteAccountViewModel(
-                                profileService = profileService,
-                                authSession = authSession,
-                            )
-                        }
-                    },
-                )
-                DeleteAccountSheet(
-                    viewModel = deleteAccountViewModel,
-                    onDismiss = { deletingAccount = false },
-                )
+                ProfileSheet.DeleteAccount -> {
+                    val deleteAccountViewModel: DeleteAccountViewModel = viewModel(
+                        key = "delete-account-${session?.user?.id}",
+                        factory = viewModelFactory {
+                            initializer {
+                                DeleteAccountViewModel(
+                                    profileService = profileService,
+                                    authSession = authSession,
+                                )
+                            }
+                        },
+                    )
+                    DeleteAccountSheet(
+                        viewModel = deleteAccountViewModel,
+                        onDismiss = profileViewModel::dismissSheet,
+                    )
+                }
+
+                null -> Unit
             }
         }
 
