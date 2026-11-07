@@ -61,16 +61,16 @@ describe('SegmentHighlights', () => {
   it('applies correct color coding based on default threshold 0.8', () => {
     const { container } = render(<SegmentHighlights segments={mockSegments} />);
 
-    const scores = container.querySelectorAll('span[style*="color"]');
+    const scores = container.querySelectorAll<HTMLElement>('span[style*="color"]');
 
     // Word 1: 0.95 >= 0.8 → green
-    expect(scores[0]).toHaveStyle({ color: 'var(--colors-score-pass)' });
+    expect(scores[0].style.color).toBe('var(--colors-score-pass)');
 
     // Word 2: 0.78 >= 0.7 (0.8 - 0.1) → yellow
-    expect(scores[1]).toHaveStyle({ color: 'var(--colors-score-warn)' });
+    expect(scores[1].style.color).toBe('var(--colors-score-warn)');
 
     // Word 3: 0.65 < 0.7 → red
-    expect(scores[2]).toHaveStyle({ color: 'var(--colors-score-fail)' });
+    expect(scores[2].style.color).toBe('var(--colors-score-fail)');
   });
 
   it('applies correct color coding based on custom threshold', () => {
@@ -82,16 +82,16 @@ describe('SegmentHighlights', () => {
 
     const { container } = render(<SegmentHighlights segments={segments} threshold={0.85} />);
 
-    const scores = container.querySelectorAll('span[style*="color"]');
+    const scores = container.querySelectorAll<HTMLElement>('span[style*="color"]');
 
     // 0.90 >= 0.85 → green
-    expect(scores[0]).toHaveStyle({ color: 'var(--colors-score-pass)' });
+    expect(scores[0].style.color).toBe('var(--colors-score-pass)');
 
     // 0.82 >= 0.75 (0.85 - 0.1) → yellow
-    expect(scores[1]).toHaveStyle({ color: 'var(--colors-score-warn)' });
+    expect(scores[1].style.color).toBe('var(--colors-score-warn)');
 
     // 0.70 < 0.75 → red
-    expect(scores[2]).toHaveStyle({ color: 'var(--colors-score-fail)' });
+    expect(scores[2].style.color).toBe('var(--colors-score-fail)');
   });
 
   it('displays metrics when present', () => {
@@ -148,10 +148,10 @@ describe('SegmentHighlights', () => {
     const segments: ScoreSegment[] = [{ label: 'Test', score: 0.85, metrics: null }];
 
     const { container } = render(<SegmentHighlights segments={segments} />);
-    const scoreElement = container.querySelector('span[style*="color"]');
+    const scoreElement = container.querySelector<HTMLElement>('span[style*="color"]');
 
     // 0.85 >= 0.8 → green
-    expect(scoreElement).toHaveStyle({ color: 'var(--colors-score-pass)' });
+    expect(scoreElement?.style.color).toBe('var(--colors-score-pass)');
   });
 
   it('renders correct number of segment cards', () => {

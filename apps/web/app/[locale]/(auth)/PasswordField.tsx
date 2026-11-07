@@ -120,8 +120,7 @@ export function PasswordField({
           aria-controls={id}
           disabled={disabled}
         >
-          {visible ? t('hide') : t('show')}
-          <span className="sr-only"> {t('a11ySuffix')}</span>
+          {visible ? t('hide') : t('show')} <span className="sr-only">{t('a11ySuffix')}</span>
         </button>
       </div>
       {helperText && (
