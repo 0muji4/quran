@@ -12,9 +12,9 @@ import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
 
 const JSONObjectScalar = new GraphQLScalarType({
   name: 'JSONObject',
-  serialize: (value) => value ?? null,
-  parseValue: (value) => (typeof value === 'object' && value !== null ? value : null),
-  parseLiteral: (ast) => {
+  coerceOutputValue: (value) => value ?? null,
+  coerceInputValue: (value) => (typeof value === 'object' && value !== null ? value : null),
+  coerceInputLiteral: (ast) => {
     if (ast.kind === Kind.OBJECT || ast.kind === Kind.LIST) {
       return valueFromASTUntyped(ast);
     }
@@ -25,9 +25,9 @@ const JSONObjectScalar = new GraphQLScalarType({
 
 const DateTimeScalar = new GraphQLScalarType({
   name: 'DateTime',
-  serialize: (value) => new Date(value as string | number | Date).toISOString(),
-  parseValue: (value) => (typeof value === 'string' ? value : null),
-  parseLiteral: (ast) => (ast.kind === Kind.STRING ? ast.value : null)
+  coerceOutputValue: (value) => new Date(value as string | number | Date).toISOString(),
+  coerceInputValue: (value) => (typeof value === 'string' ? value : null),
+  coerceInputLiteral: (ast) => (ast.kind === Kind.STRING ? ast.value : null)
 });
 
 const requireSession = (context: GraphQLContext): NonNullable<GraphQLContext['session']> => {
