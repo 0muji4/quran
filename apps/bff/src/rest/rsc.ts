@@ -33,8 +33,9 @@ rscRouter.get('/surahs', async (req: AuthedRequest, res) => {
 });
 
 rscRouter.get('/surah/:surahId/ayahs', async (req: AuthedRequest, res) => {
+  const surahId = String(req.params.surahId);
   try {
-    const surah = await fetchSurahFromBackend(req.params.surahId);
+    const surah = await fetchSurahFromBackend(surahId);
 
     if (!surah) {
       res.status(404).json({ error: 'Surah not found' });
@@ -51,14 +52,14 @@ rscRouter.get('/surah/:surahId/ayahs', async (req: AuthedRequest, res) => {
       ayahs: surah.ayahs
     });
   } catch (error) {
-    console.error(`Failed to fetch surah ${req.params.surahId} from backend:`, error);
+    console.error(`Failed to fetch surah ${surahId} from backend:`, error);
     res.status(502).json({ error: 'Failed to fetch surah' });
   }
 });
 
 rscRouter.get('/scores/:sessionId', async (req: AuthedRequest, res) => {
   const startedAt = Date.now();
-  const sessionId = req.params.sessionId;
+  const sessionId = String(req.params.sessionId);
   const session = requireAuth(req, res);
   if (!session) return;
   let job;
