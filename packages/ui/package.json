@@ -43,16 +43,16 @@
   "devDependencies": {
     "@pandacss/dev": "^1.12.2",
     "@quran-project/eslint-config": "workspace:*",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^9.39.5",
-    "jsdom": "^25.0.1",
+    "jsdom": "^31.0.0",
     "react-dom": "^18.3.1",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7"
+    "vitest": "^5.1.0"
   }
 }
