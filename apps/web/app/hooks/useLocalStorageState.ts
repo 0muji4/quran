@@ -7,7 +7,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function useLocalStorageState<T>(reader: () => T, initial: T): [T, () => void] {
   const [value, setValue] = useState<T>(initial);
   const readerRef = useRef(reader);
-  readerRef.current = reader;
+  useEffect(() => {
+    readerRef.current = reader;
+  });
 
   const refresh = useCallback(() => {
     try {

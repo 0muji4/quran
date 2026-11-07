@@ -28,11 +28,7 @@ import { getWebTracer } from './web-tracer';
 // duplicate listeners.
 
 export type WebVitalName =
-  | 'web.vitals.lcp'
-  | 'web.vitals.fcp'
-  | 'web.vitals.inp'
-  | 'web.vitals.cls'
-  | 'web.vitals.ttfb';
+  'web.vitals.lcp' | 'web.vitals.fcp' | 'web.vitals.inp' | 'web.vitals.cls' | 'web.vitals.ttfb';
 
 let initialised = false;
 

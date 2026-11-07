@@ -47,7 +47,7 @@ export default async function PracticeResultPage({ params }: { params: Promise<R
   // Teacher reference audio is served by a separate BFF endpoint; fetch
   // alongside the rest so the result page can render the Listen back tile
   // server-side. Failures here are non-fatal — we hide the player gracefully.
-  let teacherAudioUrl: string | null = null;
+  let teacherAudioUrl: string | null;
   try {
     const ref = await fetchReferenceAudioUrl(Number(surah.id), ayah.ayahNumber);
     teacherAudioUrl = ref.url;

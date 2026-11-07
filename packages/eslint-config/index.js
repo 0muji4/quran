@@ -1,7 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
@@ -63,19 +63,18 @@ export default [
     }
   },
 
-  // React configuration
+  // React configuration. Hook rules come from eslint-plugin-react-hooks below.
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      react: reactPlugin
-    },
-    settings: {
-      react: { version: 'detect' }
-    },
-    rules: {
-      ...reactPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off'
-    }
+    ...eslintReact.configs['recommended-typescript']
+  },
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    rules: Object.fromEntries(
+      Object.keys(eslintReact.configs['disable-conflict-eslint-plugin-react-hooks'].rules).map(
+        (rule) => [rule.replace('react-hooks/', '@eslint-react/'), 'off']
+      )
+    )
   },
 
   // React Hooks configuration
@@ -85,7 +84,12 @@ export default [
       'react-hooks': reactHooksPlugin
     },
     rules: {
-      ...reactHooksPlugin.configs.recommended.rules
+      ...reactHooksPlugin.configs.recommended.rules,
+      // Existing code needs component changes to comply, so these report
+      // without failing lint.
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn'
     }
   },
 

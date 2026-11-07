@@ -55,7 +55,7 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "^5.1.0",
-    "eslint": "^9.39.5",
+    "eslint": "^10.14.0",
     "supertest": "^7.3.1",
     "ts-proto": "^2.18.4",
     "tsx": "^4.23.15",

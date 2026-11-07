@@ -139,7 +139,9 @@ export function Toast({
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  });
 
   const dismiss = useCallback(() => {
     onDismissRef.current();

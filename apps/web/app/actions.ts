@@ -524,12 +524,10 @@ export type SignInErrorCode = 'invalid_credentials';
 export type SignUpErrorCode = 'email_in_use' | 'pending_deletion';
 
 export type SignInResult =
-  | { ok: true; user: AuthSessionUser; reactivated: boolean }
-  | { ok: false; error: SignInErrorCode };
+  { ok: true; user: AuthSessionUser; reactivated: boolean } | { ok: false; error: SignInErrorCode };
 
 export type SignUpResult =
-  | { ok: true; user: AuthSessionUser }
-  | { ok: false; error: SignUpErrorCode };
+  { ok: true; user: AuthSessionUser } | { ok: false; error: SignUpErrorCode };
 
 const persistAuthSession = async (payload: AuthSuccessPayload): Promise<AuthSessionUser> => {
   await setAuthCookies({
