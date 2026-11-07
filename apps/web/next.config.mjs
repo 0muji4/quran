@@ -17,9 +17,6 @@ const nextConfig = {
       bodySizeLimit: '10mb'
     }
   },
-  eslint: {
-    ignoreDuringBuilds: true
-  },
   transpilePackages: ['@quran-project/ui', '@quran-project/shared-ts']
 };
 

@@ -17,7 +17,7 @@ interface State {
 }
 
 type UseTeacherAudioApi = State & {
-  audioRef: RefObject<HTMLAudioElement>;
+  audioRef: RefObject<HTMLAudioElement | null>;
   togglePlay: () => void;
   setRate: (rate: PlaybackRate) => void;
   toggleLoop: () => void;

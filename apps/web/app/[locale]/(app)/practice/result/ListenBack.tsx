@@ -112,7 +112,7 @@ function ListenBackTile({
   src,
   fallback
 }: {
-  audioRef: RefObject<HTMLAudioElement>;
+  audioRef: RefObject<HTMLAudioElement | null>;
   kind: 'teacher' | 'user';
   title: string;
   subtitle: string;
