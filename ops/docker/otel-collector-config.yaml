@@ -45,44 +45,48 @@ processors:
         action: delete
 
 exporters:
-  otlp/jaeger:
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
 
-  prometheusremotewrite:
+  prometheus_remote_write:
     endpoint: http://prometheus:9090/api/v1/write
     tls:
       insecure: true
 
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-    default_labels_enabled:
-      exporter: true
-      job: true
+  # Stream labels come from Loki's otlp_config defaults (service_name,
+  # service_namespace, ...). trace_id is structured metadata, not a label.
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
 
-  logging:
-    loglevel: info
+  debug:
+    verbosity: basic
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource, attributes, batch]
-      exporters: [otlp/jaeger, logging]
+      exporters: [otlp_grpc/jaeger, debug]
 
     metrics:
       receivers: [otlp, prometheus]
       processors: [memory_limiter, resource, batch]
-      exporters: [prometheusremotewrite, logging]
+      exporters: [prometheus_remote_write, debug]
 
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource, attributes, batch]
-      exporters: [loki, logging]
+      exporters: [otlp_http/loki, debug]
 
   telemetry:
     logs:
       level: info
     metrics:
-      address: 0.0.0.0:8888
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888

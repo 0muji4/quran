@@ -395,7 +395,7 @@
             "type": "loki",
             "uid": "Loki"
           },
-          "expr": "{job=~\".*backend.*\"} | json | line_format \"{{.timestamp}} [{{.level}}] {{.msg}} (trace_id={{.trace_id}})\"",
+          "expr": "{service_name=\"quran-backend\"} | json | line_format \"{{.timestamp}} [{{.level}}] {{.msg}} (trace_id={{.trace_id}})\"",
           "refId": "A"
         }
       ],

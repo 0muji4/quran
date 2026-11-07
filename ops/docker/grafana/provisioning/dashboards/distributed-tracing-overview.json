@@ -458,7 +458,7 @@
             "type": "loki",
             "uid": "Loki"
           },
-          "expr": "{job=~\"web|bff|backend|worker\"} |= \"error\" | json | __error__=\"\"",
+          "expr": "{service_name=~\"quran-(web|bff|backend|worker)\"} |= \"error\" | json | __error__=\"\"",
           "refId": "A"
         }
       ],

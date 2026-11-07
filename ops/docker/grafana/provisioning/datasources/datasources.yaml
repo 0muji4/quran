@@ -11,7 +11,7 @@ datasources:
     jsonData:
       httpMethod: POST
       prometheusType: Prometheus
-      prometheusVersion: 2.49.1
+      prometheusVersion: 3.16.0
       timeInterval: 15s
 
   - name: Loki
@@ -24,7 +24,8 @@ datasources:
       maxLines: 1000
       derivedFields:
         - datasourceUid: Jaeger
-          matcherRegex: "trace_id=(\\w+)"
+          matcherType: label
+          matcherRegex: trace_id
           name: TraceID
           url: '$${__value.raw}'
 
@@ -35,15 +36,12 @@ datasources:
     url: http://jaeger:16686
     editable: true
     jsonData:
-      tracesToLogs:
+      tracesToLogsV2:
         datasourceUid: Loki
-        tags: ['trace_id']
-        mappedTags: [{ key: 'trace_id', value: 'trace_id' }]
-        mapTagNamesEnabled: true
         spanStartTimeShift: '-1h'
         spanEndTimeShift: '1h'
-        filterByTraceID: true
-        filterBySpanID: false
+        customQuery: true
+        query: '{service_name="$${__span.tags["service.name"]}"} | trace_id="$${__span.traceId}"'
       tracesToMetrics:
         datasourceUid: Prometheus
         tags: [{ key: 'service.name', value: 'service' }]

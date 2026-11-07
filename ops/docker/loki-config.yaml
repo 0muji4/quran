@@ -38,12 +38,12 @@ compactor:
   working_directory: /loki/compactor
   compaction_interval: 10m
   retention_enabled: true
+  delete_request_store: filesystem
   retention_delete_delay: 2h
   retention_delete_worker_count: 150
 
 limits_config:
   retention_period: 168h # 7 days
-  enforce_metric_name: false
   reject_old_samples: true
   reject_old_samples_max_age: 168h
   ingestion_rate_mb: 10
@@ -53,13 +53,6 @@ limits_config:
   max_entries_limit_per_query: 5000
   max_streams_per_user: 10000
   max_global_streams_per_user: 0
-
-chunk_store_config:
-  max_look_back_period: 0s
-
-table_manager:
-  retention_deletes_enabled: true
-  retention_period: 168h
 
 ruler:
   storage:
