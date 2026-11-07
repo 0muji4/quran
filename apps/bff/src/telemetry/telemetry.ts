@@ -41,7 +41,7 @@ const metricReader = new PeriodicExportingMetricReader({
 const sdk = new NodeSDK({
   resource,
   traceExporter,
-  metricReader
+  metricReaders: [metricReader]
 });
 
 sdk.start();

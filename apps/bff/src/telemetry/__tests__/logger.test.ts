@@ -1,20 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { trace, context as otelContext } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import { logger } from '../logger';
 
 describe('Logger', () => {
-  let provider: NodeTracerProvider;
-  let tracer: ReturnType<NodeTracerProvider['getTracer']>;
+  let provider: TracerProvider;
+  let tracer: ReturnType<TracerProvider['getTracer']>;
 
   beforeEach(() => {
-    provider = new NodeTracerProvider();
-    provider.register();
+    provider = new TracerProvider();
+    trace.setGlobalTracerProvider(provider);
+    otelContext.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
     tracer = provider.getTracer('test');
   });
 
   afterEach(async () => {
     await provider.shutdown();
+    otelContext.disable();
+    trace.disable();
   });
 
   it('should log basic messages without errors', () => {
