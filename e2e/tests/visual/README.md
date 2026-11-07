@@ -56,7 +56,7 @@ reach the prod-ish `web` service rather than a `pnpm dev` host process.
      -w /work \
      -e E2E_BASE_URL=http://localhost:3000 \
      -e CI=1 \
-     mcr.microsoft.com/playwright:v1.57.0-jammy \
+     mcr.microsoft.com/playwright:v1.65.0-jammy \
      bash -lc "npx playwright test e2e/tests/visual/ --update-snapshots --project=chromium-desktop"
    ```
 

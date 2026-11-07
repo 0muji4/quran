@@ -131,41 +131,28 @@ const chevronClass = css({
 export function SurahCard({ surah, bestScore, isLastPracticed }: Props) {
   const t = useTranslations('library.surahCard');
   const className = isLastPracticed ? cx(cardClass, cardActiveClass) : cardClass;
-  // Collapse the visible spans into a single screen-reader announcement so
-  // assistive tech reads the card as one link instead of stitching together
-  // the surah number, name, dot separators, and badges.
-  const ariaLabel =
-    bestScore !== null
-      ? t('ariaLabelWithScore', {
-          name: surah.nameEn,
-          place: surah.revelationPlace,
-          count: surah.ayahCount,
-          score: bestScore
-        })
-      : t('ariaLabel', {
-          name: surah.nameEn,
-          place: surah.revelationPlace,
-          count: surah.ayahCount
-        });
   return (
-    <Link href={`/practice/${surah.id}/1`} className={className} aria-label={ariaLabel}>
+    <Link href={`/practice/${surah.id}/1`} className={className}>
       <span className={numberClass} aria-hidden="true">
         {surah.id}
       </span>
-      <span className={infoClass} aria-hidden="true">
+      <span className={infoClass}>
         <span className={nameRowClass}>
           <span className={nameEnClass}>{surah.nameEn}</span>
           <span className={dotClass} />
-          <span className={nameMeaningClass}>
+          <span className={nameMeaningClass} aria-hidden="true">
             {t('the', { meaning: surah.nameEn.split('-').pop() ?? surah.nameEn })}
           </span>
         </span>
+        <span className="sr-only">, </span>
         <span className={metaRowClass}>
           <span>{surah.revelationPlace}</span>
+          <span className="sr-only">, </span>
           <span className={dotClass} />
           <span>{t('ayahs', { count: surah.ayahCount })}</span>
           {bestScore !== null && (
             <>
+              <span className="sr-only">, </span>
               <span className={dotClass} />
               <span className={bestScoreClass}>{t('bestScore', { score: bestScore })}</span>
             </>
