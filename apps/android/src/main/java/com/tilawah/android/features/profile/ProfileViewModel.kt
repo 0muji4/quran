@@ -1,6 +1,8 @@
 package com.tilawah.android.features.profile
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import com.tilawah.android.backend.AuthUser
 import com.tilawah.android.features.history.computeStats
@@ -26,11 +28,12 @@ import kotlinx.coroutines.launch
  * buttons) and signed-in (display name / email / Sign out) purely from
  * this flow — no extra `mutableStateOf` flags or navigation state.
  *
- * Also owns which account sheet is open ([activeSheet]). The flag lives
- * here rather than in the composition so it shares the lifetime of the
- * sheet ViewModels that hold the typed input: a rotation keeps both,
- * and a save that finishes after a rotation still dismisses the sheet
- * on screen, because its callback reaches this same instance.
+ * Also owns which account sheet is open ([activeSheet]) and that sheet's
+ * ViewModels ([sheetViewModels]), which hold the typed input. Both live
+ * here rather than in the composition so they share one lifetime: a
+ * rotation keeps both, closing the sheet ends both, and a save that
+ * finishes after a rotation still dismisses the sheet on screen, because
+ * its callback reaches this same instance.
  */
 class ProfileViewModel(
     private val authSession: AuthSession,
@@ -50,20 +53,38 @@ class ProfileViewModel(
     private val _activeSheet = MutableStateFlow<ProfileSheet?>(null)
     val activeSheet: StateFlow<ProfileSheet?> = _activeSheet.asStateFlow()
 
+    /**
+     * Owner for the open sheet's ViewModels. The Activity's store only
+     * clears when the Activity finishes, which would keep a closed
+     * sheet's draft, passwords included, and show it on the next open.
+     * This store is retained across a rotation and cleared when the
+     * sheet closes, which also cancels any save still running in it.
+     */
+    val sheetViewModels: ViewModelStoreOwner = object : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
+    }
+
     init {
         // Drop an open sheet if the session disappears under us
         // (sign-out from another path, token eviction, etc.).
         viewModelScope.launch {
-            session.collect { if (it == null) _activeSheet.value = null }
+            session.collect { if (it == null) dismissSheet() }
         }
     }
 
     fun showSheet(sheet: ProfileSheet) {
+        // One sheet at a time: clearing below would pull the ViewModel
+        // out from under a sheet that is still on screen.
+        if (_activeSheet.value != null) return
+        // Composition hears about a dismiss one dispatch late, so a last
+        // frame of the closing sheet can re-create its ViewModel.
+        sheetViewModels.viewModelStore.clear()
         _activeSheet.value = sheet
     }
 
     fun dismissSheet() {
         _activeSheet.value = null
+        sheetViewModels.viewModelStore.clear()
     }
 
     fun signOut() {
@@ -73,12 +94,16 @@ class ProfileViewModel(
     fun acknowledgeReactivationNotice() {
         viewModelScope.launch { authSession.acknowledgeReactivationNotice() }
     }
+
+    override fun onCleared() {
+        sheetViewModels.viewModelStore.clear()
+    }
 }
 
 /**
  * The account sheet shown over the Profile tab. [EditProfile] and
- * [ChangeEmail] carry the values read when the sheet opened, so a
- * session update mid-save doesn't change the sheet's ViewModel key.
+ * [ChangeEmail] carry the values read when the sheet opened. They seed
+ * the sheet's ViewModel and stay put if the session updates mid-save.
  */
 sealed interface ProfileSheet {
     data class EditProfile(val user: AuthUser) : ProfileSheet

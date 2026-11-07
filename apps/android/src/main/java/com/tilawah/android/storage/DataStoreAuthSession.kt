@@ -119,9 +119,11 @@ class DataStoreAuthSession(
     }
 
     override suspend fun clear() {
+        // Before the write: observers of the session can cancel the caller
+        // as soon as it lands, because a sheet's scope ends with the session.
+        notice.value = false
         try {
             dataStore.edit { prefs -> prefs.remove(sessionKey) }
-            notice.value = false
         } catch (_: IOException) {
             throw AppError.StorageUnavailable
         }
