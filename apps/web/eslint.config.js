@@ -14,8 +14,8 @@ export default [
     ]
   },
   {
-    // Next.js requires a default export from App Router route files, the
-    // middleware entry, and the next-intl request config. Allow it there.
+    // Next.js requires a default export from App Router route files, and so
+    // does the next-intl request config. Allow it there.
     files: [
       'app/**/page.tsx',
       'app/**/layout.tsx',
@@ -30,7 +30,6 @@ export default [
       'app/**/robots.ts',
       'app/**/manifest.ts',
       'app/**/{icon,apple-icon,opengraph-image,twitter-image}.tsx',
-      'middleware.ts',
       'instrumentation.ts',
       'i18n/request.ts'
     ],

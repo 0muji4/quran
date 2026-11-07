@@ -25,7 +25,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      include: ['app/**/*.{ts,tsx}', 'i18n/**/*.ts', 'instrumentation.ts', 'middleware.ts'],
+      include: ['app/**/*.{ts,tsx}', 'i18n/**/*.ts', 'instrumentation.ts', 'proxy.ts'],
       exclude: ['**/__tests__/**', '**/*.test.{ts,tsx}', '**/*.d.ts'],
       // TODO(#567): Restore the 80% thresholds by adding tests. Until then, do
       // not lower these values; ratchet them up as coverage improves.
