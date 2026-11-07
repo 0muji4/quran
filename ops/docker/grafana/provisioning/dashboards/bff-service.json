@@ -373,7 +373,7 @@
             "type": "loki",
             "uid": "Loki"
           },
-          "expr": "{job=~\".*bff.*\"} | json | line_format \"{{.timestamp}} [{{.level}}] {{.message}} (trace_id={{.trace_id}})\"",
+          "expr": "{service_name=\"quran-bff\"} | json | line_format \"{{.timestamp}} [{{.level}}] {{.message}} (trace_id={{.trace_id}})\"",
           "refId": "A"
         }
       ],
