@@ -7,6 +7,9 @@ import { globalCss } from '@quran-project/ui/theme/global-css';
 // what locks in ADR 0003 (no `color: 'gold'` without an axis). Recipes
 // land in PR 4+; for now the theme has colors only and no recipes.
 export default defineConfig({
+  // v2 adds no presets by default. preset-panda stays out so its tokens never
+  // pass strictTokens.
+  presets: ['@pandacss/preset-base'],
   preflight: false,
   jsxFramework: 'react',
   jsxStyleProps: 'minimal',

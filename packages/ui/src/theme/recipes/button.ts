@@ -1,4 +1,5 @@
 import { defineRecipe } from '@pandacss/dev';
+import type { RecipeConfig } from '@pandacss/types';
 
 // Tilawah brand button. Collapses .btnGhost / .btnGreen / .btnGold /
 // .navBtn (and friends) into one tone × size matrix. ADR 0003 governs
@@ -8,7 +9,7 @@ import { defineRecipe } from '@pandacss/dev';
 // escape so the Recipe matches the legacy CSS Modules byte-for-byte
 // during migration; we are intentionally not forcing those values onto
 // the 4px spacing scale.
-export const button = defineRecipe({
+export const button: RecipeConfig = defineRecipe({
   className: 'btn',
   description: 'Tilawah brand button. tone selects palette + weight; size selects metrics.',
   base: {
