@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let Ayah = ApolloAPI.Object(
+  nonisolated static let Ayah = ApolloAPI.Object(
     typename: "Ayah",
     implementedInterfaces: [],
     keyFields: nil

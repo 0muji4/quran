@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let PronunciationFeedback = ApolloAPI.Object(
+  nonisolated static let PronunciationFeedback = ApolloAPI.Object(
     typename: "PronunciationFeedback",
     implementedInterfaces: [],
     keyFields: nil

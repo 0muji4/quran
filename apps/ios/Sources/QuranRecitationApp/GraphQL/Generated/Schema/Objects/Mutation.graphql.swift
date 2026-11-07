@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let Mutation = ApolloAPI.Object(
+  nonisolated static let Mutation = ApolloAPI.Object(
     typename: "Mutation",
     implementedInterfaces: [],
     keyFields: nil

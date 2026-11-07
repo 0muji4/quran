@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let Surah = ApolloAPI.Object(
+  nonisolated static let Surah = ApolloAPI.Object(
     typename: "Surah",
     implementedInterfaces: [],
     keyFields: nil

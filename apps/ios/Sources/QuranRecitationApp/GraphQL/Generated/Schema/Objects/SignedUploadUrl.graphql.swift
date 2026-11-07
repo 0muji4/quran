@@ -4,7 +4,7 @@
 import ApolloAPI
 
 public extension QuranSchema.Objects {
-  static let SignedUploadUrl = ApolloAPI.Object(
+  nonisolated static let SignedUploadUrl = ApolloAPI.Object(
     typename: "SignedUploadUrl",
     implementedInterfaces: [],
     keyFields: nil
