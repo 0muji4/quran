@@ -159,7 +159,9 @@ private fun computeStreak(
     now: Instant,
 ): Int {
     if (timestamps.isEmpty()) return 0
-    val days = timestamps.map { it.atZone(zone).toLocalDate() }.toSortedSet().reversed()
+    // Not toSortedSet().reversed(): that binds to the JDK 21 member, which
+    // is missing below API 35 and crashes there.
+    val days = timestamps.map { it.atZone(zone).toLocalDate() }.distinct().sortedDescending()
     var streak = 0
     var cursor = now.atZone(zone).toLocalDate()
     for (day in days) {

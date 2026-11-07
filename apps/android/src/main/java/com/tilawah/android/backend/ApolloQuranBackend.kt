@@ -199,9 +199,11 @@ class ApolloQuranBackend(
         throw AppError.BackendUnavailable(operation, cause)
     }
 
+    // Apollo wraps anything an HTTP interceptor throws in
+    // ApolloNetworkException, so restore the AppError from BearerAuthInterceptor.
     private fun <D : com.apollographql.apollo.api.Operation.Data>
         com.apollographql.apollo.api.ApolloResponse<D>.dataOrThrow(operation: String): D =
-        data ?: throw AppError.BackendUnavailable(operation)
+        data ?: throw (exception?.cause as? AppError ?: AppError.BackendUnavailable(operation, exception))
 
     private fun CreateScoringJobMutation.CreateScoringJob.toPayload(): ScoringResultPayload =
         ScoringResultPayload(
