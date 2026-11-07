@@ -59,7 +59,7 @@ import com.tilawah.android.designsystem.components.BrandCardStyle
  * full-bleed [Surface].
  *
  * Driven by [EditProfileViewModel]. [ProfileViewModel] owns the show /
- * hide flag and the parent host owns the ViewModel lifetime.
+ * hide flag and the ViewModel lifetime.
  */
 @Composable
 fun EditProfileSheet(
