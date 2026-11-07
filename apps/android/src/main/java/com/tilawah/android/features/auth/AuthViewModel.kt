@@ -84,7 +84,7 @@ class AuthViewModel(
             }
             val payload = authApi.signInWithGoogle(idToken)
             authSession.save(payload)
-            _state.update { it.copy(pending = false) }
+            resetForm()
             onSuccess()
         } catch (cause: AppError) {
             _state.update { it.copy(pending = false, error = cause) }
@@ -102,7 +102,7 @@ class AuthViewModel(
                 password = current.password,
             )
             authSession.save(payload)
-            _state.update { it.copy(pending = false) }
+            resetForm()
             onSuccess()
         } catch (cause: AppError) {
             _state.update { it.copy(pending = false, error = cause) }
@@ -125,10 +125,22 @@ class AuthViewModel(
                 displayName = current.displayName.trim().takeIf { it.isNotEmpty() },
             )
             authSession.save(payload)
-            _state.update { it.copy(pending = false) }
+            resetForm()
             onSuccess()
         } catch (cause: AppError) {
             _state.update { it.copy(pending = false, error = cause) }
         }
+    }
+
+    /**
+     * Returns every field to its default once the session is saved. This
+     * ViewModel outlives the sign-in, so anything left here stays in memory
+     * for the signed-in session and prefills the form after a sign-out. The
+     * next person to use the form must not inherit the password, email, or
+     * display name, and must agree to the terms themselves. A failed attempt
+     * never reaches this, so the input stays for a retry.
+     */
+    private fun resetForm() {
+        _state.value = AuthUiState()
     }
 }
