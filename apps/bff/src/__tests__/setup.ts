@@ -33,6 +33,9 @@ export const setupTestDB = async (): Promise<{ pool: Pool; cleanup: () => Promis
     password: process.env.TEST_POSTGRES_PASSWORD || 'app',
     database: dbName
   });
+  // cleanup() terminates sessions on this database, which can reach an idle
+  // client before it closes.
+  pool.on('error', () => undefined);
 
   // Create user_data_objects table
   await pool.query(`
