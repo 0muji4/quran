@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- deps: install all workspace deps with the frozen lockfile ----
-FROM node:20-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@12.18.0
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/bff/package.json ./apps/bff/
@@ -32,7 +32,7 @@ RUN pnpm --filter @quran-project/shared-ts build \
 RUN pnpm --filter @quran-project/bff deploy --prod /out
 
 # ---- runtime: distroless nodejs, non-root ----
-FROM gcr.io/distroless/nodejs20-debian12:nonroot
+FROM gcr.io/distroless/nodejs26-debian13:nonroot
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /out/node_modules ./node_modules
