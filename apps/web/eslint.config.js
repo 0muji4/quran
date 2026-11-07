@@ -36,5 +36,17 @@ export default [
     rules: {
       'no-restricted-syntax': 'off'
     }
+  },
+  {
+    // Fixed positional lists with no stable id, where the index is the identity.
+    files: [
+      'app/**/practice/RecorderBars.tsx',
+      'app/**/practice/ScoringErrorCard.tsx',
+      'app/**/practice/Waveform.tsx',
+      'app/**/practice/result/ListenBack.tsx'
+    ],
+    rules: {
+      '@eslint-react/no-array-index-key': 'off'
+    }
   }
 ];

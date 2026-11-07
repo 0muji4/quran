@@ -66,8 +66,10 @@ export function GoogleSignInButton({ clientId, label, className, onResult, onErr
   // re-initialising whenever a parent callback changes.
   const onResultRef = useRef(onResult);
   const onErrorRef = useRef(onError);
-  onResultRef.current = onResult;
-  onErrorRef.current = onError;
+  useEffect(() => {
+    onResultRef.current = onResult;
+    onErrorRef.current = onError;
+  });
 
   useEffect(() => {
     let cancelled = false;

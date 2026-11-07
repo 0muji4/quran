@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "packageManager": "pnpm@12.18.0",
   "dependencies": {
-    "globals": "^15.15.0"
+    "globals": "^17.14.0"
   },
   "scripts": {
     "format:check": "pnpm -r --if-present format:check",
@@ -28,7 +28,7 @@
     "@bufbuild/buf": "^1.75.0",
     "@playwright/test": "^1.60.0",
     "@quran-project/eslint-config": "workspace:*",
-    "eslint": "^9.39.5",
+    "eslint": "^10.14.0",
     "tsx": "^4.23.15"
   }
 }

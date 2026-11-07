@@ -24,12 +24,12 @@ type UseRecorderApi = State & {
 const initialLevels = (): number[] => Array.from({ length: LEVEL_BIN_COUNT }, () => 0);
 
 export function useRecorder(): UseRecorderApi {
-  const [state, setState] = useState<State>({
+  const [state, setState] = useState<State>(() => ({
     isRecording: false,
     elapsedMs: 0,
     levels: initialLevels(),
     error: null
-  });
+  }));
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);

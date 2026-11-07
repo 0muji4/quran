@@ -24,7 +24,7 @@ export default async function HomePage() {
   // already swallows 401 / network errors and returns null, so the
   // client falls back to the ayahCount heuristic without any extra
   // guard here.
-  let suggestion: BffSuggestionResponse | null = null;
+  let suggestion: BffSuggestionResponse | null;
   try {
     suggestion = await fetchSuggestionFromBff();
   } catch {

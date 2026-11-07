@@ -24,7 +24,7 @@ interface Props {
 }
 
 export function TeacherPanel({ surahId, ayahNumber }: Props) {
-  const audio = useTeacherAudio(surahId, ayahNumber);
+  const { audioRef, ...audio } = useTeacherAudio(surahId, ayahNumber);
   const t = useTranslations('practice.teacher');
 
   useEffect(() => onRecordingStarted(() => audio.pause()), [audio]);
@@ -47,12 +47,7 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
         <span className={styles.panelDuration}>{formatTime(audio.duration)}</span>
       </div>
 
-      <audio
-        ref={audio.audioRef}
-        src={audio.url ?? undefined}
-        preload="metadata"
-        className="sr-only"
-      />
+      <audio ref={audioRef} src={audio.url ?? undefined} preload="metadata" className="sr-only" />
 
       <div className={styles.teacherPlayer}>
         <button
