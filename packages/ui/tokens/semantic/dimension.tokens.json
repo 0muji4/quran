@@ -1,0 +1,59 @@
+{
+  "spacing": {
+    "0": {
+      "$value": "{dimension.0}"
+    },
+    "1": {
+      "$value": "{dimension.4}"
+    },
+    "2": {
+      "$value": "{dimension.8}"
+    },
+    "3": {
+      "$value": "{dimension.12}"
+    },
+    "4": {
+      "$value": "{dimension.16}"
+    },
+    "5": {
+      "$value": "{dimension.20}"
+    },
+    "6": {
+      "$value": "{dimension.24}"
+    },
+    "8": {
+      "$value": "{dimension.32}"
+    },
+    "10": {
+      "$value": "{dimension.40}"
+    },
+    "12": {
+      "$value": "{dimension.48}"
+    },
+    "16": {
+      "$value": "{dimension.64}"
+    },
+    "$type": "dimension"
+  },
+  "shape": {
+    "$type": "dimension",
+    "none": {
+      "$value": "{dimension.0}"
+    },
+    "extraSmall": {
+      "$value": "{dimension.4}"
+    },
+    "small": {
+      "$value": "{dimension.8}"
+    },
+    "medium": {
+      "$value": "{dimension.12}"
+    },
+    "large": {
+      "$value": "{dimension.16}"
+    },
+    "extraLarge": {
+      "$value": "{dimension.28}"
+    }
+  }
+}

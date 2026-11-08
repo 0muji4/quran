@@ -1,0 +1,160 @@
+{
+  "color": {
+    "role": {
+      "$type": "color",
+      "primary": {
+        "$value": "{color.palette.primary.80}"
+      },
+      "onPrimary": {
+        "$value": "{color.palette.primary.20}"
+      },
+      "primaryContainer": {
+        "$value": "{color.palette.primary.30}"
+      },
+      "onPrimaryContainer": {
+        "$value": "{color.palette.primary.90}"
+      },
+      "inversePrimary": {
+        "$value": "{color.palette.primary.40}"
+      },
+      "secondary": {
+        "$value": "{color.palette.secondary.80}"
+      },
+      "onSecondary": {
+        "$value": "{color.palette.secondary.20}"
+      },
+      "secondaryContainer": {
+        "$value": "{color.palette.secondary.30}"
+      },
+      "onSecondaryContainer": {
+        "$value": "{color.palette.secondary.90}"
+      },
+      "tertiary": {
+        "$value": "{color.palette.tertiary.80}"
+      },
+      "onTertiary": {
+        "$value": "{color.palette.tertiary.20}"
+      },
+      "tertiaryContainer": {
+        "$value": "{color.palette.tertiary.30}"
+      },
+      "onTertiaryContainer": {
+        "$value": "{color.palette.tertiary.90}"
+      },
+      "background": {
+        "$value": "{color.palette.neutral.6}"
+      },
+      "onBackground": {
+        "$value": "{color.palette.neutral.90}"
+      },
+      "surface": {
+        "$value": "{color.palette.neutral.6}"
+      },
+      "onSurface": {
+        "$value": "{color.palette.neutral.90}"
+      },
+      "surfaceVariant": {
+        "$value": "{color.palette.neutralVariant.30}"
+      },
+      "onSurfaceVariant": {
+        "$value": "{color.palette.neutralVariant.80}"
+      },
+      "surfaceTint": {
+        "$value": "{color.palette.primary.80}"
+      },
+      "inverseSurface": {
+        "$value": "{color.palette.neutral.90}"
+      },
+      "inverseOnSurface": {
+        "$value": "{color.palette.neutral.20}"
+      },
+      "error": {
+        "$value": "{color.palette.error.80}"
+      },
+      "onError": {
+        "$value": "{color.palette.error.20}"
+      },
+      "errorContainer": {
+        "$value": "{color.palette.error.30}"
+      },
+      "onErrorContainer": {
+        "$value": "{color.palette.error.90}"
+      },
+      "outline": {
+        "$value": "{color.palette.neutralVariant.60}"
+      },
+      "outlineVariant": {
+        "$value": "{color.palette.neutralVariant.30}"
+      },
+      "scrim": {
+        "$value": "{color.palette.neutral.0}"
+      },
+      "surfaceBright": {
+        "$value": "{color.palette.neutral.24}"
+      },
+      "surfaceContainer": {
+        "$value": "{color.palette.neutral.12}"
+      },
+      "surfaceContainerHigh": {
+        "$value": "{color.palette.neutral.17}"
+      },
+      "surfaceContainerHighest": {
+        "$value": "{color.palette.neutral.22}"
+      },
+      "surfaceContainerLow": {
+        "$value": "{color.palette.neutral.10}"
+      },
+      "surfaceContainerLowest": {
+        "$value": "{color.palette.neutral.4}"
+      },
+      "surfaceDim": {
+        "$value": "{color.palette.neutral.6}"
+      },
+      "recording": {
+        "$value": "{color.palette.error.80}"
+      },
+      "onRecording": {
+        "$value": "{color.palette.error.20}"
+      },
+      "pass": {
+        "$value": "{color.palette.pass.80}"
+      },
+      "onPass": {
+        "$value": "{color.palette.pass.20}"
+      },
+      "passContainer": {
+        "$value": "{color.palette.pass.30}"
+      },
+      "onPassContainer": {
+        "$value": "{color.palette.pass.90}"
+      },
+      "warn": {
+        "$value": "{color.palette.warn.80}"
+      },
+      "onWarn": {
+        "$value": "{color.palette.warn.20}"
+      },
+      "warnContainer": {
+        "$value": "{color.palette.warn.30}"
+      },
+      "onWarnContainer": {
+        "$value": "{color.palette.warn.90}"
+      },
+      "fail": {
+        "$value": "{color.palette.error.80}"
+      },
+      "onFail": {
+        "$value": "{color.palette.error.20}"
+      },
+      "failContainer": {
+        "$value": "{color.palette.error.30}"
+      },
+      "onFailContainer": {
+        "$value": "{color.palette.error.90}"
+      },
+      "ornament": {
+        "$value": "{color.palette.tertiary.70}"
+      }
+    }
+  }
+}

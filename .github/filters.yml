@@ -66,6 +66,14 @@ proto:
   - 'apps/backend/internal/gen/**'
   - 'apps/bff/src/gen/**'
 
+tokens:
+  - *shared
+  - 'packages/ui/tokens/**'
+  - 'packages/ui/scripts/**'
+  - 'packages/ui/package.json'
+  - 'apps/android/src/main/java/com/tilawah/android/designsystem/generated/**'
+  - 'apps/ios/Sources/QuranRecitationApp/DesignSystem/Generated/**'
+
 db:
   - *shared
   - 'db/**'

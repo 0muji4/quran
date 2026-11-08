@@ -23,6 +23,7 @@ jobs:
       js: ${{ steps.resolve.outputs.js }}
       go: ${{ steps.resolve.outputs.go }}
       proto: ${{ steps.resolve.outputs.proto }}
+      tokens: ${{ steps.resolve.outputs.tokens }}
       db: ${{ steps.resolve.outputs.db }}
       terraform: ${{ steps.resolve.outputs.terraform }}
       ios: ${{ steps.resolve.outputs.ios }}
@@ -45,6 +46,7 @@ jobs:
           F_JS: ${{ steps.filter.outputs.js }}
           F_GO: ${{ steps.filter.outputs.go }}
           F_PROTO: ${{ steps.filter.outputs.proto }}
+          F_TOKENS: ${{ steps.filter.outputs.tokens }}
           F_DB: ${{ steps.filter.outputs.db }}
           F_TERRAFORM: ${{ steps.filter.outputs.terraform }}
           F_IOS: ${{ steps.filter.outputs.ios }}
@@ -62,6 +64,7 @@ jobs:
           emit js        "$F_JS"
           emit go        "$F_GO"
           emit proto     "$F_PROTO"
+          emit tokens    "$F_TOKENS"
           emit db        "$F_DB"
           emit terraform "$F_TERRAFORM"
           emit ios       "$F_IOS"
@@ -174,6 +177,31 @@ jobs:
 
       - name: Lint schemas and check generated code
         run: make proto-check
+
+  tokens-check:
+    needs: changes
+    if: needs.changes.outputs.tokens == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.18.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check generated design tokens
+        run: make tokens-check
 
   db-lint:
     needs: changes
@@ -314,6 +342,7 @@ jobs:
       - format
       - go-quality
       - proto-check
+      - tokens-check
       - db-lint
       - terraform-validate
       - tests
