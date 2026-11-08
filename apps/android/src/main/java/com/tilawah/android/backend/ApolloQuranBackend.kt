@@ -165,11 +165,12 @@ class ApolloQuranBackend(
             ayahNumber = toOptional(ayahNumber),
             uploadKey = uploadKey,
         )
-        val data = apollo
-            .mutation(CreateScoringJobMutation(input))
-            .execute()
-            .dataOrThrow("createScoringJob")
-        data.createScoringJob.toPayload()
+        val response = apollo.mutation(CreateScoringJobMutation(input)).execute()
+        // The BFF answers 429 only when the scoring limit is used up.
+        if ((response.exception as? ApolloHttpException)?.statusCode == 429) {
+            throw AppError.ScoringLimitReached
+        }
+        response.dataOrThrow("createScoringJob").createScoringJob.toPayload()
     }
 
     override suspend fun fetchScoringJob(jobId: String): ScoringResultPayload =

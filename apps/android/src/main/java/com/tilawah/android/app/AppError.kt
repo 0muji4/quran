@@ -34,6 +34,9 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
 
     data object ScoringTimeout : AppError(message = "scoring timed out")
 
+    /** BFF 429 on `createScoringJob` — the user's hourly scoring limit is used up. */
+    data object ScoringLimitReached : AppError(message = "scoring limit reached")
+
     data object StorageUnavailable : AppError(message = "storage unavailable")
 
     /** BFF `POST /auth/login` returned 401. */
@@ -62,7 +65,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
         get() = when (this) {
             is Network, is BackendUnavailable, ScoringTimeout -> true
             AudioPermissionDenied, is AudioRecordingFailed, is AudioPlaybackFailed,
-            is ReferenceUnavailable, StorageUnavailable,
+            is ReferenceUnavailable, ScoringLimitReached, StorageUnavailable,
             InvalidCredentials, EmailInUse, GoogleLinkRequired, is ValidationFailed -> false
         }
 
@@ -80,6 +83,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is AudioPlaybackFailed -> "audio_playback_failed"
             is ReferenceUnavailable -> "reference_unavailable"
             ScoringTimeout -> "scoring_timeout"
+            ScoringLimitReached -> "scoring_limit_reached"
             StorageUnavailable -> "storage_unavailable"
             InvalidCredentials -> "invalid_credentials"
             EmailInUse -> "email_in_use"
@@ -102,6 +106,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is AudioPlaybackFailed -> R.string.error_audio_playback_failed_title
             is ReferenceUnavailable -> R.string.error_reference_unavailable_title
             ScoringTimeout -> R.string.error_scoring_timeout_title
+            ScoringLimitReached -> R.string.error_scoring_limit_reached_title
             StorageUnavailable -> R.string.error_storage_unavailable_title
             InvalidCredentials -> R.string.error_invalid_credentials_title
             EmailInUse -> R.string.error_email_in_use_title
@@ -119,6 +124,7 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) :
             is AudioPlaybackFailed -> R.string.error_audio_playback_failed_recovery
             is ReferenceUnavailable -> R.string.error_reference_unavailable_recovery
             ScoringTimeout -> R.string.error_scoring_timeout_recovery
+            ScoringLimitReached -> R.string.error_scoring_limit_reached_recovery
             StorageUnavailable -> R.string.error_storage_unavailable_recovery
             InvalidCredentials -> R.string.error_invalid_credentials_recovery
             EmailInUse -> R.string.error_email_in_use_recovery

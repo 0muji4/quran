@@ -47,15 +47,28 @@ class ApolloQuranBackendTest {
         assertNull(backend.fetchScoringJob("job-1").score)
     }
 
+    @Test
+    fun `createScoringJob 429 surfaces ScoringLimitReached`() = runTest {
+        val backend = backendRespondingWith(
+            body = """{"errors":[{"message":"scoring job limit reached","extensions":{"code":"RATE_LIMITED"}}]}""",
+            statusCode = 429,
+        )
+
+        val failure = failureOf { backend.createScoringJob("uploads/a.webm", "1", 1, null) }
+
+        assertEquals(AppError.ScoringLimitReached, failure)
+        assertEquals("scoring_limit_reached", (failure as AppError).telemetryCode)
+    }
+
     private fun scoringJobJson(score: String): String =
         """{"data":{"scoringJob":{"jobId":"job-1","status":"COMPLETED","score":$score,
            "verdict":null,"segments":[],"feedback":null}}}"""
 
-    private fun backendRespondingWith(body: String): ApolloQuranBackend =
+    private fun backendRespondingWith(body: String, statusCode: Int = 200): ApolloQuranBackend =
         ApolloQuranBackend(
             apollo = ApolloClient.Builder()
                 .serverUrl("http://localhost/graphql")
-                .addHttpInterceptor(RespondingInterceptor(body))
+                .addHttpInterceptor(RespondingInterceptor(body, statusCode))
                 .build(),
         )
 
@@ -76,11 +89,14 @@ class ApolloQuranBackendTest {
         throw AssertionError("expected the call to throw")
     }
 
-    private class RespondingInterceptor(private val body: String) : HttpInterceptor {
+    private class RespondingInterceptor(
+        private val body: String,
+        private val statusCode: Int,
+    ) : HttpInterceptor {
         override suspend fun intercept(
             request: HttpRequest,
             chain: HttpInterceptorChain,
-        ): HttpResponse = HttpResponse.Builder(statusCode = 200)
+        ): HttpResponse = HttpResponse.Builder(statusCode = statusCode)
             .body(Buffer().writeUtf8(body))
             .build()
     }

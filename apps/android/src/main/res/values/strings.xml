@@ -26,6 +26,8 @@
     <string name="error_reference_unavailable_recovery">Teacher recitation for this ayah isn\'t ready yet. You can still record on your own.</string>
     <string name="error_scoring_timeout_title">Scoring took too long</string>
     <string name="error_scoring_timeout_recovery">The scoring service is busy. Try again in a moment.</string>
+    <string name="error_scoring_limit_reached_title">Scoring limit reached</string>
+    <string name="error_scoring_limit_reached_recovery">You have scored many recordings in the past hour. Try again later.</string>
     <string name="error_storage_unavailable_title">Storage unavailable</string>
     <string name="error_storage_unavailable_recovery">Your practice history could not be saved. Free up space and try again.</string>
     <string name="error_invalid_credentials_title">Invalid email or password</string>
