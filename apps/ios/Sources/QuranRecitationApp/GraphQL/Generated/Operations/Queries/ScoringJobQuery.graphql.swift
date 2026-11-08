@@ -2,9 +2,10 @@
 // This file was automatically generated and should not be edited.
 
 @_exported import ApolloAPI
+@_spi(Execution) @_spi(Unsafe) import ApolloAPI
 
 public extension QuranSchema {
-  class ScoringJobQuery: GraphQLQuery {
+  nonisolated struct ScoringJobQuery: GraphQLQuery {
     public static let operationName: String = "ScoringJob"
     public static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
@@ -17,17 +18,17 @@ public extension QuranSchema {
       self.jobId = jobId
     }
 
-    public var __variables: Variables? { ["jobId": jobId] }
+    @_spi(Unsafe) public var __variables: Variables? { ["jobId": jobId] }
 
-    public struct Data: QuranSchema.SelectionSet {
-      public let __data: DataDict
-      public init(_dataDict: DataDict) { __data = _dataDict }
+    nonisolated public struct Data: QuranSchema.SelectionSet {
+      @_spi(Unsafe) public let __data: DataDict
+      @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-      public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
-      public static var __selections: [ApolloAPI.Selection] { [
+      @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.Query }
+      @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
         .field("scoringJob", ScoringJob?.self, arguments: ["jobId": .variable("jobId")]),
       ] }
-      public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+      @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         ScoringJobQuery.Data.self
       ] }
 
@@ -36,12 +37,12 @@ public extension QuranSchema {
       /// ScoringJob
       ///
       /// Parent Type: `ScoringResult`
-      public struct ScoringJob: QuranSchema.SelectionSet {
-        public let __data: DataDict
-        public init(_dataDict: DataDict) { __data = _dataDict }
+      nonisolated public struct ScoringJob: QuranSchema.SelectionSet {
+        @_spi(Unsafe) public let __data: DataDict
+        @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-        public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.ScoringResult }
-        public static var __selections: [ApolloAPI.Selection] { [
+        @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.ScoringResult }
+        @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("jobId", QuranSchema.ID.self),
           .field("status", GraphQLEnum<QuranSchema.ScoringStatus>.self),
@@ -50,7 +51,7 @@ public extension QuranSchema {
           .field("segments", [Segment].self),
           .field("feedback", Feedback?.self),
         ] }
-        public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+        @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           ScoringJobQuery.Data.ScoringJob.self
         ] }
 
@@ -64,17 +65,17 @@ public extension QuranSchema {
         /// ScoringJob.Segment
         ///
         /// Parent Type: `ScoreSegment`
-        public struct Segment: QuranSchema.SelectionSet {
-          public let __data: DataDict
-          public init(_dataDict: DataDict) { __data = _dataDict }
+        nonisolated public struct Segment: QuranSchema.SelectionSet {
+          @_spi(Unsafe) public let __data: DataDict
+          @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-          public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.ScoreSegment }
-          public static var __selections: [ApolloAPI.Selection] { [
+          @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.ScoreSegment }
+          @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
             .field("label", String.self),
             .field("score", Double.self),
           ] }
-          public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+          @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             ScoringJobQuery.Data.ScoringJob.Segment.self
           ] }
 
@@ -85,12 +86,12 @@ public extension QuranSchema {
         /// ScoringJob.Feedback
         ///
         /// Parent Type: `PronunciationFeedback`
-        public struct Feedback: QuranSchema.SelectionSet {
-          public let __data: DataDict
-          public init(_dataDict: DataDict) { __data = _dataDict }
+        nonisolated public struct Feedback: QuranSchema.SelectionSet {
+          @_spi(Unsafe) public let __data: DataDict
+          @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-          public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.PronunciationFeedback }
-          public static var __selections: [ApolloAPI.Selection] { [
+          @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.PronunciationFeedback }
+          @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
             .field("accuracy", Double.self),
             .field("completeness", Double.self),
@@ -101,7 +102,7 @@ public extension QuranSchema {
             .field("cer", Double?.self),
             .field("wordAlignments", [WordAlignment].self),
           ] }
-          public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+          @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             ScoringJobQuery.Data.ScoringJob.Feedback.self
           ] }
 
@@ -117,18 +118,18 @@ public extension QuranSchema {
           /// ScoringJob.Feedback.WordAlignment
           ///
           /// Parent Type: `WordAlignment`
-          public struct WordAlignment: QuranSchema.SelectionSet {
-            public let __data: DataDict
-            public init(_dataDict: DataDict) { __data = _dataDict }
+          nonisolated public struct WordAlignment: QuranSchema.SelectionSet {
+            @_spi(Unsafe) public let __data: DataDict
+            @_spi(Unsafe) public init(_dataDict: DataDict) { __data = _dataDict }
 
-            public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.WordAlignment }
-            public static var __selections: [ApolloAPI.Selection] { [
+            @_spi(Execution) public static var __parentType: any ApolloAPI.ParentType { QuranSchema.Objects.WordAlignment }
+            @_spi(Execution) public static var __selections: [ApolloAPI.Selection] { [
               .field("__typename", String.self),
               .field("refWord", String?.self),
               .field("hypWord", String?.self),
               .field("op", String.self),
             ] }
-            public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+            @_spi(Execution) public static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
               ScoringJobQuery.Data.ScoringJob.Feedback.WordAlignment.self
             ] }
 

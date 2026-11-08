@@ -6,9 +6,10 @@ reference audio. Entry point is `apps/ios/Package.swift`.
 
 ## Prerequisites
 
-- macOS with Xcode 15+ (Swift 5.9)
+- macOS with Xcode 16.3+ (Swift 6.1, required by Apollo iOS 2.x)
 - iOS 16+ SDK
-- `apollo-ios-cli` 1.25.5 (or via `APOLLO_CLI=/path/to/apollo-ios-cli`)
+- `apollo-ios-cli` 2.5.0: `make codegen` downloads the pinned release into
+  `.build/`, or point `APOLLO_CLI=/path/to/apollo-ios-cli` at your own copy
 
 ## Layout
 

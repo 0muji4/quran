@@ -32,16 +32,15 @@ final class ApolloBackend: QuranBackend {
     onSignOut: @escaping @MainActor () -> Void
   ) {
     let store = ApolloStore()
-    let urlSessionClient = URLSessionClient()
     let provider = AuthInterceptorProvider(
       tokenStore: tokenStore,
       refresher: refresher,
-      onSignOut: onSignOut,
-      client: urlSessionClient,
-      store: store
+      onSignOut: onSignOut
     )
     let transport = RequestChainNetworkTransport(
+      urlSession: URLSession(configuration: .default),
       interceptorProvider: provider,
+      store: store,
       endpointURL: endpoint
     )
     self.client = ApolloClient(networkTransport: transport, store: store)
@@ -81,7 +80,7 @@ final class ApolloBackend: QuranBackend {
   func createScoringJob(uploadKey: String, surahId: String, ayahNumber: Int?) async throws -> ScoringResultPayload {
     let input = CreateScoringJobInput(
       surahId: surahId,
-      ayahNumber: ayahNumber.map { .some($0) } ?? nil,
+      ayahNumber: ayahNumber.map { .some(Int32($0)) } ?? nil,
       uploadKey: uploadKey
     )
     let mutation = CreateScoringJobMutation(input: input)
@@ -109,8 +108,8 @@ final class ApolloBackend: QuranBackend {
 
   func surahs(limit: Int? = nil, offset: Int? = nil) async throws -> [SurahSummary] {
     let query = GetSurahsQuery(
-      limit: limit.map { .some($0) } ?? nil,
-      offset: offset.map { .some($0) } ?? nil
+      limit: limit.map { .some(Int32($0)) } ?? nil,
+      offset: offset.map { .some(Int32($0)) } ?? nil
     )
     let result = try await fetch(query: query, operation: "surahs")
     return result.surahs.map { SurahSummary(from: $0) }
@@ -123,50 +122,51 @@ final class ApolloBackend: QuranBackend {
   }
 
   func ayah(surahId: String, ayahNumber: Int) async throws -> AyahDetail? {
-    let query = GetAyahQuery(surahId: surahId, ayahNumber: ayahNumber)
+    let query = GetAyahQuery(surahId: surahId, ayahNumber: Int32(ayahNumber))
     let result = try await fetch(query: query, operation: "ayah")
     return result.ayah.map { AyahDetail(from: $0) }
   }
 
   // MARK: - Apollo bridges
 
+  // Both bridges run Apollo in an unstructured `Task` because the calls
+  // here start from SwiftUI `.task` modifiers, which cancel when the
+  // view disappears. A cancelled request would land in the view model
+  // as a failed load, and those only reload from `.idle`.
+
   private func perform<Mutation: GraphQLMutation>(
     mutation: Mutation,
     operation: String
-  ) async throws -> Mutation.Data {
-    try await withCheckedThrowingContinuation { continuation in
-      client.perform(mutation: mutation) { result in
-        switch result {
-        case .success(let graphQLResult):
-          if let data = graphQLResult.data {
-            continuation.resume(returning: data)
-          } else {
-            continuation.resume(throwing: AppError.backendUnavailable(operation: operation))
-          }
-        case .failure(let error):
-          continuation.resume(throwing: AppError.network(underlying: error))
-        }
-      }
+  ) async throws -> Mutation.Data where Mutation.ResponseFormat == SingleResponseFormat {
+    let response: GraphQLResponse<Mutation>
+    do {
+      response = try await Task { [client] in
+        try await client.perform(mutation: mutation)
+      }.value
+    } catch {
+      throw AppError.network(underlying: error)
     }
+    guard let data = response.data else {
+      throw AppError.backendUnavailable(operation: operation)
+    }
+    return data
   }
 
   private func fetch<Query: GraphQLQuery>(
     query: Query,
     operation: String
-  ) async throws -> Query.Data {
-    try await withCheckedThrowingContinuation { continuation in
-      client.fetch(query: query, cachePolicy: .fetchIgnoringCacheData) { result in
-        switch result {
-        case .success(let graphQLResult):
-          if let data = graphQLResult.data {
-            continuation.resume(returning: data)
-          } else {
-            continuation.resume(throwing: AppError.backendUnavailable(operation: operation))
-          }
-        case .failure(let error):
-          continuation.resume(throwing: AppError.network(underlying: error))
-        }
-      }
+  ) async throws -> Query.Data where Query.ResponseFormat == SingleResponseFormat {
+    let response: GraphQLResponse<Query>
+    do {
+      response = try await Task { [client] in
+        try await client.fetch(query: query, cachePolicy: .networkOnly)
+      }.value
+    } catch {
+      throw AppError.network(underlying: error)
     }
+    guard let data = response.data else {
+      throw AppError.backendUnavailable(operation: operation)
+    }
+    return data
   }
 }

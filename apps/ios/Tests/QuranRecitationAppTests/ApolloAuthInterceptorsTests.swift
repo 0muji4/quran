@@ -11,10 +11,7 @@ import XCTest
 /// Mirrors Android PR #435's interceptor tests. Tests use a
 /// `URLProtocol`-based stub for the wire so they exercise the real
 /// `RequestChainNetworkTransport` end-to-end without touching the
-/// network. Full refresh-on-401 behaviour (rotation, sign-out on
-/// second 401) is verified by parity with the Android implementation
-/// at code review time; the stateful URLProtocol scaffolding needed
-/// to assert it from Swift unit tests would exceed the value here.
+/// network, including the refresh-on-401 retry and sign-out paths.
 @MainActor
 final class ApolloAuthInterceptorsTests: XCTestCase {
 
@@ -33,7 +30,7 @@ final class ApolloAuthInterceptorsTests: XCTestCase {
   func test_provider_inserts_BearerAuthInterceptor_at_position_0() {
     let provider = makeProvider()
 
-    let interceptors = provider.interceptors(for: GetSurahsQuery(limit: nil, offset: nil))
+    let interceptors = provider.graphQLInterceptors(for: GetSurahsQuery(limit: nil, offset: nil))
 
     XCTAssertTrue(
       interceptors.first is BearerAuthInterceptor,
@@ -41,21 +38,27 @@ final class ApolloAuthInterceptorsTests: XCTestCase {
     )
   }
 
-  func test_provider_inserts_RefreshOn401Interceptor_before_ResponseCodeInterceptor() {
+  func test_provider_keeps_default_interceptors_behind_the_auth_pair() {
     let provider = makeProvider()
 
-    let interceptors = provider.interceptors(for: GetSurahsQuery(limit: nil, offset: nil))
+    let interceptors = provider.graphQLInterceptors(for: GetSurahsQuery(limit: nil, offset: nil))
 
-    let refreshIndex = interceptors.firstIndex { $0 is RefreshOn401Interceptor }
-    let responseCodeIndex = interceptors.firstIndex { $0 is ResponseCodeInterceptor }
-    XCTAssertNotNil(refreshIndex, "RefreshOn401Interceptor missing from chain")
-    XCTAssertNotNil(responseCodeIndex, "ResponseCodeInterceptor missing from chain")
-    if let r = refreshIndex, let rc = responseCodeIndex {
-      XCTAssertLessThan(
-        r, rc,
-        "RefreshOn401Interceptor must sit before ResponseCodeInterceptor so it can observe a 401 response before it becomes a thrown ResponseCodeError"
-      )
-    }
+    XCTAssertTrue(interceptors[1] is RefreshOn401Interceptor)
+    XCTAssertTrue(
+      interceptors.contains { $0 is MaxRetryInterceptor },
+      "MaxRetryInterceptor must stay in the chain as the backstop for RefreshOn401Interceptor's retry"
+    )
+  }
+
+  func test_provider_keeps_ResponseCodeInterceptor() {
+    let provider = makeProvider()
+
+    let interceptors = provider.httpInterceptors(for: GetSurahsQuery(limit: nil, offset: nil))
+
+    XCTAssertTrue(
+      interceptors.contains { $0 is ResponseCodeInterceptor },
+      "RefreshOn401Interceptor only sees a 401 as the ResponseCodeError this interceptor throws"
+    )
   }
 
   // MARK: - Bearer header injection (smoke test via URLProtocol stub)
@@ -105,6 +108,124 @@ final class ApolloAuthInterceptorsTests: XCTestCase {
     )
   }
 
+  // MARK: - Refresh on 401
+
+  func test_401_refreshes_and_retries_with_the_rotated_token() async throws {
+    let rotated = AuthTokens(accessToken: "new-access", refreshToken: "new-refresh")
+    let authService = MockAuthService(refreshResult: .success(rotated))
+    let tokenStore = InMemoryTokenStore(
+      tokens: AuthTokens(accessToken: "old-access", refreshToken: "old-refresh"),
+      user: nil
+    )
+    let refresher = TokenRefresher(authService: authService, tokenStore: tokenStore)
+    let signOuts = SignOutCounter()
+
+    let captured = RequestLog()
+    FakeURLProtocol.handler = { request in
+      let isFirstAttempt = captured.record(request) == 1
+      return isFirstAttempt
+        ? Self.unauthorizedResponse(for: request)
+        : Self.emptySurahsResponse(for: request)
+    }
+
+    let apollo = makeApolloClient(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: { signOuts.count += 1 }
+    )
+    let response = try await Self.fetch(client: apollo, query: GetSurahsQuery(limit: nil, offset: nil))
+
+    XCTAssertEqual(response.data?.surahs.count, 0)
+    XCTAssertEqual(authService.refreshCallCount, 1)
+    XCTAssertEqual(captured.authorizationHeaders, ["Bearer old-access", "Bearer new-access"])
+    XCTAssertEqual(captured.retryHeaders, [nil, "1"])
+    XCTAssertEqual(signOuts.count, 0)
+  }
+
+  func test_second_401_signs_out_without_another_refresh() async {
+    let rotated = AuthTokens(accessToken: "new-access", refreshToken: "new-refresh")
+    let authService = MockAuthService(refreshResult: .success(rotated))
+    let tokenStore = InMemoryTokenStore(
+      tokens: AuthTokens(accessToken: "old-access", refreshToken: "old-refresh"),
+      user: nil
+    )
+    let refresher = TokenRefresher(authService: authService, tokenStore: tokenStore)
+    let signOuts = SignOutCounter()
+
+    let captured = RequestLog()
+    FakeURLProtocol.handler = { request in
+      captured.record(request)
+      return Self.unauthorizedResponse(for: request)
+    }
+
+    let apollo = makeApolloClient(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: { signOuts.count += 1 }
+    )
+    await XCTAssertThrowsErrorAsync(
+      try await Self.fetch(client: apollo, query: GetSurahsQuery(limit: nil, offset: nil))
+    ) { error in
+      XCTAssertTrue(error is ResponseCodeInterceptor.ResponseCodeError)
+    }
+
+    XCTAssertEqual(authService.refreshCallCount, 1)
+    XCTAssertEqual(captured.authorizationHeaders.count, 2)
+    XCTAssertEqual(signOuts.count, 1)
+  }
+
+  func test_rejected_refresh_signs_out() async {
+    let authService = MockAuthService(refreshResult: .failure(.invalidCredentials))
+    let tokenStore = InMemoryTokenStore(
+      tokens: AuthTokens(accessToken: "old-access", refreshToken: "old-refresh"),
+      user: nil
+    )
+    let refresher = TokenRefresher(authService: authService, tokenStore: tokenStore)
+    let signOuts = SignOutCounter()
+
+    FakeURLProtocol.handler = { Self.unauthorizedResponse(for: $0) }
+
+    let apollo = makeApolloClient(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: { signOuts.count += 1 }
+    )
+    await XCTAssertThrowsErrorAsync(
+      try await Self.fetch(client: apollo, query: GetSurahsQuery(limit: nil, offset: nil))
+    ) { error in
+      XCTAssertEqual((error as? AppError)?.telemetryCode, "invalid_credentials")
+    }
+
+    XCTAssertEqual(signOuts.count, 1)
+  }
+
+  func test_transient_refresh_failure_keeps_the_session() async {
+    let authService = MockAuthService(
+      refreshResult: .failure(.backendUnavailable(operation: "auth.refresh"))
+    )
+    let tokenStore = InMemoryTokenStore(
+      tokens: AuthTokens(accessToken: "old-access", refreshToken: "old-refresh"),
+      user: nil
+    )
+    let refresher = TokenRefresher(authService: authService, tokenStore: tokenStore)
+    let signOuts = SignOutCounter()
+
+    FakeURLProtocol.handler = { Self.unauthorizedResponse(for: $0) }
+
+    let apollo = makeApolloClient(
+      tokenStore: tokenStore,
+      refresher: refresher,
+      onSignOut: { signOuts.count += 1 }
+    )
+    await XCTAssertThrowsErrorAsync(
+      try await Self.fetch(client: apollo, query: GetSurahsQuery(limit: nil, offset: nil))
+    ) { error in
+      XCTAssertEqual((error as? AppError)?.telemetryCode, "backend_unavailable")
+    }
+
+    XCTAssertEqual(signOuts.count, 0)
+  }
+
   // MARK: - Helpers
 
   private func makeProvider(
@@ -128,20 +249,16 @@ final class ApolloAuthInterceptorsTests: XCTestCase {
   ) -> ApolloClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [FakeURLProtocol.self]
-    let urlSessionClient = URLSessionClient(
-      sessionConfiguration: config,
-      callbackQueue: .main
-    )
     let store = ApolloStore()
     let provider = AuthInterceptorProvider(
       tokenStore: tokenStore,
       refresher: refresher,
-      onSignOut: onSignOut,
-      client: urlSessionClient,
-      store: store
+      onSignOut: onSignOut
     )
     let transport = RequestChainNetworkTransport(
+      urlSession: URLSession(configuration: config),
       interceptorProvider: provider,
+      store: store,
       endpointURL: URL(string: "https://test.example.com/graphql")!
     )
     return ApolloClient(networkTransport: transport, store: store)
@@ -158,15 +275,23 @@ final class ApolloAuthInterceptorsTests: XCTestCase {
     return (response, body)
   }
 
+  /// Same shape as the BFF's `UNAUTHENTICATED` GraphQL response.
+  static func unauthorizedResponse(for request: URLRequest) -> (HTTPURLResponse, Data) {
+    let body = #"{"errors":[{"message":"authentication required"}]}"#.data(using: .utf8)!
+    let response = HTTPURLResponse(
+      url: request.url ?? URL(string: "https://test.example.com/graphql")!,
+      statusCode: 401,
+      httpVersion: nil,
+      headerFields: ["Content-Type": "application/json"]
+    )!
+    return (response, body)
+  }
+
   static func fetch<Q: GraphQLQuery>(
     client: ApolloClient,
     query: Q
-  ) async throws -> GraphQLResult<Q.Data> {
-    try await withCheckedThrowingContinuation { continuation in
-      client.fetch(query: query, cachePolicy: .fetchIgnoringCacheData) { result in
-        continuation.resume(with: result)
-      }
-    }
+  ) async throws -> GraphQLResponse<Q> where Q.ResponseFormat == SingleResponseFormat {
+    try await client.fetch(query: query, cachePolicy: .networkOnly)
   }
 }
 
@@ -207,4 +332,50 @@ final class FakeURLProtocol: URLProtocol {
 /// the test on the main actor without crossing isolation domains.
 final class AuthCaptureBox: @unchecked Sendable {
   var value: String?
+}
+
+/// Records the auth headers of each outbound request, for tests that
+/// fire more than one. Locked because the `FakeURLProtocol` handler
+/// runs on the URL session's delegate queue.
+final class RequestLog: @unchecked Sendable {
+  private let lock = NSLock()
+  private var requests: [URLRequest] = []
+
+  /// Returns how many requests have been recorded, including this one.
+  @discardableResult
+  func record(_ request: URLRequest) -> Int {
+    lock.lock()
+    defer { lock.unlock() }
+    requests.append(request)
+    return requests.count
+  }
+
+  var authorizationHeaders: [String?] { headers(named: "Authorization") }
+  var retryHeaders: [String?] { headers(named: RefreshOn401Interceptor.retryHeaderName) }
+
+  private func headers(named name: String) -> [String?] {
+    lock.lock()
+    defer { lock.unlock() }
+    return requests.map { $0.value(forHTTPHeaderField: name) }
+  }
+}
+
+/// Counts `onSignOut` calls, which run on the main actor.
+@MainActor
+final class SignOutCounter {
+  var count = 0
+}
+
+private func XCTAssertThrowsErrorAsync<T>(
+  _ expression: @autoclosure () async throws -> T,
+  file: StaticString = #filePath,
+  line: UInt = #line,
+  _ assert: (Error) -> Void = { _ in }
+) async {
+  do {
+    _ = try await expression()
+    XCTFail("expected expression to throw", file: file, line: line)
+  } catch {
+    assert(error)
+  }
 }
