@@ -121,9 +121,7 @@ describe('Server Actions', () => {
         })
       );
 
-      expect(result.jobId).toBe('job-123');
-      expect(result.status).toBe('COMPLETED');
-      expect(result.uploadKey).toBe('uploads/test-upload-key.webm');
+      expect(result).toEqual({ ok: true, job: mockScoringResult });
     });
 
     it('handles job creation without sessionId', async () => {
@@ -138,7 +136,23 @@ describe('Server Actions', () => {
         ayahNumber: 5
       });
 
-      expect(result).toEqual(mockScoringResult);
+      expect(result).toEqual({ ok: true, job: mockScoringResult });
+    });
+
+    it('returns limit_reached when the BFF answers 429', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({ error: 'scoring job limit reached' })
+      } as Response);
+
+      const result = await createScoringJobFromUpload({
+        uploadKey: 'uploads/test.webm',
+        surahId: '1',
+        ayahNumber: 1
+      });
+
+      expect(result).toEqual({ ok: false, error: 'limit_reached' });
     });
 
     it('throws error on failed job creation', async () => {

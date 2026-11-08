@@ -10,6 +10,7 @@ import messages from '../../../../../messages/en.json';
 interface FakeJobState {
   stage: 'idle' | 'uploading' | 'scoring' | 'done' | 'error';
   job: { jobId: string; status: string; score?: number } | null;
+  failure?: 'limit_reached' | null;
 }
 
 const IDLE_JOB: FakeJobState = { stage: 'idle', job: null };
@@ -198,6 +199,27 @@ describe('RecorderPanel recording flow', () => {
       messages.practice.recorder.liveStatus.scoringErrorGeneric
     );
     expect(screen.getByRole('button', { name: REPLAY })).toBeInTheDocument();
+  });
+
+  it('explains the scoring limit and offers no replay', async () => {
+    render(panel());
+    await record(2_000);
+
+    setJob({ stage: 'error', job: null, failure: 'limit_reached' });
+
+    expect(
+      screen.getByRole('heading', { name: messages.practice.scoringError.limitReachedTitle })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(messages.practice.recorder.headerErrorSubtitle)
+    ).not.toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(messages.practice.scoringError.limitReachedHint);
+    expect(alert).not.toHaveTextContent(messages.practice.scoringError.defaultHint);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      messages.practice.scoringError.limitReachedTitle
+    );
+    expect(screen.queryByRole('button', { name: REPLAY })).not.toBeInTheDocument();
   });
 
   it('hides replay when no audio was captured', async () => {
