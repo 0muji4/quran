@@ -1,4 +1,4 @@
-.PHONY: help install lint test proto-lint proto-gen proto-check go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
+.PHONY: help install lint test proto-lint proto-gen proto-check tokens-gen tokens-check go-test go-test-integration go-test-all go-test-coverage-check test-coverage-all ci-test bff-test bff-test-coverage migrate-lint db-migrate db-migrate-down db-migrate-version db-reset db-status db-shell format-check format go-fmt go-fmt-check build ci dev-up dev-down dev-logs observability-up observability-down observability-logs observability-status
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -66,6 +66,19 @@ proto-check: proto-lint proto-gen ## Fail when generated protobuf code is stale
 	@stale=$$(git status --porcelain -- apps/backend/internal/gen apps/bff/src/gen); \
 	if [ -n "$$stale" ]; then \
 		echo "Generated protobuf code is stale; run make proto-gen:"; \
+		echo "$$stale"; \
+		exit 1; \
+	fi
+
+TOKEN_OUTPUTS := packages/ui/tokens apps/android/src/main/java/com/tilawah/android/designsystem/generated apps/ios/Sources/QuranRecitationApp/DesignSystem/Generated
+
+tokens-gen: ## Generate design tokens and the Android / iOS token code (ADR 0026)
+	@pnpm --filter @quran-project/ui run tokens:gen
+
+tokens-check: tokens-gen ## Fail when generated design token files are stale
+	@stale=$$(git status --porcelain -- $(TOKEN_OUTPUTS)); \
+	if [ -n "$$stale" ]; then \
+		echo "Generated design tokens are stale; run make tokens-gen:"; \
 		echo "$$stale"; \
 		exit 1; \
 	fi
