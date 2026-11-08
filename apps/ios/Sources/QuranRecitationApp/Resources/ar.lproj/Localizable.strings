@@ -22,6 +22,9 @@
 "error.scoringTimeout.title" = "Scoring is taking longer than usual";
 "error.scoringTimeout.recovery" = "Wait a moment and try again.";
 
+"error.scoringLimitReached.title" = "Scoring limit reached";
+"error.scoringLimitReached.recovery" = "You have scored many recordings in the past hour. Try again later.";
+
 "error.storageUnavailable.title" = "Couldn't save locally";
 "error.storageUnavailable.recovery" = "Free up some space on your device and try again.";
 

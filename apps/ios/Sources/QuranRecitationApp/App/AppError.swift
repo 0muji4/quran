@@ -14,6 +14,8 @@ enum AppError: LocalizedError {
   case audioPlaybackFailed(underlying: Error)
   case referenceUnavailable(surahId: String, ayah: Int)
   case scoringTimeout
+  /// BFF 429 on `createScoringJob` — the user's hourly scoring limit is used up.
+  case scoringLimitReached
   case storageUnavailable
   case invalidCredentials
   case emailInUse
@@ -40,7 +42,7 @@ enum AppError: LocalizedError {
     case .network, .backendUnavailable, .scoringTimeout:
       return true
     case .audioPermissionDenied, .audioRecordingFailed, .audioPlaybackFailed,
-         .referenceUnavailable, .storageUnavailable,
+         .referenceUnavailable, .scoringLimitReached, .storageUnavailable,
          .invalidCredentials, .emailInUse, .googleLinkRequired, .validationFailed:
       // Auth failures need the user to change their input (wrong
       // password, taken email, malformed field) — not a bare retry.
@@ -59,6 +61,7 @@ enum AppError: LocalizedError {
     case .audioPlaybackFailed:   return "audio_playback_failed"
     case .referenceUnavailable:  return "reference_unavailable"
     case .scoringTimeout:        return "scoring_timeout"
+    case .scoringLimitReached:   return "scoring_limit_reached"
     case .storageUnavailable:    return "storage_unavailable"
     case .invalidCredentials:    return "invalid_credentials"
     case .emailInUse:            return "email_in_use"
@@ -86,6 +89,7 @@ private enum AppErrorStrings {
     case .audioPlaybackFailed:   return "error.audioPlaybackFailed"
     case .referenceUnavailable:  return "error.referenceUnavailable"
     case .scoringTimeout:        return "error.scoringTimeout"
+    case .scoringLimitReached:   return "error.scoringLimitReached"
     case .storageUnavailable:    return "error.storageUnavailable"
     case .invalidCredentials:    return "error.invalidCredentials"
     case .emailInUse:            return "error.emailInUse"
