@@ -26,13 +26,8 @@ class InMemoryHistoryStore : HistoryCache {
     override fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?> =
         _best.map { it[bestScoreKey(surahId, ayahNumber)] }
 
-    override fun bestScoreForSurah(surahId: String): Flow<Int?> =
-        _best.map { all ->
-            val prefix = "$surahId:"
-            all.entries
-                .filter { it.key.startsWith(prefix) }
-                .maxOfOrNull { it.value.score }
-        }
+    override fun bestScoresBySurah(): Flow<Map<String, Int>> =
+        _best.map { it.maxBySurah() }
 
     override suspend fun recordBestScore(
         surahId: String,

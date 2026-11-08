@@ -23,7 +23,8 @@ interface HistoryStore {
 
     fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?>
 
-    fun bestScoreForSurah(surahId: String): Flow<Int?>
+    /** Highest best score per surah, keyed by surah id. */
+    fun bestScoresBySurah(): Flow<Map<String, Int>>
 
     suspend fun recordBestScore(
         surahId: String,
@@ -70,3 +71,8 @@ interface HistoryCache : HistoryStore {
 
 /** Composite key matching the web `${surahId}:${ayahNumber}` convention. */
 internal fun bestScoreKey(surahId: String, ayahNumber: Int): String = "$surahId:$ayahNumber"
+
+internal fun Map<String, BestScoreEntry>.maxBySurah(): Map<String, Int> =
+    entries
+        .groupBy { (key, _) -> key.substringBefore(':') }
+        .mapValues { (_, perAyah) -> perAyah.maxOf { it.value.score } }

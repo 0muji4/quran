@@ -163,7 +163,7 @@ fun AppRoot(
         )
     }
     val historyStore: HistoryStore = remember(remoteSynced, signedIn) {
-        SignInGatedHistoryStore(base = remoteSynced, isSignedIn = { signedIn.value })
+        SignInGatedHistoryStore(base = remoteSynced, signedIn = signedIn)
     }
 
     LaunchedEffect(signedIn) {

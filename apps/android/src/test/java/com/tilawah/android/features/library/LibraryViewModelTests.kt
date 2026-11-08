@@ -1,14 +1,24 @@
 package com.tilawah.android.features.library
 
 import app.cash.turbine.test
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.MockBackend
 import com.tilawah.android.backend.SurahSummary
+import com.tilawah.android.storage.BestScoreEntry
+import com.tilawah.android.storage.HistorySnapshot
+import com.tilawah.android.storage.InMemoryHistoryStore
+import com.tilawah.android.storage.SignInGatedHistoryStore
 import com.tilawah.android.telemetry.TelemetrySpy
+import java.time.Instant
 
 class LibraryViewModelTests {
 
@@ -44,6 +54,34 @@ class LibraryViewModelTests {
         val errorRecord = telemetry.records.filterIsInstance<TelemetrySpy.Record.Error>().single()
         assertEquals("network", errorRecord.code)
         assertEquals(mapOf("screen" to "library"), errorRecord.context)
+    }
+
+    @Test
+    fun `bestScores follows sign-in and later cache writes`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val cache = InMemoryHistoryStore()
+            val signedIn = MutableStateFlow(false)
+            val viewModel = LibraryViewModel(
+                backend = MockBackend(),
+                telemetry = TelemetrySpy(),
+                historyStore = SignInGatedHistoryStore(cache, signedIn),
+            )
+            assertEquals(emptyMap<String, Int>(), viewModel.bestScores.value)
+
+            signedIn.value = true
+            cache.replaceAll(
+                HistorySnapshot(
+                    lastPracticed = null,
+                    bestScores = mapOf("1:1" to BestScoreEntry(95, Instant.parse("2026-01-04T12:00:00Z"))),
+                    attempts = emptyList(),
+                ),
+            )
+
+            assertEquals(mapOf("1" to 95), viewModel.bestScores.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 
     @Test

@@ -86,15 +86,13 @@ class HistoryStoreTest {
     }
 
     @Test
-    fun `bestScoreForSurah returns max across ayahs`() = runTest {
+    fun `bestScoresBySurah returns max across ayahs`() = runTest {
         val store = InMemoryHistoryStore()
         val t = Instant.parse("2026-05-09T13:00:00Z")
         store.recordBestScore("1", 1, 60, t)
         store.recordBestScore("1", 2, 80, t)
         store.recordBestScore("2", 1, 95, t)
-        assertEquals(80, store.bestScoreForSurah("1").first())
-        assertEquals(95, store.bestScoreForSurah("2").first())
-        assertNull(store.bestScoreForSurah("missing").first())
+        assertEquals(mapOf("1" to 80, "2" to 95), store.bestScoresBySurah().first())
     }
 
     @Test
