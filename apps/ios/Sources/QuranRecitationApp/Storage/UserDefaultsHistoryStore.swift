@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// Production `HistoryStore` backed by `UserDefaults`. Encodes Codable
@@ -8,6 +9,9 @@ final class UserDefaultsHistoryStore: HistoryStore {
   private let defaults: UserDefaults
   private let encoder: JSONEncoder
   private let decoder: JSONDecoder
+  private let changeSubject = PassthroughSubject<Void, Never>()
+
+  var changes: AnyPublisher<Void, Never> { changeSubject.eraseToAnyPublisher() }
 
   init(defaults: UserDefaults = .standard) {
     self.defaults = defaults
@@ -27,6 +31,7 @@ final class UserDefaultsHistoryStore: HistoryStore {
 
   func setLastPracticed(_ entry: LastPracticed) {
     encode(entry, key: HistoryStoreConstants.Key.lastPracticed)
+    changeSubject.send()
   }
 
   // MARK: - BestScores
@@ -36,13 +41,8 @@ final class UserDefaultsHistoryStore: HistoryStore {
     return all[bestKey(surahId, ayahNumber)]
   }
 
-  func bestScore(forSurah surahId: String) -> Int? {
-    let all = bestScoresMap()
-    let prefix = "\(surahId):"
-    return all
-      .filter { $0.key.hasPrefix(prefix) }
-      .map(\.value.score)
-      .max()
+  func bestScoresBySurah() -> [String: Int] {
+    bestScoresMap().maxBySurah()
   }
 
   func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
@@ -51,6 +51,7 @@ final class UserDefaultsHistoryStore: HistoryStore {
     if let existing = all[key], existing.score >= score { return }
     all[key] = BestScoreEntry(score: score, achievedAt: achievedAt)
     encode(all, key: HistoryStoreConstants.Key.bestScores)
+    changeSubject.send()
   }
 
   // MARK: - Attempts
@@ -66,12 +67,14 @@ final class UserDefaultsHistoryStore: HistoryStore {
     existing.insert(attempt, at: 0)
     let trimmed = Array(existing.prefix(HistoryStoreConstants.historyLimit))
     encode(AttemptLog(attempts: trimmed), key: HistoryStoreConstants.Key.recentAttempts)
+    changeSubject.send()
   }
 
   func clear() {
     defaults.removeObject(forKey: HistoryStoreConstants.Key.lastPracticed)
     defaults.removeObject(forKey: HistoryStoreConstants.Key.bestScores)
     defaults.removeObject(forKey: HistoryStoreConstants.Key.recentAttempts)
+    changeSubject.send()
   }
 
   @MainActor

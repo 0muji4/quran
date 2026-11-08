@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 
@@ -37,16 +38,29 @@ final class LibraryViewModel: ObservableObject {
   @Published private(set) var state: LoadState = .idle
   @Published var query: String = ""
   @Published var filter: Filter = .all
+  @Published private(set) var lastPracticed: LastPracticed?
+  /// Best score per surah on a 0–100 scale, keyed by surah id.
+  @Published private(set) var bestScores: [String: Int] = [:]
 
   private let backend: QuranBackend
   private let telemetry: Telemetry
+  private let historyStore: HistoryStore
 
   /// Surahs of "Al-Ikhlas" length or shorter. Used by `.short` filter.
   private static let shortAyahCutoff = 20
 
-  init(backend: QuranBackend, telemetry: Telemetry) {
+  init(backend: QuranBackend, telemetry: Telemetry, historyStore: HistoryStore) {
     self.backend = backend
     self.telemetry = telemetry
+    self.historyStore = historyStore
+    reloadHistory()
+  }
+
+  var historyChanges: AnyPublisher<Void, Never> { historyStore.changes }
+
+  func reloadHistory() {
+    lastPracticed = historyStore.lastPracticed()
+    bestScores = historyStore.bestScoresBySurah()
   }
 
   func load() async {

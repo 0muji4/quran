@@ -52,7 +52,7 @@ final class RemoteSyncedHistoryStoreTests: XCTestCase {
     let store = RemoteSyncedHistoryStore(cache: cache, me: MockMeClient(), telemetry: NoOpTelemetry())
 
     XCTAssertEqual(store.bestScore(surahId: "1", ayahNumber: 1)?.score, 88)
-    XCTAssertEqual(store.bestScore(forSurah: "1"), 88)
+    XCTAssertEqual(store.bestScoresBySurah()["1"], 88)
   }
 
   func test_recentAttempts_returnsCacheValue() {

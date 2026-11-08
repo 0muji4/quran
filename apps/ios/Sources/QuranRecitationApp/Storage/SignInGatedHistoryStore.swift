@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// Decorator that gates every `HistoryStore` operation by the signed-in
@@ -47,9 +48,9 @@ final class SignInGatedHistoryStore: HistoryStore {
     return base.bestScore(surahId: surahId, ayahNumber: ayahNumber)
   }
 
-  func bestScore(forSurah surahId: String) -> Int? {
-    guard isSignedIn() else { return nil }
-    return base.bestScore(forSurah: surahId)
+  func bestScoresBySurah() -> [String: Int] {
+    guard isSignedIn() else { return [:] }
+    return base.bestScoresBySurah()
   }
 
   func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
@@ -78,6 +79,8 @@ final class SignInGatedHistoryStore: HistoryStore {
   func clear() {
     base.clear()
   }
+
+  var changes: AnyPublisher<Void, Never> { base.changes }
 
   /// Delegates without gating. AppRoot calls this exactly when the
   /// gate is about to flip to signed-in, so a guard here would race

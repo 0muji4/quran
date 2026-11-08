@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 
@@ -21,6 +22,8 @@ final class HistoryViewModel: ObservableObject {
     self.historyStore = historyStore
     self.telemetry = telemetry
   }
+
+  var historyChanges: AnyPublisher<Void, Never> { historyStore.changes }
 
   func reload() {
     attempts = historyStore.recentAttempts()

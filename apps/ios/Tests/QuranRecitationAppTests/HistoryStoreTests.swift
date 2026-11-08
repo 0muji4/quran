@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import QuranRecitationApp
 
@@ -40,18 +41,37 @@ final class HistoryStoreTests: XCTestCase {
     store.recordBestScore(surahId: "1", ayahNumber: 1, score: 92, achievedAt: date)
 
     XCTAssertEqual(store.bestScore(surahId: "1", ayahNumber: 1)?.score, 92)
-    XCTAssertEqual(store.bestScore(forSurah: "1"), 92)
+    XCTAssertEqual(store.bestScoresBySurah()["1"], 92)
   }
 
-  func test_bestScoreForSurah_aggregatesAcrossAyat() {
+  func test_bestScoresBySurah_aggregatesAcrossAyat() {
     let date = Date()
     store.recordBestScore(surahId: "1", ayahNumber: 1, score: 80, achievedAt: date)
     store.recordBestScore(surahId: "1", ayahNumber: 2, score: 92, achievedAt: date)
     store.recordBestScore(surahId: "2", ayahNumber: 1, score: 100, achievedAt: date)
 
-    XCTAssertEqual(store.bestScore(forSurah: "1"), 92)
-    XCTAssertEqual(store.bestScore(forSurah: "2"), 100)
-    XCTAssertNil(store.bestScore(forSurah: "999"))
+    XCTAssertEqual(store.bestScoresBySurah(), ["1": 92, "2": 100])
+  }
+
+  func test_changes_firesOnEveryWriteThatChangesTheCache() {
+    var count = 0
+    let subscription = store.changes.sink { count += 1 }
+    defer { subscription.cancel() }
+    let date = Date(timeIntervalSince1970: 1_700_000_000)
+
+    store.setLastPracticed(LastPracticed(
+      surahId: "1", ayahNumber: 1, surahNameEn: "Al-Fatihah", surahNameAr: "الفاتحة",
+      ayahCount: 7, practicedAt: date
+    ))
+    store.recordBestScore(surahId: "1", ayahNumber: 1, score: 80, achievedAt: date)
+    store.recordBestScore(surahId: "1", ayahNumber: 1, score: 70, achievedAt: date)
+    store.recordAttempt(Attempt(
+      id: "a1", surahId: "1", surahNameEn: "Al-Fatihah", ayahNumber: 1, score: 80,
+      jobId: "j1", createdAt: date, status: .completed, durationMs: nil
+    ))
+    store.clear()
+
+    XCTAssertEqual(count, 4, "the lower best score is not a write")
   }
 
   func test_recordAttempt_prependsAndCapsAtHistoryLimit() {

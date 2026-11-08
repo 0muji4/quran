@@ -101,9 +101,9 @@ struct AppRoot: View {
       LibraryView(
         viewModel: LibraryViewModel(
           backend: backend,
-          telemetry: telemetry
+          telemetry: telemetry,
+          historyStore: historyStore
         ),
-        historyStore: historyStore,
         onResume: { entry in
           practiceContext = PracticeContext(
             surahId: entry.surahId,

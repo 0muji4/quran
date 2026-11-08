@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 // MARK: - DTOs
@@ -48,7 +49,8 @@ protocol HistoryStore {
   func setLastPracticed(_ entry: LastPracticed)
 
   func bestScore(surahId: String, ayahNumber: Int) -> BestScoreEntry?
-  func bestScore(forSurah surahId: String) -> Int?
+  /// Highest best score per surah, keyed by surah id.
+  func bestScoresBySurah() -> [String: Int]
   func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date)
 
   func recentAttempts(limit: Int) -> [Attempt]
@@ -58,6 +60,10 @@ protocol HistoryStore {
   /// (via the AppRoot observer) so a signed-out device does not leak
   /// the previous user's history into the next sign-in (see ADR 0021).
   func clear()
+
+  /// Fires on the caller's thread after every write, including `clear()`.
+  /// Screens that keep a copy of what they read re-read on it.
+  var changes: AnyPublisher<Void, Never> { get }
 
   /// Pull authoritative state from the remote source, replacing the
   /// local cache. AppRoot invokes this when the session transitions
@@ -83,5 +89,15 @@ enum HistoryStoreConstants {
     static let lastPracticed = "tilawah:last-practiced"
     static let bestScores = "tilawah:best-scores"
     static let recentAttempts = "tilawah:recent-attempts"
+  }
+}
+
+extension Dictionary where Key == String, Value == BestScoreEntry {
+  /// Highest score per surah from entries keyed `"<surahId>:<ayahNumber>"`.
+  func maxBySurah() -> [String: Int] {
+    reduce(into: [:]) { result, entry in
+      let surahId = String(entry.key.prefix { $0 != ":" })
+      result[surahId] = Swift.max(result[surahId] ?? entry.value.score, entry.value.score)
+    }
   }
 }

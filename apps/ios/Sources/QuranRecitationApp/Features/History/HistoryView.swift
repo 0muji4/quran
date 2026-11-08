@@ -32,6 +32,7 @@ struct HistoryView: View {
     }
     .background(Color.brand.surface.ignoresSafeArea())
     .onAppear { viewModel.reload() }
+    .onReceive(viewModel.historyChanges) { viewModel.reload() }
     .onChange(of: session.currentUser?.id) { _ in
       // Sign-in flips the gated store from empty to "real reads";
       // sign-out flips it the other way. Re-fetch so the in-memory
