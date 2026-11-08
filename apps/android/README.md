@@ -13,7 +13,9 @@ Compose client for Tilawah. Talks to the BFF (`:4000`) over GraphQL through Apol
 ```
 src/main/java/tv/every/tilawah/android/
 ├── app/             AppRoot, AppConfig, AppError, Routing, HistoryDataStore
-├── designsystem/    BrandColors, BrandTypography, BrandSpacing, BrandTheme,
+├── designsystem/    AppTheme (binds generated/ to Compose, ADR 0026),
+│                    generated/ (ColorTokens, DimensionTokens; `make tokens-gen`),
+│                    BrandColors, BrandTypography, BrandSpacing, BrandTheme,
 │                    components/ (BrandCard, ChipFilter, PlaybackRow,
 │                                  PrimaryButton, BrandProgressBar, WaveformView,
 │                                  BrandCardStyle)
