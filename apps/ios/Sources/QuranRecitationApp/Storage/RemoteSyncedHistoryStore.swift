@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// `HistoryStore` decorator that mirrors writes through to the BFF
@@ -84,8 +85,8 @@ final class RemoteSyncedHistoryStore: HistoryStore {
     cache.bestScore(surahId: surahId, ayahNumber: ayahNumber)
   }
 
-  func bestScore(forSurah surahId: String) -> Int? {
-    cache.bestScore(forSurah: surahId)
+  func bestScoresBySurah() -> [String: Int] {
+    cache.bestScoresBySurah()
   }
 
   func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
@@ -165,6 +166,8 @@ final class RemoteSyncedHistoryStore: HistoryStore {
   func clear() {
     cache.clear()
   }
+
+  var changes: AnyPublisher<Void, Never> { cache.changes }
 
   // MARK: - Remote refresh
 

@@ -1,12 +1,25 @@
+import Combine
 import XCTest
 @testable import QuranRecitationApp
 
 @MainActor
 final class LibraryViewModelTests: XCTestCase {
+  func test_reloadHistory_picksUpCacheWritesAnnouncedOnHistoryChanges() {
+    let store = InMemoryHistoryStore()
+    let viewModel = LibraryViewModel(backend: MockBackend(), telemetry: NoOpTelemetry(), historyStore: store)
+    let subscription = viewModel.historyChanges.sink { viewModel.reloadHistory() }
+    defer { subscription.cancel() }
+    XCTAssertEqual(viewModel.bestScores, [:])
+
+    store.recordBestScore(surahId: "1", ayahNumber: 1, score: 95, achievedAt: Date())
+
+    XCTAssertEqual(viewModel.bestScores, ["1": 95])
+  }
+
   func test_load_publishesLoadedStateOnSuccess() async {
     let backend = MockBackend(surahsResult: .success(Self.fixtures))
     let telemetry = TelemetrySpy()
-    let viewModel = LibraryViewModel(backend: backend, telemetry: telemetry)
+    let viewModel = LibraryViewModel(backend: backend, telemetry: telemetry, historyStore: InMemoryHistoryStore())
 
     await viewModel.load()
 
@@ -21,7 +34,7 @@ final class LibraryViewModelTests: XCTestCase {
   func test_load_publishesFailedStateOnNetworkError() async {
     let backend = MockBackend(surahsResult: .failure(.network(underlying: NSError(domain: "x", code: 0))))
     let telemetry = TelemetrySpy()
-    let viewModel = LibraryViewModel(backend: backend, telemetry: telemetry)
+    let viewModel = LibraryViewModel(backend: backend, telemetry: telemetry, historyStore: InMemoryHistoryStore())
 
     await viewModel.load()
 
@@ -35,7 +48,7 @@ final class LibraryViewModelTests: XCTestCase {
 
   func test_surahOpened_emitsTelemetry() {
     let telemetry = TelemetrySpy()
-    let viewModel = LibraryViewModel(backend: MockBackend(), telemetry: telemetry)
+    let viewModel = LibraryViewModel(backend: MockBackend(), telemetry: telemetry, historyStore: InMemoryHistoryStore())
 
     viewModel.surahOpened(Self.fixtures[0])
 
@@ -48,7 +61,7 @@ final class LibraryViewModelTests: XCTestCase {
 
   func test_filteredSurahs_appliesQueryAndChip() async {
     let backend = MockBackend(surahsResult: .success(Self.filteringFixtures))
-    let viewModel = LibraryViewModel(backend: backend, telemetry: NoOpTelemetry())
+    let viewModel = LibraryViewModel(backend: backend, telemetry: NoOpTelemetry(), historyStore: InMemoryHistoryStore())
     await viewModel.load()
 
     XCTAssertEqual(viewModel.filteredSurahs.count, 4, "no filters → all surahs")

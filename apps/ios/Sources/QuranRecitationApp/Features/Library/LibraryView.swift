@@ -6,18 +6,15 @@ import SwiftUI
 /// prompt. Mirrors the web Library, which always leads with this hero.
 struct LibraryView: View {
   @StateObject var viewModel: LibraryViewModel
-  let historyStore: HistoryStore
   let onResume: ((LastPracticed) -> Void)?
   let onSurahOpened: ((SurahSummary) -> Void)?
 
   init(
     viewModel: @autoclosure @escaping () -> LibraryViewModel,
-    historyStore: HistoryStore,
     onResume: ((LastPracticed) -> Void)? = nil,
     onSurahOpened: ((SurahSummary) -> Void)? = nil
   ) {
     self._viewModel = StateObject(wrappedValue: viewModel())
-    self.historyStore = historyStore
     self.onResume = onResume
     self.onSurahOpened = onSurahOpened
   }
@@ -30,7 +27,7 @@ struct LibraryView: View {
         // there is one, otherwise a get-started prompt. The get-started
         // variant waits for the list to load so its CTA has a surah to
         // open (the first one), mirroring web's /practice/{first}/1.
-        if let lastPracticed = historyStore.lastPracticed() {
+        if let lastPracticed = viewModel.lastPracticed {
           ContinueCard(entry: lastPracticed) { entry in
             viewModel.continueTapped(entry)
             onResume?(entry)
@@ -55,6 +52,7 @@ struct LibraryView: View {
         await viewModel.load()
       }
     }
+    .onReceive(viewModel.historyChanges) { viewModel.reloadHistory() }
   }
 
   private var header: some View {
@@ -130,7 +128,7 @@ struct LibraryView: View {
           ForEach(visible) { surah in
             SurahRow(
               surah: surah,
-              bestScore: historyStore.bestScore(forSurah: surah.id)
+              bestScore: viewModel.bestScores[surah.id]
             )
             .onTapGesture {
               viewModel.surahOpened(surah)

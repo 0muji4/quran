@@ -44,7 +44,7 @@ final class SignInGatedHistoryStoreTests: XCTestCase {
     signedIn = false
 
     XCTAssertNil(store.bestScore(surahId: "1", ayahNumber: 1))
-    XCTAssertNil(store.bestScore(forSurah: "1"))
+    XCTAssertTrue(store.bestScoresBySurah().isEmpty)
   }
 
   // MARK: - Writes drop on the floor when signed out

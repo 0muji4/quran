@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// In-memory `HistoryStore` for SwiftUI Previews and unit tests. State
@@ -6,6 +7,9 @@ final class InMemoryHistoryStore: HistoryStore {
   private var lastPracticedEntry: LastPracticed?
   private var bestScores: [String: BestScoreEntry] = [:]
   private var attempts: [Attempt] = []
+  private let changeSubject = PassthroughSubject<Void, Never>()
+
+  var changes: AnyPublisher<Void, Never> { changeSubject.eraseToAnyPublisher() }
 
   init(
     lastPracticed: LastPracticed? = nil,
@@ -23,24 +27,22 @@ final class InMemoryHistoryStore: HistoryStore {
 
   func setLastPracticed(_ entry: LastPracticed) {
     lastPracticedEntry = entry
+    changeSubject.send()
   }
 
   func bestScore(surahId: String, ayahNumber: Int) -> BestScoreEntry? {
     bestScores["\(surahId):\(ayahNumber)"]
   }
 
-  func bestScore(forSurah surahId: String) -> Int? {
-    let prefix = "\(surahId):"
-    return bestScores
-      .filter { $0.key.hasPrefix(prefix) }
-      .map(\.value.score)
-      .max()
+  func bestScoresBySurah() -> [String: Int] {
+    bestScores.maxBySurah()
   }
 
   func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
     let key = "\(surahId):\(ayahNumber)"
     if let existing = bestScores[key], existing.score >= score { return }
     bestScores[key] = BestScoreEntry(score: score, achievedAt: achievedAt)
+    changeSubject.send()
   }
 
   func recentAttempts(limit: Int) -> [Attempt] {
@@ -52,12 +54,14 @@ final class InMemoryHistoryStore: HistoryStore {
     if attempts.count > HistoryStoreConstants.historyLimit {
       attempts = Array(attempts.prefix(HistoryStoreConstants.historyLimit))
     }
+    changeSubject.send()
   }
 
   func clear() {
     lastPracticedEntry = nil
     bestScores = [:]
     attempts = []
+    changeSubject.send()
   }
 
   @MainActor
