@@ -86,12 +86,17 @@ export const requestSignedUploadUrl = async (input: {
   );
 };
 
+export type CreateScoringJobErrorCode = 'limit_reached';
+
+export type CreateScoringJobResult =
+  { ok: true; job: ScoringResult } | { ok: false; error: CreateScoringJobErrorCode };
+
 export const createScoringJobFromUpload = async (input: {
   sessionId?: string;
   uploadKey: string;
   surahId: string;
   ayahNumber: number;
-}): Promise<ScoringResult> => {
+}): Promise<CreateScoringJobResult> => {
   return tracer.startActiveSpan(
     'ServerAction: createScoringJobFromUpload',
     { kind: SpanKind.CLIENT },
@@ -108,15 +113,23 @@ export const createScoringJobFromUpload = async (input: {
           body: JSON.stringify(input)
         });
 
-        const result = await parseJson<ScoringResult>(response);
+        if (response.status === 429) {
+          logger.warn('createScoringJobFromUpload: scoring limit reached', {
+            uploadKey: input.uploadKey
+          });
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { ok: false as const, error: 'limit_reached' as const };
+        }
+
+        const job = await parseJson<ScoringResult>(response);
 
         logger.info('createScoringJobFromUpload completed', {
           uploadKey: input.uploadKey,
-          jobId: result.jobId
+          jobId: job.jobId
         });
 
         span.setStatus({ code: SpanStatusCode.OK });
-        return result;
+        return { ok: true as const, job };
       } catch (error) {
         span.recordException(error as Error);
         span.setStatus({

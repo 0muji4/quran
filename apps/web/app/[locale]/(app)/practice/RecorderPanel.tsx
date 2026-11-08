@@ -65,6 +65,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
   const router = useRouter();
   const t = useTranslations('practice.recorder');
   const liveStatusT = useTranslations('practice.recorder.liveStatus');
+  const scoringErrorT = useTranslations('practice.scoringError');
   // The footer ("Last attempt: N / 100") reflects the most recent
   // completed scoring for this ayah, refreshed on mount and after each
   // new attempt lands.
@@ -242,25 +243,33 @@ export function RecorderPanel({ surah, ayah }: Props) {
         ? `${styles.panelIcon} ${styles.panelIconGreen}`
         : `${styles.panelIcon} ${styles.panelIconTan}`;
 
+  // Recording again closer to the mic cannot help here, so the panel
+  // explains the limit in the header and drops the hearing hints.
+  const limitReached = isScoringError && job.failure === 'limit_reached';
   const headerTitle = isRecording
     ? t('headerRecordingTitle')
     : isAnalysing
       ? t('headerAnalysingTitle')
-      : isScoringError
-        ? t('headerErrorTitle')
-        : t('headerIdleTitle');
+      : limitReached
+        ? scoringErrorT('limitReachedTitle')
+        : isScoringError
+          ? t('headerErrorTitle')
+          : t('headerIdleTitle');
   const headerSubtitle = isRecording
     ? t('headerRecordingSubtitle')
     : isAnalysing
       ? isStuck
         ? t('headerAnalysingStuckSubtitle')
         : t('headerAnalysingSubtitle')
-      : isScoringError
-        ? t('headerErrorSubtitle')
-        : t('headerIdleSubtitle');
+      : limitReached
+        ? null
+        : isScoringError
+          ? t('headerErrorSubtitle')
+          : t('headerIdleSubtitle');
 
   const errorReasons: string[] = [];
   if (tooShortReason) errorReasons.push(tooShortReason);
+  if (limitReached) errorReasons.push(scoringErrorT('limitReachedTitle'));
 
   const liveStatus = recorderStatusMessage(
     {
@@ -286,7 +295,7 @@ export function RecorderPanel({ surah, ayah }: Props) {
           </span>
           <div>
             <h2 className={styles.panelTitle}>{headerTitle}</h2>
-            <p className={styles.panelSubtitle}>{headerSubtitle}</p>
+            {headerSubtitle && <p className={styles.panelSubtitle}>{headerSubtitle}</p>}
           </div>
         </div>
         {isRecording && (
@@ -316,8 +325,9 @@ export function RecorderPanel({ surah, ayah }: Props) {
           </>
         ) : isScoringError ? (
           <ScoringErrorCard
-            reasons={errorReasons}
-            canReplay={lastBlob !== null}
+            reasons={limitReached ? [] : errorReasons}
+            hint={limitReached ? scoringErrorT('limitReachedHint') : undefined}
+            canReplay={lastBlob !== null && !limitReached}
             onReplay={handleReplay}
             onRecordAgain={handleRecordAgain}
           />

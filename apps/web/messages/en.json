@@ -198,6 +198,8 @@
     },
     "scoringError": {
       "defaultHint": "Move closer to the microphone and try again",
+      "limitReachedTitle": "Scoring limit reached",
+      "limitReachedHint": "You have scored many recordings in the past hour. Try again later.",
       "replay": "Replay your recording",
       "recordAgain": "Record again"
     },

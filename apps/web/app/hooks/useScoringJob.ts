@@ -2,17 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScoreSegment, ScoringResult } from '@quran-project/shared-ts';
-import { createScoringJobFromUpload, fetchScoringJob, requestSignedUploadUrl } from '../actions';
+import {
+  createScoringJobFromUpload,
+  fetchScoringJob,
+  requestSignedUploadUrl,
+  type CreateScoringJobErrorCode
+} from '../actions';
 import { RECORDING_MIME_TYPE } from './useRecorder';
 
 export type ScoringStage = 'idle' | 'uploading' | 'scoring' | 'done' | 'error';
 
-// No error text: a server action error reaches the browser only as React's
-// generic production message, so the screen picks its own wording.
+// A failure is a code, not text: a server action error reaches the browser
+// only as React's generic production message, so the screen picks its own
+// wording. `failure` stays null for failures the user cannot act on.
 interface State {
   stage: ScoringStage;
   job: ScoringResult | null;
   segments: ScoreSegment[];
+  failure: CreateScoringJobErrorCode | null;
 }
 
 interface SubmitInput {
@@ -27,7 +34,8 @@ export function useScoringJob() {
   const [state, setState] = useState<State>({
     stage: 'idle',
     job: null,
-    segments: []
+    segments: [],
+    failure: null
   });
   const pollerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -42,7 +50,7 @@ export function useScoringJob() {
 
   const reset = useCallback(() => {
     clearPolling();
-    setState({ stage: 'idle', job: null, segments: [] });
+    setState({ stage: 'idle', job: null, segments: [], failure: null });
   }, [clearPolling]);
 
   const startPolling = useCallback(
@@ -80,7 +88,7 @@ export function useScoringJob() {
 
   const submit = useCallback(
     async ({ blob, surahId, ayahNumber }: SubmitInput): Promise<ScoringResult | null> => {
-      setState({ stage: 'uploading', job: null, segments: [] });
+      setState({ stage: 'uploading', job: null, segments: [], failure: null });
       try {
         const upload = await requestSignedUploadUrl({
           filename: `recording-${Date.now()}.webm`,
@@ -109,12 +117,17 @@ export function useScoringJob() {
         }
 
         setState((prev) => ({ ...prev, stage: 'scoring' }));
-        const job = await createScoringJobFromUpload({
+        const created = await createScoringJobFromUpload({
           sessionId,
           uploadKey,
           surahId,
           ayahNumber
         });
+        if (!created.ok) {
+          setState({ stage: 'error', job: null, segments: [], failure: created.error });
+          return null;
+        }
+        const job = created.job;
 
         setState((prev) => ({
           ...prev,
@@ -129,7 +142,7 @@ export function useScoringJob() {
         return job;
       } catch (err) {
         console.error('[scoring] submit failed', err);
-        setState({ stage: 'error', job: null, segments: [] });
+        setState({ stage: 'error', job: null, segments: [], failure: null });
         return null;
       }
     },
