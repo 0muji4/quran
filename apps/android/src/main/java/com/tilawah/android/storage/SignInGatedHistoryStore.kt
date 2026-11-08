@@ -1,6 +1,9 @@
 package com.tilawah.android.storage
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import java.time.Instant
 
@@ -13,36 +16,34 @@ import java.time.Instant
  *
  * Why a decorator rather than inline gates at each ViewModel call
  * site: a new write path could be added later and forget the
- * `isSignedIn` check; centralising the gate at the storage seam
+ * signed-in check; centralising the gate at the storage seam
  * prevents that drift. ADR 0021 §"Decision (1)" defines the
  * invariant the gate enforces.
  *
- * [isSignedIn] is a `() -> Boolean` lambda rather than an
- * `AuthSession` reference so the gate keeps no opinion on how
- * signed-in state is observed — tests pass `{ false }` / `{ true }`
- * directly, and production captures the current snapshot of an
- * `AuthSession`-backed `StateFlow`.
+ * Reads follow [signedIn], so a flow collected before sign-in starts
+ * emitting the cache once the user signs in. Writes check its current value.
  *
  * Mirrors `apps/ios/Sources/QuranRecitationApp/Storage/SignInGatedHistoryStore.swift`.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class SignInGatedHistoryStore(
     private val base: HistoryStore,
-    private val isSignedIn: () -> Boolean,
+    private val signedIn: StateFlow<Boolean>,
 ) : HistoryStore {
 
     override fun lastPracticed(): Flow<LastPracticed?> =
-        if (isSignedIn()) base.lastPracticed() else flowOf(null)
+        whenSignedIn(signedOut = null) { base.lastPracticed() }
 
     override suspend fun setLastPracticed(entry: LastPracticed) {
-        if (!isSignedIn()) return
+        if (!signedIn.value) return
         base.setLastPracticed(entry)
     }
 
     override fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?> =
-        if (isSignedIn()) base.bestScore(surahId, ayahNumber) else flowOf(null)
+        whenSignedIn(signedOut = null) { base.bestScore(surahId, ayahNumber) }
 
-    override fun bestScoreForSurah(surahId: String): Flow<Int?> =
-        if (isSignedIn()) base.bestScoreForSurah(surahId) else flowOf(null)
+    override fun bestScoresBySurah(): Flow<Map<String, Int>> =
+        whenSignedIn(signedOut = emptyMap()) { base.bestScoresBySurah() }
 
     override suspend fun recordBestScore(
         surahId: String,
@@ -50,22 +51,22 @@ class SignInGatedHistoryStore(
         score: Int,
         achievedAt: Instant,
     ) {
-        if (!isSignedIn()) return
+        if (!signedIn.value) return
         base.recordBestScore(surahId, ayahNumber, score, achievedAt)
     }
 
     override fun recentAttempts(limit: Int): Flow<List<Attempt>> =
-        if (isSignedIn()) base.recentAttempts(limit) else flowOf(emptyList())
+        whenSignedIn(signedOut = emptyList()) { base.recentAttempts(limit) }
 
     override suspend fun recordAttempt(attempt: Attempt) {
-        if (!isSignedIn()) return
+        if (!signedIn.value) return
         base.recordAttempt(attempt)
     }
 
     /**
      * Always delegates — callers (sign-out) need to wipe the cache
      * regardless of the current session state, otherwise a race where
-     * `isSignedIn` flips before [clear] lands would strand the
+     * [signedIn] flips before [clear] lands would strand the
      * previous user's records.
      */
     override suspend fun clear() {
@@ -80,4 +81,7 @@ class SignInGatedHistoryStore(
     override suspend fun refreshFromRemote() {
         base.refreshFromRemote()
     }
+
+    private fun <T> whenSignedIn(signedOut: T, read: () -> Flow<T>): Flow<T> =
+        signedIn.flatMapLatest { if (it) read() else flowOf(signedOut) }
 }

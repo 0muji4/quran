@@ -163,7 +163,7 @@ class RemoteSyncedHistoryStoreTest {
         )
         val (store, _, _) = build(cache = cache, remote = remote)
         val seen = mutableListOf<Int?>()
-        backgroundScope.launch(dispatcher) { store.bestScoreForSurah("1").collect { seen += it } }
+        backgroundScope.launch(dispatcher) { store.bestScoresBySurah().collect { seen += it["1"] } }
 
         store.refreshFromRemote()
         advanceUntilIdle()

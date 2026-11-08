@@ -49,8 +49,7 @@ class RemoteSyncedHistoryStore(
     override fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?> =
         cache.bestScore(surahId, ayahNumber)
 
-    override fun bestScoreForSurah(surahId: String): Flow<Int?> =
-        cache.bestScoreForSurah(surahId)
+    override fun bestScoresBySurah(): Flow<Map<String, Int>> = cache.bestScoresBySurah()
 
     override fun recentAttempts(limit: Int): Flow<List<Attempt>> = cache.recentAttempts(limit)
 

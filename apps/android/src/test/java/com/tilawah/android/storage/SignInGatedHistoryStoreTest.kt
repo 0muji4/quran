@@ -1,5 +1,7 @@
 package com.tilawah.android.storage
 
+import app.cash.turbine.test
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -37,11 +39,11 @@ class SignInGatedHistoryStoreTest {
         base.setLastPracticed(lastPracticed())
         base.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         base.recordAttempt(attempt())
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(false))
 
         assertNull(gated.lastPracticed().first())
         assertNull(gated.bestScore("1", 1).first())
-        assertNull(gated.bestScoreForSurah("1").first())
+        assertTrue(gated.bestScoresBySurah().first().isEmpty())
         assertTrue(gated.recentAttempts().first().isEmpty())
     }
 
@@ -51,18 +53,18 @@ class SignInGatedHistoryStoreTest {
         base.setLastPracticed(lastPracticed())
         base.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         base.recordAttempt(attempt())
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { true })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(true))
 
         assertEquals(lastPracticed(), gated.lastPracticed().first())
         assertEquals(90, gated.bestScore("1", 1).first()?.score)
-        assertEquals(90, gated.bestScoreForSurah("1").first())
+        assertEquals(mapOf("1" to 90), gated.bestScoresBySurah().first())
         assertEquals(1, gated.recentAttempts().first().size)
     }
 
     @Test
     fun `writes are dropped when signed out`() = runTest {
         val base = InMemoryHistoryStore()
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(false))
 
         gated.setLastPracticed(lastPracticed())
         gated.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
@@ -76,7 +78,7 @@ class SignInGatedHistoryStoreTest {
     @Test
     fun `writes pass through when signed in`() = runTest {
         val base = InMemoryHistoryStore()
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { true })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(true))
 
         gated.setLastPracticed(lastPracticed())
         gated.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
@@ -95,7 +97,7 @@ class SignInGatedHistoryStoreTest {
         // Sign-out path: the gate has flipped to false but we MUST
         // still be able to wipe the cache to prevent leaks to the next
         // user.
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(false))
 
         gated.clear()
 
@@ -113,7 +115,7 @@ class SignInGatedHistoryStoreTest {
         }
         // refresh is fired by AppRoot exactly as the session transitions
         // to signed-in; a guard here would race the bridge.
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
+        val gated = SignInGatedHistoryStore(base, signedIn = MutableStateFlow(false))
 
         gated.refreshFromRemote()
 
@@ -121,18 +123,34 @@ class SignInGatedHistoryStoreTest {
     }
 
     @Test
-    fun `signed-in flag is evaluated per call`() = runTest {
+    fun `writes check the current sign-in state`() = runTest {
         val base = InMemoryHistoryStore()
-        var signedIn = false
-        val gated = SignInGatedHistoryStore(base, isSignedIn = { signedIn })
+        val signedIn = MutableStateFlow(false)
+        val gated = SignInGatedHistoryStore(base, signedIn = signedIn)
 
         // While signed out, the write is dropped.
         gated.setLastPracticed(lastPracticed())
         assertNull(base.lastPracticed().first())
 
         // After signing in, the same call goes through.
-        signedIn = true
+        signedIn.value = true
         gated.setLastPracticed(lastPracticed())
         assertNotNull(base.lastPracticed().first())
+    }
+
+    @Test
+    fun `a read collected while signed out follows sign-in and sign-out`() = runTest {
+        val base = InMemoryHistoryStore()
+        base.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
+        val signedIn = MutableStateFlow(false)
+        val gated = SignInGatedHistoryStore(base, signedIn = signedIn)
+
+        gated.bestScoresBySurah().test {
+            assertEquals(emptyMap<String, Int>(), awaitItem())
+            signedIn.value = true
+            assertEquals(mapOf("1" to 90), awaitItem())
+            signedIn.value = false
+            assertEquals(emptyMap<String, Int>(), awaitItem())
+        }
     }
 }
