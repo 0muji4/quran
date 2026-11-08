@@ -43,12 +43,20 @@ struct PracticeErrorPanel: View {
         Text(error.errorDescription ?? "")
           .font(Font.brand.body.weight(.semibold))
           .foregroundColor(Color.brand.textPrimary)
-        Text("practice.error.subtitle", bundle: .module)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
+        if showsMicHint {
+          Text("practice.error.subtitle", bundle: .module)
+            .font(Font.brand.caption)
+            .foregroundColor(Color.brand.textSecondary)
+        }
       }
       Spacer()
     }
+  }
+
+  /// "Move closer to the mic" does not help when the scoring limit is used up.
+  private var showsMicHint: Bool {
+    if case .scoringLimitReached = error { return false }
+    return true
   }
 
   private var dashedMicIcon: some View {

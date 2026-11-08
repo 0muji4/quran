@@ -29,7 +29,8 @@ final class ApolloBackend: QuranBackend {
     pollIntervalNanos: UInt64 = 800_000_000,
     tokenStore: TokenStore,
     refresher: TokenRefresher,
-    onSignOut: @escaping @MainActor () -> Void
+    onSignOut: @escaping @MainActor () -> Void,
+    sessionConfiguration: URLSessionConfiguration = .default
   ) {
     let store = ApolloStore()
     let provider = AuthInterceptorProvider(
@@ -38,7 +39,7 @@ final class ApolloBackend: QuranBackend {
       onSignOut: onSignOut
     )
     let transport = RequestChainNetworkTransport(
-      urlSession: URLSession(configuration: .default),
+      urlSession: URLSession(configuration: sessionConfiguration),
       interceptorProvider: provider,
       store: store,
       endpointURL: endpoint
@@ -143,6 +144,10 @@ final class ApolloBackend: QuranBackend {
       response = try await Task { [client] in
         try await client.perform(mutation: mutation)
       }.value
+    } catch let error as ResponseCodeInterceptor.ResponseCodeError
+      where error.response.statusCode == 429 {
+      // The BFF answers 429 only when the scoring limit is used up.
+      throw AppError.scoringLimitReached
     } catch {
       throw AppError.network(underlying: error)
     }
