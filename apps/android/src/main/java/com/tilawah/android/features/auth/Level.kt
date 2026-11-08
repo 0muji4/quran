@@ -4,15 +4,13 @@ import androidx.compose.runtime.Immutable
 
 /**
  * Self-declared recitation level shown in the sign-up `YOUR LEVEL`
- * selector. UI-only this pass: the choice is held in the AuthViewModel
- * but is not sent to the BFF (matches `LEVEL_OPTIONS` in
- * `apps/web/app/(auth)/copy.ts`). Persistence lands with a later
- * profile-preferences PR.
+ * selector (matches `LEVEL_OPTIONS` in `apps/web/app/(auth)/copy.ts`).
+ * [wireValue] is the value the BFF stores.
  */
-enum class Level(val label: String, val description: String) {
-    Beginner(label = "Beginner", description = "Learning Arabic"),
-    Intermediate(label = "Intermediate", description = "Working on tajweed"),
-    Advanced(label = "Advanced", description = "Polishing recitation"),
+enum class Level(val label: String, val description: String, val wireValue: String) {
+    Beginner(label = "Beginner", description = "Learning Arabic", wireValue = "beginner"),
+    Intermediate(label = "Intermediate", description = "Working on tajweed", wireValue = "intermediate"),
+    Advanced(label = "Advanced", description = "Polishing recitation", wireValue = "advanced"),
 }
 
 @Immutable

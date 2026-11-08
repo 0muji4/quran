@@ -22,11 +22,7 @@ import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.features.auth.Level
 import com.tilawah.android.features.auth.LevelOptions
 
-/**
- * Single-select stack of radio cards used on the sign-up screen. UI-only
- * for now (parity with the web `LevelSelector.tsx`); the chosen value
- * stays in the AuthViewModel and is not sent to the BFF.
- */
+/** Single-select stack of radio cards used on the sign-up screen (parity with the web `LevelSelector.tsx`). */
 @Composable
 fun LevelSelector(
     selection: Level,

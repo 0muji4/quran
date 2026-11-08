@@ -54,6 +54,26 @@ class OkHttpAuthApiTest {
     }
 
     @Test
+    fun `signUp posts the level`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {"accessToken":"a-tok","refreshToken":"r-tok",
+                     "user":{"id":"u-1","email":"noor@example.com","displayName":"Noor","level":"advanced"}}
+                    """.trimIndent(),
+                ),
+        )
+
+        api.signUp(email = "noor@example.com", password = "long-enough-pw", displayName = "Noor", level = "advanced")
+
+        val recorded = server.takeRequest()
+        assertTrue(recorded.path?.endsWith("auth/signup") == true)
+        assertTrue(recorded.body.readUtf8().contains("\"level\":\"advanced\""))
+    }
+
+    @Test
     fun `signIn 401 surfaces InvalidCredentials`() = runTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"error":"invalid"}"""))
 
@@ -68,7 +88,7 @@ class OkHttpAuthApiTest {
 
         assertThrows(AppError.EmailInUse::class.java) {
             kotlinx.coroutines.runBlocking {
-                api.signUp(email = "noor@example.com", password = "long-enough-pw", displayName = null)
+                api.signUp(email = "noor@example.com", password = "long-enough-pw", displayName = null, level = null)
             }
         }
     }
@@ -81,7 +101,7 @@ class OkHttpAuthApiTest {
 
         val error = assertThrows(AppError.ValidationFailed::class.java) {
             kotlinx.coroutines.runBlocking {
-                api.signUp(email = "noor@example.com", password = "x", displayName = "Noor")
+                api.signUp(email = "noor@example.com", password = "x", displayName = "Noor", level = null)
             }
         }
         assertTrue(error.reason.contains("password"))

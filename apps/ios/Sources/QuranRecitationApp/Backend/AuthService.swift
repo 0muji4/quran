@@ -33,9 +33,9 @@ protocol AuthService {
 
   /// `POST /auth/signup`. Throws `AppError.emailInUse` on 409,
   /// `.validationFailed` on 400, `.backendUnavailable` on 5xx,
-  /// `.network` on transport failure. `displayName` is omitted from the
-  /// request body when `nil`.
-  func signUp(email: String, password: String, displayName: String?) async throws -> AuthSuccess
+  /// `.network` on transport failure. `displayName` and `level` are
+  /// omitted from the request body when `nil`.
+  func signUp(email: String, password: String, displayName: String?, level: String?) async throws -> AuthSuccess
 
   /// `POST /auth/refresh`. Trades the current refresh token for a
   /// freshly rotated access + refresh pair. Throws
@@ -78,10 +78,10 @@ final class URLSessionAuthService: AuthService {
     )
   }
 
-  func signUp(email: String, password: String, displayName: String?) async throws -> AuthSuccess {
+  func signUp(email: String, password: String, displayName: String?, level: String?) async throws -> AuthSuccess {
     try await perform(
       path: "auth/signup",
-      body: SignUpRequestBody(email: email, password: password, displayName: displayName),
+      body: SignUpRequestBody(email: email, password: password, displayName: displayName, level: level),
       operation: "auth.signup"
     )
   }
@@ -220,6 +220,7 @@ private struct SignUpRequestBody: Encodable {
   let email: String
   let password: String
   let displayName: String?
+  let level: String?
 }
 
 /// `POST /auth/login` body.

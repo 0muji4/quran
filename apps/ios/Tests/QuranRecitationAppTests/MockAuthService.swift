@@ -27,6 +27,7 @@ final class MockAuthService: AuthService {
   /// Double optional so tests can tell "never called" (`nil`) apart
   /// from "called with no display name" (`.some(nil)`).
   private(set) var lastSignUpDisplayName: String??
+  private(set) var lastSignUpLevel: String?
   private(set) var lastRefreshToken: String?
   private(set) var lastGoogleIDToken: String?
 
@@ -47,11 +48,12 @@ final class MockAuthService: AuthService {
     return try Self.unwrap(signInResult, operation: "mock.auth.signin")
   }
 
-  func signUp(email: String, password: String, displayName: String?) async throws -> AuthSuccess {
+  func signUp(email: String, password: String, displayName: String?, level: String?) async throws -> AuthSuccess {
     signUpCallCount += 1
     lastSignUpEmail = email
     lastSignUpPassword = password
     lastSignUpDisplayName = displayName
+    lastSignUpLevel = level
     return try Self.unwrap(signUpResult, operation: "mock.auth.signup")
   }
 

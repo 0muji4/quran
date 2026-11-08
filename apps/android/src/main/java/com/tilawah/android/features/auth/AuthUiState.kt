@@ -6,8 +6,7 @@ import com.tilawah.android.app.AppError
 /**
  * Snapshot consumed by `SignInScreen` / `SignUpScreen`. `displayName`,
  * `level`, and `agreedToTerms` are only read by the sign-up form;
- * `level` and `agreedToTerms` are UI-only this pass (matches web —
- * neither is sent to the BFF).
+ * `agreedToTerms` is not sent to the BFF.
  */
 @Immutable
 data class AuthUiState(

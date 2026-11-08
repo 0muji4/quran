@@ -18,7 +18,6 @@ final class AuthViewModel: ObservableObject {
   @Published var password: String = "" { didSet { clearError() } }
   @Published var displayName: String = "" { didSet { clearError() } }
   @Published var isPasswordVisible: Bool = false
-  /// UI-only — collected but never sent to the BFF (see `PracticeLevel`).
   @Published var selectedLevel: PracticeLevel = .beginner
   /// Terms-of-Service gate on sign-up. Checking the box clears the error.
   @Published var agreedToTerms: Bool = false {
@@ -91,11 +90,11 @@ final class AuthViewModel: ObservableObject {
     let name = trimmedName.isEmpty ? nil : trimmedName
     do {
       let success = try await telemetry.measure("auth.signup") {
-        // `selectedLevel` is deliberately not passed — UI-only this pass.
         try await authService.signUp(
           email: email.trimmedForAuth,
           password: password,
-          displayName: name
+          displayName: name,
+          level: selectedLevel.rawValue
         )
       }
       session.completeAuthentication(success)

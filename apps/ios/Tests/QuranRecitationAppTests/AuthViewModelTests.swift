@@ -130,7 +130,7 @@ final class AuthViewModelTests: XCTestCase {
     XCTAssertFalse(viewModel.termsError)
   }
 
-  func test_signUp_success_trimsDisplayNameAndNeverSendsLevel() async {
+  func test_signUp_success_trimsDisplayNameAndSendsLevel() async {
     let service = MockAuthService(signUpResult: .success(.fixture()))
     let session = SessionStore(tokenStore: InMemoryTokenStore())
     let viewModel = AuthViewModel(authService: service, session: session, telemetry: TelemetrySpy())
@@ -145,8 +145,7 @@ final class AuthViewModelTests: XCTestCase {
     XCTAssertEqual(service.signUpCallCount, 1)
     XCTAssertEqual(service.lastSignUpEmail, "noor@example.com")
     XCTAssertEqual(service.lastSignUpDisplayName, .some("Noor"), "display name is trimmed")
-    // `AuthService.signUp` has no level parameter — the selection is
-    // structurally unable to reach the BFF this pass.
+    XCTAssertEqual(service.lastSignUpLevel, "advanced")
     XCTAssertEqual(session.currentUser?.id, "user-1")
   }
 

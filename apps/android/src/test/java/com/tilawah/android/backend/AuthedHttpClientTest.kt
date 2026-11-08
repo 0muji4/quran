@@ -226,6 +226,7 @@ class AuthedHttpClientTest {
             email: String,
             password: String,
             displayName: String?,
+            level: String?,
         ): AuthSessionPayload {
             error("signUp not used")
         }

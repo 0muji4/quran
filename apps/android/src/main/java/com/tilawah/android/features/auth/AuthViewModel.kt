@@ -123,6 +123,7 @@ class AuthViewModel(
                 email = current.email.trim(),
                 password = current.password,
                 displayName = current.displayName.trim().takeIf { it.isNotEmpty() },
+                level = current.level.wireValue,
             )
             authSession.save(payload)
             resetForm()

@@ -292,7 +292,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp never sends level or terms to the API`() = runTest {
+    fun `signUp sends the selected level`() = runTest {
         val api = FakeAuthApi(
             signUpResult = { _, _, displayName ->
                 AuthSessionPayload(
@@ -311,11 +311,9 @@ class AuthViewModelTest {
 
         viewModel.signUpInternal { }
 
-        // The fake API only records the three parameters the interface
-        // exposes; if level or terms ever leak into AuthApi.signUp this
-        // assertion has to change deliberately.
         assertEquals("noor@example.com", api.lastSignUpEmail)
         assertEquals("Noor", api.lastSignUpDisplayName)
+        assertEquals("intermediate", api.lastSignUpLevel)
     }
 
     private fun payload() = AuthSessionPayload(
@@ -355,6 +353,7 @@ class AuthViewModelTest {
         var lastSignInPassword: String? = null
         var lastSignUpEmail: String? = null
         var lastSignUpDisplayName: String? = null
+        var lastSignUpLevel: String? = null
         var lastGoogleIdToken: String? = null
 
         override suspend fun signIn(email: String, password: String): AuthSessionPayload {
@@ -367,9 +366,11 @@ class AuthViewModelTest {
             email: String,
             password: String,
             displayName: String?,
+            level: String?,
         ): AuthSessionPayload {
             lastSignUpEmail = email
             lastSignUpDisplayName = displayName
+            lastSignUpLevel = level
             return signUpResult(email, password, displayName)
         }
 
