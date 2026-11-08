@@ -46,15 +46,15 @@ import com.tilawah.android.designsystem.components.SecondaryButton
  * because those error strings are shared across screens and the Figma
  * wording is panel-specific.
  *
- * [error] is retained in the signature for the call site and future
- * per-error copy/telemetry; the current design renders one canonical
- * "recording too short" layout with both Replay + Record again actions.
+ * The scoring limit is the exception: moving closer to the mic or
+ * replaying cannot help, so it shows the [AppError] copy and only
+ * Record again.
  * TODO: branch copy on [error] when the design covers other failures
  * (network / scoring timeout).
  */
 @Composable
 fun PracticeErrorPanel(
-    @Suppress("UNUSED_PARAMETER") error: AppError,
+    error: AppError,
     onReplay: () -> Unit,
     onRecordAgain: () -> Unit,
     modifier: Modifier = Modifier,
@@ -62,6 +62,7 @@ fun PracticeErrorPanel(
     val colors = BrandTheme.colors
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
+    val limitReached = error == AppError.ScoringLimitReached
 
     BrandCard(modifier = modifier.fillMaxWidth(), style = BrandCardStyle.Paper) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.lg)) {
@@ -86,15 +87,19 @@ fun PracticeErrorPanel(
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = stringResource(R.string.practice_error_too_short_title),
+                        text = stringResource(
+                            if (limitReached) error.titleRes else R.string.practice_error_too_short_title,
+                        ),
                         style = typography.sectionTitle.copy(fontWeight = FontWeight.SemiBold),
                         color = colors.textPrimary,
                     )
-                    Text(
-                        text = stringResource(R.string.practice_error_too_short_subtitle),
-                        style = typography.caption,
-                        color = colors.textSecondary,
-                    )
+                    if (!limitReached) {
+                        Text(
+                            text = stringResource(R.string.practice_error_too_short_subtitle),
+                            style = typography.caption,
+                            color = colors.textSecondary,
+                        )
+                    }
                 }
             }
 
@@ -113,7 +118,9 @@ fun PracticeErrorPanel(
                 ) {
                     DashedMicBadge()
                     Text(
-                        text = stringResource(R.string.practice_error_too_short_caption),
+                        text = stringResource(
+                            if (limitReached) error.recoveryRes else R.string.practice_error_too_short_caption,
+                        ),
                         style = typography.caption,
                         color = colors.textSecondary,
                         textAlign = TextAlign.Center,
@@ -122,11 +129,13 @@ fun PracticeErrorPanel(
                         horizontalArrangement = Arrangement.spacedBy(spacing.md),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        SecondaryButton(
-                            label = stringResource(R.string.practice_error_replay),
-                            onClick = onReplay,
-                            fillWidth = false,
-                        )
+                        if (!limitReached) {
+                            SecondaryButton(
+                                label = stringResource(R.string.practice_error_replay),
+                                onClick = onReplay,
+                                fillWidth = false,
+                            )
+                        }
                         PrimaryButton(
                             label = stringResource(R.string.practice_error_record_again),
                             onClick = onRecordAgain,
