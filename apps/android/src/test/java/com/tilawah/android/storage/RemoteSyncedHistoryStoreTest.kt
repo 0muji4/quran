@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -57,7 +58,7 @@ class RemoteSyncedHistoryStoreTest {
     )
 
     private fun build(
-        cache: HistoryStore = InMemoryHistoryStore(),
+        cache: HistoryCache = InMemoryHistoryStore(),
         remote: HistoryRemoteClient = FakeRemote(),
         telemetry: SpyTelemetry = SpyTelemetry(),
     ): Triple<RemoteSyncedHistoryStore, HistoryStore, SpyTelemetry> {
@@ -151,6 +152,23 @@ class RemoteSyncedHistoryStoreTest {
         // Newest-first server order preserved after the oldest-first replay.
         val attempts = cache.recentAttempts().first()
         assertEquals(listOf("fresh-2", "fresh-1"), attempts.map { it.id })
+    }
+
+    @Test
+    fun `refreshFromRemote never shows readers an empty cache`() = runTest {
+        val cache = InMemoryHistoryStore()
+        cache.recordBestScore("1", 1, 80, Instant.parse("2026-01-04T12:00:00Z"))
+        val remote = FakeRemote(
+            bestScoresResult = { mapOf("1:1" to BestScoreEntry(90, Instant.parse("2026-01-05T12:00:00Z"))) },
+        )
+        val (store, _, _) = build(cache = cache, remote = remote)
+        val seen = mutableListOf<Int?>()
+        backgroundScope.launch(dispatcher) { store.bestScoreForSurah("1").collect { seen += it } }
+
+        store.refreshFromRemote()
+        advanceUntilIdle()
+
+        assertEquals(listOf<Int?>(80, 90), seen)
     }
 
     @Test

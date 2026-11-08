@@ -11,7 +11,7 @@ import java.time.Instant
  * Mirrors the production [DataStoreHistoryStore] semantics (50-attempt
  * cap, best-of replacement).
  */
-class InMemoryHistoryStore : HistoryStore {
+class InMemoryHistoryStore : HistoryCache {
 
     private val _last = MutableStateFlow<LastPracticed?>(null)
     private val _best = MutableStateFlow<Map<String, BestScoreEntry>>(emptyMap())
@@ -53,6 +53,12 @@ class InMemoryHistoryStore : HistoryStore {
     override suspend fun recordAttempt(attempt: Attempt) {
         _attempts.value = (listOf(attempt) + _attempts.value)
             .take(HistoryStoreConstants.HISTORY_LIMIT)
+    }
+
+    override suspend fun replaceAll(snapshot: HistorySnapshot) {
+        _last.value = snapshot.lastPracticed
+        _best.value = snapshot.bestScores
+        _attempts.value = snapshot.attempts.take(HistoryStoreConstants.HISTORY_LIMIT)
     }
 
     override suspend fun clear() {
