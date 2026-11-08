@@ -38,9 +38,7 @@ interface HistoryStore {
 
     /**
      * Drop every locally cached entry — last-practiced, best-scores,
-     * attempts. Called on sign-out (so the next sign-in starts clean)
-     * and by `RemoteSyncedHistoryStore.refreshFromRemote()` before
-     * replaying server state.
+     * attempts. Called on sign-out so the next sign-in starts clean.
      */
     suspend fun clear()
 
@@ -53,6 +51,21 @@ interface HistoryStore {
      * which concrete store sits underneath.
      */
     suspend fun refreshFromRemote() = Unit
+}
+
+/** The whole history that a refresh writes into the cache. */
+data class HistorySnapshot(
+    val lastPracticed: LastPracticed?,
+    /** Keyed by [bestScoreKey]. */
+    val bestScores: Map<String, BestScoreEntry>,
+    /** Newest first. */
+    val attempts: List<Attempt>,
+)
+
+/** A local [HistoryStore] whose whole content can be replaced at once. */
+interface HistoryCache : HistoryStore {
+    /** Readers see either the previous content or [snapshot], never an empty or partly written cache. */
+    suspend fun replaceAll(snapshot: HistorySnapshot)
 }
 
 /** Composite key matching the web `${surahId}:${ayahNumber}` convention. */

@@ -67,6 +67,7 @@ import com.tilawah.android.features.result.ResultDetailScreen
 import com.tilawah.android.features.result.ResultDetailViewModel
 import com.tilawah.android.storage.AuthSession
 import com.tilawah.android.storage.DataStoreHistoryStore
+import com.tilawah.android.storage.HistoryCache
 import com.tilawah.android.storage.HistoryStore
 import com.tilawah.android.storage.InMemoryAuthSession
 import com.tilawah.android.storage.InMemoryHistoryStore
@@ -113,7 +114,7 @@ private val DefaultPractice = LastPracticed(
 @Composable
 fun AppRoot(
     telemetry: Telemetry = NoOpTelemetry,
-    baseHistoryStore: HistoryStore = defaultHistoryStore(),
+    baseHistoryStore: HistoryCache = defaultHistoryStore(),
     authApi: AuthApi = remember { OkHttpAuthApi() },
     authSession: AuthSession = remember { InMemoryAuthSession() },
     tokenRefresher: TokenRefresher = remember(authApi, authSession) {
@@ -448,7 +449,7 @@ private fun ResultTabHost(
 }
 
 @Composable
-private fun defaultHistoryStore(): HistoryStore {
+private fun defaultHistoryStore(): HistoryCache {
     val context = LocalContext.current
     return remember(context) {
         try {

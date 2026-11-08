@@ -30,7 +30,7 @@ import java.time.Instant
 class DataStoreHistoryStore(
     private val dataStore: DataStore<Preferences>,
     private val json: Json = HistoryJson,
-) : HistoryStore {
+) : HistoryCache {
 
     private val lastKey = stringPreferencesKey(HistoryStoreConstants.Key.LAST_PRACTICED)
     private val bestKey = stringPreferencesKey(HistoryStoreConstants.Key.BEST_SCORES)
@@ -91,6 +91,18 @@ class DataStoreHistoryStore(
             prefs.remove(lastKey)
             prefs.remove(bestKey)
             prefs.remove(attemptsKey)
+        }
+    }
+
+    override suspend fun replaceAll(snapshot: HistorySnapshot) {
+        write { prefs ->
+            snapshot.lastPracticed
+                ?.let { prefs[lastKey] = json.encodeToString(it) }
+                ?: prefs.remove(lastKey)
+            prefs[bestKey] = json.encodeToString<Map<String, BestScoreEntry>>(snapshot.bestScores)
+            prefs[attemptsKey] = json.encodeToString(
+                AttemptLog(snapshot.attempts.take(HistoryStoreConstants.HISTORY_LIMIT)),
+            )
         }
     }
 

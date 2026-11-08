@@ -36,7 +36,7 @@ import java.time.Instant
  * Mirrors `apps/ios/Sources/QuranRecitationApp/Storage/RemoteSyncedHistoryStore.swift`.
  */
 class RemoteSyncedHistoryStore(
-    private val cache: HistoryStore,
+    private val cache: HistoryCache,
     private val remote: HistoryRemoteClient,
     private val telemetry: Telemetry,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
@@ -103,10 +103,11 @@ class RemoteSyncedHistoryStore(
     // MARK: - Remote refresh
 
     /**
-     * Pull every record from the BFF concurrently and rebuild the local
-     * cache. The previous cache is wiped first so a sign-in against a
-     * different account does not leave stragglers from the previous
-     * identity.
+     * Pull every record from the BFF concurrently and replace the local
+     * cache with it in one write. Nothing from the previous content
+     * survives, so a sign-in against a different account leaves no
+     * stragglers, and a screen reading during the refresh never sees an
+     * empty cache.
      *
      * Failures are reported through telemetry but otherwise swallowed:
      * a transient network blip leaves the cache as-is, and the next
@@ -122,17 +123,12 @@ class RemoteSyncedHistoryStore(
                 Triple(lastDef.await(), scoresDef.await(), attemptsDef.await())
             }
 
-            cache.clear()
-            last?.let { cache.setLastPracticed(it) }
-            for ((key, entry) in scores) {
-                val (surahId, ayahNumber) = parseBestScoreKey(key) ?: continue
-                cache.recordBestScore(surahId, ayahNumber, entry.score, entry.achievedAt)
-            }
-            // BFF returns attempts newest-first; cache.recordAttempt prepends,
-            // so replaying oldest-first preserves the server ordering.
-            for (attempt in attempts.asReversed()) {
-                cache.recordAttempt(attempt)
-            }
+            val bestScores = scores.entries.mapNotNull { (key, entry) ->
+                val (surahId, ayahNumber) = parseBestScoreKey(key) ?: return@mapNotNull null
+                bestScoreKey(surahId, ayahNumber) to entry
+            }.toMap()
+            // The BFF returns attempts newest-first, the order the cache keeps.
+            cache.replaceAll(HistorySnapshot(last, bestScores, attempts))
         } catch (cause: AppError) {
             telemetry.error(cause, context = mapOf("operation" to "history.refresh"))
         } catch (cause: Throwable) {
