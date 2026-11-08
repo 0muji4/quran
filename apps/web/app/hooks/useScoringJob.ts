@@ -7,11 +7,12 @@ import { RECORDING_MIME_TYPE } from './useRecorder';
 
 export type ScoringStage = 'idle' | 'uploading' | 'scoring' | 'done' | 'error';
 
+// No error text: a server action error reaches the browser only as React's
+// generic production message, so the screen picks its own wording.
 interface State {
   stage: ScoringStage;
   job: ScoringResult | null;
   segments: ScoreSegment[];
-  error: string | null;
 }
 
 interface SubmitInput {
@@ -26,8 +27,7 @@ export function useScoringJob() {
   const [state, setState] = useState<State>({
     stage: 'idle',
     job: null,
-    segments: [],
-    error: null
+    segments: []
   });
   const pollerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -42,7 +42,7 @@ export function useScoringJob() {
 
   const reset = useCallback(() => {
     clearPolling();
-    setState({ stage: 'idle', job: null, segments: [], error: null });
+    setState({ stage: 'idle', job: null, segments: [] });
   }, [clearPolling]);
 
   const startPolling = useCallback(
@@ -60,19 +60,15 @@ export function useScoringJob() {
                 ? 'done'
                 : result.status === 'FAILED'
                   ? 'error'
-                  : 'scoring',
-            error: result.status === 'FAILED' ? (result.verdict ?? 'Scoring failed') : prev.error
+                  : 'scoring'
           }));
           if (result.status === 'COMPLETED' || result.status === 'FAILED') {
             clearPolling();
           }
         } catch (err) {
           clearPolling();
-          setState((prev) => ({
-            ...prev,
-            stage: 'error',
-            error: err instanceof Error ? err.message : 'Polling failed'
-          }));
+          console.error('[scoring] polling failed', err);
+          setState((prev) => ({ ...prev, stage: 'error' }));
         }
       };
 
@@ -84,7 +80,7 @@ export function useScoringJob() {
 
   const submit = useCallback(
     async ({ blob, surahId, ayahNumber }: SubmitInput): Promise<ScoringResult | null> => {
-      setState({ stage: 'uploading', job: null, segments: [], error: null });
+      setState({ stage: 'uploading', job: null, segments: [] });
       try {
         const upload = await requestSignedUploadUrl({
           filename: `recording-${Date.now()}.webm`,
@@ -124,9 +120,7 @@ export function useScoringJob() {
           ...prev,
           job,
           segments: job.segments,
-          stage:
-            job.status === 'COMPLETED' ? 'done' : job.status === 'FAILED' ? 'error' : 'scoring',
-          error: job.status === 'FAILED' ? (job.verdict ?? 'Scoring failed') : prev.error
+          stage: job.status === 'COMPLETED' ? 'done' : job.status === 'FAILED' ? 'error' : 'scoring'
         }));
 
         if (job.status !== 'COMPLETED' && job.status !== 'FAILED') {
@@ -134,12 +128,8 @@ export function useScoringJob() {
         }
         return job;
       } catch (err) {
-        setState({
-          stage: 'error',
-          job: null,
-          segments: [],
-          error: err instanceof Error ? err.message : 'Unexpected error'
-        });
+        console.error('[scoring] submit failed', err);
+        setState({ stage: 'error', job: null, segments: [] });
         return null;
       }
     },
