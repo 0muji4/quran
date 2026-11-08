@@ -43,9 +43,8 @@ fun ProfileAuthHost(
     val reactivationNotice by profileViewModel.reactivationNotice.collectAsStateWithLifecycle()
     val streakDays by profileViewModel.streakDays.collectAsStateWithLifecycle()
     val activeSheet by profileViewModel.activeSheet.collectAsStateWithLifecycle()
-    // Saveable so a rotation keeps the auth screen open. A tab switch
-    // still resets it: the tab leaves the composition, and that is the
-    // way out of these screens, which have no back action.
+    // Saveable so a rotation keeps the auth screen open. Back closes it,
+    // and so does a tab switch, because the tab leaves the composition.
     var pendingMode: AuthMode? by rememberSaveable { mutableStateOf<AuthMode?>(null) }
 
     val authViewModel: AuthViewModel = viewModel(
@@ -171,6 +170,7 @@ fun ProfileAuthHost(
             viewModel = authViewModel,
             onAuthenticated = { /* session flow flips the branch */ },
             onCreateAccount = { pendingMode = AuthMode.SignUp },
+            onBack = { pendingMode = null },
             modifier = modifier,
         )
 

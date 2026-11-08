@@ -1,5 +1,6 @@
 package com.tilawah.android.features.auth
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,9 +47,11 @@ fun SignInScreen(
     viewModel: AuthViewModel,
     onAuthenticated: () -> Unit,
     onCreateAccount: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    BackHandler { if (!state.pending) onBack() }
     val copy = AuthCopyByMode.getValue(AuthMode.SignIn)
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing

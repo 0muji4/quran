@@ -1,5 +1,6 @@
 package com.tilawah.android.features.result
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ fun ResultDetailScreen(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler(onBack = onNavigateBack)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val teacherState by (viewModel.teacherPlayer?.state
         ?: kotlinx.coroutines.flow.MutableStateFlow(null as PlayerState?))
