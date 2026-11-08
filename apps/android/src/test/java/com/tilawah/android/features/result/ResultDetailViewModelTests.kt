@@ -32,7 +32,7 @@ class ResultDetailViewModelTests {
             jobId = "job-1",
             surahId = "1",
             ayahNumber = 1,
-            initial = completedScoringResult(jobId = "job-1", score = 0.81),
+            initial = completedScoringResult(jobId = "job-1", score = 81),
         )
         val loaded = viewModel.state.value as ResultDetailViewModel.UiState.Loaded
         assertEquals("job-1", loaded.result.jobId)
@@ -42,7 +42,7 @@ class ResultDetailViewModelTests {
     @Test
     fun `load fetches scoring job from backend`() = runTest(dispatcher) {
         val backend = MockBackend(
-            fetchScoringJobResult = { Result.success(completedScoringResult(it, score = 0.92)) },
+            fetchScoringJobResult = { Result.success(completedScoringResult(it, score = 92)) },
         )
         val viewModel = ResultDetailViewModel(
             backend = backend,
@@ -53,7 +53,7 @@ class ResultDetailViewModelTests {
         )
         dispatcher.scheduler.advanceUntilIdle()
         val loaded = viewModel.state.value as ResultDetailViewModel.UiState.Loaded
-        assertEquals(0.92, loaded.result.score!!, 0.0001)
+        assertEquals(92, loaded.result.score)
     }
 
     @Test

@@ -8,7 +8,7 @@ import SwiftUI
 /// computed by `verdictForScore(_:)` so iOS stays bit-for-bit aligned
 /// with the web `verdictForScore` band table.
 struct ScoreHero: View {
-  let score: Double?
+  let score: Int?
   let verdict: VerdictBand
 
   var body: some View {
@@ -32,7 +32,7 @@ struct ScoreHero: View {
     }
   }
 
-  private var clampedScore: Double {
+  private var clampedScore: Int {
     guard let score else { return 0 }
     return max(0, min(100, score))
   }
@@ -57,7 +57,7 @@ private struct VerdictBadge: View {
 }
 
 struct ScoreDial: View {
-  let score: Double
+  let score: Int
 
   private let lineWidth: CGFloat = 10
   private let size: CGFloat = 180
@@ -75,7 +75,7 @@ struct ScoreDial: View {
         .rotationEffect(.degrees(-90))
         .animation(.easeOut(duration: 0.6), value: score)
       VStack(spacing: 0) {
-        Text("\(Int(score))")
+        Text("\(score)")
           .font(Font.brand.scoreDisplay)
           .foregroundColor(Color.brand.textPrimary)
           .monospacedDigit()
@@ -86,10 +86,10 @@ struct ScoreDial: View {
     }
     .frame(width: size, height: size)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel(Text("Score \(Int(score)) of 100"))
+    .accessibilityLabel(Text("Score \(score) of 100"))
   }
 
   private var progress: CGFloat {
-    CGFloat(max(0, min(100, score)) / 100)
+    CGFloat(max(0, min(100, score))) / 100
   }
 }

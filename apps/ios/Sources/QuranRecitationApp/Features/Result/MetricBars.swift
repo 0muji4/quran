@@ -8,7 +8,7 @@ import SwiftUI
 /// feedback is missing by falling back to the overall score.
 struct MetricBars: View {
   let feedback: PronunciationFeedbackPayload?
-  let fallbackScore: Double?
+  let fallbackScore: Int?
 
   var body: some View {
     BrandCard {
@@ -44,14 +44,14 @@ struct MetricBars: View {
   }
 
   private var accuracy: Double {
-    feedback.map { $0.accuracy * 100 } ?? fallbackScore ?? 0
+    feedback.map { $0.accuracy * 100 } ?? fallbackScore.map(Double.init) ?? 0
   }
 
   private var characterMatch: Double {
-    feedback?.cer.map { (1 - $0) * 100 } ?? fallbackScore ?? 0
+    feedback?.cer.map { (1 - $0) * 100 } ?? fallbackScore.map(Double.init) ?? 0
   }
 
   private var completeness: Double {
-    feedback.map { $0.completeness * 100 } ?? fallbackScore ?? 0
+    feedback.map { $0.completeness * 100 } ?? fallbackScore.map(Double.init) ?? 0
   }
 }

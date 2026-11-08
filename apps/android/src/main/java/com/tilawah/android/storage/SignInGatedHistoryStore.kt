@@ -41,13 +41,13 @@ class SignInGatedHistoryStore(
     override fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?> =
         if (isSignedIn()) base.bestScore(surahId, ayahNumber) else flowOf(null)
 
-    override fun bestScoreForSurah(surahId: String): Flow<Double?> =
+    override fun bestScoreForSurah(surahId: String): Flow<Int?> =
         if (isSignedIn()) base.bestScoreForSurah(surahId) else flowOf(null)
 
     override suspend fun recordBestScore(
         surahId: String,
         ayahNumber: Int,
-        score: Double,
+        score: Int,
         achievedAt: Instant,
     ) {
         if (!isSignedIn()) return

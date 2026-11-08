@@ -185,7 +185,7 @@ class HttpHistoryRemoteClient(
         surahId = surahId,
         surahNameEn = surahNameEn,
         ayahNumber = ayahNumber,
-        score = score?.toInt(),
+        score = score,
         jobId = jobId,
         status = status,
         durationMs = durationMs,
@@ -205,11 +205,7 @@ class HttpHistoryRemoteClient(
 @Serializable
 internal data class AttemptsResponseBody(val attempts: List<Attempt>)
 
-/**
- * Wire shape for `POST /me/attempts`. `id` is omitted because the BFF
- * issues a fresh one; `score` is an `Int?` so the BFF's zod
- * `z.number().int()` validator accepts it without decimal noise.
- */
+/** Wire shape for `POST /me/attempts`. `id` is omitted because the BFF issues a fresh one. */
 @Serializable
 internal data class AttemptPostBody(
     val surahId: String,

@@ -8,7 +8,7 @@
     "practicedAt": "2026-05-09T12:30:00Z"
   },
   "bestScoreEntry": {
-    "score": 0.84,
+    "score": 84,
     "achievedAt": "2026-05-09T12:30:00Z"
   },
   "attempt": {
@@ -16,7 +16,7 @@
     "surahId": "1",
     "surahNameEn": "Al-Fatihah",
     "ayahNumber": 2,
-    "score": 0.84,
+    "score": 84,
     "jobId": "job-abc",
     "createdAt": "2026-05-09T12:30:00Z",
     "status": "COMPLETED",

@@ -50,7 +50,7 @@ class RemoteSyncedHistoryStoreTest {
         surahId = surahId,
         surahNameEn = "Al-Fatihah",
         ayahNumber = ayah,
-        score = 92.0,
+        score = 92,
         jobId = "j-$id",
         createdAt = Instant.parse("2026-01-04T12:00:00Z"),
         status = AttemptStatus.COMPLETED,
@@ -83,13 +83,13 @@ class RemoteSyncedHistoryStoreTest {
         val remote = FakeRemote()
         val (store, cache, _) = build(remote = remote)
 
-        store.recordBestScore("2", 255, 92.0, Instant.parse("2026-01-04T12:00:00Z"))
+        store.recordBestScore("2", 255, 92, Instant.parse("2026-01-04T12:00:00Z"))
         store.awaitPendingWrites()
 
-        assertEquals(92.0, cache.bestScore("2", 255).first()?.score!!, 0.0001)
+        assertEquals(92, cache.bestScore("2", 255).first()?.score)
         assertEquals(1, remote.bestScorePuts.size)
         assertEquals("2:255", remote.bestScorePuts[0].first)
-        assertEquals(92.0, remote.bestScorePuts[0].second.score, 0.0001)
+        assertEquals(92, remote.bestScorePuts[0].second.score)
     }
 
     @Test
@@ -133,8 +133,8 @@ class RemoteSyncedHistoryStoreTest {
             lastPracticedResult = { lastPracticed(surahId = "fresh", ayah = 5) },
             bestScoresResult = {
                 mapOf(
-                    "fresh:1" to BestScoreEntry(99.0, Instant.parse("2026-01-04T12:00:00Z")),
-                    "malformed-key" to BestScoreEntry(50.0, Instant.parse("2026-01-04T12:00:00Z")),
+                    "fresh:1" to BestScoreEntry(99, Instant.parse("2026-01-04T12:00:00Z")),
+                    "malformed-key" to BestScoreEntry(50, Instant.parse("2026-01-04T12:00:00Z")),
                 )
             },
             attemptsResult = { listOf(attempt(id = "fresh-2"), attempt(id = "fresh-1")) },
@@ -147,7 +147,7 @@ class RemoteSyncedHistoryStoreTest {
         // Last practiced replaced with the server view.
         assertEquals("fresh", cache.lastPracticed().first()?.surahId)
         // Best score loaded; malformed key silently skipped.
-        assertEquals(99.0, cache.bestScore("fresh", 1).first()?.score!!, 0.0001)
+        assertEquals(99, cache.bestScore("fresh", 1).first()?.score)
         // Newest-first server order preserved after the oldest-first replay.
         val attempts = cache.recentAttempts().first()
         assertEquals(listOf("fresh-2", "fresh-1"), attempts.map { it.id })

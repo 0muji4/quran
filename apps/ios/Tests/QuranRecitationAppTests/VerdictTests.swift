@@ -9,10 +9,6 @@ final class VerdictTests: XCTestCase {
     XCTAssertEqual(verdictForScore(nil).badge, "AWAITING SCORE")
   }
 
-  func test_nanScore_returnsAwaitingBadge() {
-    XCTAssertEqual(verdictForScore(.nan).badge, "AWAITING SCORE")
-  }
-
   func test_mastered_bandFor90AndAbove() {
     XCTAssertEqual(verdictForScore(90).badge, "MASHALLAH — MASTERED")
     XCTAssertEqual(verdictForScore(100).badge, "MASHALLAH — MASTERED")

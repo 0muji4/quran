@@ -52,9 +52,9 @@ class MockBackendTest {
 
     @Test
     fun `completedScoringResult builder produces a Completed status`() {
-        val result = completedScoringResult(jobId = "job-9", score = 0.91)
+        val result = completedScoringResult(jobId = "job-9", score = 91)
         assertEquals("job-9", result.jobId)
-        assertEquals(0.91, result.score!!, 0.0)
+        assertEquals(91, result.score)
         assertEquals(ScoringStatus.Completed, result.status)
     }
 

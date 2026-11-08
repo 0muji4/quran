@@ -84,11 +84,11 @@ final class RemoteSyncedHistoryStore: HistoryStore {
     cache.bestScore(surahId: surahId, ayahNumber: ayahNumber)
   }
 
-  func bestScore(forSurah surahId: String) -> Double? {
+  func bestScore(forSurah surahId: String) -> Int? {
     cache.bestScore(forSurah: surahId)
   }
 
-  func recordBestScore(surahId: String, ayahNumber: Int, score: Double, achievedAt: Date) {
+  func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
     cache.recordBestScore(
       surahId: surahId,
       ayahNumber: ayahNumber,

@@ -118,7 +118,7 @@ class HttpHistoryRemoteClientTest {
         val scores = client.bestScores()
 
         assertEquals(2, scores.size)
-        assertEquals(98.0, scores["1:1"]?.score!!, 0.0001)
+        assertEquals(98, scores["1:1"]?.score)
         assertEquals(Instant.parse("2026-01-05T08:30:00Z"), scores["2:255"]?.achievedAt)
     }
 
@@ -138,12 +138,12 @@ class HttpHistoryRemoteClientTest {
                 """{"score":98,"achievedAt":"2026-01-04T12:00:00Z"}""",
             ),
         )
-        val entry = BestScoreEntry(score = 95.0, achievedAt = Instant.parse("2026-01-04T12:00:00Z"))
+        val entry = BestScoreEntry(score = 95, achievedAt = Instant.parse("2026-01-04T12:00:00Z"))
 
         val result = client.putBestScore(surahId = "2", ayahNumber = 255, entry = entry)
 
         // Server MAX semantics may have returned a higher score than we sent.
-        assertEquals(98.0, result.score, 0.0001)
+        assertEquals(98, result.score)
         val recorded = server.takeRequest()
         assertEquals("PUT", recorded.method)
         assertTrue(recorded.path?.endsWith("me/best-scores/2:255") == true)
@@ -188,7 +188,7 @@ class HttpHistoryRemoteClientTest {
             surahId = "1",
             surahNameEn = "Al-Fatihah",
             ayahNumber = 1,
-            score = 92.0,
+            score = 92,
             jobId = "j1",
             createdAt = Instant.parse("2026-01-04T12:00:00Z"),
             status = AttemptStatus.COMPLETED,
@@ -202,7 +202,6 @@ class HttpHistoryRemoteClientTest {
         val recorded = server.takeRequest()
         assertEquals("POST", recorded.method)
         val body = recorded.body.readUtf8()
-        // zod expects integer; Double encoding would have produced "92.0".
         assertTrue("expected integer score in body, got $body", body.contains("\"score\":92"))
         assertTrue("client id must not leak", !body.contains("client-draft"))
     }
@@ -240,7 +239,7 @@ class HttpHistoryRemoteClientTest {
                         surahId = "1",
                         surahNameEn = "Al-Fatihah",
                         ayahNumber = 1,
-                        score = 101.0,
+                        score = 101,
                         jobId = "j",
                         createdAt = Instant.parse("2026-01-04T12:00:00Z"),
                         status = AttemptStatus.COMPLETED,

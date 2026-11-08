@@ -79,7 +79,8 @@ data class ScoreSegment(
 data class ScoringResultPayload(
     val jobId: String,
     val status: ScoringStatus,
-    val score: Double?,
+    /** Whole points out of 100, the scale history and the result screen use. */
+    val score: Int?,
     val verdict: String?,
     val segments: List<ScoreSegment>,
     val feedback: PronunciationFeedback?,

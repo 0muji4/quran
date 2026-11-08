@@ -48,7 +48,7 @@ class PracticeEndToEndTests {
                 SignedUploadPayload("https://upload.example/uploads/recording.m4a", "exp", "recording.m4a"),
             ),
             uploadResult = Result.success(Unit),
-            createScoringJobResult = Result.success(completedScoringResult(jobId = "job-1", score = 0.9)),
+            createScoringJobResult = Result.success(completedScoringResult(jobId = "job-1", score = 90)),
         )
         val telemetry = TelemetrySpy()
         val viewModel = newViewModel(backend, historyStore, telemetry)
@@ -59,15 +59,15 @@ class PracticeEndToEndTests {
         dispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.state.value as PracticeState.Done
-        assertEquals(0.9, state.score!!, 0.0001)
+        assertEquals(90, state.score)
         assertEquals("job-1", state.jobId)
         assertTrue(telemetry.eventNames.contains("practice.upload.completed.succeeded"))
         assertTrue(telemetry.eventNames.contains("practice.scoring.completed.succeeded"))
         val attempts = historyStore.recentAttempts().first()
         assertEquals(1, attempts.size)
         assertEquals("Al-Fatihah", attempts.first().surahNameEn)
-        assertEquals(0.9, attempts.first().score!!, 0.0001)
-        assertEquals(0.9, historyStore.bestScore("1", 1).first()?.score)
+        assertEquals(90, attempts.first().score)
+        assertEquals(90, historyStore.bestScore("1", 1).first()?.score)
         val last = historyStore.lastPracticed().first()!!
         assertEquals("Al-Fatihah", last.surahNameEn)
         assertEquals(7, last.ayahCount)

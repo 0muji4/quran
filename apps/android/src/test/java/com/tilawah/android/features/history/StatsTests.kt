@@ -24,9 +24,9 @@ class StatsTests {
     @Test
     fun `thisWeek counts only the trailing 7 day window`() {
         val attempts = listOf(
-            attempt("a", now.minus(Duration.ofDays(2)), 0.7),
-            attempt("b", now.minus(Duration.ofDays(6)), 0.6),
-            attempt("c", now.minus(Duration.ofDays(8)), 0.5),
+            attempt("a", now.minus(Duration.ofDays(2)), 70),
+            attempt("b", now.minus(Duration.ofDays(6)), 60),
+            attempt("c", now.minus(Duration.ofDays(8)), 50),
         )
         assertEquals(2, computeStats(attempts, now).thisWeekCount)
     }
@@ -34,13 +34,13 @@ class StatsTests {
     @Test
     fun `average and best fold completed scores`() {
         val attempts = listOf(
-            attempt("a", now, 0.8),
-            attempt("b", now, 0.5, AttemptStatus.FAILED),
-            attempt("c", now, 0.95),
+            attempt("a", now, 80),
+            attempt("b", now, 50, AttemptStatus.FAILED),
+            attempt("c", now, 95),
         )
         val stats = computeStats(attempts, now)
         assertEquals(87.5, stats.averageValue!!, 0.001)
-        assertEquals(95.0, stats.bestValue!!, 0.001)
+        assertEquals(95, stats.bestValue)
     }
 
     @Test
@@ -57,7 +57,7 @@ class StatsTests {
     private fun attempt(
         id: String,
         createdAt: Instant,
-        score: Double = 0.7,
+        score: Int = 70,
         status: AttemptStatus = AttemptStatus.COMPLETED,
     ) = Attempt(
         id = id,

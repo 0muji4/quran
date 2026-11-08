@@ -112,12 +112,12 @@ private fun ScoreLabel(attempt: Attempt) {
         return
     }
 
-    val scoreValue = attempt.score * 100
+    val scoreValue = attempt.score
     val color = if (scoreValue < LOW_SCORE_THRESHOLD) colors.accent else colors.primary
     Text(
         text = buildAnnotatedString {
             withStyle(typography.sectionTitle.toSpanStyle().copy(color = color)) {
-                append("%.0f".format(scoreValue))
+                append(scoreValue.toString())
             }
             withStyle(SpanStyle(color = colors.textSecondary, fontSize = 12.sp)) {
                 append(" /100")

@@ -26,6 +26,7 @@ import com.tilawah.android.graphql.type.ScoringStatus as GqlScoringStatus
 import com.tilawah.android.graphql.type.SignedUploadInput
 import java.io.File
 import java.io.IOException
+import kotlin.math.roundToInt
 
 /**
  * Production [QuranBackend] backed by Apollo Kotlin (GraphQL) plus a
@@ -205,11 +206,14 @@ class ApolloQuranBackend(
         com.apollographql.apollo.api.ApolloResponse<D>.dataOrThrow(operation: String): D =
         data ?: throw (exception?.cause as? AppError ?: AppError.BackendUnavailable(operation, exception))
 
+    // GraphQL scores are 0..1 fractions.
+    private fun Double.toScoreOutOf100(): Int = (this * 100).roundToInt()
+
     private fun CreateScoringJobMutation.CreateScoringJob.toPayload(): ScoringResultPayload =
         ScoringResultPayload(
             jobId = jobId,
             status = status.toFacade(),
-            score = score,
+            score = score?.toScoreOutOf100(),
             verdict = verdict,
             segments = segments.map { ScoreSegment(it.label, it.score) },
             feedback = feedback?.let { f ->
@@ -232,7 +236,7 @@ class ApolloQuranBackend(
         ScoringResultPayload(
             jobId = jobId,
             status = status.toFacade(),
-            score = score,
+            score = score?.toScoreOutOf100(),
             verdict = verdict,
             segments = segments.map { ScoreSegment(it.label, it.score) },
             feedback = feedback?.let { f ->

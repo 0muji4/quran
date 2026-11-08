@@ -23,12 +23,12 @@ interface HistoryStore {
 
     fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?>
 
-    fun bestScoreForSurah(surahId: String): Flow<Double?>
+    fun bestScoreForSurah(surahId: String): Flow<Int?>
 
     suspend fun recordBestScore(
         surahId: String,
         ayahNumber: Int,
-        score: Double,
+        score: Int,
         achievedAt: Instant = Instant.now(),
     )
 

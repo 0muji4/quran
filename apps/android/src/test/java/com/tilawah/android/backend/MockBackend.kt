@@ -89,7 +89,7 @@ class MockBackend(
 /** Convenience builder for a "completed" ScoringResult fixture. */
 fun completedScoringResult(
     jobId: String = "job-1",
-    score: Double = 0.84,
+    score: Int = 84,
 ): ScoringResultPayload = ScoringResultPayload(
     jobId = jobId,
     status = ScoringStatus.Completed,

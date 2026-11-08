@@ -46,7 +46,7 @@ class DataStoreHistoryStore(
     override fun bestScore(surahId: String, ayahNumber: Int): Flow<BestScoreEntry?> =
         bestScoresFlow().map { it[bestScoreKey(surahId, ayahNumber)] }
 
-    override fun bestScoreForSurah(surahId: String): Flow<Double?> =
+    override fun bestScoreForSurah(surahId: String): Flow<Int?> =
         bestScoresFlow().map { all ->
             val prefix = "$surahId:"
             all.entries
@@ -57,7 +57,7 @@ class DataStoreHistoryStore(
     override suspend fun recordBestScore(
         surahId: String,
         ayahNumber: Int,
-        score: Double,
+        score: Int,
         achievedAt: Instant,
     ) {
         write { prefs ->

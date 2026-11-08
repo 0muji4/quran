@@ -33,9 +33,9 @@ struct AttemptRow: View {
   private var scoreLabel: some View {
     if let score = attempt.score {
       HStack(spacing: 0) {
-        Text("\(Int(score))")
+        Text("\(score)")
           .font(.system(size: 19, weight: .bold, design: .serif))
-          .foregroundColor(Self.scoreColor(Int(score)))
+          .foregroundColor(Self.scoreColor(score))
         Text("/100")
           .font(Font.brand.caption)
           .foregroundColor(Color.brand.textSecondary)

@@ -130,7 +130,7 @@ struct LibraryView: View {
           ForEach(visible) { surah in
             SurahRow(
               surah: surah,
-              bestScore: historyStore.bestScore(forSurah: surah.id).map { Int($0) }
+              bestScore: historyStore.bestScore(forSurah: surah.id)
             )
             .onTapGesture {
               viewModel.surahOpened(surah)
