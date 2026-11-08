@@ -5,6 +5,7 @@ import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.AuthSessionPayload
 import com.tilawah.android.backend.AuthUser
 import com.tilawah.android.backend.RefreshedTokens
+import com.tilawah.android.storage.AuthSession
 import com.tilawah.android.storage.InMemoryAuthSession
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -39,8 +40,66 @@ class AuthViewModelTest {
         assertTrue(success)
         assertFalse(viewModel.state.value.pending)
         assertNull(viewModel.state.value.error)
-        // Trimmed email lands at the API; original UI state unchanged.
+        // The API receives the trimmed email.
         assertEquals("noor@example.com", api.lastSignInEmail)
+    }
+
+    @Test
+    fun `signIn success resets the form before signalling success`() = runTest {
+        val api = FakeAuthApi(signInResult = { _, _ -> payload() })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+
+        var stateAtSuccess: AuthUiState? = null
+        viewModel.signInInternal { stateAtSuccess = viewModel.state.value }
+
+        assertEquals(AuthUiState(), stateAtSuccess)
+        assertEquals(AuthUiState(), viewModel.state.value)
+    }
+
+    @Test
+    fun `signIn works again on the reset form after a sign-out`() = runTest {
+        val api = FakeAuthApi(signInResult = { _, _ -> payload() })
+        val session = InMemoryAuthSession()
+        val viewModel = AuthViewModel(authApi = api, authSession = session)
+        viewModel.fillForm()
+        viewModel.signInInternal { }
+        session.clear()
+
+        viewModel.setEmail("second@example.com")
+        viewModel.setPassword("second-password")
+        var success = false
+        viewModel.signInInternal { success = true }
+
+        assertTrue(success)
+        assertEquals("second@example.com", api.lastSignInEmail)
+        assertEquals("second-password", api.lastSignInPassword)
+    }
+
+    @Test
+    fun `signIn failure keeps the typed input and shows the error`() = runTest {
+        val api = FakeAuthApi(signInResult = { _, _ -> throw AppError.InvalidCredentials })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+        val typed = viewModel.state.value
+
+        viewModel.signInInternal { }
+
+        assertEquals(typed.copy(error = AppError.InvalidCredentials), viewModel.state.value)
+    }
+
+    @Test
+    fun `signIn keeps the typed input when the session cannot be saved`() = runTest {
+        val api = FakeAuthApi(signInResult = { _, _ -> payload() })
+        val viewModel = AuthViewModel(authApi = api, authSession = FailingSaveAuthSession())
+        viewModel.fillForm()
+        val typed = viewModel.state.value
+
+        var success = false
+        viewModel.signInInternal { success = true }
+
+        assertFalse(success)
+        assertEquals(typed.copy(error = AppError.StorageUnavailable), viewModel.state.value)
     }
 
     @Test
@@ -124,6 +183,46 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `signInWithGoogle success resets a partly typed form`() = runTest {
+        val api = FakeAuthApi(googleResult = { _ -> payload() })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+
+        var stateAtSuccess: AuthUiState? = null
+        viewModel.signInWithGoogleInternal(
+            getIdToken = { "id-token" },
+            onSuccess = { stateAtSuccess = viewModel.state.value },
+        )
+
+        assertEquals(AuthUiState(), stateAtSuccess)
+        assertEquals(AuthUiState(), viewModel.state.value)
+    }
+
+    @Test
+    fun `signInWithGoogle cancellation keeps the typed input`() = runTest {
+        val api = FakeAuthApi(googleResult = { _ -> error("should not be called") })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+        val typed = viewModel.state.value
+
+        viewModel.signInWithGoogleInternal(getIdToken = { null }, onSuccess = { })
+
+        assertEquals(typed, viewModel.state.value)
+    }
+
+    @Test
+    fun `signInWithGoogle failure keeps the typed input and shows the error`() = runTest {
+        val api = FakeAuthApi(googleResult = { _ -> throw AppError.GoogleLinkRequired })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+        val typed = viewModel.state.value
+
+        viewModel.signInWithGoogleInternal(getIdToken = { "id-token" }, onSuccess = { })
+
+        assertEquals(typed.copy(error = AppError.GoogleLinkRequired), viewModel.state.value)
+    }
+
+    @Test
     fun `signInWithGoogle 409 surfaces link-required error and skips session save`() = runTest {
         val api = FakeAuthApi(googleResult = { _ -> throw AppError.GoogleLinkRequired })
         val session = InMemoryAuthSession()
@@ -150,6 +249,31 @@ class AuthViewModelTest {
         assertFalse(success)
         assertTrue(viewModel.state.value.termsError)
         assertNull(api.lastSignUpEmail)
+    }
+
+    @Test
+    fun `signUp success resets the form before signalling success`() = runTest {
+        val api = FakeAuthApi(signUpResult = { _, _, _ -> payload() })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+
+        var stateAtSuccess: AuthUiState? = null
+        viewModel.signUpInternal { stateAtSuccess = viewModel.state.value }
+
+        assertEquals(AuthUiState(), stateAtSuccess)
+        assertEquals(AuthUiState(), viewModel.state.value)
+    }
+
+    @Test
+    fun `signUp failure keeps the typed input and shows the error`() = runTest {
+        val api = FakeAuthApi(signUpResult = { _, _, _ -> throw AppError.EmailInUse })
+        val viewModel = AuthViewModel(authApi = api, authSession = InMemoryAuthSession())
+        viewModel.fillForm()
+        val typed = viewModel.state.value
+
+        viewModel.signUpInternal { }
+
+        assertEquals(typed.copy(error = AppError.EmailInUse), viewModel.state.value)
     }
 
     @Test
@@ -194,6 +318,27 @@ class AuthViewModelTest {
         assertEquals("Noor", api.lastSignUpDisplayName)
     }
 
+    private fun payload() = AuthSessionPayload(
+        accessToken = "a",
+        refreshToken = "r",
+        user = AuthUser("u-1", "noor@example.com", "Noor"),
+    )
+
+    /** Sets every field away from its default, as a user would on the sign-up form. */
+    private fun AuthViewModel.fillForm() {
+        setEmail("noor@example.com")
+        setPassword("correct-horse")
+        setDisplayName("Noor")
+        setLevel(Level.Advanced)
+        setAgreedToTerms(true)
+    }
+
+    private class FailingSaveAuthSession : AuthSession by InMemoryAuthSession() {
+        override suspend fun save(payload: AuthSessionPayload) {
+            throw AppError.StorageUnavailable
+        }
+    }
+
     private class FakeAuthApi(
         val signInResult: (String, String) -> AuthSessionPayload = { _, _ ->
             error("signIn not configured")
@@ -207,12 +352,14 @@ class AuthViewModelTest {
         val nonce: String = "nonce-1",
     ) : AuthApi {
         var lastSignInEmail: String? = null
+        var lastSignInPassword: String? = null
         var lastSignUpEmail: String? = null
         var lastSignUpDisplayName: String? = null
         var lastGoogleIdToken: String? = null
 
         override suspend fun signIn(email: String, password: String): AuthSessionPayload {
             lastSignInEmail = email
+            lastSignInPassword = password
             return signInResult(email, password)
         }
 
