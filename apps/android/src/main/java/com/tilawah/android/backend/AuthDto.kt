@@ -19,6 +19,7 @@ internal data class SignUpRequest(
     val email: String,
     val password: String,
     val displayName: String? = null,
+    val level: String? = null,
 )
 
 @Serializable

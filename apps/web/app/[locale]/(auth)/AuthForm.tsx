@@ -153,8 +153,7 @@ const footerClass = css({
 // The interactive island of the auth screen. AuthScreen renders the
 // eyebrow / title / lede around this; here we own the form fields, the
 // sign-up terms gate, and the existing BFF auth flow (server action →
-// cache migration → redirect). The BFF payload is unchanged: level is
-// UI-only this pass and is never read here.
+// cache migration → redirect).
 export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

@@ -37,7 +37,6 @@ const signupSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8).max(128),
     displayName: z.string().min(1).max(64).optional(),
-    // The web sign-up form collects this; iOS does not send it today.
     // Persisted under users.preferences->'level' for the profile page.
     level: z.enum(VALID_LEVELS).optional()
   })

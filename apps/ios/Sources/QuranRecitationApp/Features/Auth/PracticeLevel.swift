@@ -2,10 +2,7 @@ import SwiftUI
 
 /// Self-reported recitation experience, chosen on the sign-up screen.
 /// Mirrors the web `LEVEL_OPTIONS` (`apps/web/app/(auth)/copy.ts`).
-///
-/// UI-only this pass: the selection rides in the form but is **not**
-/// sent to the BFF — persistence lands with a later DesignDoc, same as
-/// the web client.
+/// The raw value is what the BFF stores.
 enum PracticeLevel: String, CaseIterable, Hashable {
   case beginner
   case intermediate

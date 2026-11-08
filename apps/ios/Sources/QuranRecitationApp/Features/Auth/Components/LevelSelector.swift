@@ -6,8 +6,7 @@ import SwiftUI
 /// `docs/design/iOS _ Sign up`.
 ///
 /// Presentation-only, driven by a `@Binding` selection — the same
-/// shape as `ChipFilter`. UI-only this pass: the value is collected
-/// but not sent to the BFF (see `PracticeLevel`).
+/// shape as `ChipFilter`.
 struct LevelSelector: View {
   @Binding var selection: PracticeLevel
 

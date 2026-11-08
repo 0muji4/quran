@@ -27,6 +27,7 @@ interface AuthApi {
         email: String,
         password: String,
         displayName: String?,
+        level: String?,
     ): AuthSessionPayload
 
     /**
@@ -75,11 +76,12 @@ class OkHttpAuthApi(
         email: String,
         password: String,
         displayName: String?,
+        level: String?,
     ): AuthSessionPayload = post(
         path = "auth/signup",
         body = json.encodeToString(
             SignUpRequest.serializer(),
-            SignUpRequest(email = email, password = password, displayName = displayName),
+            SignUpRequest(email = email, password = password, displayName = displayName, level = level),
         ),
         operation = "signUp",
     )
