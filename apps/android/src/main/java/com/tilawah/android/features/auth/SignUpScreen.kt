@@ -1,5 +1,6 @@
 package com.tilawah.android.features.auth
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,6 +56,7 @@ fun SignUpScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    BackHandler { if (!state.pending) onSignIn() }
     val copy = AuthCopyByMode.getValue(AuthMode.SignUp)
     val colors = BrandTheme.colors
     val spacing = BrandTheme.spacing

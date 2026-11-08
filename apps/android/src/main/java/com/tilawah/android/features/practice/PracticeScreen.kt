@@ -1,5 +1,6 @@
 package com.tilawah.android.features.practice
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ fun PracticeScreen(
     hasMicPermission: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler(onBack = onNavigateBack)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val ayah by viewModel.ayah.collectAsStateWithLifecycle()
     val surah by viewModel.surah.collectAsStateWithLifecycle()

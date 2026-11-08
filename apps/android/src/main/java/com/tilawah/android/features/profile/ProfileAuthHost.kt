@@ -171,6 +171,7 @@ fun ProfileAuthHost(
             viewModel = authViewModel,
             onAuthenticated = { /* session flow flips the branch */ },
             onCreateAccount = { pendingMode = AuthMode.SignUp },
+            onBack = { pendingMode = null },
             modifier = modifier,
         )
 
