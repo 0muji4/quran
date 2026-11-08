@@ -38,25 +38,22 @@ import com.tilawah.android.designsystem.components.BrandCardStyle
  * the raw 0–100 numeral (no percent sign) above an "OF 100" caption, and
  * an encouragement subtitle. Mirrors `docs/design/Android _ Result detail`.
  *
- * Score is a 0..1 fraction; null renders as a single dash.
+ * Score is whole points out of 100; null renders as a single dash.
  */
 @Composable
 fun ScoreHero(
-    score: Double?,
+    score: Int?,
     modifier: Modifier = Modifier,
 ) {
     val colors = BrandTheme.colors
     val typography = BrandTheme.typography
     val spacing = BrandTheme.spacing
 
-    // The dial shows the raw 0–100 score; the percent form is reserved for a11y.
-    // Round (not truncate) so 0.87 reads as "87" rather than "86".
-    val scoreValue = score?.let { Math.round(it * 100).toInt() }
-    val scoreText = scoreValue?.toString() ?: "—"
-    val verdictBand = verdictBandForScore(scoreValue)
+    val scoreText = score?.toString() ?: "—"
+    val verdictBand = verdictBandForScore(score)
     val verdictBadge = stringResource(verdictBand.badgeRes)
-    val a11y = if (scoreValue != null) {
-        "Recitation score $scoreValue out of 100, $verdictBadge"
+    val a11y = if (score != null) {
+        "Recitation score $score out of 100, $verdictBadge"
     } else {
         "Recitation score not available"
     }
@@ -112,8 +109,8 @@ fun ScoreHero(
 }
 
 @Composable
-private fun ScoreArc(score: Double?, baseColor: Color, scoreColor: Color) {
-    val sweep = ((score ?: 0.0).coerceIn(0.0, 1.0) * 360.0).toFloat()
+private fun ScoreArc(score: Int?, baseColor: Color, scoreColor: Color) {
+    val sweep = (score ?: 0).coerceIn(0, 100) * 360f / 100f
     Canvas(modifier = Modifier.size(180.dp)) {
         val stroke = 18f
         val pad = stroke / 2f

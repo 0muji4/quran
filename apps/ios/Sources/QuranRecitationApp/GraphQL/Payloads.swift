@@ -92,7 +92,8 @@ public struct PronunciationFeedbackPayload: Hashable {
 public struct ScoringResultPayload {
   public let jobId: String
   public let status: ScoringStatus
-  public let score: Double?
+  /// Whole points out of 100, the scale history and the result screen use.
+  public let score: Int?
   public let verdict: String?
   public let segments: [ScoreSegmentPayload]
   public let feedback: PronunciationFeedbackPayload?
@@ -100,7 +101,7 @@ public struct ScoringResultPayload {
   init(from data: CreateScoringJobMutation.Data.CreateScoringJob) {
     jobId = data.jobId
     status = data.status.value ?? .failed
-    score = data.score
+    score = Self.scoreOutOf100(data.score)
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }
     feedback = data.feedback.map { fb in
@@ -122,7 +123,7 @@ public struct ScoringResultPayload {
   init(from data: ScoringJobQuery.Data.ScoringJob) {
     jobId = data.jobId
     status = data.status.value ?? .failed
-    score = data.score
+    score = Self.scoreOutOf100(data.score)
     verdict = data.verdict
     segments = data.segments.map { ScoreSegmentPayload(from: $0) }
     feedback = data.feedback.map { fb in
@@ -139,6 +140,12 @@ public struct ScoringResultPayload {
         }
       )
     }
+  }
+
+  /// GraphQL scores are 0…1 fractions.
+  static func scoreOutOf100(_ raw: Double?) -> Int? {
+    guard let raw, !raw.isNaN else { return nil }
+    return Int((raw * 100).rounded())
   }
 }
 

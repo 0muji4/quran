@@ -19,7 +19,7 @@ enum LibraryRoute: Hashable {}
 /// `NavigationPath` after a scoring job reaches a terminal status so
 /// the result detail screen can pop back into Practice cleanly.
 enum PracticeRoute: Hashable {
-  case result(jobId: String, surahId: String, ayahNumber: Int, score: Double?)
+  case result(jobId: String, surahId: String, ayahNumber: Int, score: Int?)
 }
 
 /// History tab destinations.

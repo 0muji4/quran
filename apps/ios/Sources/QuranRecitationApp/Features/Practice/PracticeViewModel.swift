@@ -385,7 +385,7 @@ final class PracticeViewModel: ObservableObject {
 
   private func recordAttempt(
     jobId: String,
-    score: Double?,
+    score: Int?,
     durationMs: Int,
     status: AttemptStatus
   ) {

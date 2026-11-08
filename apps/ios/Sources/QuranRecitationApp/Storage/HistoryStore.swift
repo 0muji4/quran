@@ -16,7 +16,7 @@ struct LastPracticed: Codable, Equatable {
 }
 
 struct BestScoreEntry: Codable, Equatable {
-  let score: Double
+  let score: Int
   let achievedAt: Date
 }
 
@@ -30,7 +30,7 @@ struct Attempt: Codable, Equatable, Identifiable {
   let surahId: String
   let surahNameEn: String
   let ayahNumber: Int
-  let score: Double?
+  let score: Int?
   let jobId: String
   let createdAt: Date
   let status: AttemptStatus
@@ -48,8 +48,8 @@ protocol HistoryStore {
   func setLastPracticed(_ entry: LastPracticed)
 
   func bestScore(surahId: String, ayahNumber: Int) -> BestScoreEntry?
-  func bestScore(forSurah surahId: String) -> Double?
-  func recordBestScore(surahId: String, ayahNumber: Int, score: Double, achievedAt: Date)
+  func bestScore(forSurah surahId: String) -> Int?
+  func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date)
 
   func recentAttempts(limit: Int) -> [Attempt]
   func recordAttempt(_ attempt: Attempt)

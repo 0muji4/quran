@@ -31,7 +31,7 @@ data class LastPracticed(
 
 @Serializable
 data class BestScoreEntry(
-    val score: Double,
+    val score: Int,
     @Serializable(with = InstantIsoSerializer::class)
     val achievedAt: Instant,
 )
@@ -48,7 +48,7 @@ data class Attempt(
     val surahId: String,
     val surahNameEn: String,
     val ayahNumber: Int,
-    val score: Double?,
+    val score: Int?,
     val jobId: String,
     @Serializable(with = InstantIsoSerializer::class)
     val createdAt: Instant,

@@ -22,7 +22,7 @@ sealed interface PracticeState {
 
     data class Analysing(val step: AnalysingStep) : PracticeState
 
-    data class Done(val score: Double?, val jobId: String) : PracticeState
+    data class Done(val score: Int?, val jobId: String) : PracticeState
 
     data class Error(val error: AppError) : PracticeState
 

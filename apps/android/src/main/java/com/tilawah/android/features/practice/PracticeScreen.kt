@@ -256,7 +256,7 @@ private fun LongSurahProgress(active: Int, ayahCount: Int) {
 
 @Composable
 private fun DonePanel(
-    score: Double?,
+    score: Int?,
     onViewResult: () -> Unit,
     onRecordAgain: () -> Unit,
 ) {
@@ -275,7 +275,7 @@ private fun DonePanel(
         )
         score?.let { s ->
             Text(
-                text = "%.0f%%".format(s * 100),
+                text = "$s%",
                 style = typography.scoreDisplay,
                 color = colors.success,
             )

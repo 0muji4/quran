@@ -68,7 +68,7 @@ fun StatsGrid(
         ) {
             StatTile(
                 title = stringResource(R.string.history_stats_best),
-                value = stats.bestValue?.let { "%.0f".format(it) } ?: "—",
+                value = stats.bestValue?.toString() ?: "—",
                 unit = stats.bestSurahName ?: stringResource(R.string.history_stats_best_unit_empty),
                 modifier = Modifier.weight(1f),
             )
@@ -131,7 +131,7 @@ internal data class HistoryStats(
     /** Mean score on a 0–100 scale (bare number, no percent sign). */
     val averageValue: Double?,
     /** Best score on a 0–100 scale (bare number, no percent sign). */
-    val bestValue: Double?,
+    val bestValue: Int?,
     /** English surah name of the best-scoring attempt, for the Best tile subtitle. */
     val bestSurahName: String?,
     val streakDays: Int,
@@ -145,9 +145,9 @@ internal fun computeStats(attempts: List<Attempt>, now: Instant): HistoryStats {
     val sevenDaysAgo = now.minus(Duration.ofDays(7))
     val thisWeek = attempts.count { !it.createdAt.isBefore(sevenDaysAgo) }
     val completed = attempts.filter { it.status == AttemptStatus.COMPLETED && it.score != null }
-    val avg = completed.map { it.score!! }.takeIf { it.isNotEmpty() }?.average()?.times(100)
+    val avg = completed.map { it.score!! }.takeIf { it.isNotEmpty() }?.average()
     val bestAttempt = completed.maxByOrNull { it.score!! }
-    val best = bestAttempt?.score?.times(100)
+    val best = bestAttempt?.score
     val bestName = bestAttempt?.surahNameEn
     val streak = computeStreak(attempts.map { it.createdAt }, zone, now)
     return HistoryStats(thisWeek, avg, best, bestName, streak)

@@ -25,7 +25,7 @@ class SignInGatedHistoryStoreTest {
         surahId = "1",
         surahNameEn = "Al-Fatihah",
         ayahNumber = 1,
-        score = 92.0,
+        score = 92,
         jobId = "j-$id",
         createdAt = Instant.parse("2026-01-04T12:00:00Z"),
         status = AttemptStatus.COMPLETED,
@@ -35,7 +35,7 @@ class SignInGatedHistoryStoreTest {
     fun `reads return empty when signed out`() = runTest {
         val base = InMemoryHistoryStore()
         base.setLastPracticed(lastPracticed())
-        base.recordBestScore("1", 1, 90.0, Instant.parse("2026-01-04T12:00:00Z"))
+        base.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         base.recordAttempt(attempt())
         val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
 
@@ -49,13 +49,13 @@ class SignInGatedHistoryStoreTest {
     fun `reads pass through when signed in`() = runTest {
         val base = InMemoryHistoryStore()
         base.setLastPracticed(lastPracticed())
-        base.recordBestScore("1", 1, 90.0, Instant.parse("2026-01-04T12:00:00Z"))
+        base.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         base.recordAttempt(attempt())
         val gated = SignInGatedHistoryStore(base, isSignedIn = { true })
 
         assertEquals(lastPracticed(), gated.lastPracticed().first())
-        assertEquals(90.0, gated.bestScore("1", 1).first()?.score!!, 0.0001)
-        assertEquals(90.0, gated.bestScoreForSurah("1").first()!!, 0.0001)
+        assertEquals(90, gated.bestScore("1", 1).first()?.score)
+        assertEquals(90, gated.bestScoreForSurah("1").first())
         assertEquals(1, gated.recentAttempts().first().size)
     }
 
@@ -65,7 +65,7 @@ class SignInGatedHistoryStoreTest {
         val gated = SignInGatedHistoryStore(base, isSignedIn = { false })
 
         gated.setLastPracticed(lastPracticed())
-        gated.recordBestScore("1", 1, 90.0, Instant.parse("2026-01-04T12:00:00Z"))
+        gated.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         gated.recordAttempt(attempt())
 
         assertNull(base.lastPracticed().first())
@@ -79,7 +79,7 @@ class SignInGatedHistoryStoreTest {
         val gated = SignInGatedHistoryStore(base, isSignedIn = { true })
 
         gated.setLastPracticed(lastPracticed())
-        gated.recordBestScore("1", 1, 90.0, Instant.parse("2026-01-04T12:00:00Z"))
+        gated.recordBestScore("1", 1, 90, Instant.parse("2026-01-04T12:00:00Z"))
         gated.recordAttempt(attempt())
 
         assertEquals(lastPracticed(), base.lastPracticed().first())

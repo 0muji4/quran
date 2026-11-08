@@ -36,7 +36,7 @@ final class UserDefaultsHistoryStore: HistoryStore {
     return all[bestKey(surahId, ayahNumber)]
   }
 
-  func bestScore(forSurah surahId: String) -> Double? {
+  func bestScore(forSurah surahId: String) -> Int? {
     let all = bestScoresMap()
     let prefix = "\(surahId):"
     return all
@@ -45,7 +45,7 @@ final class UserDefaultsHistoryStore: HistoryStore {
       .max()
   }
 
-  func recordBestScore(surahId: String, ayahNumber: Int, score: Double, achievedAt: Date) {
+  func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
     var all = bestScoresMap()
     let key = bestKey(surahId, ayahNumber)
     if let existing = all[key], existing.score >= score { return }

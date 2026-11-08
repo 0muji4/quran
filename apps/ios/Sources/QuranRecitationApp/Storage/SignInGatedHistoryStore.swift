@@ -47,12 +47,12 @@ final class SignInGatedHistoryStore: HistoryStore {
     return base.bestScore(surahId: surahId, ayahNumber: ayahNumber)
   }
 
-  func bestScore(forSurah surahId: String) -> Double? {
+  func bestScore(forSurah surahId: String) -> Int? {
     guard isSignedIn() else { return nil }
     return base.bestScore(forSurah: surahId)
   }
 
-  func recordBestScore(surahId: String, ayahNumber: Int, score: Double, achievedAt: Date) {
+  func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
     guard isSignedIn() else { return }
     base.recordBestScore(surahId: surahId, ayahNumber: ayahNumber, score: score, achievedAt: achievedAt)
   }

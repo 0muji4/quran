@@ -29,7 +29,7 @@ final class InMemoryHistoryStore: HistoryStore {
     bestScores["\(surahId):\(ayahNumber)"]
   }
 
-  func bestScore(forSurah surahId: String) -> Double? {
+  func bestScore(forSurah surahId: String) -> Int? {
     let prefix = "\(surahId):"
     return bestScores
       .filter { $0.key.hasPrefix(prefix) }
@@ -37,7 +37,7 @@ final class InMemoryHistoryStore: HistoryStore {
       .max()
   }
 
-  func recordBestScore(surahId: String, ayahNumber: Int, score: Double, achievedAt: Date) {
+  func recordBestScore(surahId: String, ayahNumber: Int, score: Int, achievedAt: Date) {
     let key = "\(surahId):\(ayahNumber)"
     if let existing = bestScores[key], existing.score >= score { return }
     bestScores[key] = BestScoreEntry(score: score, achievedAt: achievedAt)

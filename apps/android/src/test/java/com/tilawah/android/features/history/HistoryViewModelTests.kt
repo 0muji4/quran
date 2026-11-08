@@ -72,7 +72,7 @@ class HistoryViewModelTests {
         surahId = surahId,
         surahNameEn = surahNameEn,
         ayahNumber = ayahNumber,
-        score = 0.7,
+        score = 70,
         jobId = "job-$id",
         createdAt = Instant.parse("2026-05-09T13:00:00Z").plusSeconds(id.first().code.toLong()),
         status = AttemptStatus.COMPLETED,

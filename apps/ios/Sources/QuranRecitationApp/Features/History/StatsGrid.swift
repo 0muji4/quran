@@ -23,7 +23,7 @@ struct StatsGrid: View {
       )
       tile(
         eyebrow: "history.stats.best",
-        big: stats.bestScore.map { "\(Int($0))" } ?? "—",
+        big: stats.bestScore.map { "\($0)" } ?? "—",
         small: stats.bestSurah.map { LocalizedStringKey($0) } ?? "history.stats.bestUnknown",
         style: .standard
       )
@@ -77,7 +77,7 @@ struct StatsGrid: View {
 struct HistoryStats: Equatable {
   let thisWeekCount: Int
   let averageScore: Double?
-  let bestScore: Double?
+  let bestScore: Int?
   let bestSurah: String?
   let streakDays: Int
 
@@ -88,7 +88,7 @@ struct HistoryStats: Equatable {
 
     let scoredAttempts = attempts.compactMap { $0.score }
     let avg: Double? = scoredAttempts.isEmpty ? nil
-      : scoredAttempts.reduce(0, +) / Double(scoredAttempts.count)
+      : Double(scoredAttempts.reduce(0, +)) / Double(scoredAttempts.count)
 
     let best = attempts
       .compactMap { attempt in attempt.score.map { (score: $0, surah: attempt.surahNameEn) } }

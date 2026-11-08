@@ -406,7 +406,7 @@ class ProfileViewModelTest {
         surahId = "1",
         surahNameEn = "Al-Fatihah",
         ayahNumber = 1,
-        score = 0.9,
+        score = 90,
         jobId = "job",
         createdAt = at,
         status = AttemptStatus.COMPLETED,

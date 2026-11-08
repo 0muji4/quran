@@ -18,8 +18,8 @@ struct VerdictBand: Equatable {
   let subhead: String
 }
 
-func verdictForScore(_ score: Double?) -> VerdictBand {
-  guard let score, !score.isNaN else {
+func verdictForScore(_ score: Int?) -> VerdictBand {
+  guard let score else {
     return VerdictBand(
       badge: localized("result.verdict.awaiting.badge"),
       headline: localized("result.verdict.awaiting.headline"),

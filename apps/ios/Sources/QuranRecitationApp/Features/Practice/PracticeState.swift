@@ -9,7 +9,7 @@ enum PracticeRecordingState: Equatable {
   case recording(meters: [Float], duration: TimeInterval)
   case uploading
   case analysing(step: AnalysingStep)
-  case done(score: Double?, jobId: String)
+  case done(score: Int?, jobId: String)
   case error(AppError)
 
   var isBusy: Bool {
