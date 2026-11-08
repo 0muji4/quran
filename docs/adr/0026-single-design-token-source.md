@@ -50,7 +50,7 @@ The design system is split into six layers. **Each layer reads only the layer di
 | 2. Primitive tokens       | Raw values: tonal palettes (`color.palette.<palette>.<tone>`) and a px scale (`dimension.<px>`)                                     | `packages/ui/tokens/primitive/`                                      | Generated |
 | 3. Semantic tokens        | Usage names: colour roles per mode (`color.role.<role>`), `spacing.<step>` and `shape.<size>`, written only as aliases into layer 2 | `packages/ui/tokens/semantic/`                                       | Generated |
 | 4. Platform tokens        | Layer 3 as code: `ColorTokens` and `DimensionTokens` in Kotlin and Swift                                                            | `designsystem/generated/` (Android), `DesignSystem/Generated/` (iOS) | Generated |
-| 5. Theme binding          | The framework wiring: an `AppTheme` composable over `MaterialTheme` on Android, `Color` and environment extensions on iOS           | Each platform's design system                                        | By hand   |
+| 5. Theme binding          | The framework wiring: an `AppTheme` composable over `MaterialTheme` on Android, an `AppTheme` namespace on iOS                      | Each platform's design system                                        | By hand   |
 | 6. Components and screens | UI                                                                                                                                  | Each platform                                                        | By hand   |
 
 The dependency rule has three practical consequences:
@@ -70,7 +70,7 @@ layer 2  tokens/primitive/   ◀── aliases ──  layer 3  tokens/semantic/
                                                   ├──▶ layer 4  ColorTokens.kt, DimensionTokens.kt
                                                   │      └──▶ layer 5  AppTheme ──▶ layer 6  Compose screens
                                                   ├──▶ layer 4  ColorTokens.swift, DimensionTokens.swift
-                                                  │      └──▶ layer 5  Color extension ──▶ layer 6  SwiftUI views
+                                                  │      └──▶ layer 5  AppTheme ──▶ layer 6  SwiftUI views
                                                   └──▶ Panda token object ──▶ apps/web (after the Web redesign)
 ```
 
@@ -178,7 +178,7 @@ Each step is one pull request:
 
 1. Add layers 1–4, both generator stages and `make tokens-check`. Nothing reads the output yet.
 2. Android: add layer 5, an `AppTheme` over the generated colour schemes, next to the current `BrandTheme`.
-3. iOS: add layer 5, a `Color` extension over `TokenColor`, next to the current `Color.brand`.
+3. iOS: add layer 5, an `AppTheme` namespace over the generated tokens, next to the current `Color.brand`.
 4. Move each redesigned screen to the new theme as it is rebuilt. Delete `BrandTheme`, `BrandColors` and `Color.brand` once no screen references them.
 5. Web: generate the Panda token object and replace the hand-written `tokens.ts` as part of the Web redesign.
 

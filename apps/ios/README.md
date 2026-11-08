@@ -16,7 +16,9 @@ reference audio. Entry point is `apps/ios/Package.swift`.
 ```
 Sources/QuranRecitationApp/
 ├── App/             AppRoot, Routing, AppConfig, AppError
-├── DesignSystem/    Colors, Typography, Spacing, Components/*
+├── DesignSystem/    AppTheme (the entry point to Generated/, ADR 0026),
+│                    Generated/ (ColorTokens, DimensionTokens; `make tokens-gen`),
+│                    Colors, Typography, Spacing, Components/*
 ├── Audio/           AudioRecorder, AudioPlayer, AudioSessionCoordinator
 ├── Backend/         QuranBackend protocol + ApolloBackend impl + ReferenceAudioClient
 ├── Storage/         HistoryStore protocol + UserDefaults / InMemory impls
@@ -33,6 +35,7 @@ Sources/QuranRecitationApp/
     └── History/     HistoryView, AttemptRow, StatsGrid, ViewModel
 
 Tests/QuranRecitationAppTests/
+├── DesignSystemLayerTests
 ├── HistoryStoreTests
 ├── LibraryViewModelTests
 ├── PracticeViewModelTests
