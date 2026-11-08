@@ -1,5 +1,13 @@
 version: '3.9'
 
+# backend reads the uploads that bff signs, so both must use the same store.
+x-object-store: &object-store
+  OBJECT_STORE_ENDPOINT: minio:9000
+  OBJECT_STORE_ACCESS_KEY: minio
+  OBJECT_STORE_SECRET_KEY: minio123
+  OBJECT_STORE_BUCKET: quran-alignments
+  OBJECT_STORE_USE_SSL: 'false'
+
 services:
   postgres:
     image: postgres:18
@@ -115,9 +123,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
       otel-collector:
         condition: service_started
     environment:
+      <<: *object-store
       DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: quran-backend
@@ -165,12 +176,8 @@ services:
       # baseline (db/seed.sql) cannot be rendered.
       NODE_ENV: development
       MOCK_SESSION: 'true'
-      OBJECT_STORE_ENDPOINT: minio:9000
+      <<: *object-store
       OBJECT_STORE_EXTERNAL_ENDPOINT: localhost:9000
-      OBJECT_STORE_ACCESS_KEY: minio
-      OBJECT_STORE_SECRET_KEY: minio123
-      OBJECT_STORE_BUCKET: quran-alignments
-      OBJECT_STORE_USE_SSL: 'false'
       OBJECT_STORE_UPLOAD_PREFIX: uploads/
       OBJECT_STORE_APPLY_BUCKET_POLICY: 'true'
       SIGNED_URL_TTL_SECONDS: '900'
