@@ -10,10 +10,9 @@ import messages from '../../../../../messages/en.json';
 interface FakeJobState {
   stage: 'idle' | 'uploading' | 'scoring' | 'done' | 'error';
   job: { jobId: string; status: string; score?: number } | null;
-  error: string | null;
 }
 
-const IDLE_JOB: FakeJobState = { stage: 'idle', job: null, error: null };
+const IDLE_JOB: FakeJobState = { stage: 'idle', job: null };
 
 const fakes = vi.hoisted(() => ({
   blob: null as Blob | null,
@@ -63,7 +62,7 @@ vi.mock('../../../../hooks/useScoringJob', () => ({
       segments: [],
       submit: async (input: unknown) => {
         fakes.submit(input);
-        setState({ stage: 'uploading', job: null, error: null });
+        setState({ stage: 'uploading', job: null });
       },
       reset: () => {
         fakes.reset();
@@ -192,21 +191,24 @@ describe('RecorderPanel recording flow', () => {
     render(panel());
     await record(2_000);
 
-    setJob({ stage: 'error', job: null, error: 'Upload failed' });
+    setJob({ stage: 'error', job: null });
 
-    expect(screen.getByText('Upload failed')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(messages.practice.scoringError.defaultHint);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      messages.practice.recorder.liveStatus.scoringErrorGeneric
+    );
     expect(screen.getByRole('button', { name: REPLAY })).toBeInTheDocument();
   });
 
   it('hides replay when no audio was captured', async () => {
     render(panel());
     await record(2_000);
-    setJob({ stage: 'error', job: null, error: 'Upload failed' });
+    setJob({ stage: 'error', job: null });
     await click(RECORD_AGAIN);
 
     fakes.blob = null;
     await click('Stop recording');
-    setJob({ stage: 'error', job: null, error: 'Polling failed' });
+    setJob({ stage: 'error', job: null });
 
     expect(screen.queryByRole('button', { name: REPLAY })).not.toBeInTheDocument();
   });
@@ -235,8 +237,7 @@ describe('RecorderPanel recording flow', () => {
 
     setJob({
       stage: 'done',
-      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.85 },
-      error: null
+      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.85 }
     });
 
     expect(fakes.recordBestScore).toHaveBeenCalledWith('1', 1, 85);
@@ -256,7 +257,7 @@ describe('RecorderPanel recording flow', () => {
     render(panel());
     await record(2_000);
 
-    setJob({ stage: 'error', job: { jobId: 'job-2', status: 'FAILED' }, error: 'Too noisy' });
+    setJob({ stage: 'error', job: { jobId: 'job-2', status: 'FAILED' } });
 
     expect(fakes.recordBestScore).not.toHaveBeenCalled();
     expect(fakes.recordAttempt.mock.calls[0][0]).toMatchObject({ score: null, status: 'FAILED' });
@@ -291,7 +292,7 @@ describe('RecorderPanel scoring timer', () => {
     advance(31_000);
     expect(screen.getByText(STUCK)).toBeInTheDocument();
 
-    setJob({ stage: 'scoring', job: null, error: null });
+    setJob({ stage: 'scoring', job: null });
     expect(screen.queryByText(STUCK)).not.toBeInTheDocument();
 
     advance(29_000);
@@ -305,8 +306,7 @@ describe('RecorderPanel scoring timer', () => {
 
     setJob({
       stage: 'done',
-      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.9 },
-      error: null
+      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.9 }
     });
     expect(screen.queryByText(STUCK)).not.toBeInTheDocument();
 
@@ -325,7 +325,7 @@ describe('RecorderPanel scoring timer', () => {
     expect(fakes.cancel).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { name: 'Now you recite' })).toBeInTheDocument();
 
-    setJob({ stage: 'error', job: null, error: 'Late failure' });
+    setJob({ stage: 'error', job: null });
     expect(screen.queryByRole('button', { name: REPLAY })).not.toBeInTheDocument();
   });
 });
@@ -365,8 +365,7 @@ describe('RecorderPanel last attempt footer', () => {
     fakes.getRecentAttempts.mockReturnValue([attempt({ score: 85 })]);
     setJob({
       stage: 'done',
-      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.85 },
-      error: null
+      job: { jobId: 'job-1', status: 'COMPLETED', score: 0.85 }
     });
     setJob(IDLE_JOB);
 

@@ -261,7 +261,6 @@ export function RecorderPanel({ surah, ayah }: Props) {
 
   const errorReasons: string[] = [];
   if (tooShortReason) errorReasons.push(tooShortReason);
-  if (stage === 'error' && job.error) errorReasons.push(job.error);
 
   const liveStatus = recorderStatusMessage(
     {
