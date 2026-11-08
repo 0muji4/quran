@@ -4,9 +4,9 @@ Compose client for Tilawah. Talks to the BFF (`:4000`) over GraphQL through Apol
 
 ## Prerequisites
 
-- macOS / Linux with Android Studio Hedgehog or newer (or just the Android SDK + JDK 17)
+- macOS / Linux with an Android Studio release that supports AGP 9.5 (or just the Android SDK + JDK 17)
 - JDK 17 (Android Studio bundles a JBR; export `JAVA_HOME=$(/usr/libexec/java_home -v 17)` on macOS if you use the system JDK)
-- Android SDK 34 + a Pixel 6 / API 34 emulator for manual verification
+- Android SDK 37 + a Pixel 6 / API 37 emulator for manual verification
 
 ## Layout
 
@@ -100,7 +100,7 @@ adb logcat | rg com.tilawah.android
 ## Verification (end-to-end)
 
 1. `docker compose up` (BFF + Postgres + MinIO).
-2. Launch the Pixel 6 / API 34 emulator from Android Studio.
+2. Launch the Pixel 6 / API 37 emulator from Android Studio.
 3. `./gradlew :apps:android:installDebug`.
 4. **Library tab**: surahs load → search "Fatihah" → tap row.
 5. **Practice tab**: Teacher reference plays → record 5 s → upload → analysing checklist animates → DonePanel shows the score.

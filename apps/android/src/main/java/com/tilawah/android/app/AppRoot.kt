@@ -7,7 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -214,7 +216,13 @@ fun AppRoot(
         },
     ) { padding ->
         Surface(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            // Consuming the padding first keeps imePadding from adding the
+            // bottom bar's height on top of the keyboard's.
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .consumeWindowInsets(padding)
+                .imePadding(),
             color = BrandTheme.colors.surface,
         ) {
             when (selectedTab) {
