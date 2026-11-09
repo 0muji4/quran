@@ -5,7 +5,7 @@ import SwiftUI
 /// when enabled). Every control writes through `PreferencesViewModel`,
 /// which persists optimistically to `PATCH /me/preferences`.
 struct PracticePreferencesCard: View {
-  @ObservedObject var viewModel: PreferencesViewModel
+  let viewModel: PreferencesViewModel
 
   var body: some View {
     VStack(alignment: .leading, spacing: Spacing.md) {

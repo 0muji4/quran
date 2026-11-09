@@ -1,15 +1,17 @@
 import Foundation
+import Observation
 
 /// Drives the Practice Preferences card with an optimistic-write model:
 /// each edit applies locally at once, fires a single-field `PATCH`, and
 /// rolls back with an error banner if the server rejects it.
 @MainActor
-final class PreferencesViewModel: ObservableObject {
-  @Published private(set) var preferences: PracticePreferences
+@Observable
+final class PreferencesViewModel {
+  private(set) var preferences: PracticePreferences
   /// Tracks whether the first GET has resolved so the card can show a
   /// spinner instead of flashing the optimistic defaults as if loaded.
-  @Published private(set) var isLoaded = false
-  @Published var errorMessage: String?
+  private(set) var isLoaded = false
+  var errorMessage: String?
 
   private let meClient: MeClient
 

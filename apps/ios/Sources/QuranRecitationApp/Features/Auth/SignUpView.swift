@@ -9,7 +9,7 @@ import SwiftUI
 /// Shares its `AuthViewModel` with `SignInView` (owned by
 /// `ProfileView`) so typed input survives the sign-in ↔ sign-up toggle.
 struct SignUpView: View {
-  @ObservedObject var viewModel: AuthViewModel
+  @Bindable var viewModel: AuthViewModel
   let onNavigateToSignIn: () -> Void
   let onAuthenticated: () -> Void
 

@@ -5,7 +5,7 @@ import SwiftUI
 /// field that gates the destructive button. Mirrors the web Delete
 /// Account modal.
 struct DeleteAccountSheet: View {
-  @ObservedObject var viewModel: DeleteAccountViewModel
+  let viewModel: DeleteAccountViewModel
   let onDismiss: () -> Void
 
   var body: some View {

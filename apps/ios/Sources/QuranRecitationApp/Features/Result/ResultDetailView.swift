@@ -4,11 +4,11 @@ import SwiftUI
 /// Word comparison tiles (PR 20), and the Listen-back + actions row
 /// (PR 21). This PR only mounts the score hero.
 struct ResultDetailView: View {
-  @StateObject var viewModel: ResultDetailViewModel
+  @State private var viewModel: ResultDetailViewModel
   let onClose: () -> Void
 
   init(viewModel: @autoclosure @escaping () -> ResultDetailViewModel, onClose: @escaping () -> Void) {
-    self._viewModel = StateObject(wrappedValue: viewModel())
+    self._viewModel = State(initialValue: viewModel())
     self.onClose = onClose
   }
 

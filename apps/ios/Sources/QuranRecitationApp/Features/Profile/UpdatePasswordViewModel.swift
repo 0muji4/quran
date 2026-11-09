@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// ViewModel for the Update Password sheet. Owns the three input
 /// fields, the client-side preflight rules, and the submit lifecycle.
@@ -6,16 +7,17 @@ import Foundation
 /// also runs server-side (BFF zod + `verifyPassword`), so the client
 /// checks are UX guards, not security boundaries.
 @MainActor
-final class UpdatePasswordViewModel: ObservableObject, Identifiable {
+@Observable
+final class UpdatePasswordViewModel: Identifiable {
   /// Stable per-instance id so `.sheet(item:)` can drive the modal off
   /// "create a fresh ViewModel" rather than a bool. Same pattern as
   /// `EditProfileViewModel`.
   let id = UUID()
 
-  @Published var currentPassword: String = ""
-  @Published var newPassword: String = ""
-  @Published var confirmPassword: String = ""
-  @Published private(set) var status: Status = .idle
+  var currentPassword: String = ""
+  var newPassword: String = ""
+  var confirmPassword: String = ""
+  private(set) var status: Status = .idle
 
   enum Status: Equatable {
     case idle

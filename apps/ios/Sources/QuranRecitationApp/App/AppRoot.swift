@@ -18,7 +18,7 @@ struct AppRoot: View {
   private let profileService: ProfileService?
   private let telemetry: Telemetry
   private let historyStore: HistoryStore
-  @ObservedObject private var session: SessionStore
+  private let session: SessionStore
   @Environment(\.scenePhase) private var scenePhase
   @State private var selectedTab: AppTab = .library
   @State private var practiceContext: PracticeContext
@@ -34,7 +34,7 @@ struct AppRoot: View {
     meClient: MeClient? = nil,
     profileService: ProfileService? = nil
   ) {
-    self._session = ObservedObject(wrappedValue: session)
+    self.session = session
     self.backend = backend
     self.authService = authService
     self.telemetry = telemetry

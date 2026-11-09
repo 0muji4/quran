@@ -1,15 +1,13 @@
 import AVFoundation
-import Combine
 
 /// Lightweight wrapper around `AVAudioPlayer`. Used for the teacher
 /// reference panel and the listen-back rows on the result screen. The
-/// progress timer fires on the main run loop so SwiftUI can bind to
-/// `currentTime` directly without bridging.
+/// progress timer updates `currentTime` on the main run loop.
 @MainActor
-final class AudioPlayer: NSObject, ObservableObject {
-  @Published private(set) var isPlaying = false
-  @Published private(set) var currentTime: TimeInterval = 0
-  @Published private(set) var duration: TimeInterval = 0
+final class AudioPlayer: NSObject {
+  private(set) var isPlaying = false
+  private(set) var currentTime: TimeInterval = 0
+  private(set) var duration: TimeInterval = 0
 
   private var player: AVAudioPlayer?
   private var progressTimer: Timer?

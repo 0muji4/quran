@@ -1,5 +1,5 @@
-import Combine
 import Foundation
+import Observation
 
 /// Owns the signed-in user's session. Wraps `TokenStore` and publishes
 /// the current `AuthenticatedUser` (or `nil` when signed out / using
@@ -11,9 +11,10 @@ import Foundation
 /// app stays usable anonymously — there is no launch gate (parity with
 /// the Web client and the Android `AuthSession` model).
 @MainActor
-final class SessionStore: ObservableObject {
+@Observable
+final class SessionStore {
   /// The signed-in user, or `nil` when no session is stored.
-  @Published private(set) var currentUser: AuthenticatedUser? = nil
+  private(set) var currentUser: AuthenticatedUser? = nil
 
   /// `true` from the moment a soft-deleted account is sign-in-
   /// reactivated (BFF flipped `deleted_at` back to NULL) until the
@@ -21,7 +22,7 @@ final class SessionStore: ObservableObject {
   /// Reset on sign-out so a future sign-in starts clean. Mirrors
   /// the web `?welcome-back=1` query-string pattern in spirit —
   /// both render once per sign-in event.
-  @Published private(set) var pendingReactivationNotice: Bool = false
+  private(set) var pendingReactivationNotice: Bool = false
 
   private let tokenStore: TokenStore
 

@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// ViewModel for the Delete Account confirm sheet. Drives
 /// `DELETE /auth/me` (soft delete per ADR-0024). On a successful
@@ -7,7 +8,8 @@ import Foundation
 /// the BFF database for 30 days, after which the purge job removes
 /// it permanently.
 @MainActor
-final class DeleteAccountViewModel: ObservableObject, Identifiable {
+@Observable
+final class DeleteAccountViewModel: Identifiable {
   /// Stable per-instance id so `.sheet(item:)` can drive the modal
   /// off "create a fresh ViewModel" rather than a bool. Same pattern
   /// as the other Profile sheet ViewModels.
@@ -18,8 +20,8 @@ final class DeleteAccountViewModel: ObservableObject, Identifiable {
   /// the action feel deliberate instead of a single-tap mistake.
   static let confirmationPhrase = "DELETE"
 
-  @Published var confirmText: String = ""
-  @Published private(set) var status: Status = .idle
+  var confirmText: String = ""
+  private(set) var status: Status = .idle
 
   enum Status: Equatable {
     case idle

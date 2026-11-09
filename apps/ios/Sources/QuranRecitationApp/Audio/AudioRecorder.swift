@@ -1,9 +1,8 @@
 import AVFoundation
-import Combine
 
-/// AVAudioRecorder wrapper that publishes meter samples and elapsed
-/// duration so the Recording panel can drive a live waveform without
-/// reaching into AVFoundation directly.
+/// AVAudioRecorder wrapper that keeps recent meter samples and the
+/// elapsed duration so the Recording panel can drive a live waveform
+/// without reaching into AVFoundation directly.
 ///
 /// `startRecording()` retains its synchronous signature for backwards
 /// compatibility with the legacy `RecordingViewModel`. Microphone
@@ -12,15 +11,15 @@ import Combine
 /// (PR 12); existing callers continue to rely on iOS's implicit prompt
 /// behavior.
 @MainActor
-final class AudioRecorder: ObservableObject {
+final class AudioRecorder {
   /// Recent meter samples normalised to 0…1. Length capped at
   /// `meterBufferSize` to bound memory.
-  @Published private(set) var meters: [Float] = []
+  private(set) var meters: [Float] = []
 
   /// Elapsed seconds of the active recording. 0 when idle.
-  @Published private(set) var duration: TimeInterval = 0
+  private(set) var duration: TimeInterval = 0
 
-  @Published private(set) var isRecording = false
+  private(set) var isRecording = false
 
   private var recorder: AVAudioRecorder?
   private var meterTimer: Timer?

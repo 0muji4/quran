@@ -7,7 +7,7 @@ import SwiftUI
 /// dismisses without persisting; Save persists then dismisses on success,
 /// leaving the sheet open with an error banner on failure.
 struct EditProfileSheet: View {
-  @ObservedObject var viewModel: EditProfileViewModel
+  let viewModel: EditProfileViewModel
   let onDismiss: () -> Void
 
   var body: some View {

@@ -7,7 +7,7 @@ import SwiftUI
 /// token; `ProfileService.updateEmail` maps the 422 to
 /// `AppError.invalidCredentials` for the banner.
 struct ChangeEmailSheet: View {
-  @ObservedObject var viewModel: ChangeEmailViewModel
+  let viewModel: ChangeEmailViewModel
   let onDismiss: () -> Void
 
   var body: some View {
