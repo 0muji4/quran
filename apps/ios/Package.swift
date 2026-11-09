@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
   name: "QuranRecitationApp",
   defaultLocalization: "en",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v18)],
   products: [
     .executable(name: "QuranRecitationApp", targets: ["QuranRecitationApp"])
   ],

@@ -85,18 +85,13 @@ final class AudioRecorder: ObservableObject {
   /// prompting). Callers that need permission upfront (the new Practice
   /// flow) should await this before tapping record.
   static func requestMicrophonePermission() async -> Bool {
-    let session = AVAudioSession.sharedInstance()
-    switch session.recordPermission {
+    switch AVAudioApplication.shared.recordPermission {
     case .granted:
       return true
     case .denied:
       return false
     case .undetermined:
-      return await withCheckedContinuation { continuation in
-        session.requestRecordPermission { granted in
-          continuation.resume(returning: granted)
-        }
-      }
+      return await AVAudioApplication.requestRecordPermission()
     @unknown default:
       return false
     }
