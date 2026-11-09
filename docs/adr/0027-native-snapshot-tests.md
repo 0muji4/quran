@@ -44,13 +44,15 @@ A reviewer cannot open 8 renderings × every state × 2 platforms in an emulator
 
 The right-to-left rendering uses the Arabic locale, so it also shows Arabic UI strings where they exist.
 
+A screen still drawn with the light-only current theme (`BrandTheme` on Android, `Color.brand` on iOS) is rendered in the 4 light combinations, because its dark renderings would be identical to the light ones. It gets all 8 once it moves to `AppTheme`.
+
 The first screen captured is Practice, on the current theme, before it is rebuilt. The Practice rebuild in step 4 then shows a before/after diff for every state and combination.
 
 ### Rendering environment
 
 A baseline is only comparable with an image rendered in the same environment.
 
-- **Android**: Robolectric at SDK 35 on JDK 17, the JDK CI and the work machines already use. Robolectric's newest SDK, 36, requires JDK 21, and the app's compile SDK, 37, is not supported yet. CI renders on Linux. Whether images recorded on macOS match is checked when the Android tests are added. If they do not match, Android baselines come only from the CI artifact.
+- **Android**: Robolectric at SDK 35 on JDK 17, the JDK CI and the work machines already use. Robolectric renders SDK 36 from [4.16](https://github.com/robolectric/robolectric/releases/tag/robolectric-4.16) and the app's compile SDK, 37, from [4.17](https://github.com/robolectric/robolectric/releases/tag/robolectric-4.17), but both require JDK 21. The 4.16 release notes state this for SDK 36. For SDK 37, Robolectric 4.17 on JDK 17 fails with "Android SDK 37 requires Java 21 (have Java 17)". CI renders on Linux, and images recorded on macOS match it: the first Android baselines were recorded on macOS and passed CI's comparison unchanged.
 - **iOS**: rendering depends on the device model and the simulator runtime. CI pins the runner image, the Xcode version, the device and the runtime instead of picking the first available iPhone. The pinned values are in `apps/ios/README.md`, and a work machine records baselines on the same values.
 - **Scale**: images are rendered at 1x (Android `mdpi`, iOS display scale 1). Layout, colour and type differences stay visible, and each image has a ninth of the pixels of a 3x image.
 - **Determinism**: animations are stopped, and inputs that vary are fixed in the test, such as the recording duration and waveform levels.
@@ -96,7 +98,7 @@ Negative:
 ## Reconsideration Triggers
 
 - The committed baselines pass 50 MB. Move them to Git LFS.
-- Robolectric supports the app's compile SDK on JDK 17, or the project moves to JDK 21. Render at the newer SDK.
+- The project moves to JDK 21. Render at the app's compile SDK.
 - Compose Preview Screenshot Testing becomes stable. Re-evaluate it, since components already need `@Preview` functions.
 - Taking baselines from CI artifacts becomes a frequent round trip. Add a workflow that records baselines and commits them to the pull request branch.
 

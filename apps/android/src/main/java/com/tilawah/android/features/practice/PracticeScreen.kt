@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.R
+import com.tilawah.android.backend.AyahDetail
+import com.tilawah.android.backend.SurahSummary
 import com.tilawah.android.designsystem.BrandTheme
 import com.tilawah.android.designsystem.components.PrimaryButton
 import com.tilawah.android.designsystem.components.SecondaryButton
@@ -55,6 +57,55 @@ fun PracticeScreen(
     val surah by viewModel.surah.collectAsStateWithLifecycle()
     val reference by viewModel.reference.collectAsStateWithLifecycle()
     val playerState by viewModel.player.state.collectAsStateWithLifecycle()
+
+    PracticeContent(
+        state = state,
+        ayah = ayah,
+        surah = surah,
+        reference = when (val r = reference) {
+            is TeacherReferenceState.Ready -> TeacherReferenceState.Ready(playerState)
+            else -> r
+        },
+        onNavigateBack = onNavigateBack,
+        onNavigateToAyah = onNavigateToAyah,
+        onStartRecording = {
+            if (hasMicPermission) viewModel.startRecording() else onRequestPermission()
+        },
+        onStopRecording = viewModel::stopRecording,
+        onPlayReference = viewModel::playReference,
+        onPauseReference = viewModel::pauseReference,
+        onSetReferenceRate = viewModel::setReferenceRate,
+        onRetryReference = viewModel::retryReference,
+        onViewResult = onResultRequested,
+        onReplay = {
+            viewModel.lastRecording?.let(viewModel::viewModelScopeLaunchUploadAndScore)
+                ?: viewModel.resetIdle()
+        },
+        onRecordAgain = viewModel::resetIdle,
+        modifier = modifier,
+    )
+}
+
+/** The Practice screen drawn from its state, so any state renders without a ViewModel. */
+@Composable
+internal fun PracticeContent(
+    state: PracticeState,
+    ayah: AyahDetail?,
+    surah: SurahSummary?,
+    reference: TeacherReferenceState,
+    onNavigateBack: () -> Unit,
+    onNavigateToAyah: (Int) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onPlayReference: () -> Unit,
+    onPauseReference: () -> Unit,
+    onSetReferenceRate: (Float) -> Unit,
+    onRetryReference: () -> Unit,
+    onViewResult: (jobId: String) -> Unit,
+    onReplay: () -> Unit,
+    onRecordAgain: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val spacing = BrandTheme.spacing
     val scroll = rememberScrollState()
 
@@ -75,38 +126,30 @@ fun PracticeScreen(
         ayah?.let { AyahCard(it, surahNameEn = surahNameEn) }
 
         TeacherReferencePanel(
-            state = when (val r = reference) {
-                is TeacherReferenceState.Ready -> TeacherReferenceState.Ready(playerState)
-                else -> r
-            },
-            onPlay = viewModel::playReference,
-            onPause = viewModel::pauseReference,
-            onSetRate = viewModel::setReferenceRate,
-            onRetry = viewModel::retryReference,
+            state = reference,
+            onPlay = onPlayReference,
+            onPause = onPauseReference,
+            onSetRate = onSetReferenceRate,
+            onRetry = onRetryReference,
         )
 
         when (val current = state) {
             PracticeState.Idle, is PracticeState.Recording -> RecordingPanel(
                 state = current,
-                onStart = {
-                    if (hasMicPermission) viewModel.startRecording() else onRequestPermission()
-                },
-                onStop = viewModel::stopRecording,
+                onStart = onStartRecording,
+                onStop = onStopRecording,
             )
             PracticeState.Uploading -> AnalysingPanel(step = AnalysingStep.Transcribing)
             is PracticeState.Analysing -> AnalysingPanel(step = current.step)
             is PracticeState.Done -> DonePanel(
                 score = current.score,
-                onViewResult = { onResultRequested(current.jobId) },
-                onRecordAgain = viewModel::resetIdle,
+                onViewResult = { onViewResult(current.jobId) },
+                onRecordAgain = onRecordAgain,
             )
             is PracticeState.Error -> PracticeErrorPanel(
                 error = current.error,
-                onReplay = {
-                    viewModel.lastRecording?.let(viewModel::viewModelScopeLaunchUploadAndScore)
-                        ?: viewModel.resetIdle()
-                },
-                onRecordAgain = viewModel::resetIdle,
+                onReplay = onReplay,
+                onRecordAgain = onRecordAgain,
             )
         }
 

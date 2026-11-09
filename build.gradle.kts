@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21" apply false
     id("com.apollographql.apollo") version "5.2.0" apply false
+    id("io.github.takahirom.roborazzi") version "1.78.0" apply false
 }
 
 allprojects {
