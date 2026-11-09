@@ -18,7 +18,7 @@ The iOS app adopts the following architecture, on iOS 18+:
 2. **`TabView` shell with one `NavigationStack` per tab.** Three tabs: Library, Practice, History. Each tab owns its own `NavigationPath`.
 3. **Typed routing via a `Route` enum** stored in each tab's `NavigationPath`. Practice → Result navigation is `path.append(.result(jobId: ...))`. Cross-tab jumps (e.g. Library Continue card → Practice ayah) flip the selected tab and rewrite that tab's path.
 4. **Domain state machines as enums.** Concretely, `enum PracticeRecordingState { case idle, recording(meters: [Float], duration: TimeInterval), uploading, analysing(step: AnalysingStep), done(ScoringResult), error(AppError) }`. View bodies switch on the state; the compiler enforces exhaustiveness.
-5. **Tests for ViewModels only.** XCTest target in `Package.swift`, mocks for each injected protocol. UI is verified manually in the iOS Simulator. Snapshot testing is deliberately not introduced.
+5. **Tests for ViewModels only.** XCTest target in `Package.swift`, mocks for each injected protocol. UI is verified manually in the iOS Simulator. Snapshot testing is deliberately not introduced. _Superseded by [ADR 0027](./0027-native-snapshot-tests.md) on 2026-11-09: screens and components get snapshot tests._
 
 ## Rationale
 
@@ -51,7 +51,7 @@ Negative:
 - **`ObservableObject` with `@Published` and `@StateObject`.** The original choice while the minimum target was iOS 16. Replaced on 2026-11-09 (see Decision 1).
 - **Single `NavigationStack` with custom tab bar.** Rejected: more code, less native feel, breaks the "back button per tab" expectation.
 - **MV / SwiftUI-only with no ViewModel.** Rejected: makes the network and audio side effects untestable without UI machinery.
-- **Snapshot tests via `swift-snapshot-testing`.** Deferred: visual UI is faster to verify by hand at this stage; the dependency and CI pipeline cost is not yet justified.
+- **Snapshot tests via `swift-snapshot-testing`.** Deferred: visual UI is faster to verify by hand at this stage; the dependency and CI pipeline cost is not yet justified. Adopted by [ADR 0027](./0027-native-snapshot-tests.md) for the redesign.
 
 ## Reconsideration Triggers
 
