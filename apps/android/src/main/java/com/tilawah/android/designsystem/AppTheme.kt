@@ -5,10 +5,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
+import com.tilawah.android.R
 import com.tilawah.android.designsystem.generated.AppColors
 import com.tilawah.android.designsystem.generated.DarkAppColors
 import com.tilawah.android.designsystem.generated.DarkColorScheme
@@ -29,9 +35,9 @@ import com.tilawah.android.designsystem.generated.TokenSpacing
  *   [appColors].
  * - Spacing: [spacing]. Corner radii: [shapes], backed by
  *   `MaterialTheme.shapes`.
- *
- * Typography stays at the Material 3 default, because the type scale is
- * decided per platform rather than shared as tokens.
+ * - Type: [typography], the Material 3 type scale at its default values,
+ *   backed by `MaterialTheme.typography`. Quran text, which Material 3 has
+ *   no role for: [quranTypography] (ADR 0028).
  */
 object AppTheme {
     val colorScheme: ColorScheme
@@ -45,7 +51,29 @@ object AppTheme {
 
     val shapes: Shapes
         @Composable @ReadOnlyComposable get() = MaterialTheme.shapes
+
+    val typography: Typography
+        @Composable @ReadOnlyComposable get() = MaterialTheme.typography
+
+    val quranTypography: QuranTypography
+        get() = AppQuranTypography
 }
+
+/** Quran text styles, in the bundled Amiri subset. Sizes are `sp`, so they follow the font scale. */
+data class QuranTypography(
+    val ayah: TextStyle,
+    /** An ayah too long for [ayah], such as 2:255. */
+    val ayahLong: TextStyle,
+    val ayahNumber: TextStyle,
+)
+
+private val AmiriQuran = FontFamily(Font(R.font.tilawah_amiri_quran_regular))
+
+internal val AppQuranTypography = QuranTypography(
+    ayah = TextStyle(fontFamily = AmiriQuran, fontSize = 34.sp),
+    ayahLong = TextStyle(fontFamily = AmiriQuran, fontSize = 28.sp),
+    ayahNumber = TextStyle(fontFamily = AmiriQuran, fontSize = 20.sp),
+)
 
 /** The colours for one appearance. */
 internal data class AppThemeColors(
