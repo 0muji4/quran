@@ -6,7 +6,8 @@ reference audio. Entry point is `apps/ios/Package.swift`.
 
 ## Prerequisites
 
-- macOS with Xcode 16.3+ (Swift 6.1, required by Apollo iOS 2.x)
+- macOS with Xcode 16.3+ (Swift 6.1, required by Apollo iOS 2.x). Xcode 26.5
+  with the iOS 26.5 simulator to run the snapshot tests (see below)
 - iOS 18+ SDK
 - `apollo-ios-cli` 2.5.0: `make codegen` downloads the pinned release into
   `.build/`, or point `APOLLO_CLI=/path/to/apollo-ios-cli` at your own copy
@@ -35,6 +36,7 @@ Sources/QuranRecitationApp/
     └── History/     HistoryView, AttemptRow, StatsGrid, ViewModel
 
 Tests/QuranRecitationAppTests/
+├── __Snapshots__/       reference images for the snapshot tests
 ├── DesignSystemLayerTests
 ├── HistoryStoreTests
 ├── LibraryViewModelTests
@@ -63,15 +65,47 @@ xcodebuild \
 
 ## Test (Xcode CLI)
 
-`xcodebuild test` requires a concrete simulator destination — the
-`generic/...` slug used by `build` does not work.
+`xcodebuild test` requires a concrete simulator destination. The
+`generic/...` slug used by `build` does not work. Use the simulator CI
+pins, because the snapshot tests only match images rendered on it.
 
 ```bash
 xcodebuild \
   -scheme QuranRecitationApp \
-  -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
+  -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
   test
 ```
+
+## Snapshot tests
+
+Screens are rendered into images and compared with the reference images in
+`Tests/QuranRecitationAppTests/__Snapshots__/` ([ADR 0027](../../docs/adr/0027-native-snapshot-tests.md)).
+Rendering depends on the Xcode version, the device and the simulator
+runtime, so references are recorded on the same values as the `mobile-ios`
+job in `.github/workflows/ci.yml`:
+
+| Runner image | Xcode | Device        | Runtime  |
+| ------------ | ----- | ------------- | -------- |
+| `macos-26`   | 26.5  | iPhone 17 Pro | iOS 26.5 |
+
+A test with no reference image records one and fails. To re-record every
+reference after an intended UI change, run the tests with
+`SNAPSHOT_TESTING_RECORD=all` passed to the test runner. The run reports
+each recorded image as a failure. Then review and commit the changed images:
+
+```bash
+TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all xcodebuild \
+  -scheme QuranRecitationApp \
+  -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
+  test
+```
+
+When a comparison fails in CI, the job uploads the images it rendered as
+the `ios-snapshots` artifact. Those images can also be committed as the new
+references.
+
+To update the pinned values, change them in the workflow and in this
+table, and re-record the references in the same pull request.
 
 ## Open in Xcode
 

@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Practice screen layout: back button, "Surah · ayah N" title with a
-/// menu, progress dots, AyahCard, and teacher reference panel.
-/// Recording panel and analysing/error states land in PR 14–16.
+/// Practice screen: feeds `PracticeViewModel` into `PracticeContent` and
+/// loads the ayah on first appearance.
 struct PracticeView: View {
   @State private var viewModel: PracticeViewModel
   let onClose: () -> Void
@@ -13,11 +12,66 @@ struct PracticeView: View {
   }
 
   var body: some View {
+    PracticeContent(
+      state: viewModel.state,
+      ayah: viewModel.ayah,
+      surah: viewModel.surah,
+      currentAyahNumber: viewModel.currentAyahNumber,
+      reciterName: viewModel.reciterName,
+      teacherState: viewModel.teacherState,
+      isLoopEnabled: viewModel.isLoopEnabled,
+      canGoToPreviousAyah: viewModel.canGoToPreviousAyah,
+      canGoToNextAyah: viewModel.canGoToNextAyah,
+      onClose: onClose,
+      onTogglePlayback: { viewModel.toggleReferencePlayback() },
+      onSelectRate: { viewModel.setReferenceRate($0) },
+      onToggleLoop: { viewModel.toggleLoop() },
+      onTapRecord: { viewModel.toggleRecording() },
+      onReplay: { viewModel.replayLastRecording() },
+      onRecordAgain: { viewModel.resetForRetry() },
+      onPreviousAyah: { Task { await viewModel.goToPreviousAyah() } },
+      onNextAyah: { Task { await viewModel.goToNextAyah() } }
+    )
+    .navigationBarBackButtonHidden(true)
+    .task {
+      if viewModel.ayah == nil {
+        await viewModel.load()
+        await viewModel.loadReference()
+      }
+    }
+  }
+}
+
+/// Practice screen layout: back button, "Surah · ayah N" title with a
+/// menu, progress, AyahCard, teacher reference panel, the state-driven
+/// panel and the ayah navigation. Takes state rather than the ViewModel,
+/// so any state renders without one.
+struct PracticeContent: View {
+  let state: PracticeRecordingState
+  let ayah: AyahDetail?
+  let surah: SurahSummary?
+  let currentAyahNumber: Int
+  let reciterName: String
+  let teacherState: TeacherReferencePanel.State
+  let isLoopEnabled: Bool
+  let canGoToPreviousAyah: Bool
+  let canGoToNextAyah: Bool
+  let onClose: () -> Void
+  let onTogglePlayback: () -> Void
+  let onSelectRate: (Float) -> Void
+  let onToggleLoop: () -> Void
+  let onTapRecord: () -> Void
+  let onReplay: () -> Void
+  let onRecordAgain: () -> Void
+  let onPreviousAyah: () -> Void
+  let onNextAyah: () -> Void
+
+  var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: Spacing.lg) {
         topBar
         progressIndicator
-        if let ayah = viewModel.ayah, let surah = viewModel.surah {
+        if let ayah, let surah {
           AyahCard(
             surahNameEn: surah.nameEn,
             ayahNumber: ayah.ayahNumber,
@@ -25,20 +79,20 @@ struct PracticeView: View {
           )
           .padding(.horizontal, Spacing.screenHorizontal)
           TeacherReferencePanel(
-            reciterName: viewModel.reciterName,
-            state: viewModel.teacherState,
+            reciterName: reciterName,
+            state: teacherState,
             availableRates: PracticeViewModel.supportedReferenceRates,
-            isLoopEnabled: viewModel.isLoopEnabled,
-            onTogglePlayback: { viewModel.toggleReferencePlayback() },
-            onSelectRate: { viewModel.setReferenceRate($0) },
-            onToggleLoop: { viewModel.toggleLoop() }
+            isLoopEnabled: isLoopEnabled,
+            onTogglePlayback: onTogglePlayback,
+            onSelectRate: onSelectRate,
+            onToggleLoop: onToggleLoop
           )
           .padding(.horizontal, Spacing.screenHorizontal)
           activePanel
             .padding(.horizontal, Spacing.screenHorizontal)
           ayahNavRow
             .padding(.horizontal, Spacing.screenHorizontal)
-        } else if case .error(let error) = viewModel.state {
+        } else if case .error(let error) = state {
           Text(error.errorDescription ?? "")
             .font(Font.brand.body)
             .foregroundColor(Color.brand.textSecondary)
@@ -52,30 +106,23 @@ struct PracticeView: View {
       .padding(.vertical, Spacing.lg)
     }
     .background(Color.brand.surface.ignoresSafeArea())
-    .navigationBarBackButtonHidden(true)
-    .task {
-      if viewModel.ayah == nil {
-        await viewModel.load()
-        await viewModel.loadReference()
-      }
-    }
   }
 
   @ViewBuilder
   private var activePanel: some View {
-    switch viewModel.state {
+    switch state {
     case .idle, .recording, .uploading, .done:
       RecordingPanel(
-        state: viewModel.state,
-        onTapRecord: { viewModel.toggleRecording() }
+        state: state,
+        onTapRecord: onTapRecord
       )
     case .analysing(let step):
       AnalysingPanel(step: step)
     case .error(let error):
       PracticeErrorPanel(
         error: error,
-        onReplay: { viewModel.replayLastRecording() },
-        onRecordAgain: { viewModel.resetForRetry() }
+        onReplay: onReplay,
+        onRecordAgain: onRecordAgain
       )
     }
   }
@@ -113,7 +160,7 @@ struct PracticeView: View {
   /// threshold matches the other platforms so the cutover is identical.
   @ViewBuilder
   private var progressIndicator: some View {
-    if let count = viewModel.surah?.ayahCount, count > 0 {
+    if let count = surah?.ayahCount, count > 0 {
       Group {
         if Self.usesSegmentedProgress(ayahCount: count) {
           segmentedProgress(count: count)
@@ -124,7 +171,7 @@ struct PracticeView: View {
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(
         Text(
-          "practice.progress.a11y \(viewModel.currentAyahNumber) \(count)",
+          "practice.progress.a11y \(currentAyahNumber) \(count)",
           bundle: .module
         )
       )
@@ -135,7 +182,7 @@ struct PracticeView: View {
   /// Short-surah mode: one rounded pill per ayah, the active ayah
   /// rendered wider and in the primary emerald.
   private func segmentedProgress(count: Int) -> some View {
-    let active = max(1, min(viewModel.currentAyahNumber, count))
+    let active = max(1, min(currentAyahNumber, count))
     return HStack(spacing: Spacing.xs) {
       ForEach(1...count, id: \.self) { index in
         let isActive = index == active
@@ -163,7 +210,7 @@ struct PracticeView: View {
             .frame(width: Self.indicatorDiameter, height: Self.indicatorDiameter)
             .offset(
               x: Self.indicatorOffset(
-                currentAyahNumber: viewModel.currentAyahNumber,
+                currentAyahNumber: currentAyahNumber,
                 ayahCount: count,
                 trackWidth: geo.size.width
               )
@@ -173,7 +220,7 @@ struct PracticeView: View {
       .frame(height: Self.indicatorDiameter)
 
       VStack(alignment: .trailing, spacing: -2) {
-        Text("\(viewModel.currentAyahNumber) /")
+        Text("\(currentAyahNumber) /")
           .font(.system(size: 13, weight: .semibold))
           .foregroundColor(Color.brand.textPrimary)
         Text("\(count)")
@@ -221,9 +268,7 @@ struct PracticeView: View {
   /// non-existent ayah.
   private var ayahNavRow: some View {
     HStack(spacing: Spacing.md) {
-      Button {
-        Task { await viewModel.goToPreviousAyah() }
-      } label: {
+      Button(action: onPreviousAyah) {
         Label {
           Text("practice.nav.prev", bundle: .module)
         } icon: {
@@ -236,12 +281,10 @@ struct PracticeView: View {
         .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
       }
       .buttonStyle(.plain)
-      .disabled(!viewModel.canGoToPreviousAyah)
-      .opacity(viewModel.canGoToPreviousAyah ? 1 : 0.4)
+      .disabled(!canGoToPreviousAyah)
+      .opacity(canGoToPreviousAyah ? 1 : 0.4)
 
-      Button {
-        Task { await viewModel.goToNextAyah() }
-      } label: {
+      Button(action: onNextAyah) {
         Label {
           Text("practice.nav.next", bundle: .module)
         } icon: {
@@ -256,15 +299,15 @@ struct PracticeView: View {
         .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
       }
       .buttonStyle(.plain)
-      .disabled(!viewModel.canGoToNextAyah)
-      .opacity(viewModel.canGoToNextAyah ? 1 : 0.4)
+      .disabled(!canGoToNextAyah)
+      .opacity(canGoToNextAyah ? 1 : 0.4)
     }
   }
 
   private var title: String {
-    if let surah = viewModel.surah {
-      return "\(surah.nameEn) · ayah \(viewModel.currentAyahNumber)"
+    if let surah {
+      return "\(surah.nameEn) · ayah \(currentAyahNumber)"
     }
-    return "Ayah \(viewModel.currentAyahNumber)"
+    return "Ayah \(currentAyahNumber)"
   }
 }

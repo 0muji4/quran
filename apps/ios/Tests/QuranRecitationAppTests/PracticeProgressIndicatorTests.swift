@@ -7,10 +7,10 @@ import CoreGraphics
 /// surah > 10 ayahs.
 final class PracticeProgressIndicatorTests: XCTestCase {
   private let trackWidth: CGFloat = 250
-  private let diameter: CGFloat = 10  // mirrors PracticeView.indicatorDiameter
+  private let diameter: CGFloat = 10  // mirrors PracticeContent.indicatorDiameter
 
   func test_firstAyah_pinnedToLeftEdge() {
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 1,
       ayahCount: 7,
       trackWidth: trackWidth
@@ -22,7 +22,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
     // The indicator's leading edge stops at `trackWidth - diameter`
     // so the circle sits *inside* the bar instead of clipping past
     // the right end.
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 286,
       ayahCount: 286,
       trackWidth: trackWidth
@@ -34,7 +34,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
     // The old dot row would have rendered all-grey here because no
     // index ∈ [0,9] satisfied `index + 1 == 47`. Bar version places
     // the indicator at a deterministic fraction along the track.
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 47,
       ayahCount: 286,
       trackWidth: trackWidth
@@ -48,7 +48,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
   func test_singleAyahSurah_pinnedToLeft() {
     // ayahCount == 1 would divide by zero in the linear-scale
     // formula. Pin to the left and bail out cleanly.
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 1,
       ayahCount: 1,
       trackWidth: trackWidth
@@ -59,7 +59,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
   func test_ayahPastFinal_clampsToTheRight() {
     // Defensive: a stale ViewModel that somehow surfaces an
     // out-of-range ayah must not push the indicator past the bar.
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 999,
       ayahCount: 286,
       trackWidth: trackWidth
@@ -68,7 +68,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
   }
 
   func test_ayahBeforeFirst_clampsToTheLeft() {
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 0,
       ayahCount: 7,
       trackWidth: trackWidth
@@ -80,7 +80,7 @@ final class PracticeProgressIndicatorTests: XCTestCase {
     // If a layout pass hands us a track narrower than the
     // indicator, fall back to the left edge so the math stays
     // non-negative.
-    let offset = PracticeView.indicatorOffset(
+    let offset = PracticeContent.indicatorOffset(
       currentAyahNumber: 5,
       ayahCount: 7,
       trackWidth: 4
@@ -93,20 +93,20 @@ final class PracticeProgressIndicatorTests: XCTestCase {
   func test_shortSurah_usesSegments() {
     // Al-Fatihah (7) and any surah up to the 12-ayah cutoff render
     // as discrete pill segments.
-    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 7))
-    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 1))
+    XCTAssertTrue(PracticeContent.usesSegmentedProgress(ayahCount: 7))
+    XCTAssertTrue(PracticeContent.usesSegmentedProgress(ayahCount: 1))
   }
 
   func test_atThreshold_stillSegmented() {
     // The boundary is inclusive (≤ 12), matching Android's
     // `ayahCount <= MAX_SEGMENTS`.
-    XCTAssertEqual(PracticeView.maxSegments, 12)
-    XCTAssertTrue(PracticeView.usesSegmentedProgress(ayahCount: 12))
+    XCTAssertEqual(PracticeContent.maxSegments, 12)
+    XCTAssertTrue(PracticeContent.usesSegmentedProgress(ayahCount: 12))
   }
 
   func test_longSurah_usesContinuousBar() {
     // One past the threshold flips to the bar; Al-Baqarah (286) too.
-    XCTAssertFalse(PracticeView.usesSegmentedProgress(ayahCount: 13))
-    XCTAssertFalse(PracticeView.usesSegmentedProgress(ayahCount: 286))
+    XCTAssertFalse(PracticeContent.usesSegmentedProgress(ayahCount: 13))
+    XCTAssertFalse(PracticeContent.usesSegmentedProgress(ayahCount: 286))
   }
 }

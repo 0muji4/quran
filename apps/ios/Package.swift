@@ -10,7 +10,8 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "2.5.0"),
-    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.1.0")
+    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.1.0"),
+    .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", exact: "1.19.7")
   ],
   targets: [
     .executableTarget(
@@ -30,9 +31,11 @@ let package = Package(
       dependencies: [
         "QuranRecitationApp",
         .product(name: "Apollo", package: "apollo-ios"),
-        .product(name: "ApolloAPI", package: "apollo-ios")
+        .product(name: "ApolloAPI", package: "apollo-ios"),
+        .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
       ],
-      path: "Tests/QuranRecitationAppTests"
+      path: "Tests/QuranRecitationAppTests",
+      exclude: ["__Snapshots__"]
     )
   ],
   swiftLanguageModes: [.v5]
