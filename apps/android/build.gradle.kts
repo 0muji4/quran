@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.apollographql.apollo")
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -56,6 +57,18 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric renders the screens for the snapshot tests (ADR 0027),
+            // which needs the merged resources.
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+roborazzi {
+    outputDir.set(file("src/test/snapshots"))
 }
 
 kotlin {
@@ -107,4 +120,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("com.squareup.okhttp3:mockwebserver:5.5.1")
+    testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.78.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
