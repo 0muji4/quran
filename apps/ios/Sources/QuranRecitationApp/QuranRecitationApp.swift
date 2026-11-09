@@ -11,6 +11,7 @@ struct QuranRecitationApp: App {
   private let telemetry: Telemetry
 
   init() {
+    AppTheme.registerFonts()
     let telemetry = OSLogTelemetry()
     let authService = URLSessionAuthService()
     let tokenStore = KeychainTokenStore()
