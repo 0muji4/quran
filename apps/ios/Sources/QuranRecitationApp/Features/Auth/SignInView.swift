@@ -10,7 +10,7 @@ import SwiftUI
 /// `SignUpView`, so anything typed survives the sign-in ↔ sign-up
 /// toggle.
 struct SignInView: View {
-  @ObservedObject var viewModel: AuthViewModel
+  @Bindable var viewModel: AuthViewModel
   let onNavigateToSignUp: () -> Void
   let onAuthenticated: () -> Void
 

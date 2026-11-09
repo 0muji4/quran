@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// ViewModel for the Change Email sheet. Drives
 /// `POST /auth/me/email` (Phase 2.C-lite — no confirmation mail is
@@ -9,15 +10,16 @@ import Foundation
 /// `SessionStore`, so the header / Account card repaint without
 /// forcing a re-sign-in.
 @MainActor
-final class ChangeEmailViewModel: ObservableObject, Identifiable {
+@Observable
+final class ChangeEmailViewModel: Identifiable {
   /// Stable per-instance id so `.sheet(item:)` can drive the modal
   /// off "create a fresh ViewModel" rather than a bool. Same pattern
   /// as `EditProfileViewModel` / `UpdatePasswordViewModel`.
   let id = UUID()
 
-  @Published var currentPassword: String = ""
-  @Published var newEmail: String = ""
-  @Published private(set) var status: Status = .idle
+  var currentPassword: String = ""
+  var newEmail: String = ""
+  private(set) var status: Status = .idle
 
   enum Status: Equatable {
     case idle

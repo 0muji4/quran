@@ -10,8 +10,8 @@ import SwiftUI
 /// working anonymously — there is no launch gate. Mirrors the Android
 /// `ProfileAuthHost` + `ProfileScreen` pair.
 struct ProfileView: View {
-  @ObservedObject private var session: SessionStore
-  @StateObject private var authViewModel: AuthViewModel
+  private let session: SessionStore
+  @State private var authViewModel: AuthViewModel
   @State private var path: [AuthRoute] = []
   private let profileService: ProfileService?
   private let meClient: MeClient?
@@ -32,9 +32,9 @@ struct ProfileView: View {
     meClient: MeClient? = nil,
     historyStore: HistoryStore? = nil
   ) {
-    self._session = ObservedObject(wrappedValue: session)
-    self._authViewModel = StateObject(
-      wrappedValue: AuthViewModel(
+    self.session = session
+    self._authViewModel = State(
+      initialValue: AuthViewModel(
         authService: authService,
         session: session,
         telemetry: telemetry
@@ -139,7 +139,7 @@ private struct ProfileSignedInContent: View {
   let user: AuthenticatedUser
   /// Observed so `pendingReactivationNotice` toggles re-render the
   /// banner without relying on the parent re-creating this view.
-  @ObservedObject var session: SessionStore
+  let session: SessionStore
   let profileService: ProfileService?
   let meClient: MeClient?
   let streakDays: Int
@@ -234,15 +234,14 @@ private struct ProfileSignedInContent: View {
   }
 }
 
-/// Owns the `PreferencesViewModel` as a `@StateObject` so its lifetime
-/// is tied to the signed-in content (the surrounding struct can't hold
-/// an optional `@StateObject`). Rendered only when a `MeClient` is
-/// available — i.e. not in the read-only preview/signed-out paths.
+/// Owns the `PreferencesViewModel` as `@State` so its lifetime is tied
+/// to the signed-in content. Rendered only when a `MeClient` is
+/// available, so not in the read-only preview or signed-out paths.
 private struct PreferencesSection: View {
-  @StateObject private var viewModel: PreferencesViewModel
+  @State private var viewModel: PreferencesViewModel
 
   init(meClient: MeClient) {
-    self._viewModel = StateObject(wrappedValue: PreferencesViewModel(meClient: meClient))
+    self._viewModel = State(initialValue: PreferencesViewModel(meClient: meClient))
   }
 
   var body: some View {

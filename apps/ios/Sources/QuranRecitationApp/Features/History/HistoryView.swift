@@ -5,15 +5,15 @@ import SwiftUI
 /// (history is an account feature); the stats / chips / list collapse
 /// to that empty state so anonymous users do not see zeroed metrics.
 struct HistoryView: View {
-  @StateObject var viewModel: HistoryViewModel
-  @ObservedObject var session: SessionStore
+  @State private var viewModel: HistoryViewModel
+  let session: SessionStore
 
   init(
     viewModel: @autoclosure @escaping () -> HistoryViewModel,
     session: SessionStore
   ) {
-    self._viewModel = StateObject(wrappedValue: viewModel())
-    self._session = ObservedObject(wrappedValue: session)
+    self._viewModel = State(initialValue: viewModel())
+    self.session = session
   }
 
   var body: some View {

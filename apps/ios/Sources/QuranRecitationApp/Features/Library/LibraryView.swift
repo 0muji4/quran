@@ -5,7 +5,7 @@ import SwiftUI
 /// when the user has a recent practice session, otherwise a get-started
 /// prompt. Mirrors the web Library, which always leads with this hero.
 struct LibraryView: View {
-  @StateObject var viewModel: LibraryViewModel
+  @State private var viewModel: LibraryViewModel
   let onResume: ((LastPracticed) -> Void)?
   let onSurahOpened: ((SurahSummary) -> Void)?
 
@@ -14,7 +14,7 @@ struct LibraryView: View {
     onResume: ((LastPracticed) -> Void)? = nil,
     onSurahOpened: ((SurahSummary) -> Void)? = nil
   ) {
-    self._viewModel = StateObject(wrappedValue: viewModel())
+    self._viewModel = State(initialValue: viewModel())
     self.onResume = onResume
     self.onSurahOpened = onSurahOpened
   }
@@ -52,6 +52,7 @@ struct LibraryView: View {
         await viewModel.load()
       }
     }
+    .onAppear { viewModel.reloadHistory() }
     .onReceive(viewModel.historyChanges) { viewModel.reloadHistory() }
   }
 

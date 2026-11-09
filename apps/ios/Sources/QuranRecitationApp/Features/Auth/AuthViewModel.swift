@@ -11,25 +11,26 @@ import SwiftUI
 /// (which dismisses the auth screen). Every failure path lands in
 /// `error` as an `AppError` — the one error vocabulary the views read.
 @MainActor
-final class AuthViewModel: ObservableObject {
+@Observable
+final class AuthViewModel {
   // Form fields. Editing any text field clears a stale error banner,
   // matching the Android `AuthViewModel` setters.
-  @Published var email: String = "" { didSet { clearError() } }
-  @Published var password: String = "" { didSet { clearError() } }
-  @Published var displayName: String = "" { didSet { clearError() } }
-  @Published var isPasswordVisible: Bool = false
-  @Published var selectedLevel: PracticeLevel = .beginner
+  var email: String = "" { didSet { clearError() } }
+  var password: String = "" { didSet { clearError() } }
+  var displayName: String = "" { didSet { clearError() } }
+  var isPasswordVisible: Bool = false
+  var selectedLevel: PracticeLevel = .beginner
   /// Terms-of-Service gate on sign-up. Checking the box clears the error.
-  @Published var agreedToTerms: Bool = false {
+  var agreedToTerms: Bool = false {
     didSet { if agreedToTerms { termsError = false } }
   }
 
   /// Set when sign-up is attempted without accepting the Terms.
-  @Published private(set) var termsError: Bool = false
+  private(set) var termsError: Bool = false
   /// True while a sign-in / sign-up request is in flight.
-  @Published private(set) var isSubmitting: Bool = false
+  private(set) var isSubmitting: Bool = false
   /// The most recent failure, shown in the form's error banner.
-  @Published private(set) var error: AppError? = nil
+  private(set) var error: AppError? = nil
 
   private let authService: AuthService
   private let session: SessionStore

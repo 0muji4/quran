@@ -6,9 +6,10 @@ import SwiftUI
 /// `HistoryStore` and exposes a derived `filteredAttempts` for the
 /// chip filter row. Stats grid (PR 23) reuses the same attempts array.
 @MainActor
-final class HistoryViewModel: ObservableObject {
-  @Published private(set) var attempts: [Attempt] = []
-  @Published var filter: Filter = .all
+@Observable
+final class HistoryViewModel {
+  private(set) var attempts: [Attempt] = []
+  var filter: Filter = .all
 
   enum Filter: Hashable {
     case all

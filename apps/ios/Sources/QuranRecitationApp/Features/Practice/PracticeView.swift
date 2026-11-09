@@ -4,11 +4,11 @@ import SwiftUI
 /// menu, progress dots, AyahCard, and teacher reference panel.
 /// Recording panel and analysing/error states land in PR 14–16.
 struct PracticeView: View {
-  @StateObject var viewModel: PracticeViewModel
+  @State private var viewModel: PracticeViewModel
   let onClose: () -> Void
 
   init(viewModel: @autoclosure @escaping () -> PracticeViewModel, onClose: @escaping () -> Void) {
-    self._viewModel = StateObject(wrappedValue: viewModel())
+    self._viewModel = State(initialValue: viewModel())
     self.onClose = onClose
   }
 

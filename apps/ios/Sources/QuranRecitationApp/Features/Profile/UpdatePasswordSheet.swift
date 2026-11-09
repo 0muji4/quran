@@ -5,7 +5,7 @@ import SwiftUI
 /// before the network call. Successful submit dismisses; failure
 /// leaves the sheet open with an error banner.
 struct UpdatePasswordSheet: View {
-  @ObservedObject var viewModel: UpdatePasswordViewModel
+  let viewModel: UpdatePasswordViewModel
   let onDismiss: () -> Void
 
   var body: some View {

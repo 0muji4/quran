@@ -1,6 +1,6 @@
 # ADR 0005: iOS App Architecture — MVVM, TabView, Route Enum, State Machine
 
-- Status: Accepted. Reconsider trigger #1 fired (2026-11-09): the minimum deployment target moved to iOS 18, and the ViewModels will move from `ObservableObject` to `@Observable`. The migration and the matching update to Decision 1 land in a separate change.
+- Status: Accepted. Amended 2026-11-09: reconsider trigger #1 fired when the minimum deployment target moved to iOS 18, and Decision 1 now uses `@Observable` instead of `ObservableObject`.
 - Date: 2026-05-09
 - Author: motoshi.suzuki
 
@@ -12,9 +12,9 @@ Status text in the current `RecordingViewModel` is a `String` (`"Idle"`, `"Recor
 
 ## Decision
 
-The iOS app adopts the following architecture, all on iOS 16+:
+The iOS app adopts the following architecture, on iOS 18+:
 
-1. **MVVM with `ObservableObject` ViewModels.** Each screen has a `@MainActor final class FooViewModel: ObservableObject` that exposes `@Published` state and async methods. ViewModels receive their dependencies (backend, audio, storage, telemetry) via initializer injection.
+1. **MVVM with `@Observable` ViewModels.** Each screen has a `@MainActor @Observable final class FooViewModel` that exposes its state as stored properties and async methods. The screen's View owns it as `@State`, built in the View's initializer. A child View that needs bindings into it takes it as `@Bindable`. ViewModels receive their dependencies (backend, audio, storage, telemetry) via initializer injection, and their initializers only store those dependencies.
 2. **`TabView` shell with one `NavigationStack` per tab.** Three tabs: Library, Practice, History. Each tab owns its own `NavigationPath`.
 3. **Typed routing via a `Route` enum** stored in each tab's `NavigationPath`. Practice → Result navigation is `path.append(.result(jobId: ...))`. Cross-tab jumps (e.g. Library Continue card → Practice ayah) flip the selected tab and rewrite that tab's path.
 4. **Domain state machines as enums.** Concretely, `enum PracticeRecordingState { case idle, recording(meters: [Float], duration: TimeInterval), uploading, analysing(step: AnalysingStep), done(ScoringResult), error(AppError) }`. View bodies switch on the state; the compiler enforces exhaustiveness.
@@ -23,7 +23,8 @@ The iOS app adopts the following architecture, all on iOS 16+:
 ## Rationale
 
 - **MVVM is the path of least resistance from the current code.** The codebase is already MVVM in miniature; growing it requires no rewrite, no learning curve, and no new dependencies. The composition-based alternatives (TCA, Redux-style stores) impose a learning tax and a dependency surface that is not justified at the current size.
-- **iOS 17 `Observation` is rejected** because it would push the deployment target up and provides no functional capability the project actually needs.
+- **`@Observable` over `ObservableObject`.** A View re-renders only when a property it reads changes, not on every change to the object, and the state needs no `@Published`.
+- **ViewModel initializers only store dependencies** because `@State` evaluates its initial value every time the parent re-creates the View, and SwiftUI keeps only the first instance. Work such as reading a store goes in `onAppear` or `.task`.
 - **`TabView` matches the design.** The mockups place a three-tab bar at the bottom on every screen. A custom bottom bar would be more code for no design fidelity gain.
 - **`NavigationStack` + typed `Route` enum** is the iOS 16+ canonical pattern. Storing a `NavigationPath` per tab keeps tab states independent (a user can drill into Library, switch to History, and return to find Library still drilled in).
 - **State enums replace stringly-typed status.** The current `statusText == "Recording"` pattern is unsound — typos, locale changes, and new states break silently. An enum with associated values lets the View switch exhaustively and makes invariants like "meters only exist while recording" type-enforced.
@@ -41,13 +42,13 @@ Positive:
 Negative:
 
 - Manual dependency injection at the composition root (`AppRoot`). Tolerable for ~5 ViewModels; a DI container would be added if the app grew to ~20+.
-- `ObservableObject` boilerplate is more verbose than `@Observable` (iOS 17). Re-evaluate when iOS 16 is dropped.
+- A View that owns a ViewModel builds and discards one whenever its parent re-creates it. This stays cheap only while ViewModel initializers have no side effects.
 - No automated visual regression coverage. Visual changes must be reviewed by eye in the Simulator.
 
 ## Alternatives Considered
 
 - **The Composable Architecture (TCA).** Rejected: large dependency, steep learning curve, designed for app-wide event composition that does not exist at this size. Premature.
-- **iOS 17 `Observation` (`@Observable`).** Rejected on deployment-target grounds. Reconsider when minimum target moves to iOS 17.
+- **`ObservableObject` with `@Published` and `@StateObject`.** The original choice while the minimum target was iOS 16. Replaced on 2026-11-09 (see Decision 1).
 - **Single `NavigationStack` with custom tab bar.** Rejected: more code, less native feel, breaks the "back button per tab" expectation.
 - **MV / SwiftUI-only with no ViewModel.** Rejected: makes the network and audio side effects untestable without UI machinery.
 - **Snapshot tests via `swift-snapshot-testing`.** Deferred: visual UI is faster to verify by hand at this stage; the dependency and CI pipeline cost is not yet justified.
@@ -56,7 +57,7 @@ Negative:
 
 Re-open this decision when **any** of the following hold:
 
-1. Minimum deployment target moves to iOS 17 → evaluate `@Observable` migration. **Fired 2026-11-09** (target moved to iOS 18): migrate to `@Observable`.
+1. Minimum deployment target moves to iOS 17 → evaluate `@Observable` migration. **Fired 2026-11-09** (target moved to iOS 18): Decision 1 now uses `@Observable`.
 2. Number of ViewModels exceeds ~15 and manual DI wiring becomes a churn source → consider a small DI container (`Factory`, `Resolver`) or modularise via SPM products.
 3. UI regressions repeatedly slip past manual review → introduce snapshot testing for the most-changed screens.
 4. Cross-tab event flows (e.g. a recording-complete toast on the Library tab) become common → evaluate TCA or a shared event bus.

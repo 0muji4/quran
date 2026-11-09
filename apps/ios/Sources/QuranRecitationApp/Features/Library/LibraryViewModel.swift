@@ -7,7 +7,8 @@ import SwiftUI
 /// and exposes a `filteredSurahs` view derived from all three. The
 /// Continue-card behaviour lands in PR 11.
 @MainActor
-final class LibraryViewModel: ObservableObject {
+@Observable
+final class LibraryViewModel {
   enum LoadState: Equatable {
     case idle
     case loading
@@ -35,12 +36,12 @@ final class LibraryViewModel: ObservableObject {
     case short
   }
 
-  @Published private(set) var state: LoadState = .idle
-  @Published var query: String = ""
-  @Published var filter: Filter = .all
-  @Published private(set) var lastPracticed: LastPracticed?
+  private(set) var state: LoadState = .idle
+  var query: String = ""
+  var filter: Filter = .all
+  private(set) var lastPracticed: LastPracticed?
   /// Best score per surah on a 0–100 scale, keyed by surah id.
-  @Published private(set) var bestScores: [String: Int] = [:]
+  private(set) var bestScores: [String: Int] = [:]
 
   private let backend: QuranBackend
   private let telemetry: Telemetry
@@ -53,7 +54,6 @@ final class LibraryViewModel: ObservableObject {
     self.backend = backend
     self.telemetry = telemetry
     self.historyStore = historyStore
-    reloadHistory()
   }
 
   var historyChanges: AnyPublisher<Void, Never> { historyStore.changes }

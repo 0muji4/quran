@@ -6,20 +6,21 @@ import SwiftUI
 /// reference playback, PR 14 records, and PR 15 wires the
 /// stop → upload → analyse → result transition end-to-end.
 @MainActor
-final class PracticeViewModel: ObservableObject {
-  @Published private(set) var state: PracticeRecordingState = .idle
-  @Published private(set) var ayah: AyahDetail?
-  @Published private(set) var surah: SurahSummary?
-  @Published private(set) var teacherState: TeacherReferencePanel.State = .idle
+@Observable
+final class PracticeViewModel {
+  private(set) var state: PracticeRecordingState = .idle
+  private(set) var ayah: AyahDetail?
+  private(set) var surah: SurahSummary?
+  private(set) var teacherState: TeacherReferencePanel.State = .idle
 
   /// Whether the teacher reference repeats on finish. Mirrors the
   /// web `TeacherPanel` loop control. Driven by the loop toggle in
   /// `TeacherReferencePanel`.
-  @Published private(set) var isLoopEnabled: Bool = false
+  private(set) var isLoopEnabled: Bool = false
 
   /// Reciter name surfaced on the teacher panel. Hard-coded today —
   /// when the BFF starts returning reciter metadata, this becomes a
-  /// `@Published` populated by `loadReference()`.
+  /// property set by `loadReference()`.
   let reciterName: String = "Husary Mu'allim"
 
   let surahId: String
@@ -82,7 +83,7 @@ final class PracticeViewModel: ObservableObject {
   /// `goToNextAyah()`. Reset to `initialAyahNumber` on construction
   /// so deep-link entries (e.g. Library Continue) land where the
   /// caller expects.
-  @Published private(set) var currentAyahNumber: Int
+  private(set) var currentAyahNumber: Int
 
   /// True when there is a previous ayah to navigate to. The UI uses
   /// this to disable the prev button on ayah 1.
@@ -305,7 +306,7 @@ final class PracticeViewModel: ObservableObject {
   /// then `.analysing(step:)`, then `.done` (or `.error`). On success the
   /// final result is appended to `route` for the View to consume, and
   /// the attempt is persisted via `HistoryStore`.
-  @Published var route: [PracticeRoute] = []
+  var route: [PracticeRoute] = []
 
   /// Test-only entry point so unit tests can exercise the upload →
   /// score → telemetry pipeline without holding a real recording.
@@ -420,7 +421,7 @@ final class PracticeViewModel: ObservableObject {
   }
 
   private func observeRecorder() {
-    // Mirror AudioRecorder's @Published meters/duration into the
+    // Mirror AudioRecorder's meters/duration into the
     // PracticeRecordingState.recording associated values so the View
     // binds against the state machine directly.
     Task { @MainActor [weak self] in

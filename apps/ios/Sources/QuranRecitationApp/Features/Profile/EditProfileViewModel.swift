@@ -1,15 +1,17 @@
 import Foundation
+import Observation
 
 /// ViewModel for the Edit Profile sheet. Backs `displayName` and `level`
 /// inputs, owns the submit lifecycle, and propagates the BFF's
 /// refreshed user shape back into `SessionStore` so the header repaints
 /// without a re-sign-in.
 @MainActor
-final class EditProfileViewModel: ObservableObject, Identifiable {
+@Observable
+final class EditProfileViewModel: Identifiable {
   /// Stable per-instance id so `.sheet(item:)` can drive the modal off
   /// "create a fresh ViewModel" rather than a bool — that pattern owns
-  /// ViewModel lifetime in the parent View and avoids the @StateObject
-  /// re-init pitfall.
+  /// ViewModel lifetime in the parent View, so the sheet never rebuilds
+  /// it when SwiftUI re-initialises the sheet View.
   let id = UUID()
 
   /// Skill bucket options offered by the form. Mirrors the BFF zod
@@ -18,12 +20,12 @@ final class EditProfileViewModel: ObservableObject, Identifiable {
   /// Picker can iterate them directly.
   static let levelOptions: [String] = ["beginner", "intermediate", "advanced"]
 
-  @Published var displayName: String
+  var displayName: String
   /// `nil` means "no skill bucket selected" — distinct from any string
   /// value. Persisting `nil` is valid and clears the column server-
   /// side.
-  @Published var level: String?
-  @Published private(set) var status: Status = .idle
+  var level: String?
+  private(set) var status: Status = .idle
 
   enum Status: Equatable {
     case idle

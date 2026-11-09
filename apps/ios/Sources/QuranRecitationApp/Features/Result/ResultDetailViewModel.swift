@@ -6,7 +6,8 @@ import SwiftUI
 /// future deep-link wants to land on Result without going through
 /// Practice, the same ViewModel can refetch via `ScoringJobQuery`.
 @MainActor
-final class ResultDetailViewModel: ObservableObject {
+@Observable
+final class ResultDetailViewModel {
   enum LoadState: Equatable {
     case idle
     case loading
@@ -23,7 +24,7 @@ final class ResultDetailViewModel: ObservableObject {
     }
   }
 
-  @Published private(set) var state: LoadState
+  private(set) var state: LoadState
 
   let jobId: String
   let surahId: String

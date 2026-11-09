@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct QuranRecitationApp: App {
-  @StateObject private var session: SessionStore
+  @State private var session: SessionStore
   private let backend: QuranBackend
   private let authService: AuthService
   private let meClient: MeClient
@@ -47,7 +47,7 @@ struct QuranRecitationApp: App {
     self.meClient = meClient
     self.profileService = profileService
     self.historyStore = historyStore
-    self._session = StateObject(wrappedValue: session)
+    self._session = State(initialValue: session)
   }
 
   var body: some Scene {
