@@ -68,6 +68,12 @@ CSS resolution is unaffected. `next/font/local` synthesises its own family name 
 
 `OFL.txt` from the upstream release is committed alongside the woff2 files (`apps/web/app/fonts/OFL.txt`), satisfying OFL §"Distribution".
 
+### Update (2026-11-09): PostScript name and reproducible output
+
+- The rename step also rewrites NameID 6 (PostScript Name), which had kept `Amiri-Regular` / `Amiri-Bold`. It is now `TilawahAmiriQuranSubset-Regular` / `-Bold`, so no name record uses the Reserved Font Name. iOS looks fonts up by this name ([ADR 0028](./0028-mobile-type.md)).
+- The script requires fonttools 4.68.0 and brotli 1.2.1, and the rename step keeps the subset's modification time. A re-run with the same inputs now reproduces the committed bytes; before, a different fontTools version or the save time changed them.
+- The regenerated woff2 files differ from the earlier ones only in the `head` (modification time, checksum) and `name` tables. Glyph outlines, shaping tables and the character map are byte-identical.
+
 ## Bundle impact
 
 Measured against the post-4.3-C baseline (PR #248) on the same build pipeline:
