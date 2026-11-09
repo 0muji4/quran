@@ -24,6 +24,24 @@ OUT_DIR="${REPO_ROOT}/apps/web/app/fonts"
 AMIRI_VERSION="1.001"
 AMIRI_RELEASE_URL="https://github.com/aliftype/amiri/releases/download/${AMIRI_VERSION}/Amiri-${AMIRI_VERSION}.zip"
 
+# The subset's bytes depend on these versions. Pin them so a re-run with the
+# same inputs reproduces the committed files.
+FONTTOOLS_VERSION="4.68.0"
+BROTLI_VERSION="1.2.1"
+python3 - "${FONTTOOLS_VERSION}" "${BROTLI_VERSION}" <<'PY'
+import sys
+import brotli
+import fontTools
+
+want_fonttools, want_brotli = sys.argv[1], sys.argv[2]
+if (fontTools.version, brotli.__version__) != (want_fonttools, want_brotli):
+    sys.exit(
+        f"Need fonttools {want_fonttools} and brotli {want_brotli}, "
+        f"have {fontTools.version} and {brotli.__version__}. "
+        "See apps/web/app/fonts/README.md."
+    )
+PY
+
 WORK_DIR="$(mktemp -d -t amiri-subset.XXXXXX)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
 

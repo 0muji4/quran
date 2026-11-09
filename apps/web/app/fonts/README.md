@@ -27,7 +27,7 @@ the subsetting toolchain. Regenerate when:
 One-shot prerequisites (only needed for regeneration):
 
 ```bash
-python3 -m pip install --user 'fonttools[woff]'   # provides pyftsubset + brotli
+python3 -m pip install --user 'fonttools==4.68.0' 'brotli==1.2.1'
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"  # on macOS
 ```
 
@@ -45,10 +45,12 @@ exact source release the subset was built from.
 
 Amiri is distributed under the SIL OFL with `"Amiri"` as the Reserved
 Font Name. OFL §5 forbids modified copies (which a subset is) from
-using the reserved name in their internal Family Name (NameID 1) or
-Full Font Name (NameID 4) records. The subsetting script rewrites those
-records to `"Tilawah Amiri Quran Subset"` via
-`scripts/_rename-font-family.py` so the file identifies as a derivative.
+using the reserved name in their internal name records. The subsetting
+script rewrites the Family Name (NameID 1), Full Font Name (NameID 4) and
+Preferred Family (NameID 16) records to `"Tilawah Amiri Quran Subset"`,
+and the PostScript Name (NameID 6) to `"TilawahAmiriQuranSubset-Regular"`
+or `"…-Bold"`, via `scripts/_rename-font-family.py`, so the file
+identifies as a derivative.
 
 The CSS `font-family` declaration in `layout.tsx` therefore loads under
 this new name; no legal exposure even if the file is downloaded
