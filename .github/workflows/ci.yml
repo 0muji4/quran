@@ -300,15 +300,23 @@ jobs:
   mobile-ios:
     needs: changes
     if: needs.changes.outputs.ios == 'true'
-    runs-on: macos-latest
+    # Snapshot tests compare against images recorded on this exact runner
+    # image, Xcode, device and runtime (ADR 0027). Change them together with
+    # re-recorded snapshots, and keep apps/ios/README.md in step.
+    runs-on: macos-26
     defaults:
       run:
         working-directory: apps/ios
     env:
       APOLLO_IOS_CLI_VERSION: 1.25.5
+      XCODE_APP: /Applications/Xcode_26.5.app
+      SIMULATOR: platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch "$XCODE_APP"
 
       - name: Install Apollo iOS CLI
         run: |
@@ -322,21 +330,18 @@ jobs:
       - name: Build iOS app
         run: xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" build
 
-      - name: Run iOS tests (if present)
-        run: |
-          if [ -d Tests ]; then
-            # `xcodebuild test` needs a concrete simulator (the generic slug is
-            # build-only). Pick the first available iPhone so a runner Xcode bump
-            # can't break a hard-coded device name (Xcode 26.5 dropped "iPhone 16").
-            sim_id=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-F-]{36}')
-            if [ -z "$sim_id" ]; then
-              echo "No available iPhone simulator on this runner" >&2
-              exit 1
-            fi
-            xcodebuild -scheme QuranRecitationApp -destination "id=$sim_id" test
-          else
-            echo "No iOS tests directory; skipping tests."
-          fi
+      - name: Run iOS tests and compare snapshots
+        env:
+          TEST_RUNNER_SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/ios-snapshots
+        run: xcodebuild -scheme QuranRecitationApp -destination "$SIMULATOR" test
+
+      - name: Upload rendered snapshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-snapshots
+          path: ${{ runner.temp }}/ios-snapshots/
+          if-no-files-found: ignore
 
   ci-summary:
     # The single stable required check. Branch protection on develop/main
