@@ -1,0 +1,20 @@
+# Writes the e2e image layers to the GitHub Actions cache. Layered on top of
+# compose.ci.yml by .github/workflows/e2e.yml only on runs outside pull
+# requests (pushes to develop/main and the nightly), and only from one shard.
+#
+# A cache saved from a pull request is visible to that pull request alone,
+# and one full write is about 3 GB of the repository's 10 GB cache, so
+# writing from every PR would evict the pnpm, Go and Gradle caches. A cache
+# saved on develop is readable by every PR based on it.
+services:
+  backend:
+    build:
+      cache_to: ['type=gha,scope=e2e-backend,mode=max']
+
+  bff:
+    build:
+      cache_to: ['type=gha,scope=e2e-bff,mode=max']
+
+  web:
+    build:
+      cache_to: ['type=gha,scope=e2e-web,mode=max']
