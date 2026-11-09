@@ -7,6 +7,7 @@
 #
 #   web      woff2 Regular + Bold into apps/web/app/fonts/ (next/font/local)
 #   android  TTF Regular into apps/android/src/main/res/font/
+#   ios      TTF Regular into apps/ios/Sources/QuranRecitationApp/Resources/Fonts/
 #
 # Run once when:
 #   - upstream Amiri releases a new version (bump AMIRI_VERSION)
@@ -24,15 +25,16 @@ SEED_SQL="${REPO_ROOT}/db/seed_quran.sql"
 WEB_DIR="${REPO_ROOT}/apps/web/app/fonts"
 ANDROID_FONT_DIR="${REPO_ROOT}/apps/android/src/main/res/font"
 ANDROID_LICENSE_DIR="${REPO_ROOT}/apps/android/src/main/assets/licenses"
+IOS_FONT_DIR="${REPO_ROOT}/apps/ios/Sources/QuranRecitationApp/Resources/Fonts"
 
 TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then
-  TARGETS=(web android)
+  TARGETS=(web android ios)
 fi
 for target in "${TARGETS[@]}"; do
   case "${target}" in
-    web | android) ;;
-    *) echo "unknown output: ${target} (expected web or android)" >&2; exit 2 ;;
+    web | android | ios) ;;
+    *) echo "unknown output: ${target} (expected web, android or ios)" >&2; exit 2 ;;
   esac
 done
 wants () {
@@ -118,6 +120,12 @@ if wants android; then
   mkdir -p "${ANDROID_FONT_DIR}" "${ANDROID_LICENSE_DIR}"
   cp "${SRC_DIR}/OFL.txt" "${ANDROID_LICENSE_DIR}/OFL-amiri.txt"
   subset_one "${SRC_DIR}/Amiri-Regular.ttf" "${ANDROID_FONT_DIR}/tilawah_amiri_quran_regular.ttf" "Tilawah Amiri Quran" ""
+fi
+
+if wants ios; then
+  mkdir -p "${IOS_FONT_DIR}"
+  cp "${SRC_DIR}/OFL.txt" "${IOS_FONT_DIR}/OFL-amiri.txt"
+  subset_one "${SRC_DIR}/Amiri-Regular.ttf" "${IOS_FONT_DIR}/TilawahAmiriQuranSubset-Regular.ttf" "Tilawah Amiri Quran" ""
 fi
 
 echo "✓ Done. Commit the regenerated fonts and license files."

@@ -24,7 +24,8 @@ Sources/QuranRecitationApp/
 ├── Backend/         QuranBackend protocol + ApolloBackend impl + ReferenceAudioClient
 ├── Storage/         HistoryStore protocol + UserDefaults / InMemory impls
 ├── Telemetry/       Telemetry protocol + OSLog / NoOp impls
-├── Resources/       en.lproj / ar.lproj Localizable.strings
+├── Resources/       en.lproj / ar.lproj Localizable.strings,
+│                    Fonts/ (the Amiri subset for Quran text, ADR 0028)
 ├── GraphQL/         .graphql operations + apollo-ios-cli output
 └── Features/
     ├── Library/     LibraryView, ContinueCard, SurahRow, ViewModel
