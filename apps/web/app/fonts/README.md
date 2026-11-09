@@ -34,8 +34,11 @@ export PATH="$HOME/Library/Python/3.9/bin:$PATH"  # on macOS
 Then:
 
 ```bash
-./scripts/build-amiri-quran-subset.sh
+./scripts/build-amiri-quran-subset.sh web
 ```
+
+Without an argument the script also writes the Android TTF
+(`apps/android/src/main/res/font/`, ADR 0028).
 
 Commit the regenerated `*.woff2` files. The script also refreshes
 `OFL.txt` from the upstream zip so the license file always matches the
