@@ -1,6 +1,6 @@
 # ADR 0005: iOS App Architecture — MVVM, TabView, Route Enum, State Machine
 
-- Status: Accepted
+- Status: Accepted. Reconsider trigger #1 fired (2026-11-09): the minimum deployment target moved to iOS 18, and the ViewModels will move from `ObservableObject` to `@Observable`. The migration and the matching update to Decision 1 land in a separate change.
 - Date: 2026-05-09
 - Author: motoshi.suzuki
 
@@ -56,7 +56,7 @@ Negative:
 
 Re-open this decision when **any** of the following hold:
 
-1. Minimum deployment target moves to iOS 17 → evaluate `@Observable` migration.
+1. Minimum deployment target moves to iOS 17 → evaluate `@Observable` migration. **Fired 2026-11-09** (target moved to iOS 18): migrate to `@Observable`.
 2. Number of ViewModels exceeds ~15 and manual DI wiring becomes a churn source → consider a small DI container (`Factory`, `Resolver`) or modularise via SPM products.
 3. UI regressions repeatedly slip past manual review → introduce snapshot testing for the most-changed screens.
 4. Cross-tab event flows (e.g. a recording-complete toast on the Library tab) become common → evaluate TCA or a shared event bus.

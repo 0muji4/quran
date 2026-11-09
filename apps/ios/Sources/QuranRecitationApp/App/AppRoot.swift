@@ -55,7 +55,7 @@ struct AppRoot: View {
       profileTab
     }
     .tint(Color.brand.primary)
-    .onChange(of: selectedTab) { newValue in
+    .onChange(of: selectedTab) { _, newValue in
       if newValue == .library {
         telemetry.event(TelemetryEvent.libraryTabSelected)
       }
@@ -77,7 +77,7 @@ struct AppRoot: View {
         lastHistoryRefreshAt = nil
       }
     }
-    .onChange(of: scenePhase) { newPhase in
+    .onChange(of: scenePhase) { _, newPhase in
       // Foreground-return refresh: when the user returns to the app
       // after recording on another device (e.g. web), pull the
       // authoritative state so the History tab and Continue card are
