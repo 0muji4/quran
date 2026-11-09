@@ -6,10 +6,12 @@ not use the original Reserved Name. The Amiri OFL designates "Amiri"
 itself as the reserved name; our subset must therefore identify as
 something else when read via CSS / `next/font/local`. ADR 0020.
 
-Replaces every NameID 1 (Family Name) and NameID 4 (Full Font Name)
-record in every name table sub-record across every language with the
-provided string. NameID 16 / 17 (Preferred Family / Subfamily) are
-also updated when present.
+Replaces every NameID 1 (Family Name), NameID 4 (Full Font Name) and
+NameID 16 (Preferred Family) record across every platform and language
+with the provided string, and NameID 6 (PostScript Name) with the same
+name without spaces plus the style, for example
+"TilawahAmiriQuranSubset-Regular". The PostScript name is the name iOS
+looks a font up by, so it must not keep the reserved name either.
 """
 
 import sys
@@ -23,13 +25,25 @@ RENAME_IDS = {1, 4, 16}
 SUFFIX = " Subset"
 
 
+POSTSCRIPT_NAME_ID = 6
+SUBFAMILY_NAME_ID = 2
+
+
 def main(path: str, new_family: str) -> None:
-    font = TTFont(path)
+    # Keep the source's modification time so a re-run reproduces the same bytes.
+    font = TTFont(path, recalcTimestamp=False)
     name = font["name"]
     new = f"{new_family}{SUFFIX}"
+    style = name.getDebugName(SUBFAMILY_NAME_ID) or "Regular"
+    postscript = f"{new.replace(' ', '')}-{style.replace(' ', '')}"
     for record in list(name.names):
         if record.nameID in RENAME_IDS:
-            record.string = new.encode("utf-16-be") if record.isUnicode() else new.encode("latin-1")
+            value = new
+        elif record.nameID == POSTSCRIPT_NAME_ID:
+            value = postscript
+        else:
+            continue
+        record.string = value.encode("utf-16-be") if record.isUnicode() else value.encode("latin-1")
     font.save(path)
 
 
