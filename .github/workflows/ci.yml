@@ -147,7 +147,7 @@ jobs:
 
       - name: Run Go format check
         run: |
-          unformatted=$(gofmt -l $(find ./apps/backend ./packages/go-pkg -name '*.go' -not -path "*/vendor/*"))
+          unformatted=$(find ./apps/backend ./packages/go-pkg -name '*.go' -not -path '*/vendor/*' -print0 | xargs -0 gofmt -l)
           if [ -n "$unformatted" ]; then
             echo "gofmt needed on:"
             echo "$unformatted"
@@ -156,6 +156,48 @@ jobs:
 
       - name: Run Go tests
         run: go test ./apps/backend/... ./packages/go-pkg/...
+
+      # Fails only on vulnerabilities that the code can reach. The nightly run
+      # catches new advisories for code that has not changed.
+      - name: Check for reachable vulnerabilities
+        run: |
+          for module in apps/backend packages/go-pkg; do
+            (cd "$module" && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...)
+          done
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # The image bundles shellcheck, which also lints the `run:` scripts.
+      - name: Lint GitHub Actions workflows
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Pull requests scan their own commits and pushes scan the pushed range.
+      # Other events, such as the nightly run, scan the full history.
+      - name: Scan commits for secrets
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) range="$BASE_SHA..$HEAD_SHA" ;;
+            push) range="$BEFORE_SHA..$GITHUB_SHA" ;;
+            *) range="" ;;
+          esac
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
+            git /repo --redact --no-banner ${range:+"--log-opts=$range"}
 
   proto-check:
     needs: changes
@@ -378,6 +420,8 @@ jobs:
       - js-quality
       - format
       - go-quality
+      - actionlint
+      - secret-scan
       - proto-check
       - tokens-check
       - db-lint

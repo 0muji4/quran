@@ -18,7 +18,7 @@ jobs:
         shard: [1, 2, 3]
         total: [3]
     env:
-      COMPOSE_FILES: -f ops/docker/compose.dev.yml -f ops/docker/compose.ci.yml
+      COMPOSE_FILE: ops/docker/compose.dev.yml:ops/docker/compose.ci.yml
 
     steps:
       - name: Checkout repository
@@ -83,7 +83,7 @@ jobs:
       # postgres, minio, otel-collector). Jaeger, Prometheus, Loki and
       # Grafana are for local debugging and stay down.
       - name: Start Docker Compose services
-        run: docker compose $COMPOSE_FILES up -d --no-build web
+        run: docker compose up -d --no-build web
 
       - name: Wait for services to be healthy
         run: |
@@ -147,4 +147,4 @@ jobs:
 
       - name: Shutdown Docker Compose
         if: always()
-        run: docker compose $COMPOSE_FILES down -v
+        run: docker compose down -v
