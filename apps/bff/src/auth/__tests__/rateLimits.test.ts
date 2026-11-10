@@ -1,7 +1,6 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TRUSTED_PROXY_HOPS } from '../../server/proxy';
 import { loginAccountLimiter, signupLimiter } from '../rateLimits';
 
 const appWith = (limiter: express.RequestHandler) => {
@@ -36,28 +35,44 @@ describe('auth rate limits', () => {
     expect(response.body).toEqual({ error: 'too many requests' });
   });
 
-  it('keys on the client address behind Cloudflare and Render, ignoring spoofed entries', async () => {
+  describe('on Render', () => {
+    const render = process.env.RENDER;
+
+    beforeEach(() => {
+      process.env.RENDER = 'true';
+    });
+
+    afterEach(() => {
+      if (render === undefined) delete process.env.RENDER;
+      else process.env.RENDER = render;
+    });
+
+    it('keys on True-Client-IP, whatever X-Forwarded-For says', async () => {
+      const app = appWith(signupLimiter);
+      // Render's X-Forwarded-For: `<client-supplied...>, <client>, <cloudflare edge>, <render 10.x>`.
+      const send = (client: string, i: number) =>
+        request(app)
+          .post('/target')
+          .set('True-Client-IP', client)
+          .set('X-Forwarded-For', `192.0.2.${i}, ${client}, 172.64.0.${i}, 10.0.0.${i}`);
+      for (let i = 0; i < 5; i += 1) {
+        expect((await send('203.0.113.7', i)).status).toBe(204);
+      }
+
+      expect((await send('203.0.113.7', 5)).status).toBe(429);
+      expect((await send('198.51.100.9', 6)).status).toBe(204);
+    });
+  });
+
+  it('ignores True-Client-IP off Render, where a client could set it', async () => {
     const app = appWith(signupLimiter);
-    app.set('trust proxy', TRUSTED_PROXY_HOPS);
-    // Render delivers `<client-supplied...>, <client>, <cloudflare edge>`; the
-    // spoofed first entry and the edge address change on every request.
-    const forwardedFor = (client: string, i: number) => `10.0.0.${i}, ${client}, 172.64.0.${i}`;
     for (let i = 0; i < 5; i += 1) {
-      const response = await request(app)
-        .post('/target')
-        .set('X-Forwarded-For', forwardedFor('203.0.113.7', i));
-      expect(response.status).toBe(204);
+      await request(app).post('/target').set('True-Client-IP', `192.0.2.${i}`);
     }
 
-    const sameClient = await request(app)
-      .post('/target')
-      .set('X-Forwarded-For', forwardedFor('203.0.113.7', 5));
-    const otherClient = await request(app)
-      .post('/target')
-      .set('X-Forwarded-For', forwardedFor('198.51.100.9', 6));
+    const response = await request(app).post('/target').set('True-Client-IP', '192.0.2.99');
 
-    expect(sameClient.status).toBe(429);
-    expect(otherClient.status).toBe(204);
+    expect(response.status).toBe(429);
   });
 
   it('counts sign-in attempts per account regardless of letter case', async () => {
