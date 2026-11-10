@@ -1,6 +1,6 @@
 name: E2E Tests
 
-# Called from ci.yml when the JS or DB stack changed. Direct push and
+# Called from ci.yml when the `e2e` path filter matched. Direct push and
 # pull_request triggers are intentionally absent so this workflow only
 # runs through the orchestrator. See ADR 0014.
 on:

@@ -25,6 +25,7 @@ jobs:
       proto: ${{ steps.resolve.outputs.proto }}
       tokens: ${{ steps.resolve.outputs.tokens }}
       db: ${{ steps.resolve.outputs.db }}
+      e2e: ${{ steps.resolve.outputs.e2e }}
       terraform: ${{ steps.resolve.outputs.terraform }}
       ios: ${{ steps.resolve.outputs.ios }}
       android: ${{ steps.resolve.outputs.android }}
@@ -48,6 +49,7 @@ jobs:
           F_PROTO: ${{ steps.filter.outputs.proto }}
           F_TOKENS: ${{ steps.filter.outputs.tokens }}
           F_DB: ${{ steps.filter.outputs.db }}
+          F_E2E: ${{ steps.filter.outputs.e2e }}
           F_TERRAFORM: ${{ steps.filter.outputs.terraform }}
           F_IOS: ${{ steps.filter.outputs.ios }}
           F_ANDROID: ${{ steps.filter.outputs.android }}
@@ -66,6 +68,7 @@ jobs:
           emit proto     "$F_PROTO"
           emit tokens    "$F_TOKENS"
           emit db        "$F_DB"
+          emit e2e       "$F_E2E"
           emit terraform "$F_TERRAFORM"
           emit ios       "$F_IOS"
           emit android   "$F_ANDROID"
@@ -98,8 +101,15 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      # web, bff and ui run their suites with coverage in test.yml, so only
+      # the remaining packages run here.
       - name: Run tests
-        run: pnpm test
+        run: >-
+          pnpm -r
+          --filter '!@quran-project/web'
+          --filter '!@quran-project/bff'
+          --filter '!@quran-project/ui'
+          test
 
       - name: Run build
         run: pnpm build
@@ -256,7 +266,7 @@ jobs:
 
   e2e:
     needs: changes
-    if: needs.changes.outputs.js == 'true' || needs.changes.outputs.db == 'true'
+    if: needs.changes.outputs.e2e == 'true'
     uses: ./.github/workflows/e2e.yml
 
   mobile-android:
