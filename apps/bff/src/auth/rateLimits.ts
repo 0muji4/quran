@@ -7,7 +7,24 @@ const MINUTE_MS = 60 * 1000;
 /** Limits apply only in production, so local stacks, tests, and e2e are not throttled. */
 const isDisabled = (): boolean => process.env.NODE_ENV !== 'production';
 
-const ipKey = (req: Request): string => `ip:${ipKeyGenerator(req.ip ?? '')}`;
+/**
+ * The client address that IP limits are keyed on.
+ *
+ * On Render, requests pass through Cloudflare and Render's own proxies, and
+ * X-Forwarded-For keeps whatever the client sent at its front. Cloudflare sets
+ * True-Client-IP to the connecting address and overwrites a value the client
+ * sends, so on Render (which sets RENDER=true) that header is the client.
+ * Elsewhere the BFF trusts no proxy and uses the socket address.
+ */
+export const clientAddress = (req: Request): string => {
+  if (process.env.RENDER === 'true') {
+    const trueClientIp = req.get('true-client-ip');
+    if (trueClientIp) return trueClientIp;
+  }
+  return req.ip ?? '';
+};
+
+const ipKey = (req: Request): string => `ip:${ipKeyGenerator(clientAddress(req))}`;
 
 const limiter = (windowMs: number, limit: number, keyGenerator: Options['keyGenerator'] = ipKey) =>
   rateLimit({
@@ -17,7 +34,10 @@ const limiter = (windowMs: number, limit: number, keyGenerator: Options['keyGene
     skip: isDisabled,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    message: { error: 'too many requests' }
+    message: { error: 'too many requests' },
+    // Keys come from clientAddress, not from X-Forwarded-For, so the header
+    // arriving while Express trusts no proxy is expected.
+    validate: { xForwardedForHeader: false }
   });
 
 const emailKey = (req: Request): string => {
