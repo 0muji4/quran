@@ -1,6 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TRUSTED_PROXY_HOPS } from '../../server/proxy';
 import { loginAccountLimiter, signupLimiter } from '../rateLimits';
 
 const appWith = (limiter: express.RequestHandler) => {
@@ -33,6 +34,30 @@ describe('auth rate limits', () => {
 
     expect(response.status).toBe(429);
     expect(response.body).toEqual({ error: 'too many requests' });
+  });
+
+  it('keys on the client address behind Cloudflare and Render, ignoring spoofed entries', async () => {
+    const app = appWith(signupLimiter);
+    app.set('trust proxy', TRUSTED_PROXY_HOPS);
+    // Render delivers `<client-supplied...>, <client>, <cloudflare edge>`; the
+    // spoofed first entry and the edge address change on every request.
+    const forwardedFor = (client: string, i: number) => `10.0.0.${i}, ${client}, 172.64.0.${i}`;
+    for (let i = 0; i < 5; i += 1) {
+      const response = await request(app)
+        .post('/target')
+        .set('X-Forwarded-For', forwardedFor('203.0.113.7', i));
+      expect(response.status).toBe(204);
+    }
+
+    const sameClient = await request(app)
+      .post('/target')
+      .set('X-Forwarded-For', forwardedFor('203.0.113.7', 5));
+    const otherClient = await request(app)
+      .post('/target')
+      .set('X-Forwarded-For', forwardedFor('198.51.100.9', 6));
+
+    expect(sameClient.status).toBe(429);
+    expect(otherClient.status).toBe(204);
   });
 
   it('counts sign-in attempts per account regardless of letter case', async () => {

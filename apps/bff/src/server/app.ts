@@ -10,6 +10,7 @@ import { resolvers } from '../graphql';
 import { meRouter } from '../me';
 import { rscRouter, restRouter } from '../rest';
 import { otelMiddleware } from '../telemetry';
+import { TRUSTED_PROXY_HOPS } from './proxy';
 
 // Navigate up from bff app to project root for schema file
 // In dev: __dirname is apps/bff/dist/server (go up 4 levels)
@@ -25,8 +26,7 @@ export const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 export const createApp = () => {
   const app = express();
-  // Render's proxy appends the client address to X-Forwarded-For; trust only that hop.
-  app.set('trust proxy', 1);
+  app.set('trust proxy', TRUSTED_PROXY_HOPS);
 
   // Apply OTEL middleware first to trace all requests
   app.use(otelMiddleware);
