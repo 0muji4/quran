@@ -25,6 +25,8 @@ export const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 export const createApp = () => {
   const app = express();
+  // Render's proxy appends the client address to X-Forwarded-For; trust only that hop.
+  app.set('trust proxy', 1);
 
   // Apply OTEL middleware first to trace all requests
   app.use(otelMiddleware);
