@@ -38,15 +38,31 @@ js:
   - 'packages/ts-config/**'
   - 'schemas/**'
   - 'scripts/generate-quran-seed.ts'
-  # e2e/** is the Playwright suite + baselines. Changes here (a new
-  # spec, a refreshed visual baseline, a config edit) must re-trigger
-  # the e2e job so the change is actually exercised end-to-end. Without
-  # this entry a baseline-only PR (e.g. #247) skips e2e and ships
-  # un-validated. The job condition in ci.yml gates on the js filter,
-  # so attaching here is sufficient — no separate `e2e` filter needed.
+  # The root `pnpm lint` also lints the Playwright suite.
   - 'e2e/**'
   - 'playwright.config.ts'
-  # e2e boots the stack from ops/docker/compose.dev.yml.
+
+# The e2e job boots web, bff, backend and Postgres from
+# ops/docker/compose.dev.yml and drives them with Playwright, so it runs
+# when anything that goes into those images, the database or the suite
+# changes. Lint-only config (packages/eslint-config) is left out.
+e2e:
+  - *shared
+  - 'apps/web/**'
+  - 'apps/bff/**'
+  - 'apps/backend/**'
+  - 'packages/ui/**'
+  - 'packages/shared-ts/**'
+  - 'packages/ts-config/**'
+  - 'packages/go-pkg/**'
+  - 'go.work'
+  - 'go.work.sum'
+  - 'schemas/**'
+  - 'db/**'
+  # The Playwright suite and its baselines. A baseline-only PR (e.g. #247)
+  # must still run e2e, or the new baseline ships unvalidated.
+  - 'e2e/**'
+  - 'playwright.config.ts'
   - 'ops/docker/**'
 
 go:
