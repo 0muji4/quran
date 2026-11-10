@@ -1,0 +1,21 @@
+# CI-only overrides for compose.dev.yml, used by .github/workflows/e2e.yml.
+#
+# The e2e job builds these images with docker/bake-action before
+# `docker compose up --no-build`. Fixed image names let compose find the
+# images bake loaded. Layers are read from the GitHub Actions cache, one
+# scope per image; compose.ci-cache-write.yml adds the matching writes.
+services:
+  backend:
+    image: quran-e2e-backend:ci
+    build:
+      cache_from: ['type=gha,scope=e2e-backend']
+
+  bff:
+    image: quran-e2e-bff:ci
+    build:
+      cache_from: ['type=gha,scope=e2e-bff']
+
+  web:
+    image: quran-e2e-web:ci
+    build:
+      cache_from: ['type=gha,scope=e2e-web']
