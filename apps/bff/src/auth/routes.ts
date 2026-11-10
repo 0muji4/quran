@@ -29,6 +29,13 @@ import {
   type UserLevel,
   type UserRow
 } from './users';
+import {
+  credentialChangeLimiter,
+  googleLimiter,
+  loginAccountLimiter,
+  loginIpLimiter,
+  signupLimiter
+} from './rateLimits';
 
 export const authRouter = Router();
 
@@ -128,7 +135,7 @@ const issueAuthSuccess = async (
   };
 };
 
-authRouter.post('/auth/signup', async (req: AuthedRequest, res) => {
+authRouter.post('/auth/signup', signupLimiter, async (req: AuthedRequest, res) => {
   const validation = signupSchema.safeParse(req);
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
@@ -261,7 +268,7 @@ authRouter.patch('/auth/me', async (req: AuthedRequest, res) => {
 /// refreshed user shape on success. The response mirrors GET /auth/me
 /// so the client can reuse the same Profile component without
 /// conditional rendering.
-authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
+authRouter.post('/auth/me/email', credentialChangeLimiter, async (req: AuthedRequest, res) => {
   const session = requireAuth(req, res);
   if (!session) return;
   const validation = changeEmailSchema.safeParse(req);
@@ -310,7 +317,7 @@ authRouter.post('/auth/me/email', async (req: AuthedRequest, res) => {
 /// done here — that's a follow-up tracked in the password-change
 /// brief — so a user can rotate without being booted off every
 /// signed-in device.
-authRouter.post('/auth/me/password', async (req: AuthedRequest, res) => {
+authRouter.post('/auth/me/password', credentialChangeLimiter, async (req: AuthedRequest, res) => {
   const session = requireAuth(req, res);
   if (!session) return;
   const validation = changePasswordSchema.safeParse(req);
@@ -368,45 +375,50 @@ authRouter.delete('/auth/me', async (req: AuthedRequest, res) => {
   }
 });
 
-authRouter.post('/auth/login', async (req: AuthedRequest, res) => {
-  const validation = loginSchema.safeParse(req);
-  if (!validation.success) {
-    return res.status(400).json({ errors: validation.error.issues });
-  }
-  const { email, password } = validation.data.body;
-
-  try {
-    // `includeDeleted: true` so a soft-deleted account can sign in to
-    // reactivate (ADR-0024 §4). Every other authenticated read still
-    // hides the deleted row.
-    const user = await findUserByEmail(email, { includeDeleted: true });
-    // Always run a verify pass even when the user is missing, so the
-    // response timing is invariant with respect to existence (mitigates
-    // user-enumeration via timing).
-    const stored = user?.passwordHash ?? '';
-    const ok = stored ? await verifyPassword(password, stored) : false;
-
-    if (!user || !ok) {
-      return res.status(401).json({ error: 'invalid email or password' });
+authRouter.post(
+  '/auth/login',
+  loginIpLimiter,
+  loginAccountLimiter,
+  async (req: AuthedRequest, res) => {
+    const validation = loginSchema.safeParse(req);
+    if (!validation.success) {
+      return res.status(400).json({ errors: validation.error.issues });
     }
+    const { email, password } = validation.data.body;
 
-    // The row was soft-deleted but the password still verifies and the
-    // 30-day grace window has not been purged yet: resurrect.
-    const wasReactivated = await reactivateUser(user.id);
-    if (wasReactivated) {
-      logger.info('login reactivated soft-deleted account', { userId: user.id });
+    try {
+      // `includeDeleted: true` so a soft-deleted account can sign in to
+      // reactivate (ADR-0024 §4). Every other authenticated read still
+      // hides the deleted row.
+      const user = await findUserByEmail(email, { includeDeleted: true });
+      // Always run a verify pass even when the user is missing, so the
+      // response timing is invariant with respect to existence (mitigates
+      // user-enumeration via timing).
+      const stored = user?.passwordHash ?? '';
+      const ok = stored ? await verifyPassword(password, stored) : false;
+
+      if (!user || !ok) {
+        return res.status(401).json({ error: 'invalid email or password' });
+      }
+
+      // The row was soft-deleted but the password still verifies and the
+      // 30-day grace window has not been purged yet: resurrect.
+      const wasReactivated = await reactivateUser(user.id);
+      if (wasReactivated) {
+        logger.info('login reactivated soft-deleted account', { userId: user.id });
+      }
+
+      res.json(await issueAuthSuccess(user, { reactivated: wasReactivated }));
+    } catch (error) {
+      logger.error('POST /auth/login failed', { email, error });
+      res.status(502).json({ error: 'Failed to sign in' });
     }
-
-    res.json(await issueAuthSuccess(user, { reactivated: wasReactivated }));
-  } catch (error) {
-    logger.error('POST /auth/login failed', { email, error });
-    res.status(502).json({ error: 'Failed to sign in' });
   }
-});
+);
 
 /// Issues a single-use nonce for the native ID-token flow (DD Q3). The
 /// client passes it to the Google SDK; `/auth/google` consumes it on verify.
-authRouter.post('/auth/google/nonce', async (_req: AuthedRequest, res) => {
+authRouter.post('/auth/google/nonce', googleLimiter, async (_req: AuthedRequest, res) => {
   try {
     const nonce = await issueNonce();
     if (!nonce) {
@@ -422,7 +434,7 @@ authRouter.post('/auth/google/nonce', async (_req: AuthedRequest, res) => {
 /// Google sign-in. Web sends an auth code (exchanged); native sends an ID
 /// token (verified directly, with a single-use nonce). Both resolve the
 /// account per DD Q4 and issue the same JWT pair as the password paths.
-authRouter.post('/auth/google', async (req: AuthedRequest, res) => {
+authRouter.post('/auth/google', googleLimiter, async (req: AuthedRequest, res) => {
   const validation = googleSchema.safeParse(req);
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.issues });
