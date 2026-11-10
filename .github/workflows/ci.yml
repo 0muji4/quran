@@ -327,13 +327,27 @@ jobs:
       - name: Verify GraphQL codegen is up-to-date
         run: make codegen-check
 
-      - name: Build iOS app
-        run: xcodebuild -scheme QuranRecitationApp -destination "generic/platform=iOS Simulator" build
+      # Package.resolved is not committed, so the key follows Package.swift.
+      # A stale hit is safe: xcodebuild re-resolves and fetches only what
+      # changed.
+      - name: Cache Swift package checkouts
+        uses: actions/cache@v6
+        with:
+          path: apps/ios/.build/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('apps/ios/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
 
-      - name: Run iOS tests and compare snapshots
+      # `test` builds the app before running the tests, so this one step
+      # also checks that the app compiles.
+      - name: Build and run iOS tests, comparing snapshots
         env:
           TEST_RUNNER_SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/ios-snapshots
-        run: xcodebuild -scheme QuranRecitationApp -destination "$SIMULATOR" test
+        run: >-
+          xcodebuild -scheme QuranRecitationApp
+          -destination "$SIMULATOR"
+          -clonedSourcePackagesDirPath .build/SourcePackages
+          test
 
       - name: Upload rendered snapshots
         if: failure()
