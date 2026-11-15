@@ -108,6 +108,23 @@ references.
 To update the pinned values, change them in the workflow and in this
 table, and re-record the references in the same pull request.
 
+### Borders
+
+The tests run without a host app, so swift-snapshot-testing captures each
+view with `CALayer.render(in:)`. SwiftUI draws the outline of a `Capsule()`
+or `RoundedRectangle` (`strokeBorder`) as a layer border with continuous
+corners, and `render(in:)` draws such a border wrongly: a capsule gets
+straight edges sticking out at its ends, and a smaller corner radius gets
+notches where the curve meets the straight edge. The app on screen is not
+affected.
+
+`assertSnapshot(of:in:)` in `SnapshotSupport.swift` therefore hosts the view
+in `SnapshotHostingController`, whose layer redraws each continuous-corner
+border as a path of the same outline just before the capture and puts the
+border back afterwards. `BorderRedrawingLayerTests` checks the workaround and
+fails if `render(in:)` stops having the defect, at which point the workaround
+can be removed.
+
 ## Open in Xcode
 
 Open `apps/ios/Package.swift` in Xcode, select the `QuranRecitationApp`
