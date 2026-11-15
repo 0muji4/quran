@@ -85,30 +85,39 @@ fun AppAyahText(
     }
 }
 
-/** The transliteration, in italics, and the translation of an ayah, centred. */
+/**
+ * The transliteration, in italics, and the translation of an ayah, centred.
+ * Either may be missing, as not every ayah has both; it draws nothing when
+ * both are.
+ */
 @Composable
 fun AppAyahGloss(
-    transliteration: String,
-    translation: String,
+    transliteration: String?,
+    translation: String?,
     modifier: Modifier = Modifier,
 ) {
+    if (transliteration == null && translation == null) return
     val style = AppTheme.typography.bodyMedium
     val color = AppTheme.colorScheme.onSurfaceVariant
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.space1)) {
-        Text(
-            text = transliteration,
-            modifier = Modifier.fillMaxWidth(),
-            style = style.copy(fontStyle = FontStyle.Italic),
-            color = color,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = translation,
-            modifier = Modifier.fillMaxWidth(),
-            style = style,
-            color = color,
-            textAlign = TextAlign.Center,
-        )
+        transliteration?.let {
+            Text(
+                text = it,
+                modifier = Modifier.fillMaxWidth(),
+                style = style.copy(fontStyle = FontStyle.Italic),
+                color = color,
+                textAlign = TextAlign.Center,
+            )
+        }
+        translation?.let {
+            Text(
+                text = it,
+                modifier = Modifier.fillMaxWidth(),
+                style = style,
+                color = color,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

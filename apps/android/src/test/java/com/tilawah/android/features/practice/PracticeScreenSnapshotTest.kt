@@ -1,12 +1,14 @@
 package com.tilawah.android.features.practice
 
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import com.tilawah.android.app.AppError
 import com.tilawah.android.audio.PlayerState
 import com.tilawah.android.backend.AyahDetail
 import com.tilawah.android.backend.SurahSummary
-import com.tilawah.android.designsystem.BrandTheme
+import com.tilawah.android.designsystem.AppTheme
 import com.tilawah.android.snapshot.RenderVariant
 import com.tilawah.android.snapshot.SNAPSHOT_DEVICE
 import com.tilawah.android.snapshot.SNAPSHOT_SDK
@@ -32,26 +34,28 @@ class PracticeScreenSnapshotTest(
     @Test
     fun practice() {
         captureSnapshot(composeRule, variant, "practice/${scene.id}_${variant.id}.png") {
-            BrandTheme {
-                Surface(color = BrandTheme.colors.surface) {
-                    PracticeContent(
-                        state = scene.state,
-                        ayah = scene.ayah,
-                        surah = scene.surah,
-                        reference = REFERENCE,
-                        onNavigateBack = {},
-                        onNavigateToAyah = {},
-                        onStartRecording = {},
-                        onStopRecording = {},
-                        onPlayReference = {},
-                        onPauseReference = {},
-                        onSetReferenceRate = {},
-                        onRetryReference = {},
-                        onViewResult = {},
-                        onReplay = {},
-                        onRecordAgain = {},
-                    )
-                }
+            AppTheme {
+                PracticeContent(
+                    state = scene.state,
+                    ayah = scene.ayah,
+                    surah = scene.surah,
+                    reference = REFERENCE,
+                    onNavigateBack = {},
+                    onNavigateToAyah = {},
+                    onStartRecording = {},
+                    onStopRecording = {},
+                    onPlayReference = {},
+                    onPauseReference = {},
+                    onSetReferenceRate = {},
+                    onRetryReference = {},
+                    onViewResult = {},
+                    onReplay = {},
+                    onRecordAgain = {},
+                    // A phone-sized screen: the state panel sits at the bottom
+                    // edge, as on a device, rather than at the bottom of the
+                    // taller snapshot window.
+                    modifier = Modifier.height(PHONE_HEIGHT),
+                )
             }
         }
     }
@@ -119,13 +123,12 @@ class PracticeScreenSnapshotTest(
             Scene("idle_long_surah", PracticeState.Idle, surah = BAQARAH, ayah = BAQARAH_255),
         )
 
+        /** The height of a phone at the snapshot window's width (411dp). */
+        private val PHONE_HEIGHT = 891.dp
+
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}_{1}")
         fun parameters(): List<Array<Any>> =
-            // BrandTheme has no dark palette, so dark would repeat the light images.
-            // The dark variants return when this screen moves to AppTheme.
-            scenes.flatMap { scene ->
-                RenderVariant.all.filter { !it.dark }.map { arrayOf(scene, it) }
-            }
+            scenes.flatMap { scene -> RenderVariant.all.map { arrayOf(scene, it) } }
     }
 }
