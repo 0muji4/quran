@@ -62,12 +62,13 @@
 "practice.teacher.label" = "Teacher reference";
 "practice.teacher.unavailable" = "Reference audio not available";
 "practice.teacher.rate.legend" = "Playback speed";
-"practice.teacher.rate.a11y %@" = "Playback speed %@";
 "practice.teacher.loop.on" = "Loop ayah — on";
 "practice.teacher.loop.off" = "Loop ayah — off";
 "practice.nav.prev" = "Previous ayah";
 "practice.nav.next" = "Next ayah";
-"practice.progress.a11y %lld %lld" = "Ayah %1$lld of %2$lld";
+"practice.ayahPosition %lld %lld" = "Ayah %1$lld of %2$lld";
+"practice.ayah.a11y %lld" = "Ayah %lld";
+"practice.backToLibrary" = "Back to library";
 "practice.record.idleTitle" = "Ready to record";
 "practice.record.idleSubtitle" = "Tap to start";
 "practice.record.recordingTitle" = "Recording…";
@@ -75,7 +76,6 @@
 "practice.record.startA11y" = "Start recording";
 "practice.record.stopA11y" = "Stop recording";
 "practice.analysing.title" = "Analysing…";
-"practice.analysing.subtitle" = "Comparing to teacher";
 "practice.analysing.step.transcribing" = "Transcribing audio";
 "practice.analysing.step.comparing" = "Comparing to reference";
 "practice.analysing.step.calculating" = "Calculating score";

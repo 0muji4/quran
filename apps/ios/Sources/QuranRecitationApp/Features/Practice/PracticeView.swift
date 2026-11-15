@@ -32,7 +32,6 @@ struct PracticeView: View {
       onPreviousAyah: { Task { await viewModel.goToPreviousAyah() } },
       onNextAyah: { Task { await viewModel.goToNextAyah() } }
     )
-    .navigationBarBackButtonHidden(true)
     .task {
       if viewModel.ayah == nil {
         await viewModel.load()
@@ -42,10 +41,15 @@ struct PracticeView: View {
   }
 }
 
-/// Practice screen layout: back button, "Surah · ayah N" title with a
-/// menu, progress, AyahCard, teacher reference panel, the state-driven
-/// panel and the ayah navigation. Takes state rather than the ViewModel,
-/// so any state renders without one.
+/// The Practice screen on `AppTheme` and system controls (ADR 0030). The
+/// navigation bar holds the back button and the surah with the ayah position;
+/// the state panel stays at the bottom while the ayah, the teacher recitation
+/// and the ayah navigation scroll above it, so the record button stays on
+/// screen for a long ayah. Takes state rather than the ViewModel, so any state
+/// renders without one.
+///
+/// The screen sits at the root of the Practice tab, so "back" switches to the
+/// Library tab (`onClose`) rather than popping a navigation stack.
 struct PracticeContent: View {
   let state: PracticeRecordingState
   let ayah: AyahDetail?
@@ -67,247 +71,123 @@ struct PracticeContent: View {
   let onNextAyah: () -> Void
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        topBar
-        progressIndicator
-        if let ayah, let surah {
-          AyahCard(
-            surahNameEn: surah.nameEn,
-            ayahNumber: ayah.ayahNumber,
-            textAr: ayah.textAr
-          )
-          .padding(.horizontal, Spacing.screenHorizontal)
-          TeacherReferencePanel(
-            reciterName: reciterName,
-            state: teacherState,
-            availableRates: PracticeViewModel.supportedReferenceRates,
-            isLoopEnabled: isLoopEnabled,
-            onTogglePlayback: onTogglePlayback,
-            onSelectRate: onSelectRate,
-            onToggleLoop: onToggleLoop
-          )
-          .padding(.horizontal, Spacing.screenHorizontal)
-          activePanel
-            .padding(.horizontal, Spacing.screenHorizontal)
-          ayahNavRow
-            .padding(.horizontal, Spacing.screenHorizontal)
-        } else if case .error(let error) = state {
-          Text(error.errorDescription ?? "")
-            .font(Font.brand.body)
-            .foregroundColor(Color.brand.textSecondary)
-            .padding(.horizontal, Spacing.screenHorizontal)
-        } else {
-          ProgressView()
-            .frame(maxWidth: .infinity)
-            .padding(.top, Spacing.xxl)
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space3) {
+          content
         }
+        .padding(.horizontal, AppTheme.Spacing.space4)
+        .padding(.top, AppTheme.Spacing.space1)
+        .padding(.bottom, AppTheme.Spacing.space3)
       }
-      .padding(.vertical, Spacing.lg)
+      if ayah != nil, surah != nil {
+        statePanel
+          .padding(.horizontal, AppTheme.Spacing.space4)
+          .padding(.bottom, AppTheme.Spacing.space4)
+      }
     }
-    .background(Color.brand.surface.ignoresSafeArea())
+    .background(AppTheme.Colors.surface.ignoresSafeArea())
+    .controlSize(.large)
+    .buttonBorderShape(.capsule)
+    .tint(AppTheme.Colors.primary)
+    .navigationBarTitleDisplayMode(.inline)
+    .navigationBarBackButtonHidden(true)
+    .toolbar {
+      ToolbarItem(placement: .topBarLeading) {
+        Button(action: onClose) {
+          Image(systemName: "chevron.backward")
+        }
+        .accessibilityLabel(Text("practice.backToLibrary", bundle: .module))
+      }
+      ToolbarItem(placement: .principal) {
+        titleView
+      }
+    }
   }
 
   @ViewBuilder
-  private var activePanel: some View {
-    switch state {
-    case .idle, .recording, .uploading, .done:
-      RecordingPanel(
-        state: state,
-        onTapRecord: onTapRecord
+  private var content: some View {
+    if let ayah, let surah {
+      if surah.ayahCount > 1 {
+        ProgressView(value: Double(currentAyahNumber), total: Double(surah.ayahCount))
+          .accessibilityLabel(
+            Text("practice.ayahPosition \(currentAyahNumber) \(surah.ayahCount)", bundle: .module))
+      }
+      AyahCard(ayah: ayah)
+      TeacherReferencePanel(
+        reciterName: reciterName,
+        state: teacherState,
+        availableRates: PracticeViewModel.supportedReferenceRates,
+        isLoopEnabled: isLoopEnabled,
+        onTogglePlayback: onTogglePlayback,
+        onSelectRate: onSelectRate,
+        onToggleLoop: onToggleLoop
       )
+      ayahNavRow
+    } else if case .error(let error) = state {
+      Text(error.errorDescription ?? "")
+        .font(AppTheme.Typography.body)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+    } else {
+      ProgressView()
+        .frame(maxWidth: .infinity)
+        .padding(.top, AppTheme.Spacing.space12)
+    }
+  }
+
+  /// The surah name with the ayah position under it, in the navigation bar.
+  private var titleView: some View {
+    VStack(spacing: 0) {
+      Text(verbatim: surah?.nameEn ?? "")
+        .font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      if let surah {
+        Text("practice.ayahPosition \(currentAyahNumber) \(surah.ayahCount)", bundle: .module)
+          .font(AppTheme.Typography.footnote)
+          .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+      }
+    }
+    .accessibilityElement(children: .combine)
+  }
+
+  /// The panel for the current state. Scoring finishes by moving on to the
+  /// Result screen, so `.done` shows the record button for the next attempt.
+  @ViewBuilder
+  private var statePanel: some View {
+    switch state {
+    case .idle, .recording, .done:
+      RecordingPanel(state: state, onTapRecord: onTapRecord)
+    case .uploading:
+      AnalysingPanel(step: .transcribing)
     case .analysing(let step):
       AnalysingPanel(step: step)
     case .error(let error):
-      PracticeErrorPanel(
-        error: error,
-        onReplay: onReplay,
-        onRecordAgain: onRecordAgain
-      )
+      PracticeErrorPanel(error: error, onReplay: onReplay, onRecordAgain: onRecordAgain)
     }
   }
 
-  private var topBar: some View {
-    HStack {
-      Button(action: onClose) {
-        Image(systemName: "chevron.right")
-          .rotationEffect(.degrees(180))
-          .foregroundColor(Color.brand.textPrimary)
-          .padding(Spacing.sm)
-          .background(Color.brand.card)
-          .clipShape(Circle())
-      }
-      Spacer()
-      VStack {
-        Text(title)
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-      }
-      Spacer()
-      Image(systemName: "ellipsis")
-        .foregroundColor(Color.brand.textPrimary)
-        .padding(Spacing.sm)
-        .background(Color.brand.card)
-        .clipShape(Circle())
-    }
-    .padding(.horizontal, Spacing.screenHorizontal)
-  }
-
-  /// Ayah progress, hybrid: short surahs render a row of pill segments
-  /// (active = wider + emerald), long surahs collapse to a single linear
-  /// bar with an "n / total" count. Above ``maxSegments`` the segment row
-  /// would overflow the screen width, so it switches to the bar; the
-  /// threshold matches the other platforms so the cutover is identical.
-  @ViewBuilder
-  private var progressIndicator: some View {
-    if let count = surah?.ayahCount, count > 0 {
-      Group {
-        if Self.usesSegmentedProgress(ayahCount: count) {
-          segmentedProgress(count: count)
-        } else {
-          continuousProgress(count: count)
-        }
-      }
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel(
-        Text(
-          "practice.progress.a11y \(currentAyahNumber) \(count)",
-          bundle: .module
-        )
-      )
-      .padding(.horizontal, Spacing.screenHorizontal)
-    }
-  }
-
-  /// Short-surah mode: one rounded pill per ayah, the active ayah
-  /// rendered wider and in the primary emerald.
-  private func segmentedProgress(count: Int) -> some View {
-    let active = max(1, min(currentAyahNumber, count))
-    return HStack(spacing: Spacing.xs) {
-      ForEach(1...count, id: \.self) { index in
-        let isActive = index == active
-        Capsule()
-          .fill(isActive ? Color.brand.primary : Color.brand.tile)
-          .frame(width: isActive ? 24 : 14, height: 4)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  /// Long-surah mode: a linear track whose indicator scales across
-  /// the surah, paired with an "n / total" count. Works for any
-  /// length (Al-Baqarah is 286 ayahs), where a segment row could not.
-  private func continuousProgress(count: Int) -> some View {
-    HStack(spacing: Spacing.md) {
-      GeometryReader { geo in
-        ZStack(alignment: .leading) {
-          Capsule()
-            .fill(Color.brand.tile)
-            .frame(height: 4)
-            .frame(maxHeight: .infinity, alignment: .center)
-          Circle()
-            .fill(Color.brand.primary)
-            .frame(width: Self.indicatorDiameter, height: Self.indicatorDiameter)
-            .offset(
-              x: Self.indicatorOffset(
-                currentAyahNumber: currentAyahNumber,
-                ayahCount: count,
-                trackWidth: geo.size.width
-              )
-            )
-        }
-      }
-      .frame(height: Self.indicatorDiameter)
-
-      VStack(alignment: .trailing, spacing: -2) {
-        Text("\(currentAyahNumber) /")
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundColor(Color.brand.textPrimary)
-        Text("\(count)")
-          .font(.system(size: 13))
-          .foregroundColor(Color.brand.textSecondary)
-      }
-    }
-  }
-
-  /// Surahs with at most this many ayahs render as discrete segments;
-  /// longer ones use the continuous bar. Matches Android's
-  /// `MAX_SEGMENTS` so the cutover point is identical across platforms.
-  static let maxSegments = 12
-
-  /// Whether a surah of `ayahCount` ayahs uses the segmented indicator
-  /// (vs. the continuous bar). Extracted as a pure helper so the
-  /// threshold rule is unit-testable without a rendered view.
-  static func usesSegmentedProgress(ayahCount: Int) -> Bool {
-    ayahCount <= maxSegments
-  }
-
-  /// Diameter of the emerald indicator on the continuous bar. Kept in
-  /// one place so the offset math doesn't drift from the rendered
-  /// circle size.
-  private static let indicatorDiameter: CGFloat = 10
-
-  /// Where to put the indicator's leading edge along the track.
-  /// Ayah 1 sits at 0; the final ayah sits at `trackWidth -
-  /// indicatorDiameter` so the circle stays flush inside the bar.
-  /// Single-ayah surahs (count == 1) pin to the left.
-  static func indicatorOffset(
-    currentAyahNumber: Int,
-    ayahCount: Int,
-    trackWidth: CGFloat
-  ) -> CGFloat {
-    guard ayahCount > 1, trackWidth > indicatorDiameter else { return 0 }
-    let clampedAyah = max(1, min(currentAyahNumber, ayahCount))
-    let progress = CGFloat(clampedAyah - 1) / CGFloat(ayahCount - 1)
-    return progress * (trackWidth - indicatorDiameter)
-  }
-
-  /// Two-button nav row at the bottom of the Practice page, mirroring
-  /// the web "Prev / Next ayah" controls. Disables the corresponding
-  /// button at the surah boundaries so the user can't tap into a
-  /// non-existent ayah.
+  /// Previous and next ayah, each disabled at the surah's ends.
   private var ayahNavRow: some View {
-    HStack(spacing: Spacing.md) {
+    HStack(spacing: AppTheme.Spacing.space2) {
       Button(action: onPreviousAyah) {
         Label {
           Text("practice.nav.prev", bundle: .module)
         } icon: {
-          Image(systemName: "chevron.left")
+          Image(systemName: "chevron.backward")
         }
-        .font(Font.brand.body.weight(.semibold))
-        .foregroundColor(Color.brand.textPrimary)
-        .frame(maxWidth: .infinity, minHeight: Spacing.minTapTarget)
-        .background(Color.brand.card)
-        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+        .frame(maxWidth: .infinity)
       }
-      .buttonStyle(.plain)
       .disabled(!canGoToPreviousAyah)
-      .opacity(canGoToPreviousAyah ? 1 : 0.4)
 
       Button(action: onNextAyah) {
-        Label {
+        HStack(spacing: AppTheme.Spacing.space1) {
           Text("practice.nav.next", bundle: .module)
-        } icon: {
-          Image(systemName: "chevron.right")
+          Image(systemName: "chevron.forward")
         }
-        .labelStyle(.titleAndIcon)
-        .environment(\.layoutDirection, .rightToLeft)  // icon trailing
-        .font(Font.brand.body.weight(.semibold))
-        .foregroundColor(Color.brand.textPrimary)
-        .frame(maxWidth: .infinity, minHeight: Spacing.minTapTarget)
-        .background(Color.brand.card)
-        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+        .frame(maxWidth: .infinity)
       }
-      .buttonStyle(.plain)
       .disabled(!canGoToNextAyah)
-      .opacity(canGoToNextAyah ? 1 : 0.4)
     }
-  }
-
-  private var title: String {
-    if let surah {
-      return "\(surah.nameEn) · ayah \(currentAyahNumber)"
-    }
-    return "Ayah \(currentAyahNumber)"
+    .buttonStyle(.borderless)
   }
 }
