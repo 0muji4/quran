@@ -11,6 +11,10 @@ final class AppComponentsSnapshotTests: XCTestCase {
 
   func test_chip() { snapshot(AppChipSpecimen()) }
 
+  func test_progress() { snapshot(AppProgressSpecimen()) }
+
+  func test_waveform() { snapshot(AppWaveformSpecimen()) }
+
   private func snapshot<V: View>(_ specimen: V, testName: String = #function, line: UInt = #line) {
     for variant in RenderVariant.all {
       assertSnapshot(of: AppSpecimenSurface { specimen }, in: variant, testName: testName, line: line)
