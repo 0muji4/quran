@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,75 +21,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tilawah.android.designsystem.AppTheme
-
-/**
- * A row of [total] short bars, the first [completed] of them filled, such
- * as the ayah position in a short surah. It is drawn only: say the position
- * in text next to it, as screen readers skip it.
- */
-@Composable
-fun AppSegmentedProgress(
-    completed: Int,
-    total: Int,
-    modifier: Modifier = Modifier,
-) {
-    val colorScheme = AppTheme.colorScheme
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clearAndSetSemantics {},
-        horizontalArrangement = Arrangement.spacedBy(SEGMENT_GAP),
-    ) {
-        repeat(total) { index ->
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(BAR_HEIGHT)
-                    .background(
-                        color = if (index < completed) colorScheme.primary else colorScheme.outlineVariant,
-                        shape = RoundedCornerShape(BAR_HEIGHT / 2),
-                    ),
-            )
-        }
-    }
-}
-
-/** The colour behind an [AppLinearProgress] bar. */
-enum class AppProgressTrack {
-    /** The outline variant, on a surface, such as the position in a long surah. */
-    Outline,
-
-    /** The primary container, inside a panel, such as the analysing progress. */
-    Container,
-}
-
-/** A 4dp bar filled to [fraction] (0 to 1), with no gap or end dot. */
-@Composable
-fun AppLinearProgress(
-    fraction: Float,
-    modifier: Modifier = Modifier,
-    track: AppProgressTrack = AppProgressTrack.Outline,
-) {
-    val colorScheme = AppTheme.colorScheme
-    LinearProgressIndicator(
-        progress = { fraction.coerceIn(0f, 1f) },
-        modifier = modifier.fillMaxWidth().height(BAR_HEIGHT),
-        color = colorScheme.primary,
-        trackColor = when (track) {
-            AppProgressTrack.Outline -> colorScheme.outlineVariant
-            AppProgressTrack.Container -> colorScheme.primaryContainer
-        },
-        strokeCap = StrokeCap.Round,
-        gapSize = 0.dp,
-        drawStopIndicator = {},
-    )
-}
 
 /** Where an [AppStep] is in a sequence. */
 enum class AppStepStatus { Done, Active, Todo }
@@ -104,8 +37,10 @@ data class AppStep(
 
 /**
  * Steps that run in order, such as transcribing, comparing and scoring: a
- * check for each step done, a spinner for the active step, and an empty
- * ring for the steps to come.
+ * check on the pass colour for each step done, a Material 3 circular progress
+ * indicator for the active step, and an empty ring for the steps to come.
+ * Progress bars are Material 3's `LinearProgressIndicator`, used as it is
+ * (ADR 0030).
  */
 @Composable
 fun AppStepList(
@@ -138,52 +73,47 @@ fun AppStepList(
 
 @Composable
 private fun AppStepMarker(status: AppStepStatus) {
-    val colorScheme = AppTheme.colorScheme
     val appColors = AppTheme.appColors
     Box(modifier = Modifier.size(STEP_MARKER_SIZE), contentAlignment = Alignment.Center) {
         when (status) {
             AppStepStatus.Done -> Box(
                 modifier = Modifier
-                    .size(STEP_MARKER_SIZE)
-                    .background(appColors.passContainer, CircleShape),
+                    .size(STEP_DONE_SIZE)
+                    .background(appColors.pass, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    tint = appColors.onPassContainer,
+                    tint = appColors.onPass,
                     modifier = Modifier.size(STEP_CHECK_SIZE),
                 )
             }
-            AppStepStatus.Active -> CircularProgressIndicator(
-                modifier = Modifier.size(STEP_RING_SIZE),
-                color = colorScheme.primary,
-                trackColor = colorScheme.primaryContainer,
-                strokeWidth = 3.dp,
-            )
+            AppStepStatus.Active -> CircularProgressIndicator(modifier = Modifier.size(STEP_MARKER_SIZE))
             AppStepStatus.Todo -> Box(
                 modifier = Modifier
                     .size(STEP_RING_SIZE)
-                    .border(2.dp, colorScheme.outlineVariant, CircleShape),
+                    .border(2.dp, AppTheme.colorScheme.outline, CircleShape),
             )
         }
     }
 }
 
-private val BAR_HEIGHT = 4.dp
-private val SEGMENT_GAP = 4.dp
 private val STEP_ROW_HEIGHT = 40.dp
 private val STEP_MARKER_SIZE = 24.dp
+private val STEP_DONE_SIZE = 22.dp
 private val STEP_RING_SIZE = 20.dp
 private val STEP_CHECK_SIZE = 14.dp
 
-/** Each progress component in its states, for previews and snapshot tests. */
+/**
+ * The step list in a panel, with Material 3 linear progress indicators for the
+ * ayah position and the analysing progress, for previews and snapshot tests.
+ */
 @Composable
 internal fun AppProgressSpecimen() {
     val spacing = AppTheme.spacing
-    AppSegmentedProgress(completed = 1, total = 7)
-    AppSegmentedProgress(completed = 5, total = 7)
-    AppLinearProgress(fraction = 255f / 286f)
+    LinearProgressIndicator(progress = { 1f / 7f }, modifier = Modifier.fillMaxWidth())
+    LinearProgressIndicator(progress = { 255f / 286f }, modifier = Modifier.fillMaxWidth())
     AppPanel {
         AppStepList(
             steps = listOf(
@@ -192,10 +122,9 @@ internal fun AppProgressSpecimen() {
                 AppStep("Calculating your score", AppStepStatus.Todo),
             ),
         )
-        AppLinearProgress(
-            fraction = 0.55f,
-            modifier = Modifier.padding(top = spacing.space2),
-            track = AppProgressTrack.Container,
+        LinearProgressIndicator(
+            progress = { 0.55f },
+            modifier = Modifier.fillMaxWidth().padding(top = spacing.space2),
         )
     }
 }

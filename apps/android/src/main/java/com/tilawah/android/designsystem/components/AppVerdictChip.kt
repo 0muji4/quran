@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -27,10 +26,10 @@ enum class AppVerdict { Pass, Warn, Fail }
 
 /** How prominent an [AppVerdictChip] is. */
 enum class AppVerdictEmphasis {
-    /** The verdict on the whole recitation: a pill. */
+    /** The verdict on the whole recitation: larger type and icon. */
     Overall,
 
-    /** The verdict on one tajweed rule: a smaller rounded chip. */
+    /** The verdict on one tajweed rule: smaller type and icon. */
     Rule,
 }
 
@@ -56,7 +55,8 @@ fun AppVerdictChip(
     Row(
         modifier = modifier
             .heightIn(min = CHIP_HEIGHT)
-            .background(container, if (overall) CircleShape else AppTheme.shapes.small)
+            // The Material 3 chip shape, as the verdict reads like a chip.
+            .background(container, AppTheme.shapes.small)
             .padding(horizontal = if (overall) AppTheme.spacing.space3 else RULE_PADDING)
             .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(ICON_GAP),

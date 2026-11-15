@@ -3,18 +3,23 @@ package com.tilawah.android.designsystem.components
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import com.tilawah.android.designsystem.AppTheme
 
 /**
- * A pill-shaped outlined chip at the Material 3 height (32dp) for a small
- * setting beside other content, such as the playback speed.
+ * A Material 3 assist chip at its default shape, size and colours, for a small
+ * setting beside other content, such as the playback speed. Pass
+ * [trailingIcon] `Icons.Filled.ArrowDropDown` when the chip opens a menu.
  */
 @Composable
 fun AppChip(
@@ -22,26 +27,32 @@ fun AppChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    trailingIcon: ImageVector? = null,
 ) {
-    val colorScheme = AppTheme.colorScheme
     AssistChip(
         onClick = onClick,
-        label = { Text(text = label, style = AppTheme.typography.labelLarge) },
+        label = { Text(text = label) },
         modifier = modifier,
         enabled = enabled,
-        shape = CircleShape,
-        colors = AssistChipDefaults.assistChipColors(labelColor = colorScheme.onSurfaceVariant),
-        border = AssistChipDefaults.assistChipBorder(enabled = enabled, borderColor = colorScheme.outlineVariant),
+        trailingIcon = trailingIcon?.let { icon ->
+            {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(AssistChipDefaults.IconSize),
+                )
+            }
+        },
     )
 }
 
-/** Chips in both states, for previews and snapshot tests. */
+/** Chips with and without a trailing icon, in both states, for previews and snapshot tests. */
 @Composable
 internal fun AppChipSpecimen() {
     Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space2)) {
-        AppChip("1×", onClick = {})
+        AppChip("1×", onClick = {}, trailingIcon = Icons.Filled.ArrowDropDown)
         AppChip("0.75×", onClick = {})
-        AppChip("1×", onClick = {}, enabled = false)
+        AppChip("1×", onClick = {}, enabled = false, trailingIcon = Icons.Filled.ArrowDropDown)
     }
 }
 
