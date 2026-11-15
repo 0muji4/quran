@@ -338,6 +338,9 @@ jobs:
       - name: Build Android app
         run: ./gradlew :apps:android:assembleDebug
 
+      # Robolectric runs offline: Gradle resolves its Android framework jars
+      # (apps/android/build.gradle.kts), so they come from the Gradle cache
+      # above and the tests make no downloads of their own.
       - name: Run Android unit tests and compare snapshots
         run: ./gradlew :apps:android:testDebugUnitTest -Proborazzi.test.verify=true
 
