@@ -107,15 +107,15 @@
     <string name="result_back_a11y">Back to practice</string>
     <string name="result_more_a11y">More options</string>
     <string name="result_title">Result</string>
-    <string name="result_title_ayah">Result · ayah %1$d</string>
+    <string name="result_subtitle_ayah">Ayah %1$d</string>
     <string name="result_try_again">Try again</string>
     <string name="result_continue">Continue to next ayah</string>
-    <string name="result_score_of_100">OF 100</string>
-    <string name="result_verdict_awaiting_badge">AWAITING SCORE</string>
-    <string name="result_verdict_mastered_badge">MASHALLAH — MASTERED</string>
-    <string name="result_verdict_great_badge">MASHALLAH — WELL RECITED</string>
-    <string name="result_verdict_midway_badge">KEEP PRACTISING</string>
-    <string name="result_verdict_beginner_badge">KEEP GOING</string>
+    <string name="result_score_of_100">/ 100</string>
+    <string name="result_verdict_awaiting_badge">Awaiting score</string>
+    <string name="result_verdict_mastered_badge">Mashallah — mastered</string>
+    <string name="result_verdict_great_badge">Mashallah — well recited</string>
+    <string name="result_verdict_midway_badge">Keep practising</string>
+    <string name="result_verdict_beginner_badge">Keep going</string>
     <string name="result_verdict_awaiting_headline">No score yet</string>
     <string name="result_verdict_awaiting_subhead">Try recording the ayah to receive your pronunciation feedback.</string>
     <string name="result_verdict_mastered_headline">Masterful recitation</string>
@@ -130,14 +130,20 @@
     <string name="result_metric_accuracy">Accuracy</string>
     <string name="result_metric_character_match">Character match</string>
     <string name="result_metric_completeness">Completeness</string>
+    <string name="result_metric_percent">%1$d%%</string>
     <string name="result_word_grid_title">Word comparison</string>
     <string name="result_words_note">This is what the recognizer heard from your audio. Differences may come from the recognizer rather than your recitation — use it as a guide, not a verdict.</string>
-    <string name="result_word_grid_wer">Word Error Rate %1$.1f%%</string>
-    <string name="result_word_grid_wer_label">WER</string>
-    <string name="result_word_grid_wer_value">%1$d%%</string>
+    <string name="result_word_grid_wer">Word error rate %1$d%%</string>
+    <string name="result_word_match">Match</string>
+    <string name="result_word_substituted">Substituted</string>
+    <string name="result_word_missing">Missing</string>
+    <string name="result_word_extra">Extra</string>
+    <string name="result_word_heard">heard %1$s</string>
     <string name="result_listen_back_title">Listen back</string>
     <string name="result_listen_back_teacher">Teacher</string>
     <string name="result_listen_back_you">You</string>
+    <string name="result_listen_back_play_a11y">Play %1$s</string>
+    <string name="result_listen_back_pause_a11y">Pause %1$s</string>
 
     <!-- History tab -->
     <string name="history_eyebrow">YOUR PRACTICE</string>

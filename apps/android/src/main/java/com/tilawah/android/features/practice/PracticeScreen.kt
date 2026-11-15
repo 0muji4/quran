@@ -33,10 +33,9 @@ import com.tilawah.android.designsystem.AppTheme
 import com.tilawah.android.designsystem.components.AppButton
 import com.tilawah.android.designsystem.components.AppButtonVariant
 import com.tilawah.android.designsystem.components.AppPanel
-import com.tilawah.android.designsystem.components.AppVerdict
 import com.tilawah.android.designsystem.components.AppVerdictChip
 import com.tilawah.android.designsystem.components.AppVerdictEmphasis
-import com.tilawah.android.features.result.VerdictBand
+import com.tilawah.android.features.result.appVerdict
 import com.tilawah.android.features.result.verdictBandForScore
 
 /**
@@ -336,12 +335,3 @@ private fun DonePanel(
         }
     }
 }
-
-/** The verdict chip a score band shows; none while the score is not in yet. */
-private val VerdictBand.appVerdict: AppVerdict?
-    get() = when (this) {
-        VerdictBand.Mastered, VerdictBand.Great -> AppVerdict.Pass
-        VerdictBand.Midway -> AppVerdict.Warn
-        VerdictBand.Beginner -> AppVerdict.Fail
-        VerdictBand.Awaiting -> null
-    }

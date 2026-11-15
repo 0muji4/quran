@@ -1,166 +1,76 @@
 package com.tilawah.android.features.result
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.tilawah.android.R
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.BrandCard
-import com.tilawah.android.designsystem.components.BrandCardStyle
+import com.tilawah.android.designsystem.AppTheme
+import com.tilawah.android.designsystem.components.AppCard
+import com.tilawah.android.designsystem.components.AppVerdict
+import com.tilawah.android.designsystem.components.AppVerdictChip
+import com.tilawah.android.designsystem.components.AppVerdictEmphasis
 
 /**
- * Paper score card: a pale-mint verdict pill, a circular score dial with
- * the raw 0–100 numeral (no percent sign) above an "OF 100" caption, and
- * an encouragement subtitle. Mirrors `docs/design/Android _ Result detail`.
- *
- * Score is whole points out of 100; null renders as a single dash.
+ * The score out of 100 with its verdict chip, then the verdict band's
+ * headline and advice. Score is whole points out of 100; null shows a dash
+ * and no chip.
  */
 @Composable
 fun ScoreHero(
     score: Int?,
     modifier: Modifier = Modifier,
 ) {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    val spacing = BrandTheme.spacing
-
-    val scoreText = score?.toString() ?: "—"
-    val verdictBand = verdictBandForScore(score)
-    val verdictBadge = stringResource(verdictBand.badgeRes)
-    val a11y = if (score != null) {
-        "Recitation score $score out of 100, $verdictBadge"
-    } else {
-        "Recitation score not available"
-    }
-    BrandCard(
-        modifier = modifier.fillMaxWidth(),
-        style = BrandCardStyle.Paper,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics(mergeDescendants = true) { contentDescription = a11y },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+    val band = verdictBandForScore(score)
+    AppCard(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space2),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            VerdictBadge(verdict = verdictBadge)
-            Box(
-                modifier = Modifier.size(180.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                ScoreArc(score = score, baseColor = colors.track, scoreColor = colors.primary)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = scoreText,
-                        style = typography.scoreDisplay,
-                        color = colors.textPrimary,
-                    )
-                    Text(
-                        text = stringResource(R.string.result_score_of_100),
-                        style = typography.caption,
-                        color = colors.textSecondary,
-                    )
-                }
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space1),
             ) {
                 Text(
-                    text = stringResource(verdictBand.headlineRes),
-                    style = typography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.textPrimary,
-                    textAlign = TextAlign.Center,
+                    text = score?.toString() ?: "—",
+                    modifier = Modifier.alignByBaseline(),
+                    style = AppTheme.typography.displayLarge,
+                    color = AppTheme.colorScheme.primary,
                 )
                 Text(
-                    text = stringResource(verdictBand.subheadRes),
-                    style = typography.caption,
-                    color = colors.textSecondary,
-                    textAlign = TextAlign.Center,
+                    text = stringResource(R.string.result_score_of_100),
+                    modifier = Modifier.alignByBaseline(),
+                    style = AppTheme.typography.bodyLarge,
+                    color = AppTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            band.appVerdict?.let { verdict ->
+                AppVerdictChip(
+                    verdict = verdict,
+                    label = stringResource(band.badgeRes),
+                    emphasis = AppVerdictEmphasis.Overall,
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ScoreArc(score: Int?, baseColor: Color, scoreColor: Color) {
-    val sweep = (score ?: 0).coerceIn(0, 100) * 360f / 100f
-    Canvas(modifier = Modifier.size(180.dp)) {
-        val stroke = 18f
-        val pad = stroke / 2f
-        val arcSize = Size(size.width - stroke, size.height - stroke)
-        val topLeft = Offset(pad, pad)
-        drawArc(
-            color = baseColor,
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = stroke, cap = StrokeCap.Round),
-        )
-        if (score != null) {
-            drawArc(
-                color = scoreColor,
-                startAngle = -90f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-        }
-    }
-}
-
-@Composable
-private fun VerdictBadge(verdict: String) {
-    val colors = BrandTheme.colors
-    val spacing = BrandTheme.spacing
-    androidx.compose.foundation.layout.Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(percent = 50))
-            .background(colors.mintBg)
-            .padding(horizontal = spacing.lg, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Check,
-            contentDescription = null,
-            tint = colors.mintInk,
-            modifier = Modifier.size(16.dp),
-        )
+        Text(text = stringResource(band.headlineRes), style = AppTheme.typography.titleLarge)
         Text(
-            text = verdict,
-            style = BrandTheme.typography.eyebrow.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.mintInk,
+            text = stringResource(band.subheadRes),
+            style = AppTheme.typography.bodyMedium,
+            color = AppTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
+
+/** The verdict chip a score band shows; none while the score is not in yet. */
+val VerdictBand.appVerdict: AppVerdict?
+    get() = when (this) {
+        VerdictBand.Mastered, VerdictBand.Great -> AppVerdict.Pass
+        VerdictBand.Midway -> AppVerdict.Warn
+        VerdictBand.Beginner -> AppVerdict.Fail
+        VerdictBand.Awaiting -> null
+    }
