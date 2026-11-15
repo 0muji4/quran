@@ -36,6 +36,12 @@ class AppComponentsSnapshotTest(private val variant: RenderVariant) {
     @Test
     fun waveform() = snapshot("waveform") { AppWaveformSpecimen() }
 
+    @Test
+    fun ayah() = snapshot("ayah") { AppAyahSpecimen() }
+
+    @Test
+    fun verdictChip() = snapshot("verdict_chip") { AppVerdictChipSpecimen() }
+
     private fun snapshot(name: String, specimen: @Composable () -> Unit) {
         captureSnapshot(composeRule, variant, "designsystem/components/${name}_${variant.id}.png") {
             AppSpecimenSurface { specimen() }
