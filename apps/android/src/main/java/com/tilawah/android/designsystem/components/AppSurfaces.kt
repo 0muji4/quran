@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,22 +17,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.tilawah.android.designsystem.AppTheme
 
 /**
- * The main card of a screen, such as the one that holds the ayah: the low
- * surface container with the extra-large corner radius.
+ * The main card of a screen, such as the one that holds the ayah: a Material 3
+ * elevated card at its default shape, colour and elevation.
  */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(AppTheme.spacing.space5),
+    contentPadding: PaddingValues = PaddingValues(AppTheme.spacing.space4),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AppTheme.spacing.space2),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(
-        modifier = modifier,
-        shape = AppTheme.shapes.extraLarge,
-        color = AppTheme.colorScheme.surfaceContainerLow,
-        contentColor = AppTheme.colorScheme.onSurface,
-    ) {
+    ElevatedCard(modifier = modifier) {
         Column(
             modifier = Modifier.padding(contentPadding),
             verticalArrangement = verticalArrangement,
@@ -41,16 +38,17 @@ fun AppCard(
 
 /** The colour of an [AppPanel]. */
 enum class AppPanelTone {
-    /** The surface container, for rows and status panels. */
+    /** A Material 3 filled card, for rows and status panels. */
     Neutral,
 
-    /** The error container, for a failure and what to do about it. */
+    /** A filled card on the error container, for a failure and what to do about it. */
     Error,
 }
 
 /**
  * A panel inside or below a card, such as the teacher recitation row or the
- * analysing, scored and error panels: the large corner radius.
+ * analysing, scored and error panels: a Material 3 filled card at its default
+ * shape. [AppPanelTone.Error] changes only its colours.
  */
 @Composable
 fun AppPanel(
@@ -61,16 +59,14 @@ fun AppPanel(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colorScheme = AppTheme.colorScheme
-    Surface(
+    Card(
         modifier = modifier,
-        shape = AppTheme.shapes.large,
-        color = when (tone) {
-            AppPanelTone.Neutral -> colorScheme.surfaceContainer
-            AppPanelTone.Error -> colorScheme.errorContainer
-        },
-        contentColor = when (tone) {
-            AppPanelTone.Neutral -> colorScheme.onSurface
-            AppPanelTone.Error -> colorScheme.onErrorContainer
+        colors = when (tone) {
+            AppPanelTone.Neutral -> CardDefaults.cardColors()
+            AppPanelTone.Error -> CardDefaults.cardColors(
+                containerColor = colorScheme.errorContainer,
+                contentColor = colorScheme.onErrorContainer,
+            )
         },
     ) {
         Column(
