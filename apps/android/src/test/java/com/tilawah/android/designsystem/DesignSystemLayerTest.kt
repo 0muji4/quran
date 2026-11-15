@@ -7,7 +7,8 @@ import org.junit.Test
 /**
  * Enforces the ADR 0026 dependency rule on Android: screens and components
  * read tokens through [AppTheme], so `designsystem.generated` is imported
- * only by the theme binding.
+ * only by the theme binding, and the `App*` components, which replace the
+ * `Brand*` ones, do not read the old theme.
  */
 class DesignSystemLayerTest {
 
@@ -32,9 +33,28 @@ class DesignSystemLayerTest {
         )
     }
 
+    @Test
+    fun `App components do not read the old theme`() {
+        val componentRoot = File("src/main/java/$COMPONENTS_DIR")
+        assertTrue("Components not found at ${componentRoot.absolutePath}", componentRoot.isDirectory)
+
+        val components = componentRoot.listFiles().orEmpty()
+            .filter { it.name.startsWith("App") && it.extension == "kt" }
+        assertTrue("No App* components found in ${componentRoot.absolutePath}", components.isNotEmpty())
+
+        val offenders = components
+            .filter { OLD_THEME.containsMatchIn(it.readText()) }
+            .map { it.name }
+            .sorted()
+
+        assertTrue("Read the theme through AppTheme, not BrandTheme: $offenders", offenders.isEmpty())
+    }
+
     private companion object {
         const val GENERATED_PACKAGE = "com.tilawah.android.designsystem.generated"
         const val GENERATED_DIR = "com/tilawah/android/designsystem/generated/"
         const val THEME_BINDING = "com/tilawah/android/designsystem/AppTheme.kt"
+        const val COMPONENTS_DIR = "com/tilawah/android/designsystem/components"
+        val OLD_THEME = Regex("""\bBrand(Theme|Colors|Typography|Spacing)\b""")
     }
 }
