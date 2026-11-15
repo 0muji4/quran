@@ -18,9 +18,11 @@ export const SEEDS = {
 // Verdict chroma is capped so that the pale container tones do not turn neon.
 export const CHROMA = { secondary: 16, pass: 36, warn: 40 };
 
-// Neutrals carry a warm paper hue.
-export const NEUTRAL = { hue: 75, chroma: 6 };
-export const NEUTRAL_VARIANT = { hue: 75, chroma: 10 };
+// Neutrals carry a warm paper hue at a low chroma. The hue sits opposite the
+// primary's, so more chroma turns a translucent primary drawn over a surface
+// grey (ADR 0030).
+export const NEUTRAL = { hue: 75, chroma: 3 };
+export const NEUTRAL_VARIANT = { hue: 75, chroma: 5 };
 
 // Spacing steps on a 4px grid, as step → px.
 export const SPACING = {
