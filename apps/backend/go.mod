@@ -1,6 +1,6 @@
 module quran-project/apps/backend
 
-go 1.27.3
+go 1.27.4
 
 require (
 	cloud.google.com/go/speech v1.38.1
