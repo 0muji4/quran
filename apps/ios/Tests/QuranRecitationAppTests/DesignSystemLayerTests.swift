@@ -3,7 +3,8 @@ import XCTest
 
 /// Enforces the ADR 0026 dependency rule on iOS: components and views read
 /// tokens through `AppTheme`, so the generated types are named only by the
-/// generated files and the theme binding.
+/// generated files and the theme binding, and the `App*` components, which
+/// replace the `Brand*` ones, do not read the old theme.
 final class DesignSystemLayerTests: XCTestCase {
   func test_onlyTheThemeBindingNamesGeneratedTokens() throws {
     // This file is Tests/QuranRecitationAppTests/DesignSystemLayerTests.swift,
@@ -38,5 +39,34 @@ final class DesignSystemLayerTests: XCTestCase {
     XCTAssertEqual(
       offenders, [],
       "Read tokens through AppTheme instead of naming TokenColor, TokenSpacing or TokenShape")
+  }
+
+  func test_appComponentsDoNotReadTheOldTheme() throws {
+    let componentRoot = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .appendingPathComponent("Sources/QuranRecitationApp/DesignSystem/Components")
+    // `Color.brand`, `Font.brand`, `.brand.` shorthands, and the old `Spacing` enum.
+    let oldTheme = try NSRegularExpression(
+      pattern: #"\b(Color|Font)\.brand\b|\.brand\.|(?<!AppTheme\.)\bSpacing\."#)
+
+    let components = try FileManager.default.contentsOfDirectory(atPath: componentRoot.path)
+      .filter { $0.hasPrefix("App") && $0.hasSuffix(".swift") }
+      .sorted()
+    XCTAssertFalse(components.isEmpty, "No App* components found in \(componentRoot.path)")
+
+    var offenders: [String] = []
+    for name in components {
+      let contents = try String(
+        contentsOf: componentRoot.appendingPathComponent(name), encoding: .utf8)
+      let range = NSRange(contents.startIndex..., in: contents)
+      if oldTheme.firstMatch(in: contents, range: range) != nil {
+        offenders.append(name)
+      }
+    }
+
+    XCTAssertEqual(
+      offenders, [], "Read the theme through AppTheme, not Color.brand, Font.brand or Spacing")
   }
 }
