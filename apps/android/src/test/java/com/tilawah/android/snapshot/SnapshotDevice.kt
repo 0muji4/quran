@@ -1,6 +1,9 @@
 package com.tilawah.android.snapshot
 
-/** Android SDK the snapshots render on (ADR 0027). */
+/**
+ * Android SDK the snapshots render on (ADR 0027). `apps/android/build.gradle.kts` resolves this
+ * SDK's Robolectric framework jar, so the two change together.
+ */
 const val SNAPSHOT_SDK = 35
 
 /** A phone-width window at 1x, tall enough that the longest screen state fits without scrolling. */

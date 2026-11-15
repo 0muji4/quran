@@ -92,6 +92,11 @@ apollo {
     }
 }
 
+val robolectricAndroidAll: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isTransitive = false
+}
+
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.core:core-ktx:1.19.1")
@@ -125,4 +130,28 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.78.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // The Android framework jar for SNAPSHOT_SDK (35). The version is the one
+    // Robolectric's DefaultSdkProvider names for that SDK, so it changes with
+    // the Robolectric version above and with SNAPSHOT_SDK.
+    robolectricAndroidAll("org.robolectric:android-all-instrumented:15-robolectric-13954326-i7")
+}
+
+// Robolectric runs offline and loads the Android framework jars from this
+// directory, so the tests make no network requests of their own and the jars
+// come from Gradle's dependency cache like every other dependency. A test that
+// asks for an SDK not resolved here fails with the jar name it expected.
+val robolectricAndroidAllDir = layout.buildDirectory.dir("robolectric/android-all")
+
+val syncRobolectricAndroidAll by tasks.registering(Sync::class) {
+    from(robolectricAndroidAll)
+    into(robolectricAndroidAllDir)
+}
+
+tasks.withType<Test>().configureEach {
+    inputs.files(syncRobolectricAndroidAll)
+        .withPropertyName("robolectricAndroidAll")
+        .withPathSensitivity(PathSensitivity.NAME_ONLY)
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", robolectricAndroidAllDir.get().asFile.absolutePath)
 }
