@@ -149,6 +149,25 @@ public struct ScoringResultPayload {
   }
 }
 
+extension ScoringResultPayload {
+  /// A result built from its values, for previews and tests.
+  init(
+    jobId: String,
+    status: ScoringStatus,
+    score: Int?,
+    verdict: String?,
+    segments: [ScoreSegmentPayload],
+    feedback: PronunciationFeedbackPayload?
+  ) {
+    self.jobId = jobId
+    self.status = status
+    self.score = score
+    self.verdict = verdict
+    self.segments = segments
+    self.feedback = feedback
+  }
+}
+
 // MARK: - Library / Practice DTOs
 
 /// View-friendly surah summary used by the Library list and Continue

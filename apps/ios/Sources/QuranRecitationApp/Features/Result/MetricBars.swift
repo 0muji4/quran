@@ -1,46 +1,41 @@
 import SwiftUI
 
-/// Three stacked metric rows: Accuracy, Character match, Completeness.
-/// Feedback values are 0…1 fractions, scaled to the 0…100 the row
-/// renders; the fallback overall score is already 0…100. Character match
-/// is `1 − CER` — chirp_3 returns no per-word confidence, so the former
-/// Fluency row was always zero and has been dropped. Renders even when
-/// feedback is missing by falling back to the overall score.
+/// Accuracy, character match and completeness, each as a percentage over a
+/// linear progress view. Feedback values are 0…1 fractions; without feedback
+/// every row falls back to the overall score, which is already 0…100.
+/// Character match is `1 − CER`. chirp_3 gives no per-word confidence, so
+/// there is no fluency row.
 struct MetricBars: View {
   let feedback: PronunciationFeedbackPayload?
   let fallbackScore: Int?
 
   var body: some View {
-    BrandCard {
-      VStack(spacing: Spacing.lg) {
-        row(label: "result.metric.accuracy", value: accuracy)
-        Divider().background(Color.brand.tile)
-        row(label: "result.metric.characterMatch", value: characterMatch)
-        Divider().background(Color.brand.tile)
-        row(label: "result.metric.completeness", value: completeness)
-      }
+    AppPanel {
+      Text("result.metrics.title", bundle: .module)
+        .font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      row(label: "result.metric.accuracy", percent: accuracy)
+      row(label: "result.metric.characterMatch", percent: characterMatch)
+      row(label: "result.metric.completeness", percent: completeness)
     }
   }
 
-  private func row(label: LocalizedStringKey, value: Double) -> some View {
-    VStack(alignment: .leading, spacing: Spacing.sm) {
+  private func row(label: LocalizedStringKey, percent: Double) -> some View {
+    let clamped = min(max(percent, 0), 100)
+    return VStack(alignment: .leading, spacing: AppTheme.Spacing.space2) {
       HStack(alignment: .firstTextBaseline) {
         Text(label, bundle: .module)
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-        Spacer()
-        // Serif numeral to echo the score-hero figure; the "%" stays
-        // smaller so the value reads as the emphasis.
-        Text("\(Int(value))")
-          .font(.system(size: 19, weight: .semibold, design: .serif))
-          .foregroundColor(Color.brand.primary)
-          .monospacedDigit()
-          + Text(" %")
-          .font(Font.brand.caption.weight(.semibold))
-          .foregroundColor(Color.brand.primary)
+          .font(AppTheme.Typography.subheadline)
+          .foregroundStyle(AppTheme.Colors.onSurface)
+        Spacer(minLength: AppTheme.Spacing.space2)
+        Text("result.metric.percent \(Int(clamped.rounded()))", bundle: .module)
+          .font(AppTheme.Typography.subheadline.weight(.semibold).monospacedDigit())
+          .foregroundStyle(AppTheme.Colors.primary)
       }
-      ProgressBar(value: value, total: 100)
+      ProgressView(value: clamped, total: 100)
+        .accessibilityHidden(true)
     }
+    .accessibilityElement(children: .combine)
   }
 
   private var accuracy: Double {

@@ -1,95 +1,37 @@
 import SwiftUI
 
-/// Score dial + 3-band verdict from
-/// `docs/design/iOS _ Result detail.png`. Renders an animated arc
-/// ring around the central numeral with a verdict badge on top and
-/// a headline + subhead below. `score` is 0…100; the arc fills
-/// proportionally. The `verdict` carries badge / headline / subhead
-/// computed by `verdictForScore(_:)` so iOS stays bit-for-bit aligned
-/// with the web `verdictForScore` band table.
+/// The score out of 100 with its verdict chip, then the verdict band's
+/// headline and advice. `score` is whole points out of 100; nil shows a dash
+/// and no chip. `verdict` comes from `verdictForScore(_:)`, so iOS shows the
+/// same band as the web for the same score.
 struct ScoreHero: View {
   let score: Int?
   let verdict: VerdictBand
 
   var body: some View {
-    BrandCard {
-      VStack(spacing: Spacing.md) {
-        VerdictBadge(text: verdict.badge)
-        ScoreDial(score: clampedScore)
-        VStack(spacing: Spacing.xs) {
-          Text(verdict.headline)
-            .font(Font.brand.body.weight(.semibold))
-            .foregroundColor(Color.brand.textPrimary)
-            .multilineTextAlignment(.center)
-          Text(verdict.subhead)
-            .font(Font.brand.caption)
-            .foregroundColor(Color.brand.textSecondary)
-            .multilineTextAlignment(.center)
+    AppCard(spacing: AppTheme.Spacing.space2) {
+      HStack(alignment: .center, spacing: AppTheme.Spacing.space2) {
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.space1) {
+          Text(verbatim: score.map(String.init) ?? "—")
+            .font(.system(.largeTitle, weight: .semibold).monospacedDigit())
+            .foregroundStyle(AppTheme.Colors.primary)
+          Text("result.score.of100", bundle: .module)
+            .font(AppTheme.Typography.body)
+            .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
         }
-        .padding(.horizontal, Spacing.md)
+        .accessibilityElement(children: .combine)
+        Spacer(minLength: 0)
+        if let chip = verdict.verdict {
+          AppVerdictChip(verdict: chip, label: verdict.badge, emphasis: .overall)
+        }
       }
-      .frame(maxWidth: .infinity)
+      Text(verbatim: verdict.headline)
+        .font(AppTheme.Typography.title3.weight(.semibold))
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      Text(verbatim: verdict.subhead)
+        .font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+        .fixedSize(horizontal: false, vertical: true)
     }
-  }
-
-  private var clampedScore: Int {
-    guard let score else { return 0 }
-    return max(0, min(100, score))
-  }
-}
-
-private struct VerdictBadge: View {
-  let text: String
-
-  var body: some View {
-    HStack(spacing: Spacing.xs) {
-      Image(systemName: "checkmark.circle.fill")
-        .foregroundColor(Color.brand.success)
-      Text(text.uppercased())
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.success)
-    }
-    .padding(.horizontal, Spacing.md)
-    .padding(.vertical, Spacing.xs)
-    .background(Color.brand.success.opacity(0.12))
-    .clipShape(Capsule())
-  }
-}
-
-struct ScoreDial: View {
-  let score: Int
-
-  private let lineWidth: CGFloat = 10
-  private let size: CGFloat = 180
-
-  var body: some View {
-    ZStack {
-      Circle()
-        .stroke(Color.brand.tile, lineWidth: lineWidth)
-      Circle()
-        .trim(from: 0, to: progress)
-        .stroke(
-          Color.brand.success,
-          style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-        )
-        .rotationEffect(.degrees(-90))
-        .animation(.easeOut(duration: 0.6), value: score)
-      VStack(spacing: 0) {
-        Text("\(score)")
-          .font(Font.brand.scoreDisplay)
-          .foregroundColor(Color.brand.textPrimary)
-          .monospacedDigit()
-        Text("OF 100")
-          .font(Font.brand.eyebrow)
-          .foregroundColor(Color.brand.textSecondary)
-      }
-    }
-    .frame(width: size, height: size)
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(Text("Score \(score) of 100"))
-  }
-
-  private var progress: CGFloat {
-    CGFloat(max(0, min(100, score))) / 100
   }
 }
