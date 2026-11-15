@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Result detail screen. Subsequent PRs add the Metric bars (PR 19),
-/// Word comparison tiles (PR 20), and the Listen-back + actions row
-/// (PR 21). This PR only mounts the score hero.
+/// Result screen: feeds `ResultDetailViewModel` into `ResultContent` and
+/// loads the result on first appearance.
 struct ResultDetailView: View {
   @State private var viewModel: ResultDetailViewModel
   let onClose: () -> Void
@@ -13,137 +12,142 @@ struct ResultDetailView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        topBar
-        content
+    ResultContent(
+      state: viewModel.state,
+      ayahNumber: viewModel.ayahNumber,
+      onTryAgain: {
+        viewModel.tryAgainTapped()
+        onClose()
+      },
+      onContinue: {
+        viewModel.continueTapped()
+        onClose()
       }
-      .padding(.vertical, Spacing.lg)
-    }
-    .background(Color.brand.surface.ignoresSafeArea())
-    .navigationBarBackButtonHidden(true)
-    // Pin Try-again / Continue to the bottom so they stay reachable
-    // however long the word-comparison + listen-back content scrolls.
-    // Only shown once a result has loaded — the loading/error states
-    // have no actions.
-    .safeAreaInset(edge: .bottom) {
-      if case .loaded = viewModel.state {
-        bottomActionBar
-      }
-    }
+    )
     .task { await viewModel.loadIfNeeded() }
   }
+}
 
-  private var topBar: some View {
-    HStack {
-      Button(action: onClose) {
-        Image(systemName: "chevron.right")
-          .rotationEffect(.degrees(180))
-          .foregroundColor(Color.brand.textPrimary)
-          .padding(Spacing.sm)
-          .background(Color.brand.card)
-          .clipShape(Circle())
+/// The Result screen on `AppTheme` and system controls (ADR 0030). The agreed
+/// mockup is the Result page of the canvas linked from #596. The screen is
+/// pushed onto the Practice stack, so the system back button returns to
+/// Practice. Once the result is in, Try again and Continue stay at the bottom
+/// while the score and its details scroll above them. Takes state rather than
+/// the ViewModel, so any state renders without one.
+struct ResultContent: View {
+  let state: ResultDetailViewModel.LoadState
+  let ayahNumber: Int
+  let onTryAgain: () -> Void
+  let onContinue: () -> Void
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space3) {
+          content
+        }
+        .padding(.horizontal, AppTheme.Spacing.space4)
+        .padding(.top, AppTheme.Spacing.space1)
+        .padding(.bottom, AppTheme.Spacing.space3)
       }
-      Spacer()
-      Text("\(NSLocalizedString("result.title", bundle: .module, comment: "")) · ayah \(viewModel.ayahNumber)")
-        .font(Font.brand.body.weight(.semibold))
-        .foregroundColor(Color.brand.textPrimary)
-      Spacer()
-      Image(systemName: "ellipsis")
-        .foregroundColor(Color.brand.textPrimary)
-        .padding(Spacing.sm)
-        .background(Color.brand.card)
-        .clipShape(Circle())
+      if case .loaded = state {
+        actionBar
+      }
     }
-    .padding(.horizontal, Spacing.screenHorizontal)
+    .background(AppTheme.Colors.surface.ignoresSafeArea())
+    .controlSize(.large)
+    .buttonBorderShape(.capsule)
+    .tint(AppTheme.Colors.primary)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .principal) {
+        titleView
+      }
+    }
   }
 
   @ViewBuilder
   private var content: some View {
-    switch viewModel.state {
+    switch state {
     case .idle, .loading:
       ProgressView()
         .frame(maxWidth: .infinity)
-        .padding(.top, Spacing.xxl)
+        .padding(.top, AppTheme.Spacing.space12)
     case .loaded(let result):
-      // BFF's `result.verdict` is deliberately ignored: the
-      // `scoring_jobs.verdict` column is never populated server-side, so
-      // we compute the band locally — same thresholds, same copy as the
-      // web `verdictForScore` so a 72 on iPhone and the same 72 on Web
-      // never disagree about whether it's "Great progress" or "Some
-      // work to do".
-      ScoreHero(
-        score: result.score,
-        verdict: verdictForScore(result.score)
-      )
-      .padding(.horizontal, Spacing.screenHorizontal)
+      // The BFF's `result.verdict` is never populated server-side, so the
+      // band is computed here with the same thresholds and copy as the web's
+      // `verdictForScore`: the same score gets the same verdict everywhere.
+      ScoreHero(score: result.score, verdict: verdictForScore(result.score))
       MetricBars(feedback: result.feedback, fallbackScore: result.score)
-        .padding(.horizontal, Spacing.screenHorizontal)
       WordComparisonGrid(
         alignments: result.feedback?.wordAlignments ?? [],
         werPercent: result.feedback?.wer.map { Int(($0 * 100).rounded()) }
       )
-      .padding(.horizontal, Spacing.screenHorizontal)
+      // Listen-back is not wired to a player yet: the buttons do nothing and
+      // no clip length is known, so none is shown.
       ListenBackSection(
-        teacherDuration: result.feedback?.referenceAudioUrl != nil ? 0 : nil,
+        teacherDuration: nil,
         youDuration: nil,
         teacherIsPlaying: false,
         youIsPlaying: false,
         onToggleTeacher: {},
         onToggleYou: {}
       )
-      .padding(.horizontal, Spacing.screenHorizontal)
     case .failed(let error):
-      Text(error.errorDescription ?? "")
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
-        .padding(.horizontal, Spacing.screenHorizontal)
+      failedPanel(error)
     }
   }
 
-  /// Pinned action bar. Sits on a cream surface with a hairline top
-  /// divider so it reads as a fixed footer over the scrolling content.
-  private var bottomActionBar: some View {
-    HStack(spacing: Spacing.md) {
-      Button {
-        viewModel.tryAgainTapped()
-        onClose()
-      } label: {
-        Text("result.action.tryAgain", bundle: .module)
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-          .padding(.vertical, Spacing.sm)
-          .padding(.horizontal, Spacing.lg)
-          .background(Color.brand.card)
-          .overlay(Capsule().strokeBorder(Color.brand.textSecondary.opacity(0.3)))
-          .clipShape(Capsule())
-      }
-      .buttonStyle(.plain)
-      Button {
-        viewModel.continueTapped()
-        onClose()
-      } label: {
-        HStack {
-          Text(continueLabel)
-          Image(systemName: "arrow.right")
-        }
-      }
-      .buttonStyle(.brandPrimary)
-      .frame(minWidth: 180)
+  /// "Result" with the ayah under it, in the navigation bar.
+  private var titleView: some View {
+    VStack(spacing: 0) {
+      Text("result.title", bundle: .module)
+        .font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      Text("result.subtitle.ayah \(ayahNumber)", bundle: .module)
+        .font(AppTheme.Typography.footnote)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
     }
-    .padding(.horizontal, Spacing.screenHorizontal)
-    .padding(.vertical, Spacing.md)
-    .frame(maxWidth: .infinity)
-    .background(
-      Color.brand.surface
-        .overlay(alignment: .top) {
-          Divider().background(Color.brand.tile)
-        }
-        .ignoresSafeArea(edges: .bottom)
-    )
+    .accessibilityElement(children: .combine)
   }
 
-  private var continueLabel: LocalizedStringKey {
-    "result.action.continue \(viewModel.ayahNumber + 1)"
+  private func failedPanel(_ error: AppError) -> some View {
+    AppPanel(tone: .error) {
+      HStack(alignment: .top, spacing: AppTheme.Spacing.space3) {
+        Image(systemName: "exclamationmark.circle")
+          .font(AppTheme.Typography.title3)
+          .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space1) {
+          Text(error.errorDescription ?? "")
+            .font(AppTheme.Typography.headline)
+          if let suggestion = error.recoverySuggestion {
+            Text(suggestion)
+              .font(AppTheme.Typography.subheadline)
+          }
+        }
+      }
+      .foregroundStyle(AppTheme.Colors.onErrorContainer)
+    }
+  }
+
+  /// Try again and Continue, under a divider so they read as fixed below the
+  /// scrolling content. Continue takes the width Try again leaves, so its
+  /// longer label stays on one line.
+  private var actionBar: some View {
+    VStack(spacing: 0) {
+      Divider()
+      HStack(spacing: AppTheme.Spacing.space2) {
+        Button(action: onTryAgain) {
+          Text("result.action.tryAgain", bundle: .module)
+        }
+        .buttonStyle(.bordered)
+        Button(action: onContinue) {
+          Text("result.action.continue \(ayahNumber + 1)", bundle: .module)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.appProminent)
+      }
+      .padding(AppTheme.Spacing.space4)
+    }
   }
 }

@@ -16,6 +16,8 @@ struct VerdictBand: Equatable {
   let badge: String
   let headline: String
   let subhead: String
+  /// The verdict chip the band shows; none while the score is not in yet.
+  let verdict: AppVerdict?
 }
 
 func verdictForScore(_ score: Int?) -> VerdictBand {
@@ -23,34 +25,39 @@ func verdictForScore(_ score: Int?) -> VerdictBand {
     return VerdictBand(
       badge: localized("result.verdict.awaiting.badge"),
       headline: localized("result.verdict.awaiting.headline"),
-      subhead: localized("result.verdict.awaiting.subhead")
+      subhead: localized("result.verdict.awaiting.subhead"),
+      verdict: nil
     )
   }
   if score >= 90 {
     return VerdictBand(
       badge: localized("result.verdict.mastered.badge"),
       headline: localized("result.verdict.mastered.headline"),
-      subhead: localized("result.verdict.mastered.subhead")
+      subhead: localized("result.verdict.mastered.subhead"),
+      verdict: .pass
     )
   }
   if score >= 70 {
     return VerdictBand(
       badge: localized("result.verdict.great.badge"),
       headline: localized("result.verdict.great.headline"),
-      subhead: localized("result.verdict.great.subhead")
+      subhead: localized("result.verdict.great.subhead"),
+      verdict: .pass
     )
   }
   if score >= 40 {
     return VerdictBand(
       badge: localized("result.verdict.midway.badge"),
       headline: localized("result.verdict.midway.headline"),
-      subhead: localized("result.verdict.midway.subhead")
+      subhead: localized("result.verdict.midway.subhead"),
+      verdict: .warn
     )
   }
   return VerdictBand(
     badge: localized("result.verdict.beginner.badge"),
     headline: localized("result.verdict.beginner.headline"),
-    subhead: localized("result.verdict.beginner.subhead")
+    subhead: localized("result.verdict.beginner.subhead"),
+    verdict: .fail
   )
 }
 
