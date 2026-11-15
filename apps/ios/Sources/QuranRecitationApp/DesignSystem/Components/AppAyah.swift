@@ -53,14 +53,19 @@ struct AppAyahText: View {
 }
 
 /// The transliteration, in italics, and the translation of an ayah, centred.
+/// Either may be missing, as not every ayah has both.
 struct AppAyahGloss: View {
-  let transliteration: String
-  let translation: String
+  let transliteration: String?
+  let translation: String?
 
   var body: some View {
     VStack(spacing: AppTheme.Spacing.space1) {
-      Text(verbatim: transliteration).italic()
-      Text(verbatim: translation)
+      if let transliteration {
+        Text(verbatim: transliteration).italic()
+      }
+      if let translation {
+        Text(verbatim: translation)
+      }
     }
     .font(AppTheme.Typography.subheadline)
     .foregroundStyle(AppTheme.Colors.onSurfaceVariant)

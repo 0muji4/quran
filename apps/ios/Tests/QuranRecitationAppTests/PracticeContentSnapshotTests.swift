@@ -57,10 +57,15 @@ final class PracticeContentSnapshotTests: XCTestCase {
       onPreviousAyah: {},
       onNextAyah: {}
     )
-    // Color.brand has no dark colours, so dark would repeat the light images.
-    // The dark variants return when this screen moves to AppTheme.
-    for variant in RenderVariant.all where !variant.dark {
-      assertSnapshot(of: content, in: variant, testName: testName, line: line)
+    // In a navigation stack, so the bar is drawn, and at the height of the
+    // pinned simulator's screen (iPhone 17 Pro), so the state panel sits at
+    // the bottom edge as on a device rather than at the bottom of the taller
+    // snapshot frame.
+    let screen = NavigationStack { content }
+      .frame(height: 874)
+      .frame(maxHeight: .infinity, alignment: .top)
+    for variant in RenderVariant.all {
+      assertSnapshot(of: screen, in: variant, testName: testName, line: line)
     }
   }
 

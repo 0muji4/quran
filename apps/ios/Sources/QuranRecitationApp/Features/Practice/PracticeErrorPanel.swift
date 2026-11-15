@@ -1,55 +1,45 @@
 import SwiftUI
 
-/// "Couldn't hear that" card from
-/// `docs/design/iOS _ Practice _ error.png`. Renders a dashed-circle
-/// mic icon, the localized AppError title + recovery copy, and two
-/// CTAs: "Replay" (visible only when the error is retriable) and a
-/// primary "Record again" that resets the state machine.
+/// The panel for a failed recording or scoring: what went wrong, what to try,
+/// then Replay (when the error is retriable) and Record again.
 struct PracticeErrorPanel: View {
   let error: AppError
   let onReplay: () -> Void
   let onRecordAgain: () -> Void
 
   var body: some View {
-    BrandCard {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        header
-        VStack(spacing: Spacing.md) {
-          dashedMicIcon
+    AppPanel(tone: .error) {
+      HStack(alignment: .top, spacing: AppTheme.Spacing.space3) {
+        Image(systemName: "exclamationmark.circle")
+          .font(AppTheme.Typography.title3)
+          .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space1) {
+          Text(error.errorDescription ?? "")
+            .font(AppTheme.Typography.headline)
+          if showsMicHint {
+            Text("practice.error.subtitle", bundle: .module)
+              .font(AppTheme.Typography.subheadline)
+          }
           if let suggestion = error.recoverySuggestion {
             Text(suggestion)
-              .font(Font.brand.caption)
-              .foregroundColor(Color.brand.textSecondary)
-              .multilineTextAlignment(.center)
+              .font(AppTheme.Typography.subheadline)
           }
-          actions
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.xl)
-        .background(Color.brand.tile)
-        .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
-      }
-    }
-  }
-
-  private var header: some View {
-    HStack(alignment: .center, spacing: Spacing.md) {
-      Image(systemName: "mic.slash.fill")
-        .foregroundColor(Color.brand.recording)
-        .frame(width: Spacing.minTapTarget, height: Spacing.minTapTarget)
-        .background(Color.brand.recording.opacity(0.12))
-        .clipShape(Circle())
-      VStack(alignment: .leading, spacing: 2) {
-        Text(error.errorDescription ?? "")
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-        if showsMicHint {
-          Text("practice.error.subtitle", bundle: .module)
-            .font(Font.brand.caption)
-            .foregroundColor(Color.brand.textSecondary)
         }
       }
-      Spacer()
+      .foregroundStyle(AppTheme.Colors.onErrorContainer)
+      HStack(spacing: AppTheme.Spacing.space2) {
+        Spacer(minLength: 0)
+        if error.isRetriable {
+          Button(action: onReplay) {
+            Text("practice.error.replay", bundle: .module)
+          }
+          .buttonStyle(.bordered)
+        }
+        Button(action: onRecordAgain) {
+          Text("practice.error.recordAgain", bundle: .module)
+        }
+        .buttonStyle(.appProminent)
+      }
     }
   }
 
@@ -57,42 +47,5 @@ struct PracticeErrorPanel: View {
   private var showsMicHint: Bool {
     if case .scoringLimitReached = error { return false }
     return true
-  }
-
-  private var dashedMicIcon: some View {
-    ZStack {
-      Circle()
-        .strokeBorder(
-          Color.brand.recording,
-          style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 6])
-        )
-        .frame(width: 96, height: 96)
-      Image(systemName: "mic.fill")
-        .foregroundColor(Color.brand.recording)
-        .font(.system(size: 28))
-    }
-  }
-
-  private var actions: some View {
-    HStack(spacing: Spacing.md) {
-      if error.isRetriable {
-        Button(action: onReplay) {
-          Text("practice.error.replay", bundle: .module)
-            .font(Font.brand.body.weight(.semibold))
-            .foregroundColor(Color.brand.textPrimary)
-            .padding(.vertical, Spacing.sm)
-            .padding(.horizontal, Spacing.lg)
-            .background(Color.brand.card)
-            .overlay(Capsule().strokeBorder(Color.brand.textSecondary.opacity(0.3)))
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-      }
-      Button(action: onRecordAgain) {
-        Text("practice.error.recordAgain", bundle: .module)
-      }
-      .buttonStyle(.brandPrimary)
-      .frame(minWidth: 160)
-    }
   }
 }
