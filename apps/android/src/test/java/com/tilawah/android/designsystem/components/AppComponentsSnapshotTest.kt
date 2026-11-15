@@ -30,6 +30,12 @@ class AppComponentsSnapshotTest(private val variant: RenderVariant) {
     @Test
     fun chip() = snapshot("chip") { AppChipSpecimen() }
 
+    @Test
+    fun progress() = snapshot("progress") { AppProgressSpecimen() }
+
+    @Test
+    fun waveform() = snapshot("waveform") { AppWaveformSpecimen() }
+
     private fun snapshot(name: String, specimen: @Composable () -> Unit) {
         captureSnapshot(composeRule, variant, "designsystem/components/${name}_${variant.id}.png") {
             AppSpecimenSurface { specimen() }
