@@ -3,6 +3,10 @@ import SwiftUI
 /// The main card of a screen, such as the one that holds the ayah: the low
 /// surface container with the large corner radius. It fills the width it is
 /// given.
+///
+/// Cards and panels set no foreground style. A foreground style on a container
+/// also recolours the labels of the system buttons inside it, so text sets its
+/// own colour: `onSurface`, or `onErrorContainer` in an error panel.
 struct AppCard<Content: View>: View {
   private let alignment: HorizontalAlignment
   private let spacing: CGFloat
@@ -22,9 +26,8 @@ struct AppCard<Content: View>: View {
     VStack(alignment: alignment, spacing: spacing) {
       content
     }
-    .padding(AppTheme.Spacing.space5)
+    .padding(AppTheme.Spacing.space4)
     .frame(maxWidth: .infinity, alignment: Alignment(horizontal: alignment, vertical: .center))
-    .foregroundStyle(AppTheme.Colors.onSurface)
     .background(
       AppTheme.Colors.surfaceContainerLow,
       in: RoundedRectangle(cornerRadius: AppTheme.Shape.large, style: .continuous)
@@ -67,7 +70,6 @@ struct AppPanel<Content: View>: View {
     }
     .padding(padding)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .foregroundStyle(tone == .error ? AppTheme.Colors.onErrorContainer : AppTheme.Colors.onSurface)
     .background(
       tone == .error ? AppTheme.Colors.errorContainer : AppTheme.Colors.surfaceContainer,
       in: RoundedRectangle(cornerRadius: AppTheme.Shape.medium, style: .continuous)
@@ -80,15 +82,21 @@ struct AppSurfacesSpecimen: View {
   var body: some View {
     AppCard {
       Text(verbatim: "Card").font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
       Text(verbatim: "The main card of a screen.").font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
     }
     AppPanel {
       Text(verbatim: "Panel").font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
       Text(verbatim: "A row or status panel.").font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
     }
     AppPanel(tone: .error) {
       Text(verbatim: "Error panel").font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onErrorContainer)
       Text(verbatim: "What went wrong and what to do next.").font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onErrorContainer)
     }
   }
 }

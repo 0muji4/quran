@@ -9,8 +9,6 @@ final class AppComponentsSnapshotTests: XCTestCase {
 
   func test_surfaces() { snapshot(AppSurfacesSpecimen()) }
 
-  func test_chip() { snapshot(AppChipSpecimen()) }
-
   func test_progress() { snapshot(AppProgressSpecimen()) }
 
   func test_waveform() { snapshot(AppWaveformSpecimen()) }

@@ -1,54 +1,5 @@
 import SwiftUI
 
-/// A row of `total` short bars, the first `completed` of them filled, such as
-/// the ayah position in a short surah. It is drawn only: say the position in
-/// text next to it, as VoiceOver skips it.
-struct AppSegmentedProgress: View {
-  let completed: Int
-  let total: Int
-
-  var body: some View {
-    HStack(spacing: 4) {
-      ForEach(0..<max(total, 0), id: \.self) { index in
-        Capsule()
-          .fill(index < completed ? AppTheme.Colors.primary : AppTheme.Colors.outlineVariant)
-          .frame(height: AppProgressMetrics.barHeight)
-      }
-    }
-    .accessibilityHidden(true)
-  }
-}
-
-/// The colour behind an `AppLinearProgress` bar.
-enum AppProgressTrack {
-  /// The outline variant, on a surface, such as the position in a long surah.
-  case outline
-  /// The primary container, inside a panel, such as the analysing progress.
-  case container
-}
-
-/// A 4pt bar filled to `fraction` (0 to 1).
-struct AppLinearProgress: View {
-  let fraction: Double
-  var track: AppProgressTrack = .outline
-
-  var body: some View {
-    let clamped = min(max(fraction, 0), 1)
-    GeometryReader { geometry in
-      ZStack(alignment: .leading) {
-        Capsule()
-          .fill(track == .container ? AppTheme.Colors.primaryContainer : AppTheme.Colors.outlineVariant)
-        Capsule()
-          .fill(AppTheme.Colors.primary)
-          .frame(width: geometry.size.width * clamped)
-      }
-    }
-    .frame(height: AppProgressMetrics.barHeight)
-    .accessibilityElement()
-    .accessibilityValue(Text(clamped, format: .percent.precision(.fractionLength(0))))
-  }
-}
-
 /// Where an `AppStep` is in a sequence.
 enum AppStepStatus {
   case done
@@ -63,8 +14,10 @@ struct AppStep {
 }
 
 /// Steps that run in order, such as transcribing, comparing and scoring: a
-/// check for each step done, a spinning ring for the active step, and an
-/// empty ring for the steps to come.
+/// filled check on the pass colour for each step done, the system activity
+/// indicator for the active step, and an empty circle for the steps to come.
+/// Progress bars are the system's `ProgressView(value:)`, used as it is
+/// (ADR 0030).
 struct AppStepList: View {
   let steps: [AppStep]
 
@@ -88,59 +41,45 @@ struct AppStepList: View {
 private struct AppStepMarker: View {
   let status: AppStepStatus
 
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var spinning = false
+  /// Grows with the step's text, so a marker keeps its place beside larger type.
+  @ScaledMetric(relativeTo: .body) private var size: CGFloat = 24
 
   var body: some View {
-    ZStack {
+    Group {
       switch status {
       case .done:
-        Circle().fill(AppTheme.Colors.passContainer)
-        Image(systemName: "checkmark")
-          .font(.system(size: 12, weight: .bold))
-          .foregroundStyle(AppTheme.Colors.onPassContainer)
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: size - 2))
+          .foregroundStyle(AppTheme.Colors.pass)
       case .active:
-        Circle()
-          .strokeBorder(AppTheme.Colors.primaryContainer, lineWidth: 3)
-          .frame(width: 20, height: 20)
-        Circle()
-          .trim(from: 0, to: 0.25)
-          .stroke(AppTheme.Colors.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-          .frame(width: 17, height: 17)
-          .rotationEffect(.degrees(spinning ? 360 : 0))
-          .animation(
-            reduceMotion ? nil : .linear(duration: 1).repeatForever(autoreverses: false),
-            value: spinning
-          )
-          .onAppear { spinning = true }
+        // The regular size, whatever size the screen gives its buttons: a
+        // large spinner is wider than the marker and runs into the text.
+        ProgressView()
+          .controlSize(.regular)
       case .todo:
-        Circle()
-          .strokeBorder(AppTheme.Colors.outlineVariant, lineWidth: 2)
-          .frame(width: 20, height: 20)
+        Image(systemName: "circle")
+          .font(.system(size: size - 2))
+          .foregroundStyle(AppTheme.Colors.outlineVariant)
       }
     }
-    .frame(width: 24, height: 24)
+    .frame(width: size, height: size)
     .accessibilityHidden(true)
   }
 }
 
-private enum AppProgressMetrics {
-  static let barHeight: CGFloat = 4
-}
-
-/// Each progress component in its states, for `#Preview` and the snapshot tests.
+/// The step list in a panel, with the system progress views for the ayah
+/// position and the analysing progress, for `#Preview` and the snapshot tests.
 struct AppProgressSpecimen: View {
   var body: some View {
-    AppSegmentedProgress(completed: 1, total: 7)
-    AppSegmentedProgress(completed: 5, total: 7)
-    AppLinearProgress(fraction: 255.0 / 286.0)
+    ProgressView(value: 1.0 / 7.0)
+    ProgressView(value: 255.0 / 286.0)
     AppPanel {
       AppStepList(steps: [
         AppStep(label: "Transcribing your recitation", status: .done),
         AppStep(label: "Comparing with the teacher", status: .active),
         AppStep(label: "Calculating your score", status: .todo),
       ])
-      AppLinearProgress(fraction: 0.55, track: .container)
+      ProgressView(value: 0.55)
         .padding(.top, AppTheme.Spacing.space2)
     }
   }

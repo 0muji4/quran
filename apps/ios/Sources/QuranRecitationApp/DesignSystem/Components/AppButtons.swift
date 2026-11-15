@@ -1,179 +1,98 @@
 import SwiftUI
 
-/// A pill-shaped text button at Apple's minimum tap height (44pt). Use the
-/// `.appFilled`, `.appOutlined`, `.appText`, `.appErrorFilled` and
-/// `.appErrorText` styles, or set `fillsWidth` to share a row with another
-/// button.
-struct AppButtonStyle: ButtonStyle {
-  enum Variant {
-    /// The main action of a panel, such as "See details".
-    case filled
-    /// A second action beside a filled one, such as "Record again".
-    case outlined
-    /// A low-emphasis action, such as "Show translation".
-    case text
-    /// The main action on an error panel (`AppPanel` with `.error`).
-    case errorFilled
-    /// A low-emphasis action on an error panel (`AppPanel` with `.error`).
-    case errorText
-  }
-
-  var variant: Variant
-  var fillsWidth = false
-
+/// The main action of a panel: the system's `.borderedProminent` style with its
+/// label in `onPrimary`. The system draws the label white whatever the tint,
+/// and white on the dark-mode primary is 1.7:1, below WCAG AA; `onPrimary` is
+/// the role made for text on `primary` in both modes (ADR 0030).
+///
+/// The other buttons use the system styles directly: `.bordered` beside the
+/// main action and `.borderless` for a low-emphasis action. Screens set
+/// `.controlSize(.large)`, `.buttonBorderShape(.capsule)` and the primary
+/// `tint` once, around their content.
+struct AppProminentButtonStyle: PrimitiveButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
-    AppButtonBody(configuration: configuration, variant: variant, fillsWidth: fillsWidth)
+    Button(configuration)
+      .buttonStyle(.borderedProminent)
+      .foregroundStyle(AppTheme.Colors.onPrimary)
   }
 }
 
-extension ButtonStyle where Self == AppButtonStyle {
-  static var appFilled: AppButtonStyle { AppButtonStyle(variant: .filled) }
-  static var appOutlined: AppButtonStyle { AppButtonStyle(variant: .outlined) }
-  static var appText: AppButtonStyle { AppButtonStyle(variant: .text) }
-  static var appErrorFilled: AppButtonStyle { AppButtonStyle(variant: .errorFilled) }
-  static var appErrorText: AppButtonStyle { AppButtonStyle(variant: .errorText) }
+extension PrimitiveButtonStyle where Self == AppProminentButtonStyle {
+  static var appProminent: AppProminentButtonStyle { AppProminentButtonStyle() }
 }
 
-/// The button's look. A separate view so it can read `isEnabled`.
-private struct AppButtonBody: View {
-  let configuration: ButtonStyleConfiguration
-  let variant: AppButtonStyle.Variant
-  let fillsWidth: Bool
-
-  @Environment(\.isEnabled) private var isEnabled
-
-  var body: some View {
-    configuration.label
-      .font(AppTheme.Typography.subheadline.weight(.medium))
-      .foregroundStyle(foreground)
-      .multilineTextAlignment(.center)
-      .padding(.horizontal, isText ? AppTheme.Spacing.space3 : AppTheme.Spacing.space5)
-      .padding(.vertical, AppTheme.Spacing.space2)
-      .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: AppButtonMetrics.height)
-      .background(background, in: Capsule())
-      .overlay {
-        if variant == .outlined {
-          Capsule().strokeBorder(AppTheme.Colors.outline, lineWidth: 1)
-        }
-      }
-      .contentShape(Capsule())
-      .opacity(isEnabled ? 1 : AppButtonMetrics.disabledOpacity)
-      .opacity(configuration.isPressed ? AppButtonMetrics.pressedOpacity : 1)
-  }
-
-  private var isText: Bool { variant == .text || variant == .errorText }
-
-  private var foreground: Color {
-    switch variant {
-    case .filled: AppTheme.Colors.onPrimary
-    case .outlined, .text: AppTheme.Colors.primary
-    case .errorFilled: AppTheme.Colors.onError
-    case .errorText: AppTheme.Colors.onErrorContainer
-    }
-  }
-
-  private var background: Color {
-    switch variant {
-    case .filled: AppTheme.Colors.primary
-    case .errorFilled: AppTheme.Colors.error
-    case .outlined, .text, .errorText: .clear
-    }
-  }
-}
-
-/// The 88pt round button that starts and stops a recording. While
-/// `recording`, it shows a stop square on the recording colour inside a ring.
+/// The button that starts and stops a recording: the system's bordered-prominent
+/// button with a circle shape at the extra-large control size. It is tinted
+/// with the primary colour, and with the recording colour while `recording`;
+/// the icon takes the matching on-colour for the same reason as
+/// `AppProminentButtonStyle`.
 struct AppRecordButton: View {
   let recording: Bool
   let accessibilityLabel: Text
   let action: () -> Void
 
-  @Environment(\.isEnabled) private var isEnabled
-
   var body: some View {
     Button(action: action) {
-      ZStack {
-        Circle().fill(recording ? AppTheme.Colors.recording : AppTheme.Colors.primary)
-        if recording {
-          // The ring has the same light and dark values as errorContainer,
-          // the container role that pairs with the recording colour.
-          Circle().strokeBorder(AppTheme.Colors.errorContainer, lineWidth: 6)
-        }
-        Image(systemName: recording ? "stop.fill" : "mic.fill")
-          .font(.system(size: recording ? 28 : 34, weight: .medium))
-          .foregroundStyle(recording ? AppTheme.Colors.onRecording : AppTheme.Colors.onPrimary)
-      }
-      .frame(width: 88, height: 88)
-      .contentShape(Circle())
+      Image(systemName: recording ? "stop.fill" : "mic.fill")
+        .font(.system(size: 30, weight: .semibold))
+        .frame(width: 60, height: 60)
     }
-    .buttonStyle(.plain)
-    .opacity(isEnabled ? 1 : AppButtonMetrics.disabledOpacity)
+    .buttonStyle(.borderedProminent)
+    .buttonBorderShape(.circle)
+    .controlSize(.extraLarge)
+    .tint(recording ? AppTheme.Colors.recording : AppTheme.Colors.primary)
+    .foregroundStyle(recording ? AppTheme.Colors.onRecording : AppTheme.Colors.onPrimary)
     .accessibilityLabel(accessibilityLabel)
   }
 }
 
-/// A 48pt round icon button on the secondary container, such as the teacher
-/// recitation's play button.
-struct AppTonalIconButton: View {
-  let systemImage: String
-  let accessibilityLabel: Text
-  let action: () -> Void
-
-  @Environment(\.isEnabled) private var isEnabled
-
-  var body: some View {
-    Button(action: action) {
-      Image(systemName: systemImage)
-        .font(.system(size: 20, weight: .medium))
-        .foregroundStyle(AppTheme.Colors.onSecondaryContainer)
-        .frame(width: 48, height: 48)
-        .background(AppTheme.Colors.secondaryContainer, in: Circle())
-        .contentShape(Circle())
-    }
-    .buttonStyle(.plain)
-    .opacity(isEnabled ? 1 : AppButtonMetrics.disabledOpacity)
-    .accessibilityLabel(accessibilityLabel)
-  }
-}
-
-private enum AppButtonMetrics {
-  static let height: CGFloat = 44
-  static let disabledOpacity = 0.38
-  static let pressedOpacity = 0.8
-}
-
-/// Every button variant and state, for `#Preview` and the snapshot tests.
+/// The button styles in every state the screens use, the record button, a
+/// circular play button and the speed menu, for `#Preview` and the snapshot tests.
 struct AppButtonsSpecimen: View {
   var body: some View {
-    ForEach(
-      [
-        (AppButtonStyle.Variant.filled, "Details"),
-        (.outlined, "Again"),
-        (.text, "Translation"),
-      ],
-      id: \.1
-    ) { variant, title in
-      HStack(spacing: AppTheme.Spacing.space2) {
-        Button(title) {}.buttonStyle(AppButtonStyle(variant: variant))
-        Button(title) {}.buttonStyle(AppButtonStyle(variant: variant)).disabled(true)
-      }
+    HStack(spacing: AppTheme.Spacing.space2) {
+      Button("Details") {}.buttonStyle(.appProminent)
+      Button("Details") {}.buttonStyle(.appProminent).disabled(true)
     }
     HStack(spacing: AppTheme.Spacing.space2) {
-      Button("Record again") {}.buttonStyle(AppButtonStyle(variant: .outlined, fillsWidth: true))
-      Button("See details") {}.buttonStyle(AppButtonStyle(variant: .filled, fillsWidth: true))
+      Button("Again") {}.buttonStyle(.bordered)
+      Button("Again") {}.buttonStyle(.bordered).disabled(true)
+    }
+    HStack(spacing: AppTheme.Spacing.space2) {
+      Button("Translation") {}.buttonStyle(.borderless)
+      Button("Translation") {}.buttonStyle(.borderless).disabled(true)
+    }
+    HStack(spacing: AppTheme.Spacing.space2) {
+      Button {} label: { Text(verbatim: "Record again").frame(maxWidth: .infinity) }
+        .buttonStyle(.bordered)
+      Button {} label: { Text(verbatim: "See details").frame(maxWidth: .infinity) }
+        .buttonStyle(.appProminent)
     }
     AppPanel(tone: .error) {
       HStack(spacing: AppTheme.Spacing.space2) {
-        Button("Play mine") {}.buttonStyle(.appErrorText)
-        Button("Record again") {}.buttonStyle(.appErrorFilled)
+        Button("Play mine") {}.buttonStyle(.bordered)
+        Button("Record again") {}.buttonStyle(.appProminent)
       }
     }
     HStack(spacing: AppTheme.Spacing.space4) {
       AppRecordButton(recording: false, accessibilityLabel: Text(verbatim: "Start recording")) {}
       AppRecordButton(recording: true, accessibilityLabel: Text(verbatim: "Stop recording")) {}
-      AppRecordButton(recording: false, accessibilityLabel: Text(verbatim: "Start recording")) {}
-        .disabled(true)
-      AppTonalIconButton(systemImage: "play.fill", accessibilityLabel: Text(verbatim: "Play")) {}
+      Button {} label: { Image(systemName: "play.fill") }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel(Text(verbatim: "Play"))
+      Menu {
+        Button("0.75×") {}
+        Button("1×") {}
+      } label: {
+        HStack(spacing: AppTheme.Spacing.space1) {
+          Text(verbatim: "1×")
+          Image(systemName: "chevron.up.chevron.down")
+            .imageScale(.small)
+        }
+      }
+      .buttonStyle(.bordered)
+      .controlSize(.small)
     }
   }
 }
