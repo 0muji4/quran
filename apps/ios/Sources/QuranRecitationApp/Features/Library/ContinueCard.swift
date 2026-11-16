@@ -1,128 +1,107 @@
 import SwiftUI
 
-/// Continue-your-practice card shown above the surah list when the
-/// user has a recent session. Mirrors the dark surface in
-/// `docs/design/iOS _ Surah library.png`. The "Resume" CTA dispatches
-/// to the parent via `onResume(_:)`; cross-tab navigation handler
-/// lands in PR 15 (end-to-end Practice wiring).
+/// The card at the top of the Library that resumes the last session: the
+/// surah in English and Arabic, how far into it the user got and when, and a
+/// button to resume at that ayah.
 struct ContinueCard: View {
   let entry: LastPracticed
   let onResume: (LastPracticed) -> Void
 
   var body: some View {
-    BrandCard(style: .inverse) {
-      VStack(alignment: .leading, spacing: Spacing.md) {
-        HStack(spacing: Spacing.xs) {
-          Image(systemName: "bookmark.fill")
-            .font(.system(size: 11))
-          Text("library.continueEyebrow", bundle: .module)
-            .textCase(.uppercase)
-        }
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.accent)
-
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
-          Text(entry.surahNameAr)
-            .font(Font.brand.arabicAyah.weight(.regular))
-            .foregroundColor(Color.brand.textOnInverse)
-            .environment(\.layoutDirection, .rightToLeft)
-          Text(entry.surahNameEn)
-            .font(Font.brand.sectionTitle)
-            .foregroundColor(Color.brand.textOnInverse)
-        }
-
-        Text(progressLabel)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textOnInverse.opacity(0.75))
-
-        progressBar
-
-        Button {
-          onResume(entry)
-        } label: {
-          HStack {
-            Text(resumeLabel)
-            Image(systemName: "arrow.right")
-          }
-        }
-        .buttonStyle(.brandAccent)
+    AppCard {
+      LibraryCardEyebrow(symbol: "bookmark.fill", label: "library.continueEyebrow")
+      HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.space2) {
+        Text(verbatim: entry.surahNameEn)
+          .font(AppTheme.Typography.title3.weight(.semibold))
+          .foregroundStyle(AppTheme.Colors.onSurface)
+        Spacer(minLength: 0)
+        SurahNameArabic(name: entry.surahNameAr)
       }
+      Text(
+        "library.continueProgress \(entry.ayahNumber) \(entry.ayahCount) \(relativeLastPracticed(entry.practicedAt))",
+        bundle: .module
+      )
+      .font(AppTheme.Typography.subheadline)
+      .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+      ProgressView(value: Self.fraction(entry))
+        .padding(.vertical, AppTheme.Spacing.space1)
+        .accessibilityHidden(true)
+      LibraryCardAction(label: "library.resumeAyah \(entry.ayahNumber)") { onResume(entry) }
     }
   }
 
-  /// Gold progress bar reading position-within-surah on the dark card —
-  /// the accent fill over a faint track, matching the mock's amber rule.
-  private var progressBar: some View {
-    GeometryReader { geo in
-      ZStack(alignment: .leading) {
-        Capsule()
-          .fill(Color.brand.textOnInverse.opacity(0.18))
-          .frame(height: 4)
-        Capsule()
-          .fill(Color.brand.accent)
-          .frame(width: geo.size.width * Self.fraction(entry), height: 4)
-      }
-      .frame(maxHeight: .infinity, alignment: .center)
-    }
-    .frame(height: 4)
-    .accessibilityHidden(true)
-  }
-
-  /// Filled fraction of the progress bar, clamped to [0, 1]. Single-ayah
-  /// surahs read as full; ayah 1 of N reads as 1/N so there's always a
-  /// visible sliver of progress.
-  static func fraction(_ entry: LastPracticed) -> CGFloat {
+  static func fraction(_ entry: LastPracticed) -> Double {
     guard entry.ayahCount > 0 else { return 0 }
-    return min(1, max(0, CGFloat(entry.ayahNumber) / CGFloat(entry.ayahCount)))
-  }
-
-  private var progressLabel: LocalizedStringKey {
-    "library.continueProgress \(entry.ayahNumber) \(entry.ayahCount)"
-  }
-
-  private var resumeLabel: LocalizedStringKey {
-    "library.resumeAyah \(entry.ayahNumber)"
+    return min(1, max(0, Double(entry.ayahNumber) / Double(entry.ayahCount)))
   }
 }
 
-/// Get-started variant of the Continue hero, shown when the user has no
-/// recorded session yet. Reuses the dark inverse card and gold eyebrow so
-/// the Library always leads with this hero (resume once there is history),
-/// mirroring the web `ContinueCard` empty state. The CTA opens the first
-/// surah at ayah 1 via `onStart`, matching web's `/practice/{first}/1`.
+/// The same card for a user with no session yet: an invitation to start, with
+/// a button that opens the first surah at ayah 1.
 struct GetStartedCard: View {
   let onStart: () -> Void
 
   var body: some View {
-    BrandCard(style: .inverse) {
-      VStack(alignment: .leading, spacing: Spacing.md) {
-        HStack(spacing: Spacing.xs) {
-          Image(systemName: "bookmark.fill")
-            .font(.system(size: 11))
-          Text("library.getStartedEyebrow", bundle: .module)
-            .textCase(.uppercase)
-        }
-        .font(Font.brand.eyebrow)
-        .foregroundColor(Color.brand.accent)
-
-        Text("library.getStartedTitle", bundle: .module)
-          .font(Font.brand.sectionTitle)
-          .foregroundColor(Color.brand.textOnInverse)
-
-        Text("library.getStartedBody", bundle: .module)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textOnInverse.opacity(0.75))
-
-        Button {
-          onStart()
-        } label: {
-          HStack {
-            Text("library.getStartedCta", bundle: .module)
-            Image(systemName: "arrow.right")
-          }
-        }
-        .buttonStyle(.brandAccent)
-      }
+    AppCard {
+      LibraryCardEyebrow(symbol: "star.fill", label: "library.getStartedEyebrow")
+      Text("library.getStartedTitle", bundle: .module)
+        .font(AppTheme.Typography.title3.weight(.semibold))
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      Text("library.getStartedBody", bundle: .module)
+        .font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+        .fixedSize(horizontal: false, vertical: true)
+      LibraryCardAction(label: "library.getStartedCta", action: onStart)
     }
+  }
+}
+
+/// A small primary label with a symbol, above the card's title. An `HStack`
+/// rather than a `Label`: inside a list row a `Label` lays its icon out in the
+/// row's icon column, which is wider than this small symbol needs.
+private struct LibraryCardEyebrow: View {
+  let symbol: String
+  let label: LocalizedStringKey
+
+  var body: some View {
+    HStack(spacing: AppTheme.Spacing.space1) {
+      Image(systemName: symbol)
+        .accessibilityHidden(true)
+      Text(label, bundle: .module)
+    }
+    .font(AppTheme.Typography.footnote.weight(.semibold))
+    .foregroundStyle(AppTheme.Colors.primary)
+  }
+}
+
+/// The card's main action with a forward arrow, at the card's trailing edge.
+private struct LibraryCardAction: View {
+  let label: LocalizedStringKey
+  let action: () -> Void
+
+  var body: some View {
+    HStack {
+      Spacer(minLength: 0)
+      Button(action: action) {
+        HStack(spacing: AppTheme.Spacing.space2) {
+          Text(label, bundle: .module)
+          Image(systemName: "arrow.forward")
+        }
+      }
+      .buttonStyle(.appProminent)
+    }
+  }
+}
+
+/// When the user last practised: "today", "yesterday", or the month and day,
+/// counted in calendar days in the user's time zone.
+func relativeLastPracticed(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
+  let days = calendar.dateComponents(
+    [.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)
+  ).day ?? 0
+  switch days {
+  case 0: return NSLocalizedString("library.lastPracticed.today", bundle: .module, comment: "")
+  case 1: return NSLocalizedString("library.lastPracticed.yesterday", bundle: .module, comment: "")
+  default: return date.formatted(.dateTime.month(.abbreviated).day())
   }
 }

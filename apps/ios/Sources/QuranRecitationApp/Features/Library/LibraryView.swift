@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Library tab — vertical list of surahs with a search bar and
-/// difficulty chip filter, led by a dark hero card: the Continue card
-/// when the user has a recent practice session, otherwise a get-started
-/// prompt. Mirrors the web Library, which always leads with this hero.
+/// Library tab: feeds `LibraryViewModel` into `LibraryContent`, loads the
+/// surahs on first appearance and reloads the history when it changes.
 struct LibraryView: View {
   @State private var viewModel: LibraryViewModel
   let onResume: ((LastPracticed) -> Void)?
@@ -20,33 +18,23 @@ struct LibraryView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        header
-        // Always lead with the dark hero: resume the last session when
-        // there is one, otherwise a get-started prompt. The get-started
-        // variant waits for the list to load so its CTA has a surah to
-        // open (the first one), mirroring web's /practice/{first}/1.
-        if let lastPracticed = viewModel.lastPracticed {
-          ContinueCard(entry: lastPracticed) { entry in
-            viewModel.continueTapped(entry)
-            onResume?(entry)
-          }
-          .padding(.horizontal, Spacing.screenHorizontal)
-        } else if case let .loaded(items) = viewModel.state, let first = items.first {
-          GetStartedCard {
-            viewModel.surahOpened(first)
-            onSurahOpened?(first)
-          }
-          .padding(.horizontal, Spacing.screenHorizontal)
-        }
-        searchPill
-        chipFilter
-        content
-      }
-      .padding(.vertical, Spacing.lg)
-    }
-    .background(Color.brand.surface.ignoresSafeArea())
+    LibraryContent(
+      state: viewModel.state,
+      visibleSurahs: viewModel.filteredSurahs,
+      query: $viewModel.query,
+      filter: $viewModel.filter,
+      lastPracticed: viewModel.lastPracticed,
+      bestScores: viewModel.bestScores,
+      onResume: { entry in
+        viewModel.continueTapped(entry)
+        onResume?(entry)
+      },
+      onSurahOpened: { surah in
+        viewModel.surahOpened(surah)
+        onSurahOpened?(surah)
+      },
+      onRetry: { Task { await viewModel.load() } }
+    )
     .task {
       if case .idle = viewModel.state {
         await viewModel.load()
@@ -55,137 +43,162 @@ struct LibraryView: View {
     .onAppear { viewModel.reloadHistory() }
     .onReceive(viewModel.historyChanges) { viewModel.reloadHistory() }
   }
+}
 
-  private var header: some View {
-    VStack(alignment: .leading, spacing: Spacing.xs) {
-      BrandEyebrow("library.eyebrow")
-      Text("library.title", bundle: .module)
-        .font(Font.brand.pageTitle)
-        .foregroundColor(Color.brand.textPrimary)
+/// The Library on `AppTheme` and system controls (ADR 0030). The agreed
+/// mockup is the Library page of the canvas linked from #596. A large title
+/// and the system search field head an inset grouped list: the Continue card,
+/// the revelation-place filter as a segmented control, then the surahs. Takes
+/// state rather than the ViewModel, so any state renders without one.
+///
+/// The Continue card resumes `lastPracticed` whenever there is one. Without
+/// one, once the surahs are in, it offers to start at the first surah.
+struct LibraryContent: View {
+  let state: LibraryViewModel.LoadState
+  let visibleSurahs: [SurahSummary]
+  @Binding var query: String
+  @Binding var filter: LibraryViewModel.Filter
+  let lastPracticed: LastPracticed?
+  let bestScores: [String: Int]
+  let onResume: (LastPracticed) -> Void
+  let onSurahOpened: (SurahSummary) -> Void
+  let onRetry: () -> Void
+
+  var body: some View {
+    List {
+      Section {
+        hero
+        filterPicker
+          .listRowInsets(EdgeInsets(top: AppTheme.Spacing.space2, leading: 0, bottom: 0, trailing: 0))
+          .listRowBackground(Color.clear)
+          .listRowSeparator(.hidden)
+      }
+      content
     }
-    .padding(.horizontal, Spacing.screenHorizontal)
+    .listStyle(.insetGrouped)
+    .listSectionSpacing(AppTheme.Spacing.space3)
+    .scrollContentBackground(.hidden)
+    .background(AppTheme.Colors.surface.ignoresSafeArea())
+    .tint(AppTheme.Colors.primary)
+    .navigationTitle(Text("library.title", bundle: .module))
+    .searchable(
+      text: $query,
+      placement: .navigationBarDrawer(displayMode: .always),
+      prompt: Text("library.searchPlaceholder", bundle: .module)
+    )
+    .autocorrectionDisabled()
+    .textInputAutocapitalization(.never)
   }
 
-  /// Inline search pill in the content (not the nav-bar `.searchable`
-  /// drawer) — the rounded cream field from the mock, sitting between
-  /// the Continue card and the filter chips.
-  private var searchPill: some View {
-    HStack(spacing: Spacing.sm) {
-      Image(systemName: "magnifyingglass")
-        .foregroundColor(Color.brand.textSecondary)
-      TextField(
-        "",
-        text: $viewModel.query,
-        prompt: Text("library.searchPlaceholder", bundle: .module)
-          .foregroundColor(Color.brand.textSecondary)
-      )
-      .foregroundColor(Color.brand.textPrimary)
-      .autocorrectionDisabled()
-      .textInputAutocapitalization(.never)
-      if !viewModel.query.isEmpty {
-        Button {
-          viewModel.query = ""
-        } label: {
-          Image(systemName: "xmark.circle.fill")
-            .foregroundColor(Color.brand.textSecondary)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("library.searchPlaceholder", bundle: .module))
+  @ViewBuilder
+  private var hero: some View {
+    Group {
+      if let lastPracticed {
+        ContinueCard(entry: lastPracticed, onResume: onResume)
+      } else if case .loaded(let items) = state, let first = items.first {
+        GetStartedCard { onSurahOpened(first) }
       }
     }
-    .padding(.horizontal, Spacing.lg)
-    .frame(minHeight: Spacing.minTapTarget)
-    .background(Color.brand.card)
-    .clipShape(Capsule())
-    .overlay(Capsule().strokeBorder(Color.brand.tile, lineWidth: 1))
-    .padding(.horizontal, Spacing.screenHorizontal)
+    .controlSize(.large)
+    .buttonBorderShape(.capsule)
+    .listRowInsets(EdgeInsets())
+    .listRowBackground(Color.clear)
+    .listRowSeparator(.hidden)
   }
 
-  private var chipFilter: some View {
-    ChipFilter<LibraryViewModel.Filter>(
-      items: [
-        .init(.all, "library.filter.all"),
-        .init(.mecca, "library.filter.mecca"),
-        .init(.medina, "library.filter.medina"),
-        .init(.short, "library.filter.short")
-      ],
-      selection: $viewModel.filter
-    )
+  private var filterPicker: some View {
+    Picker(selection: $filter) {
+      Text("library.filter.all", bundle: .module).tag(LibraryViewModel.Filter.all)
+      Text("library.filter.mecca", bundle: .module).tag(LibraryViewModel.Filter.mecca)
+      Text("library.filter.medina", bundle: .module).tag(LibraryViewModel.Filter.medina)
+      Text("library.filter.short", bundle: .module).tag(LibraryViewModel.Filter.short)
+    } label: {
+      Text("library.filter.a11y", bundle: .module)
+    }
+    .pickerStyle(.segmented)
   }
 
   @ViewBuilder
   private var content: some View {
-    switch viewModel.state {
+    switch state {
     case .idle, .loading:
       ProgressView()
         .frame(maxWidth: .infinity)
-        .padding(.top, Spacing.xxl)
+        .padding(.top, AppTheme.Spacing.space12)
+        .listRowBackground(Color.clear)
     case .loaded:
-      let visible = viewModel.filteredSurahs
-      if visible.isEmpty {
-        emptyState
+      if visibleSurahs.isEmpty {
+        noMatch
+          .listRowBackground(Color.clear)
       } else {
-        LazyVStack(spacing: Spacing.sm) {
-          ForEach(visible) { surah in
-            SurahRow(
-              surah: surah,
-              bestScore: viewModel.bestScores[surah.id]
-            )
-            .onTapGesture {
-              viewModel.surahOpened(surah)
-              onSurahOpened?(surah)
+        Section {
+          ForEach(visibleSurahs) { surah in
+            Button {
+              onSurahOpened(surah)
+            } label: {
+              SurahRow(
+                surah: surah,
+                bestScore: bestScores[surah.id],
+                resume: surah.id == lastPracticed?.surahId
+              )
             }
+            .listRowBackground(AppTheme.Colors.surfaceContainer)
+            .alignmentGuide(.listRowSeparatorLeading) { _ in AppTheme.Spacing.space12 }
           }
         }
-        .padding(.horizontal, Spacing.screenHorizontal)
       }
     case .failed(let error):
-      ErrorState(error: error) {
-        Task { await viewModel.load() }
-      }
+      failedPanel(error)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
     }
   }
 
-  private var emptyState: some View {
-    VStack(spacing: Spacing.sm) {
+  private var noMatch: some View {
+    VStack(spacing: AppTheme.Spacing.space2) {
       Image(systemName: "magnifyingglass")
-        .foregroundColor(Color.brand.textSecondary)
+        .font(.system(size: 36))
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+        .accessibilityHidden(true)
       Text("library.empty", bundle: .module)
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
+        .font(AppTheme.Typography.headline)
+        .foregroundStyle(AppTheme.Colors.onSurface)
+      Text("library.emptyBody", bundle: .module)
+        .font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
     }
+    .multilineTextAlignment(.center)
     .frame(maxWidth: .infinity)
-    .padding(.top, Spacing.xxl)
+    .padding(.top, AppTheme.Spacing.space12)
   }
-}
 
-private struct ErrorState: View {
-  let error: AppError
-  let retry: () -> Void
-
-  var body: some View {
-    VStack(spacing: Spacing.md) {
-      Image(systemName: "exclamationmark.triangle")
-        .foregroundColor(Color.brand.recording)
-      Text(error.errorDescription ?? "")
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textPrimary)
-      if let suggestion = error.recoverySuggestion {
-        Text(suggestion)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
-          .multilineTextAlignment(.center)
-      }
-      if error.isRetriable {
-        Button {
-          retry()
-        } label: {
-          Text("library.retry", bundle: .module)
+  private func failedPanel(_ error: AppError) -> some View {
+    AppPanel(tone: .error) {
+      HStack(alignment: .top, spacing: AppTheme.Spacing.space3) {
+        Image(systemName: "exclamationmark.circle")
+          .font(AppTheme.Typography.title3)
+          .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space1) {
+          Text(error.errorDescription ?? "")
+            .font(AppTheme.Typography.headline)
+          if let suggestion = error.recoverySuggestion {
+            Text(suggestion)
+              .font(AppTheme.Typography.subheadline)
+          }
         }
-        .buttonStyle(.brandPrimary)
+      }
+      .foregroundStyle(AppTheme.Colors.onErrorContainer)
+      if error.isRetriable {
+        HStack {
+          Spacer(minLength: 0)
+          Button(action: onRetry) {
+            Text("library.retry", bundle: .module)
+          }
+          .buttonStyle(.appProminent)
+        }
       }
     }
-    .padding(.top, Spacing.xxl)
-    .padding(.horizontal, Spacing.screenHorizontal)
+    .controlSize(.large)
+    .buttonBorderShape(.capsule)
   }
 }
