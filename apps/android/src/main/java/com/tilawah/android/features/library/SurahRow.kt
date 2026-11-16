@@ -1,47 +1,39 @@
 package com.tilawah.android.features.library
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.tilawah.android.R
 import com.tilawah.android.backend.SurahSummary
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.BrandCard
-import com.tilawah.android.designsystem.components.BrandCardStyle
+import com.tilawah.android.designsystem.AppTheme
 
 /**
- * One row in the Library list. Mirrors `apps/ios/.../Features/Library/SurahRow.swift`:
- * leading cream badge with the *canonical* surah number, English name +
- * revelation place / ayah count (+ optional best score) metadata, and the
- * Arabic name on the trailing side rendered RTL.
+ * One surah in the Library list, as a Material 3 list item: the surah's
+ * number, its English name with the revelation place, ayah count and best
+ * score under it, and its Arabic name at the end. The surah the user left
+ * off at ([resume]) carries a bookmark.
  *
- * The [selected] row (the resume target shown first) gains a gold hairline
- * border to echo the Figma "active" treatment.
- *
- * @param canonicalNumber the surah's canonical 1–114 number for the badge,
- *   derived from `surah.id` by the caller (falls back to list position).
- * @param bestScore best recorded score on a 0–100 scale, or null when the
- *   user has not practiced this surah yet (then the "best" suffix is hidden).
+ * @param canonicalNumber the surah's 1–114 number, derived from `surah.id`
+ *   by the caller (falling back to the list position).
+ * @param bestScore the best score out of 100, or null before the first attempt.
  */
 @Composable
 fun SurahRow(
@@ -49,75 +41,60 @@ fun SurahRow(
     surah: SurahSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    selected: Boolean = false,
+    resume: Boolean = false,
     bestScore: Int? = null,
 ) {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    val spacing = BrandTheme.spacing
-
-    val meta = buildString {
-        append(surah.revelationPlace)
-        append(" · ")
-        append(surah.ayahCount)
-        append(" ayahs")
-        if (bestScore != null) {
-            append(" · best ")
-            append(bestScore)
-        }
+    val meta = if (bestScore != null) {
+        stringResource(R.string.library_surah_meta_best, surah.revelationPlace, surah.ayahCount, bestScore)
+    } else {
+        stringResource(R.string.library_surah_meta, surah.revelationPlace, surah.ayahCount)
     }
-
-    BrandCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .semantics {
-                role = Role.Button
-                contentDescription =
-                    "Surah ${surah.nameEn}, ${surah.revelationPlace}, ${surah.ayahCount} ayahs"
-            },
-        style = BrandCardStyle.Paper,
-        border = if (selected) BorderStroke(1.dp, colors.borderStrong) else null,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(colors.tanSoft),
-                contentAlignment = Alignment.Center,
+    ListItem(
+        modifier = modifier.clickable(onClick = onClick),
+        leadingContent = {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = AppTheme.colorScheme.secondaryContainer,
             ) {
-                Text(
-                    text = canonicalNumber.toString(),
-                    style = typography.caption.copy(fontWeight = FontWeight.SemiBold),
-                    // Gilded numeral on the cream badge — the AA-safe gold ink
-                    // (a brighter accent gold would drop below contrast here).
-                    color = colors.goldOnLight,
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Text(text = "%d".format(canonicalNumber), style = AppTheme.typography.labelLarge)
+                }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = surah.nameEn,
-                    style = typography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.textPrimary,
-                )
-                Text(
-                    text = meta,
-                    style = typography.caption,
-                    color = colors.textSecondary,
-                )
+        },
+        headlineContent = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space1),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = surah.nameEn)
+                if (resume) {
+                    Icon(
+                        imageVector = Icons.Filled.Bookmark,
+                        contentDescription = stringResource(R.string.library_resume_a11y),
+                        modifier = Modifier.size(14.dp),
+                        tint = AppTheme.colorScheme.primary,
+                    )
+                }
             }
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Text(
-                    text = surah.nameAr,
-                    style = typography.arabicAyah,
-                    color = colors.textPrimary,
-                )
-            }
-        }
+        },
+        supportingContent = { Text(text = meta) },
+        trailingContent = { SurahNameArabic(name = surah.nameAr) },
+    )
+}
+
+/** A surah's Arabic name in Amiri, right to left whatever the interface direction. */
+@Composable
+internal fun SurahNameArabic(name: String, modifier: Modifier = Modifier) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Text(
+            text = name,
+            modifier = modifier,
+            style = AppTheme.quranTypography.ayahNumber.copy(fontSize = SURAH_NAME_SIZE),
+            color = AppTheme.colorScheme.onSurface,
+        )
     }
 }
+
+/** Large enough for Amiri's marks to read beside a list item's text. */
+private val SURAH_NAME_SIZE = 22.sp

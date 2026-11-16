@@ -1,45 +1,62 @@
 package com.tilawah.android.features.library
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tilawah.android.R
 import com.tilawah.android.app.AppError
 import com.tilawah.android.backend.SurahSummary
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.ChipFilter
-import com.tilawah.android.designsystem.components.FilterChip
-import com.tilawah.android.designsystem.components.PrimaryButton
+import com.tilawah.android.designsystem.AppTheme
+import com.tilawah.android.designsystem.components.AppButton
+import com.tilawah.android.designsystem.components.AppPanel
+import com.tilawah.android.designsystem.components.AppPanelTone
+import com.tilawah.android.storage.LastPracticed
 
 /**
- * Library tab — search + chip-filtered list of surahs preceded by an
- * eyebrow / title header. Mirrors
- * `apps/ios/.../Features/Library/LibraryView.swift` at the PR 10
- * milestone (search + chips, no Continue card yet).
+ * The Library tab, on [AppTheme] (ADR 0026) and Material 3 components
+ * (ADR 0030). The agreed mockup is the Library page of the canvas linked
+ * from #596.
  */
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
     onSurahOpened: (SurahSummary) -> Unit,
-    onResume: (com.tilawah.android.storage.LastPracticed) -> Unit,
+    onResume: (LastPracticed) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -52,211 +69,258 @@ fun LibraryScreen(
         if (state is LibraryUiState.Idle) viewModel.load()
     }
 
-    val spacing = BrandTheme.spacing
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(vertical = spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(spacing.lg),
-    ) {
-        Header()
-        val loaded = state as? LibraryUiState.Loaded
-        // The Library always leads with the dark hero card: resume the last
-        // session when there is one, otherwise a get-started prompt (mirrors
-        // web's ContinueCard). The get-started variant waits for the surah
-        // list to load — a non-null `lastPracticed` resolves from local
-        // storage well before the network fetch, so this gate shows the
-        // resume card immediately and never flashes get-started first.
-        val resumeEntry = lastPracticed
-        when {
-            resumeEntry != null -> ContinueCard(
-                entry = resumeEntry,
-                onResume = {
-                    viewModel.continueTapped(resumeEntry)
-                    onResume(resumeEntry)
-                },
-                modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
-            )
-            loaded != null -> GetStartedCard(
-                onStart = {
-                    loaded.surahs.firstOrNull()?.let { surah ->
-                        viewModel.surahOpened(surah)
-                        onSurahOpened(surah)
-                    }
-                },
-                modifier = Modifier.padding(horizontal = spacing.screenHorizontal),
-            )
-        }
-        SearchField(
+    AppTheme {
+        LibraryContent(
+            state = state,
+            // Read after the flows above, so a new query or filter recomposes the list.
+            visibleSurahs = if (state is LibraryUiState.Loaded) viewModel.filteredSurahs() else emptyList(),
             query = query,
-            onQueryChanged = viewModel::setQuery,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.screenHorizontal),
+            filter = filter,
+            lastPracticed = lastPracticed,
+            bestScores = bestScores,
+            onQueryChange = viewModel::setQuery,
+            onFilterChange = viewModel::setFilter,
+            onResume = { entry ->
+                viewModel.continueTapped(entry)
+                onResume(entry)
+            },
+            onSurahOpened = { surah ->
+                viewModel.surahOpened(surah)
+                onSurahOpened(surah)
+            },
+            onRetry = viewModel::load,
+            modifier = modifier,
         )
-        ChipFilter(
-            items = filterChips(totalCount = (state as? LibraryUiState.Loaded)?.surahs?.size),
-            selection = filter,
-            onSelect = viewModel::setFilter,
-        )
-        Box(modifier = Modifier.padding(horizontal = spacing.screenHorizontal)) {
-            when (val current = state) {
-                LibraryUiState.Idle, LibraryUiState.Loading -> LoadingState()
-                is LibraryUiState.Loaded -> SurahList(
-                    surahs = viewModel.filteredSurahs(),
-                    bestScores = bestScores,
-                    resumeSurahId = lastPracticed?.surahId,
-                    onSurahOpened = { surah ->
-                        viewModel.surahOpened(surah)
-                        onSurahOpened(surah)
-                    },
-                )
-                is LibraryUiState.Failed -> ErrorState(
-                    error = current.error,
-                    onRetry = { viewModel.load() },
-                )
+    }
+}
+
+/**
+ * The Library drawn from its state, so any state renders without a
+ * ViewModel. The top app bar and the search bar stay in place; the Continue
+ * card, the filter chips and the surahs scroll below them.
+ *
+ * The Continue card resumes [lastPracticed] whenever there is one. Without
+ * one, once the surahs are in, it offers to start at the first surah.
+ */
+@Composable
+internal fun LibraryContent(
+    state: LibraryUiState,
+    visibleSurahs: List<SurahSummary>,
+    query: String,
+    filter: LibraryFilter,
+    lastPracticed: LastPracticed?,
+    bestScores: Map<String, Int>,
+    onQueryChange: (String) -> Unit,
+    onFilterChange: (LibraryFilter) -> Unit,
+    onResume: (LastPracticed) -> Unit,
+    onSurahOpened: (SurahSummary) -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = AppTheme.spacing
+    val loaded = state as? LibraryUiState.Loaded
+    Surface(modifier = modifier.fillMaxSize(), color = AppTheme.colorScheme.surface) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            LibraryTopBar()
+            LibrarySearchBar(
+                query = query,
+                onQueryChange = onQueryChange,
+                modifier = Modifier.padding(horizontal = spacing.space4).padding(bottom = spacing.space2),
+            )
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(top = spacing.space2, bottom = spacing.space3),
+            ) {
+                val hero = Modifier.padding(horizontal = spacing.space4).padding(bottom = spacing.space3)
+                when {
+                    lastPracticed != null -> item(key = "continue") {
+                        ContinueCard(entry = lastPracticed, onResume = { onResume(lastPracticed) }, modifier = hero)
+                    }
+                    loaded != null && loaded.surahs.isNotEmpty() -> item(key = "start") {
+                        val first = loaded.surahs.first()
+                        GetStartedCard(onStart = { onSurahOpened(first) }, modifier = hero)
+                    }
+                }
+                item(key = "filters") {
+                    FilterChips(
+                        selection = filter,
+                        totalCount = loaded?.surahs?.size,
+                        onSelect = onFilterChange,
+                    )
+                }
+                when (state) {
+                    LibraryUiState.Idle, LibraryUiState.Loading -> item(key = "loading") {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(top = spacing.space12),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is LibraryUiState.Failed -> item(key = "failed") {
+                        FailedPanel(
+                            error = state.error,
+                            onRetry = onRetry,
+                            modifier = Modifier.padding(horizontal = spacing.space4).padding(top = spacing.space3),
+                        )
+                    }
+                    is LibraryUiState.Loaded -> if (visibleSurahs.isEmpty()) {
+                        item(key = "empty") { NoMatch() }
+                    } else {
+                        item(key = "gap") { Box(Modifier.padding(top = spacing.space2)) }
+                        items(visibleSurahs, key = { it.id }) { surah ->
+                            SurahRow(
+                                // The canonical 1–114 number comes from the id; a
+                                // non-numeric id falls back to the list position.
+                                canonicalNumber = surah.id.toIntOrNull()
+                                    ?: (state.surahs.indexOf(surah) + 1),
+                                surah = surah,
+                                onClick = { onSurahOpened(surah) },
+                                resume = surah.id == lastPracticed?.surahId,
+                                bestScore = bestScores[surah.id],
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Header() {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    Column(
-        modifier = Modifier.padding(horizontal = BrandTheme.spacing.screenHorizontal),
-        verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(BrandTheme.spacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "✦",
-                style = typography.eyebrow,
-                color = colors.decorative,
-            )
-            Text(
-                text = stringResource(R.string.library_eyebrow),
-                style = typography.eyebrow,
-                color = colors.accent,
-            )
-        }
-        Text(
-            text = stringResource(R.string.library_title),
-            style = typography.pageTitle,
-            color = colors.textPrimary,
-        )
-    }
+private fun LibraryTopBar() {
+    TopAppBar(title = { Text(text = stringResource(R.string.library_title)) })
 }
 
+/**
+ * A Material 3 search bar that filters the list as the user types. It does
+ * not expand into a search view: the results are the list below it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SearchField(
+private fun LibrarySearchBar(
     query: String,
-    onQueryChanged: (String) -> Unit,
+    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChanged,
-        modifier = modifier,
-        singleLine = true,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = null,
-                tint = BrandTheme.colors.textSecondary,
-            )
-        },
-        placeholder = { Text(stringResource(R.string.library_search_placeholder)) },
-    )
-}
-
-@Composable
-private fun filterChips(totalCount: Int?): List<FilterChip<LibraryFilter>> = listOf(
-    FilterChip(
-        LibraryFilter.All,
-        if (totalCount != null) {
-            stringResource(R.string.library_filter_all_count, totalCount)
-        } else {
-            stringResource(R.string.library_filter_all)
-        },
-    ),
-    FilterChip(LibraryFilter.Mecca, stringResource(R.string.library_filter_mecca)),
-    FilterChip(LibraryFilter.Medina, stringResource(R.string.library_filter_medina)),
-    FilterChip(LibraryFilter.Short, stringResource(R.string.library_filter_short)),
-)
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxWidth().padding(top = BrandTheme.spacing.xxl),
-        contentAlignment = Alignment.Center,
+    val keyboard = LocalSoftwareKeyboardController.current
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = CircleShape,
+        color = AppTheme.colorScheme.surfaceContainerHigh,
     ) {
-        CircularProgressIndicator(color = BrandTheme.colors.primary)
-    }
-}
-
-@Composable
-private fun SurahList(
-    surahs: List<SurahSummary>,
-    bestScores: Map<String, Int>,
-    resumeSurahId: String?,
-    onSurahOpened: (SurahSummary) -> Unit,
-) {
-    if (surahs.isEmpty()) {
-        Text(
-            text = stringResource(R.string.library_empty),
-            style = BrandTheme.typography.body,
-            color = BrandTheme.colors.textSecondary,
+        SearchBarDefaults.InputField(
+            query = query,
+            onQueryChange = onQueryChange,
+            onSearch = { keyboard?.hide() },
+            expanded = false,
+            onExpandedChange = {},
+            placeholder = { Text(text = stringResource(R.string.library_search_placeholder)) },
+            leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = if (query.isNotEmpty()) {
+                {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.library_search_clear_a11y),
+                        )
+                    }
+                }
+            } else {
+                null
+            },
         )
-        return
     }
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(BrandTheme.spacing.sm),
+}
+
+/** One filter chip per [LibraryFilter], in a row that scrolls sideways when it does not fit. */
+@Composable
+private fun FilterChips(
+    selection: LibraryFilter,
+    totalCount: Int?,
+    onSelect: (LibraryFilter) -> Unit,
+) {
+    val spacing = AppTheme.spacing
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = spacing.space4),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space2),
     ) {
-        items(surahs.size) { index ->
-            val surah = surahs[index]
-            // Canonical 1–114 number derived from the surah id, falling
-            // back to list position when the id is non-numeric.
-            val canonicalNumber = surah.id.toIntOrNull() ?: (index + 1)
-            SurahRow(
-                canonicalNumber = canonicalNumber,
-                surah = surah,
-                onClick = { onSurahOpened(surah) },
-                selected = surah.id == resumeSurahId,
-                bestScore = bestScores[surah.id],
+        LibraryFilter.entries.forEach { option ->
+            val selected = option == selection
+            FilterChip(
+                selected = selected,
+                onClick = { onSelect(option) },
+                label = { Text(text = filterLabel(option, totalCount)) },
+                leadingIcon = if (selected) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                        )
+                    }
+                } else {
+                    null
+                },
             )
         }
     }
 }
 
 @Composable
-private fun ErrorState(error: AppError, onRetry: () -> Unit) {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    val spacing = BrandTheme.spacing
+private fun filterLabel(filter: LibraryFilter, totalCount: Int?): String = when (filter) {
+    LibraryFilter.All -> if (totalCount != null) {
+        stringResource(R.string.library_filter_all_count, totalCount)
+    } else {
+        stringResource(R.string.library_filter_all)
+    }
+    LibraryFilter.Mecca -> stringResource(R.string.library_filter_mecca)
+    LibraryFilter.Medina -> stringResource(R.string.library_filter_medina)
+    LibraryFilter.Short -> stringResource(R.string.library_filter_short)
+}
+
+/** No surah matches the search and filter. */
+@Composable
+private fun NoMatch() {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.md),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = AppTheme.spacing.space4)
+            .padding(top = AppTheme.spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.space2),
     ) {
-        Text(
-            text = stringResource(error.titleRes),
-            style = typography.sectionTitle,
-            color = colors.textPrimary,
+        Icon(
+            imageVector = Icons.Filled.Search,
+            contentDescription = null,
+            modifier = Modifier.size(40.dp),
+            tint = AppTheme.colorScheme.onSurfaceVariant,
         )
+        Text(text = stringResource(R.string.library_empty), style = AppTheme.typography.titleMedium)
         Text(
-            text = stringResource(error.recoveryRes),
-            style = typography.caption,
-            color = colors.textSecondary,
+            text = stringResource(R.string.library_empty_body),
+            style = AppTheme.typography.bodyMedium,
+            color = AppTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun FailedPanel(error: AppError, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    AppPanel(modifier = modifier.fillMaxWidth(), tone = AppPanelTone.Error) {
+        Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space3)) {
+            Icon(imageVector = Icons.Outlined.ErrorOutline, contentDescription = null)
+            Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.space1)) {
+                Text(text = stringResource(error.titleRes), style = AppTheme.typography.titleMedium)
+                Text(text = stringResource(error.recoveryRes), style = AppTheme.typography.bodyMedium)
+            }
+        }
         if (error.isRetriable) {
-            PrimaryButton(
-                label = stringResource(R.string.library_retry),
-                onClick = onRetry,
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                AppButton(text = stringResource(R.string.library_retry), onClick = onRetry)
+            }
         }
     }
 }
