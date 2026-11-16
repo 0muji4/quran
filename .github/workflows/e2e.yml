@@ -11,12 +11,10 @@ jobs:
     # Playwright cannot install browsers on ubuntu-26.04, which ubuntu-latest
     # now resolves to.
     runs-on: ubuntu-24.04
+    # One job, not Playwright shards: setup and image builds take 1.5–3.5
+    # minutes and the suite about 40 seconds, so each shard would repeat
+    # the setup to save seconds. See ADR 0029.
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
-        total: [3]
     env:
       COMPOSE_FILE: ops/docker/compose.dev.yml:ops/docker/compose.ci.yml
 
@@ -64,10 +62,9 @@ jobs:
 
       # compose.ci.yml names the images and reads their layers from the
       # GitHub Actions cache. compose.ci-cache-write.yml, which saves them,
-      # is added only outside pull requests and only on shard 1; that file
-      # explains why. Bake resolves the compose `context: ../..` against its
-      # working directory, which a local `source` sets, so it must be
-      # ops/docker.
+      # is added only outside pull requests; that file explains why. Bake
+      # resolves the compose `context: ../..` against its working
+      # directory, which a local `source` sets, so it must be ops/docker.
       - name: Build app images
         uses: docker/bake-action@v7
         with:
@@ -75,7 +72,7 @@ jobs:
           files: |
             compose.dev.yml
             compose.ci.yml
-            ${{ github.event_name != 'pull_request' && matrix.shard == 1 && 'compose.ci-cache-write.yml' || '' }}
+            ${{ github.event_name != 'pull_request' && 'compose.ci-cache-write.yml' || '' }}
           targets: backend,bff,web
           load: true
 
@@ -127,13 +124,13 @@ jobs:
             -e E2E_BASE_URL=http://localhost:3000 \
             -e CI=1 \
             mcr.microsoft.com/playwright:v${{ steps.playwright.outputs.version }}-jammy \
-            bash -lc "npx playwright test --shard=${{ matrix.shard }}/${{ matrix.total }}"
+            bash -lc "npx playwright test"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-report
           path: playwright-report/
           retention-days: 30
 
@@ -141,7 +138,7 @@ jobs:
         uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: test-results-${{ matrix.shard }}
+          name: test-results
           path: test-results/
           retention-days: 7
 
