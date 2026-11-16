@@ -40,18 +40,24 @@
 "error.validationFailed.recovery" = "Please review the fields and try again.";
 
 /* Library tab */
-"library.eyebrow" = "Your practice";
-"library.title" = "Choose a surah to recite";
-"library.retry" = "Retry";
+"library.title" = "Library";
+"library.retry" = "Try again";
 "library.searchPlaceholder" = "Search by surah name…";
-"library.empty" = "No surahs match your filters";
+"library.empty" = "No surahs match";
+"library.emptyBody" = "Try another name or clear the filter.";
 "library.filter.all" = "All";
 "library.filter.mecca" = "Mecca";
 "library.filter.medina" = "Medina";
 "library.filter.short" = "Short";
+"library.filter.a11y" = "Filter surahs";
+"library.surah.meta %@ %lld" = "%1$@ · %2$lld ayahs";
+"library.surah.metaBest %@ %lld %lld" = "%1$@ · %2$lld ayahs · best %3$lld";
+"library.resumeA11y" = "Where you left off";
 "library.continueEyebrow" = "Continue";
-"library.continueProgress" = "Ayah %d of %d • last practiced recently";
-"library.resumeAyah" = "Resume ayah %d";
+"library.continueProgress %lld %lld %@" = "Ayah %1$lld of %2$lld · last practiced %3$@";
+"library.lastPracticed.today" = "today";
+"library.lastPracticed.yesterday" = "yesterday";
+"library.resumeAyah %lld" = "Resume ayah %lld";
 "library.getStartedEyebrow" = "Get started";
 "library.getStartedTitle" = "Begin your tilawah";
 "library.getStartedBody" = "Pick any surah from the library below to record your first ayah.";
