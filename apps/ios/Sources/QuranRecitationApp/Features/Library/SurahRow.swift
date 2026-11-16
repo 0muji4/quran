@@ -1,65 +1,71 @@
 import SwiftUI
 
-/// One row in the Library list. Mirrors the row treatment in
-/// `docs/design/iOS _ Surah library.png` — small index circle, English
-/// name + revelation place / ayah count metadata, Arabic name on the
-/// trailing side. Tapping the row opens the Practice tab in PR 11.
+/// One surah in the Library list: its number, its English name with the
+/// revelation place, ayah count and best score under it, its Arabic name and
+/// a disclosure chevron. The surah the user left off at (`resume`) carries a
+/// bookmark.
 struct SurahRow: View {
   let surah: SurahSummary
   let bestScore: Int?
+  var resume: Bool = false
 
   var body: some View {
-    HStack(alignment: .center, spacing: Spacing.md) {
-      indexBadge
+    HStack(spacing: AppTheme.Spacing.space3) {
+      Text(verbatim: "\(surah.id)")
+        .font(AppTheme.Typography.footnote.weight(.semibold).monospacedDigit())
+        .foregroundStyle(AppTheme.Colors.primary)
+        .frame(width: 32, height: 32)
+        .background(AppTheme.Colors.primary.opacity(0.14), in: Circle())
+        .accessibilityHidden(true)
       VStack(alignment: .leading, spacing: 2) {
-        Text(surah.nameEn)
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-        Text(metadata)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
+        HStack(spacing: 6) {
+          Text(verbatim: surah.nameEn)
+            .font(AppTheme.Typography.body)
+            .foregroundStyle(AppTheme.Colors.onSurface)
+          if resume {
+            Image(systemName: "bookmark.fill")
+              .font(AppTheme.Typography.caption)
+              .foregroundStyle(AppTheme.Colors.primary)
+              .accessibilityLabel(Text("library.resumeA11y", bundle: .module))
+          }
+        }
+        metadata
+          .font(AppTheme.Typography.footnote)
+          .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
       }
-      Spacer(minLength: Spacing.md)
-      Text(surah.nameAr)
-        .font(Font.brand.arabicAyah.weight(.regular))
-        .foregroundColor(Color.brand.textPrimary)
-        .environment(\.layoutDirection, .rightToLeft)
+      Spacer(minLength: AppTheme.Spacing.space2)
+      SurahNameArabic(name: surah.nameAr)
+      Image(systemName: "chevron.forward")
+        .font(AppTheme.Typography.footnote.weight(.semibold))
+        .foregroundStyle(AppTheme.Colors.outline)
+        .accessibilityHidden(true)
     }
-    .padding(.vertical, Spacing.md)
-    .padding(.horizontal, Spacing.lg)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.brand.paper)
-    .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
+    .contentShape(Rectangle())
     .accessibilityElement(children: .combine)
-    .accessibilityLabel(accessibilityLabel)
     .accessibilityHint(Text("library.surah.a11yHint", bundle: .module))
     .accessibilityAddTraits(.isButton)
   }
 
-  private var accessibilityLabel: Text {
+  private var metadata: Text {
     if let bestScore {
-      return Text("Surah \(surah.nameEn), \(surah.revelationPlace), \(surah.ayahCount) ayahs, best score \(bestScore)")
+      return Text(
+        "library.surah.metaBest \(surah.revelationPlace) \(surah.ayahCount) \(bestScore)", bundle: .module)
     }
-    return Text("Surah \(surah.nameEn), \(surah.revelationPlace), \(surah.ayahCount) ayahs")
+    return Text("library.surah.meta \(surah.revelationPlace) \(surah.ayahCount)", bundle: .module)
+  }
+}
+
+/// A surah's Arabic name in Amiri, right to left whatever the interface direction.
+struct SurahNameArabic: View {
+  let name: String
+
+  var body: some View {
+    Text(verbatim: name)
+      .font(Self.font)
+      .foregroundStyle(AppTheme.Colors.onSurface)
+      .environment(\.layoutDirection, .rightToLeft)
   }
 
-  /// Canonical surah number (1…114) from `surah.id`, not the row's
-  /// position in the filtered list — so Ya-Sin reads "36" even when
-  /// it's the 4th row of a Mecca filter.
-  private var indexBadge: some View {
-    Text(surah.id)
-      .font(Font.brand.caption.weight(.semibold))
-      .foregroundColor(Color.brand.goldOnLight)
-      .frame(width: 28, height: 28)
-      .background(Color.brand.tanSoft)
-      .clipShape(Circle())
-  }
-
-  private var metadata: String {
-    if let bestScore {
-      return "\(surah.revelationPlace) · \(surah.ayahCount) ayahs · best \(bestScore)"
-    } else {
-      return "\(surah.revelationPlace) · \(surah.ayahCount) ayahs"
-    }
-  }
+  /// Large enough for Amiri's marks to read beside a row's text.
+  private static let font = Font.custom(AppTheme.Typography.quranFontName, size: 22, relativeTo: .body)
 }
