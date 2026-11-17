@@ -53,7 +53,7 @@ The first screen captured is Practice, on the current theme, before it is rebuil
 A baseline is only comparable with an image rendered in the same environment.
 
 - **Android**: Robolectric at SDK 35 on JDK 17, the JDK CI and the work machines already use. Robolectric renders SDK 36 from [4.16](https://github.com/robolectric/robolectric/releases/tag/robolectric-4.16) and the app's compile SDK, 37, from [4.17](https://github.com/robolectric/robolectric/releases/tag/robolectric-4.17), but both require JDK 21. The 4.16 release notes state this for SDK 36. For SDK 37, Robolectric 4.17 on JDK 17 fails with "Android SDK 37 requires Java 21 (have Java 17)". CI renders on Linux, and images recorded on macOS match it: the first Android baselines were recorded on macOS and passed CI's comparison unchanged.
-- **iOS**: rendering depends on the device model and the simulator runtime. CI pins the runner image, the Xcode version, the device and the runtime instead of picking the first available iPhone. The pinned values are in `apps/ios/README.md`, and a work machine records baselines on the same values.
+- **iOS**: rendering depends on the device model and the simulator runtime. CI pins the runner image, the Xcode version, the device and the runtime instead of picking the first available iPhone. The pinned values are in `apps/ios/README.md`, and a work machine records baselines on the same values. The tests run in an empty host app and capture through the render server ([ADR 0031](./0031-ios-tests-in-a-host-app.md)).
 - **Scale**: images are rendered at 1x (Android `mdpi`, iOS display scale 1). Layout, colour and type differences stay visible, and each image has a ninth of the pixels of a 3x image.
 - **Determinism**: animations are stopped, and inputs that vary are fixed in the test, such as the recording duration and waveform levels.
 
@@ -107,4 +107,5 @@ Negative:
 - [ADR 0004](./0004-visual-regression-playwright.md): the Web counterpart and its baseline policy
 - [ADR 0005](./0005-ios-app-architecture.md) Decision 5: snapshot tests deferred on iOS, now superseded by this ADR
 - [ADR 0026](./0026-single-design-token-source.md): the redesign this layer gates
+- [ADR 0031](./0031-ios-tests-in-a-host-app.md): the iOS tests run in a host app and capture through the render server
 - `.github/workflows/ci.yml`: the `mobile-android` and `mobile-ios` jobs
