@@ -382,24 +382,37 @@ jobs:
       - name: Verify GraphQL codegen is up-to-date
         run: make codegen-check
 
-      # Package.resolved is not committed, so the key follows Package.swift.
-      # A stale hit is safe: xcodebuild re-resolves and fetches only what
-      # changed.
+      # Package.resolved is not committed, so the key follows the package
+      # manifest and the test project spec. A stale hit is safe: xcodebuild
+      # re-resolves and fetches only what changed.
       - name: Cache Swift package checkouts
         uses: actions/cache@v6
         with:
           path: apps/ios/.build/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('apps/ios/Package.swift') }}
+          key: ${{ runner.os }}-spm-${{ hashFiles('apps/ios/Package.swift', 'apps/ios/TestHost/project.yml') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      # `test` builds the app before running the tests, so this one step
-      # also checks that the app compiles.
-      - name: Build and run iOS tests, comparing snapshots
+      # The tests link the app's library, not its entry point, so the app
+      # itself is built on its own.
+      - name: Build the app
+        run: >-
+          xcodebuild -scheme QuranRecitationAppMain
+          -destination "generic/platform=iOS Simulator"
+          -clonedSourcePackagesDirPath .build/SourcePackages
+          build
+
+      # The tests run inside the TestHost app (ADR 0031), from an Xcode
+      # project that XcodeGen generates from TestHost/project.yml.
+      - name: Generate the test project
+        run: make test-project
+
+      - name: Run iOS tests, comparing snapshots
         env:
           TEST_RUNNER_SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/ios-snapshots
         run: >-
-          xcodebuild -scheme QuranRecitationApp-Package
+          xcodebuild -project TestHost/QuranRecitationAppTests.xcodeproj
+          -scheme QuranRecitationAppTests
           -destination "$SIMULATOR"
           -clonedSourcePackagesDirPath .build/SourcePackages
           test

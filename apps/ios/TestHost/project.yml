@@ -1,0 +1,60 @@
+# The Xcode project that runs the iOS unit tests inside an empty host app
+# (ADR 0031). Generate it with `make test-project`; the generated
+# QuranRecitationAppTests.xcodeproj is not committed.
+name: QuranRecitationAppTests
+options:
+  deploymentTarget:
+    iOS: '18.0'
+packages:
+  QuranRecitationApp:
+    path: ..
+  apollo-ios:
+    url: https://github.com/apollographql/apollo-ios.git
+    exactVersion: 2.5.0
+  swift-snapshot-testing:
+    url: https://github.com/pointfreeco/swift-snapshot-testing.git
+    exactVersion: 1.19.7
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    GENERATE_INFOPLIST_FILE: 'YES'
+targets:
+  TestHost:
+    type: application
+    platform: iOS
+    sources: [App]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tilawah.testhost
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES'
+        INFOPLIST_KEY_UILaunchScreen_Generation: 'YES'
+  QuranRecitationAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ../Tests/QuranRecitationAppTests
+        excludes:
+          - '__Snapshots__'
+    dependencies:
+      - target: TestHost
+      - package: QuranRecitationApp
+        product: QuranRecitationApp
+      - package: apollo-ios
+        product: Apollo
+      - package: apollo-ios
+        product: ApolloAPI
+      - package: swift-snapshot-testing
+        product: SnapshotTesting
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tilawah.testhost.tests
+        TEST_HOST: '$(BUILT_PRODUCTS_DIR)/TestHost.app/TestHost'
+        BUNDLE_LOADER: '$(TEST_HOST)'
+schemes:
+  QuranRecitationAppTests:
+    build:
+      targets:
+        TestHost: all
+        QuranRecitationAppTests: [test]
+    test:
+      targets: [QuranRecitationAppTests]

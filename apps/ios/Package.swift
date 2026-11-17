@@ -11,12 +11,11 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "2.5.0"),
-    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.1.0"),
-    .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", exact: "1.19.7")
+    .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "10.1.0")
   ],
   targets: [
-    // Everything the app is made of, so tests can link it. The executable below only
-    // holds the entry point.
+    // Everything the app is made of. The executable below only holds the entry point.
+    // The tests run in a host app from TestHost/project.yml, which links this library.
     .target(
       name: "QuranRecitationApp",
       dependencies: [
@@ -33,17 +32,6 @@ let package = Package(
       name: "QuranRecitationAppMain",
       dependencies: ["QuranRecitationApp"],
       path: "Sources/QuranRecitationAppMain"
-    ),
-    .testTarget(
-      name: "QuranRecitationAppTests",
-      dependencies: [
-        "QuranRecitationApp",
-        .product(name: "Apollo", package: "apollo-ios"),
-        .product(name: "ApolloAPI", package: "apollo-ios"),
-        .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
-      ],
-      path: "Tests/QuranRecitationAppTests",
-      exclude: ["__Snapshots__"]
     )
   ],
   swiftLanguageModes: [.v5]

@@ -14,10 +14,11 @@ reference audio. Entry point is `apps/ios/Package.swift`.
 
 ## Layout
 
-The app is the `QuranRecitationApp` library, which tests link. The
+The app is the `QuranRecitationApp` library, which the tests link. The
 `QuranRecitationAppMain` executable only holds the `@main` entry point.
 
 ```
+TestHost/                         the empty app the tests run in, and its project spec
 Sources/QuranRecitationAppMain/   the entry point
 Sources/QuranRecitationApp/
 ├── App/             AppRoot, Routing, AppConfig, AppError
@@ -63,12 +64,21 @@ The shape of the iOS app is documented in five ADRs:
 
 ```bash
 xcodebuild \
-  -scheme QuranRecitationApp-Package \
+  -scheme QuranRecitationAppMain \
   -destination "generic/platform=iOS Simulator" \
   build
 ```
 
 ## Test (Xcode CLI)
+
+The unit tests run inside `TestHost`, an empty app, so that snapshots are
+captured through the render server ([ADR 0031](../../docs/adr/0031-ios-tests-in-a-host-app.md)).
+The Xcode project that builds it and the tests is generated from
+`TestHost/project.yml` by a pinned XcodeGen and is not committed:
+
+```bash
+make test-project
+```
 
 `xcodebuild test` requires a concrete simulator destination. The
 `generic/...` slug used by `build` does not work. Use the simulator CI
@@ -76,7 +86,8 @@ pins, because the snapshot tests only match images rendered on it.
 
 ```bash
 xcodebuild \
-  -scheme QuranRecitationApp-Package \
+  -project TestHost/QuranRecitationAppTests.xcodeproj \
+  -scheme QuranRecitationAppTests \
   -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
   test
 ```
@@ -100,7 +111,8 @@ each recorded image as a failure. Then review and commit the changed images:
 
 ```bash
 TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all xcodebuild \
-  -scheme QuranRecitationApp-Package \
+  -project TestHost/QuranRecitationAppTests.xcodeproj \
+  -scheme QuranRecitationAppTests \
   -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
   test
 ```
@@ -112,27 +124,25 @@ references.
 To update the pinned values, change them in the workflow and in this
 table, and re-record the references in the same pull request.
 
-### Borders
+### Capture
 
-The tests run without a host app, so swift-snapshot-testing captures each
-view with `CALayer.render(in:)`. SwiftUI draws the outline of a `Capsule()`
-or `RoundedRectangle` (`strokeBorder`) as a layer border with continuous
-corners, and `render(in:)` draws such a border wrongly: a capsule gets
-straight edges sticking out at its ends, and a smaller corner radius gets
-notches where the curve meets the straight edge. The app on screen is not
-affected.
-
-`assertSnapshot(of:in:)` in `SnapshotSupport.swift` therefore hosts the view
-in `SnapshotHostingController`, whose layer redraws each continuous-corner
-border as a path of the same outline just before the capture and puts the
-border back afterwards. `BorderRedrawingLayerTests` checks the workaround and
-fails if `render(in:)` stops having the defect, at which point the workaround
-can be removed.
+`assertSnapshot(of:in:)` in `SnapshotSupport.swift` shows the view in the
+host app's key window and captures it with `drawHierarchy`, which draws
+what the render server draws, including iOS 26 glass. The view is hosted
+in a `FrozenTimeView`, whose layer has Core Animation time stopped, so
+animations such as spinners are captured at their first frame. Glass varies
+by up to 2/255 in a colour channel between captures, so the comparison reads
+both images as 8-bit sRGB and a colour channel matches when it differs by at
+most 3/255 (`snapshotChannelTolerance`), and
+every pixel is compared. `SnapshotHarnessTests` checks that the tests run
+in the host app, that animations are stopped, and that glass and
+continuous-corner borders are drawn.
 
 ## Open in Xcode
 
-Open `apps/ios/Package.swift` in Xcode, select the `QuranRecitationApp`
-scheme, and run.
+Open `apps/ios/Package.swift` in Xcode, select the `QuranRecitationAppMain`
+scheme, and run. For the tests, run `make test-project` and open
+`TestHost/QuranRecitationAppTests.xcodeproj`.
 
 ## GraphQL code generation
 

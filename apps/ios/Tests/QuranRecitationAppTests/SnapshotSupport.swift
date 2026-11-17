@@ -33,10 +33,23 @@ struct RenderVariant: CustomStringConvertible {
 }
 
 /// The width of the pinned simulator's screen (iPhone 17 Pro), and a height that fits the
-/// longest screen state without scrolling.
+/// longest screen state without scrolling. The host app's key window is resized to it for
+/// each capture.
 let snapshotSize = CGSize(width: 402, height: 1800)
 
 /// Compares `view`, rendered in `variant`, with `__Snapshots__/<test class>/<test>.<variant>.png`.
+///
+/// The tests run inside the TestHost app (ADR 0031), so the view is shown in the app's key
+/// window and captured with `drawHierarchy(in:afterScreenUpdates:)`. That capture goes
+/// through the render server and includes what only it draws, such as iOS 26 glass.
+///
+/// The render server draws animations as they are at the moment of the capture, such as
+/// the angle of a spinner. The view is hosted in a `FrozenTimeView`, so every animation is
+/// captured at its first frame.
+///
+/// Glass is not drawn the same way every time: repeat captures differ by up to 2/255 in a
+/// colour channel inside glass, and nowhere else. So every pixel is compared, and a colour
+/// channel matches when it differs by at most `snapshotChannelTolerance` (3/255).
 @MainActor
 func assertSnapshot<V: View>(
   of view: V,
@@ -48,9 +61,15 @@ func assertSnapshot<V: View>(
   let localized = view
     .environment(\.locale, Locale(identifier: variant.rightToLeft ? "ar" : "en"))
     .environment(\.layoutDirection, variant.rightToLeft ? .rightToLeft : .leftToRight)
+  var strategy = Snapshotting<UIViewController, UIImage>.image(
+    drawHierarchyInKeyWindow: true,
+    size: snapshotSize,
+    traits: variant.traits
+  )
+  strategy.diffing = .channelTolerant(strategy.diffing, tolerance: snapshotChannelTolerance)
   SnapshotTesting.assertSnapshot(
-    of: SnapshotHostingController(rootView: localized),
-    as: .image(size: snapshotSize, traits: variant.traits),
+    of: FrozenTimeHostingController(rootView: localized),
+    as: strategy,
     named: variant.description,
     file: file,
     testName: testName,
@@ -58,10 +77,24 @@ func assertSnapshot<V: View>(
   )
 }
 
-/// Hosts a SwiftUI view for a snapshot in a view whose layer redraws borders before the
-/// snapshot is captured (`BorderRedrawingLayer`). Otherwise the same as the SwiftUI view
-/// strategy: both hand the controller's view to swift-snapshot-testing's view snapshot.
-final class SnapshotHostingController<Content: View>: UIViewController {
+/// A view whose layer has Core Animation time stopped (`speed` 0). An animation added
+/// anywhere under it stays at its first frame, so a capture through the render server does
+/// not depend on when it is taken.
+final class FrozenTimeView: UIView {
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    layer.speed = 0
+    layer.timeOffset = 0
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) is not supported")
+  }
+}
+
+/// Hosts a SwiftUI view in a `FrozenTimeView` for a snapshot.
+final class FrozenTimeHostingController<Content: View>: UIViewController {
   private let hosting: UIHostingController<Content>
 
   init(rootView: Content) {
@@ -75,7 +108,7 @@ final class SnapshotHostingController<Content: View>: UIViewController {
   }
 
   override func loadView() {
-    view = BorderRedrawingView()
+    view = FrozenTimeView()
   }
 
   override func viewDidLoad() {
@@ -88,69 +121,81 @@ final class SnapshotHostingController<Content: View>: UIViewController {
   }
 }
 
-private final class BorderRedrawingView: UIView {
-  override class var layerClass: AnyClass { BorderRedrawingLayer.self }
-}
-
-/// swift-snapshot-testing captures a view with `CALayer.render(in:)` when the tests run
-/// without a host app. `render(in:)` draws a border with continuous corners wrongly: a
-/// capsule gets straight edges sticking out at its ends, and a smaller corner radius gets
-/// notches where the curve meets the straight edge. SwiftUI's `Capsule()` and
-/// `RoundedRectangle` default to continuous corners, so their outlines are affected. This
-/// layer redraws those borders as paths for the capture and then puts them back.
-final class BorderRedrawingLayer: CALayer {
-  override func render(in ctx: CGContext) {
-    let restore = redrawContinuousBorders(in: self)
-    super.render(in: ctx)
-    restore()
+/// The TestHost app's key window, which swift-snapshot-testing captures in (ADR 0031).
+@MainActor
+func snapshotWindow(file: StaticString = #filePath, line: UInt = #line) -> UIWindow {
+  guard
+    let window = UIApplication.shared.connectedScenes
+      .compactMap({ $0 as? UIWindowScene })
+      .flatMap(\.windows)
+      .first(where: \.isKeyWindow)
+  else {
+    preconditionFailure("Snapshots need the TestHost app's key window (ADR 0031)", file: file, line: line)
   }
+  return window
 }
 
-/// Replaces each continuous-corner border in the layer tree under `root` with a path of the
-/// same outline, and returns a closure that puts the borders back. `UIBezierPath`'s rounded
-/// rectangle has continuous corners, like the border it replaces.
-func redrawContinuousBorders(in root: CALayer) -> () -> Void {
-  var restores: [() -> Void] = []
+/// The largest difference in a colour channel, out of 255, that still counts as a match.
+/// Measured glass noise reaches 2; any change to the UI that matters is far larger.
+let snapshotChannelTolerance = 3
 
-  func visit(_ layer: CALayer) {
-    (layer.sublayers ?? []).forEach(visit)
-    guard layer.borderWidth > 0, layer.cornerRadius > 0, layer.cornerCurve == .continuous,
-      layer.maskedCorners == allCorners, let color = layer.borderColor
-    else { return }
-
-    let width = layer.borderWidth
-    let outline = CAShapeLayer()
-    outline.frame = layer.bounds
-    outline.contentsScale = layer.contentsScale
-    outline.path = UIBezierPath(
-      roundedRect: layer.bounds.insetBy(dx: width / 2, dy: width / 2),
-      cornerRadius: max(layer.cornerRadius - width / 2, 0)
-    ).cgPath
-    outline.fillColor = nil
-    outline.strokeColor = color
-    outline.lineWidth = width
-
-    layer.borderWidth = 0
-    layer.addSublayer(outline)
-    restores.append {
-      outline.removeFromSuperlayer()
-      layer.borderWidth = width
+extension Diffing where Value == UIImage {
+  /// `base`, with its comparison replaced by `channelMismatch(_:_:tolerance:)`. The library's
+  /// own `perceptualPrecision` computes ΔE on sRGB values as if they were linear, which
+  /// inflates differences in dark colours and hides larger ones in light colours, so it
+  /// cannot express a tolerance that is the same everywhere.
+  static func channelTolerant(_ base: Diffing, tolerance: Int) -> Diffing {
+    .diff(toData: base.toData, fromData: base.fromData) { old, new in
+      guard let message = channelMismatch(old, new, tolerance: tolerance) else { return nil }
+      return (
+        message,
+        [.data(base.toData(old), name: "reference.png"), .data(base.toData(new), name: "failure.png")]
+      )
     }
   }
-
-  CATransaction.begin()
-  CATransaction.setDisableActions(true)
-  visit(root)
-  CATransaction.commit()
-
-  return {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    restores.reversed().forEach { $0() }
-    CATransaction.commit()
-  }
 }
 
-private let allCorners: CACornerMask = [
-  .layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner,
-]
+/// Compares two images as 8-bit sRGB. Returns nil when they have the same size and every
+/// colour channel of every pixel differs by at most `tolerance`, and otherwise says how they
+/// differ.
+func channelMismatch(_ old: UIImage, _ new: UIImage, tolerance: Int) -> String? {
+  guard let reference = srgbBytes(of: old), let actual = srgbBytes(of: new) else {
+    return "An image could not be read."
+  }
+  guard reference.width == actual.width, reference.height == actual.height else {
+    return "The image is \(actual.width)×\(actual.height) px; the reference is"
+      + " \(reference.width)×\(reference.height) px."
+  }
+  if reference.bytes == actual.bytes { return nil }
+  var differing = 0
+  var largest = 0
+  for index in reference.bytes.indices {
+    let delta = abs(Int(reference.bytes[index]) - Int(actual.bytes[index]))
+    largest = max(largest, delta)
+    if delta > tolerance { differing += 1 }
+  }
+  if differing == 0 { return nil }
+  return "\(differing) colour channels differ by more than \(tolerance)/255 (the largest by"
+    + " \(largest)/255)."
+}
+
+/// The image's pixels as 8-bit RGBA in sRGB, top row first.
+private func srgbBytes(of image: UIImage) -> (bytes: [UInt8], width: Int, height: Int)? {
+  guard let cgImage = image.cgImage, let space = CGColorSpace(name: CGColorSpace.sRGB) else {
+    return nil
+  }
+  let width = cgImage.width
+  let height = cgImage.height
+  var bytes = [UInt8](repeating: 0, count: width * height * 4)
+  let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
+    guard
+      let context = CGContext(
+        data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+        bytesPerRow: width * 4, space: space,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    else { return false }
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    return true
+  }
+  return drawn ? (bytes, width, height) : nil
+}
