@@ -1,0 +1,39 @@
+# Temporary diagnostic, not for merging: a minimal app that hosts snapshot
+# captures, so they can go through the render server (drawHierarchy).
+name: SnapshotHost
+options:
+  deploymentTarget:
+    iOS: '18.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    GENERATE_INFOPLIST_FILE: 'YES'
+targets:
+  SnapshotHost:
+    type: application
+    platform: iOS
+    sources: [App]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tilawah.snapshothost
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES'
+        INFOPLIST_KEY_UILaunchScreen_Generation: 'YES'
+  SnapshotHostTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: SnapshotHost
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tilawah.snapshothost.tests
+        TEST_HOST: '$(BUILT_PRODUCTS_DIR)/SnapshotHost.app/SnapshotHost'
+        BUNDLE_LOADER: '$(TEST_HOST)'
+schemes:
+  SnapshotHost:
+    build:
+      targets:
+        SnapshotHost: all
+        SnapshotHostTests: [test]
+    test:
+      targets: [SnapshotHostTests]
