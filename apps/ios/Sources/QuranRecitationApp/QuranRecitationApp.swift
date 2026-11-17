@@ -1,7 +1,9 @@
 import SwiftUI
 
-@main
-struct QuranRecitationApp: App {
+/// The app: builds the services once and shows `AppRoot` with them. It lives in the
+/// `QuranRecitationApp` library so tests can link everything the app is made of;
+/// the `QuranRecitationAppMain` executable only marks it as the entry point.
+public struct QuranRecitationApp: App {
   @State private var session: SessionStore
   private let backend: QuranBackend
   private let authService: AuthService
@@ -10,7 +12,7 @@ struct QuranRecitationApp: App {
   private let historyStore: HistoryStore
   private let telemetry: Telemetry
 
-  init() {
+  public init() {
     AppTheme.registerFonts()
     let telemetry = OSLogTelemetry()
     let authService = URLSessionAuthService()
@@ -51,7 +53,7 @@ struct QuranRecitationApp: App {
     self._session = State(initialValue: session)
   }
 
-  var body: some Scene {
+  public var body: some Scene {
     WindowGroup {
       AppRoot(
         session: session,

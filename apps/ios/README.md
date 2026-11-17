@@ -14,7 +14,11 @@ reference audio. Entry point is `apps/ios/Package.swift`.
 
 ## Layout
 
+The app is the `QuranRecitationApp` library, which tests link. The
+`QuranRecitationAppMain` executable only holds the `@main` entry point.
+
 ```
+Sources/QuranRecitationAppMain/   the entry point
 Sources/QuranRecitationApp/
 ├── App/             AppRoot, Routing, AppConfig, AppError
 ├── DesignSystem/    AppTheme (the entry point to Generated/, ADR 0026),
@@ -59,7 +63,7 @@ The shape of the iOS app is documented in five ADRs:
 
 ```bash
 xcodebuild \
-  -scheme QuranRecitationApp \
+  -scheme QuranRecitationApp-Package \
   -destination "generic/platform=iOS Simulator" \
   build
 ```
@@ -72,7 +76,7 @@ pins, because the snapshot tests only match images rendered on it.
 
 ```bash
 xcodebuild \
-  -scheme QuranRecitationApp \
+  -scheme QuranRecitationApp-Package \
   -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
   test
 ```
@@ -96,7 +100,7 @@ each recorded image as a failure. Then review and commit the changed images:
 
 ```bash
 TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all xcodebuild \
-  -scheme QuranRecitationApp \
+  -scheme QuranRecitationApp-Package \
   -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" \
   test
 ```
