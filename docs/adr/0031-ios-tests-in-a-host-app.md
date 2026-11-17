@@ -27,12 +27,14 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 - `apps/ios/TestHost` holds the app, a SwiftUI `WindowGroup` showing nothing, and `project.yml`. The tests do not launch the real app. They link the `QuranRecitationApp` library and render its views directly, as before.
 - The Xcode project is generated from `project.yml` by XcodeGen. The XcodeGen version and its SHA-256 are pinned in `apps/ios/Makefile` (`make test-project`), like the Apollo CLI. The generated project is not committed.
 - The app is the `QuranRecitationApp` library plus a `QuranRecitationAppMain` executable that only holds `@main`. An Xcode test bundle can only link a library.
-- `assertSnapshot(of:in:)` uses swift-snapshot-testing's `.image(drawHierarchyInKeyWindow: true)` capture with its own comparison: both images are read as 8-bit sRGB, every pixel is compared, and a colour channel matches when it differs by at most 3/255 (`snapshotChannelTolerance`).
-- The view is hosted in a `FrozenTimeView`, whose layer has Core Animation time stopped (`layer.speed = 0`), so an animation such as a spinner is captured at its first frame. The render server would otherwise draw it as it is at the moment of the capture. Stopping time on the key window's own layer has no effect: in CI an animated square reached its end either way.
+- `assertSnapshot(of:in:)` prepares the capture itself (`captureInKeyWindow`). It sets the screen as the key window's root, applies the rendering through `traitOverrides` on the screen, and captures the window. swift-snapshot-testing only records, loads and compares the files. Its own preparation wraps the screen in a parent view controller, and under that parent a large navigation title loses its leading margin, whatever traits are overridden (#643).
+- The comparison is the harness's own: both images are read as 8-bit sRGB, every pixel is compared, and a colour channel matches when it differs by at most 3/255 (`snapshotChannelTolerance`).
+- Core Animation time is stopped in the screen's view (`layer.speed = 0`), so an animation such as a spinner is captured at its first frame. The render server would otherwise draw it as it is at the moment of the capture. Stopping time on the key window's own layer has no effect: in CI an animated square reached its end either way.
 - The continuous-border workaround is removed. `SnapshotHarnessTests` checks the following, with a baseline for the selection thumb:
   - the tests run in a host app with a key window;
   - a continuous capsule border is drawn with curved ends;
   - an animation is captured at its first frame;
+  - a large navigation title sits on the 16pt layout margin, mirrored in right-to-left;
   - the selection thumb is drawn.
 - CI builds the app from the package and runs the tests from the generated project.
 
@@ -46,7 +48,7 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 
 ## Consequences
 
-- Every iOS baseline is re-recorded once. Glass now appears in them, and layouts include the key window's safe area.
+- Every iOS baseline is re-recorded once. Glass now appears in them, and layouts include the screen's safe area: the status bar and the home indicator.
 - Running the iOS tests needs `make test-project` first, and the CI job builds the package twice: once for the app and once for the tests.
 - A change of up to 3/255 in a colour channel passes. A larger change in any channel of any pixel fails.
 - XcodeGen is a new pinned tool. Updating it is a change to `apps/ios/Makefile`.

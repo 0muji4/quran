@@ -14,15 +14,16 @@ struct RenderVariant: CustomStringConvertible {
       .joined(separator: "_")
   }
 
-  /// Rendered at display scale 1 to keep the committed images small.
-  var traits: UITraitCollection {
-    UITraitCollection { traits in
-      traits.displayScale = 1
-      traits.userInterfaceStyle = dark ? .dark : .light
-      // About 135% of the default body size, the category closest to Android's 1.3 font scale.
-      traits.preferredContentSizeCategory = largeText ? .extraExtraExtraLarge : .large
-      traits.layoutDirection = rightToLeft ? .rightToLeft : .leftToRight
-    }
+  /// Applies the rendering to `controller` itself through `traitOverrides`. Display scale 1
+  /// keeps the committed images small.
+  @MainActor
+  func apply(to controller: UIViewController) {
+    controller.traitOverrides.displayScale = 1
+    controller.traitOverrides.userInterfaceStyle = dark ? .dark : .light
+    // About 135% of the default body size, the category closest to Android's 1.3 font scale.
+    controller.traitOverrides.preferredContentSizeCategory =
+      largeText ? .extraExtraExtraLarge : .large
+    controller.traitOverrides.layoutDirection = rightToLeft ? .rightToLeft : .leftToRight
   }
 
   static let all: [RenderVariant] = [false, true].flatMap { dark in
@@ -34,18 +35,15 @@ struct RenderVariant: CustomStringConvertible {
 
 /// The width of the pinned simulator's screen (iPhone 17 Pro), and a height that fits the
 /// longest screen state without scrolling. The host app's key window is resized to it for
-/// each capture.
+/// each capture, and keeps the screen's safe area (the status bar and the home indicator).
 let snapshotSize = CGSize(width: 402, height: 1800)
 
 /// Compares `view`, rendered in `variant`, with `__Snapshots__/<test class>/<test>.<variant>.png`.
 ///
-/// The tests run inside the TestHost app (ADR 0031), so the view is shown in the app's key
-/// window and captured with `drawHierarchy(in:afterScreenUpdates:)`. That capture goes
-/// through the render server and includes what only it draws, such as iOS 26 glass.
-///
-/// The render server draws animations as they are at the moment of the capture, such as
-/// the angle of a spinner. The view is hosted in a `FrozenTimeView`, so every animation is
-/// captured at its first frame.
+/// The tests run inside the TestHost app (ADR 0031). `captureInKeyWindow(_:in:)` shows the
+/// view as the root of the app's key window and captures it through the render server, which
+/// includes what only the render server draws, such as iOS 26 glass. swift-snapshot-testing
+/// records, loads and compares the files.
 ///
 /// Glass is not drawn the same way every time: repeat captures differ by up to 2/255 in a
 /// colour channel inside glass, and nowhere else. So every pixel is compared, and a colour
@@ -61,14 +59,14 @@ func assertSnapshot<V: View>(
   let localized = view
     .environment(\.locale, Locale(identifier: variant.rightToLeft ? "ar" : "en"))
     .environment(\.layoutDirection, variant.rightToLeft ? .rightToLeft : .leftToRight)
-  var strategy = Snapshotting<UIViewController, UIImage>.image(
-    drawHierarchyInKeyWindow: true,
-    size: snapshotSize,
-    traits: variant.traits
-  )
-  strategy.diffing = .channelTolerant(strategy.diffing, tolerance: snapshotChannelTolerance)
+  let strategy = Snapshotting<UIViewController, UIImage>(
+    pathExtension: "png",
+    diffing: .channelTolerant(.image(scale: 1), tolerance: snapshotChannelTolerance)
+  ) { controller in
+    MainActor.assumeIsolated { captureInKeyWindow(controller, in: variant) }
+  }
   SnapshotTesting.assertSnapshot(
-    of: FrozenTimeHostingController(rootView: localized),
+    of: UIHostingController(rootView: localized),
     as: strategy,
     named: variant.description,
     file: file,
@@ -77,14 +75,47 @@ func assertSnapshot<V: View>(
   )
 }
 
-/// A view whose layer has Core Animation time stopped (`speed` 0). An animation added
-/// anywhere under it stays at its first frame, so a capture through the render server does
-/// not depend on when it is taken.
+/// Shows `controller` as the root of the TestHost app's key window, laid out at
+/// `snapshotSize` in `variant`, and captures the window through the render server.
+///
+/// This replaces swift-snapshot-testing's own preparation, which wraps the screen in a parent
+/// view controller and overrides its traits from there: under that parent, a large
+/// navigation title loses its leading margin, whatever traits are overridden.
+///
+/// The render server draws animations as they are at the moment of the capture, such as the
+/// angle of a spinner, so Core Animation time is stopped in the screen and every animation
+/// is captured at its first frame.
+@MainActor
+func captureInKeyWindow(_ controller: UIViewController, in variant: RenderVariant) -> UIImage {
+  let window = snapshotWindow()
+  let previousRoot = window.rootViewController
+  defer { window.rootViewController = previousRoot }
+  variant.apply(to: controller)
+  stopAnimationTime(in: controller.view.layer)
+  window.rootViewController = controller
+  window.frame = CGRect(origin: .zero, size: snapshotSize)
+  window.layoutIfNeeded()
+  let format = UIGraphicsImageRendererFormat()
+  format.scale = 1
+  format.preferredRange = .standard
+  return UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+    _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+  }
+}
+
+/// Stops Core Animation time in `layer` (`speed` 0), so an animation added anywhere under
+/// it stays at its first frame. It has no effect on a window's own layer, the root of what
+/// the render server draws, so it is applied to a view inside the window.
+func stopAnimationTime(in layer: CALayer) {
+  layer.speed = 0
+  layer.timeOffset = 0
+}
+
+/// A view with Core Animation time stopped (`stopAnimationTime(in:)`).
 final class FrozenTimeView: UIView {
   override init(frame: CGRect) {
     super.init(frame: frame)
-    layer.speed = 0
-    layer.timeOffset = 0
+    stopAnimationTime(in: layer)
   }
 
   @available(*, unavailable)
@@ -93,35 +124,7 @@ final class FrozenTimeView: UIView {
   }
 }
 
-/// Hosts a SwiftUI view in a `FrozenTimeView` for a snapshot.
-final class FrozenTimeHostingController<Content: View>: UIViewController {
-  private let hosting: UIHostingController<Content>
-
-  init(rootView: Content) {
-    hosting = UIHostingController(rootView: rootView)
-    super.init(nibName: nil, bundle: nil)
-  }
-
-  @available(*, unavailable)
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) is not supported")
-  }
-
-  override func loadView() {
-    view = FrozenTimeView()
-  }
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    addChild(hosting)
-    hosting.view.frame = view.bounds
-    hosting.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    view.addSubview(hosting.view)
-    hosting.didMove(toParent: self)
-  }
-}
-
-/// The TestHost app's key window, which swift-snapshot-testing captures in (ADR 0031).
+/// The TestHost app's key window, which snapshots are captured in (ADR 0031).
 @MainActor
 func snapshotWindow(file: StaticString = #filePath, line: UInt = #line) -> UIWindow {
   guard

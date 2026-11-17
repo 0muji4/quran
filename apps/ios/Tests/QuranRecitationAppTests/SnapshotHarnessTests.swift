@@ -107,6 +107,29 @@ final class SnapshotHarnessTests: XCTestCase {
     }
   }
 
+  /// A large navigation title sits on the 16pt layout margin, mirrored in right-to-left.
+  /// Under swift-snapshot-testing's own preparation it lost its leading margin.
+  func test_largeTitleKeepsTheLayoutMargin() throws {
+    for variant in RenderVariant.all where !variant.dark && !variant.largeText {
+      let controller = UIHostingController(
+        rootView: NavigationStack {
+          List { Text(verbatim: "Row") }
+            .navigationTitle(Text(verbatim: "Library"))
+        })
+      _ = captureInKeyWindow(controller, in: variant)
+      let title = try XCTUnwrap(
+        Self.views(in: controller.view)
+          .compactMap { $0 as? UILabel }
+          .first { $0.text == "Library" && $0.font.pointSize > 30 })
+      let frame = title.convert(title.bounds, to: controller.view)
+      if variant.rightToLeft {
+        XCTAssertEqual(frame.maxX, snapshotSize.width - 16, accuracy: 0.5, "\(variant)")
+      } else {
+        XCTAssertEqual(frame.minX, 16, accuracy: 0.5, "\(variant)")
+      }
+    }
+  }
+
   /// The selection thumb of a segmented control is iOS 26 glass, which only the render
   /// server draws. The baselines show it on "Mecca".
   func test_segmentedControl() {
@@ -153,5 +176,9 @@ final class SnapshotHarnessTests: XCTestCase {
     context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
     let pixels = context.data!.assumingMemoryBound(to: UInt8.self)
     return Int(pixels[(y * width + x) * 4])
+  }
+
+  private static func views(in root: UIView) -> [UIView] {
+    [root] + root.subviews.flatMap(views(in:))
   }
 }

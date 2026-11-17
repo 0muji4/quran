@@ -126,17 +126,19 @@ table, and re-record the references in the same pull request.
 
 ### Capture
 
-`assertSnapshot(of:in:)` in `SnapshotSupport.swift` shows the view in the
-host app's key window and captures it with `drawHierarchy`, which draws
-what the render server draws, including iOS 26 glass. The view is hosted
-in a `FrozenTimeView`, whose layer has Core Animation time stopped, so
-animations such as spinners are captured at their first frame. Glass varies
+`assertSnapshot(of:in:)` in `SnapshotSupport.swift` sets the view as the
+root of the host app's key window, applies the rendering through
+`traitOverrides`, and captures the window with `drawHierarchy`, which draws
+what the render server draws, including iOS 26 glass. swift-snapshot-testing
+only records, loads and compares the files. Core Animation time is stopped
+in the view, so animations such as spinners are captured at their first
+frame. Glass varies
 by up to 2/255 in a colour channel between captures, so the comparison reads
 both images as 8-bit sRGB and a colour channel matches when it differs by at
 most 3/255 (`snapshotChannelTolerance`), and
 every pixel is compared. `SnapshotHarnessTests` checks that the tests run
-in the host app, that animations are stopped, and that glass and
-continuous-corner borders are drawn.
+in the host app, that animations are stopped, that a large title keeps its
+layout margin, and that glass and continuous-corner borders are drawn.
 
 ## Open in Xcode
 
