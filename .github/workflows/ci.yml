@@ -399,7 +399,7 @@ jobs:
         env:
           TEST_RUNNER_SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/ios-snapshots
         run: >-
-          xcodebuild -scheme QuranRecitationApp
+          xcodebuild -scheme QuranRecitationApp-Package
           -destination "$SIMULATOR"
           -clonedSourcePackagesDirPath .build/SourcePackages
           test

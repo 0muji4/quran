@@ -6,7 +6,8 @@ let package = Package(
   defaultLocalization: "en",
   platforms: [.iOS(.v18)],
   products: [
-    .executable(name: "QuranRecitationApp", targets: ["QuranRecitationApp"])
+    .library(name: "QuranRecitationApp", targets: ["QuranRecitationApp"]),
+    .executable(name: "QuranRecitationAppMain", targets: ["QuranRecitationAppMain"])
   ],
   dependencies: [
     .package(url: "https://github.com/apollographql/apollo-ios.git", exact: "2.5.0"),
@@ -14,7 +15,9 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", exact: "1.19.7")
   ],
   targets: [
-    .executableTarget(
+    // Everything the app is made of, so tests can link it. The executable below only
+    // holds the entry point.
+    .target(
       name: "QuranRecitationApp",
       dependencies: [
         .product(name: "Apollo", package: "apollo-ios"),
@@ -25,6 +28,11 @@ let package = Package(
       resources: [
         .process("Resources")
       ]
+    ),
+    .executableTarget(
+      name: "QuranRecitationAppMain",
+      dependencies: ["QuranRecitationApp"],
+      path: "Sources/QuranRecitationAppMain"
     ),
     .testTarget(
       name: "QuranRecitationAppTests",
