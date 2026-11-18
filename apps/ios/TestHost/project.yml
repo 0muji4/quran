@@ -69,3 +69,5 @@ schemes:
       commandLineArguments:
         "-AppleLanguages (ar)": true
         "-AppleLocale ar": true
+        "-AppleTextDirection YES": true
+        "-NSForceRightToLeftWritingDirection YES": true
