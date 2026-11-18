@@ -1,0 +1,49 @@
+{
+  "configurations" : [
+    {
+      "id" : "29FDC76A-A26D-450D-B8E7-D4F0BBA5B62C",
+      "name" : "Left-to-right",
+      "options" : {
+        "environmentVariableEntries" : [
+          {
+            "key" : "SNAPSHOT_LAYOUT_DIRECTION",
+            "value" : "leftToRight"
+          }
+        ]
+      }
+    },
+    {
+      "id" : "4FEC9804-77D4-4B26-BCEE-9D274E882431",
+      "name" : "Right-to-left",
+      "options" : {
+        "commandLineArgumentEntries" : [
+          {
+            "argument" : "-AppleTextDirection YES"
+          },
+          {
+            "argument" : "-NSForceRightToLeftWritingDirection YES"
+          }
+        ],
+        "environmentVariableEntries" : [
+          {
+            "key" : "SNAPSHOT_LAYOUT_DIRECTION",
+            "value" : "rightToLeft"
+          }
+        ]
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:QuranRecitationAppTests.xcodeproj",
+        "identifier" : "8399C80D9E396E8E48A8CD43",
+        "name" : "QuranRecitationAppTests"
+      }
+    }
+  ],
+  "version" : 1
+}

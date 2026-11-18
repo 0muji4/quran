@@ -3,6 +3,12 @@ import SwiftUI
 import XCTest
 
 /// One of the 8 renderings every snapshot is taken in (ADR 0027).
+///
+/// Each test runs twice, once per configuration of `QuranRecitationAppTests.xctestplan`: in the
+/// app laid out left-to-right, and in the app forced right-to-left (ADR 0031). UIKit places
+/// some parts of system controls by the app's direction rather than the trait, such as the
+/// search field's magnifying glass, so each run renders only the variants in its own direction
+/// (`isRenderedInThisRun`).
 struct RenderVariant: CustomStringConvertible {
   let dark: Bool
   let largeText: Bool
@@ -12,6 +18,12 @@ struct RenderVariant: CustomStringConvertible {
   var description: String {
     [dark ? "dark" : "light", largeText ? "large" : "default", rightToLeft ? "rtl" : "ltr"]
       .joined(separator: "_")
+  }
+
+  /// Whether this test run renders `self`: whether its direction is the app's.
+  @MainActor
+  var isRenderedInThisRun: Bool {
+    rightToLeft == (UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft)
   }
 
   /// Applies the rendering to `controller` itself through `traitOverrides`. Display scale 1
@@ -39,6 +51,8 @@ struct RenderVariant: CustomStringConvertible {
 let snapshotSize = CGSize(width: 402, height: 1800)
 
 /// Compares `view`, rendered in `variant`, with `__Snapshots__/<test class>/<test>.<variant>.png`.
+/// A variant in the other direction is left to the test plan's other configuration, and
+/// passes without a capture (`RenderVariant.isRenderedInThisRun`).
 ///
 /// The tests run inside the TestHost app (ADR 0031). `captureInKeyWindow(_:in:)` shows the
 /// view as the root of the app's key window and captures it through the render server, which
@@ -56,6 +70,7 @@ func assertSnapshot<V: View>(
   testName: String = #function,
   line: UInt = #line
 ) {
+  guard variant.isRenderedInThisRun else { return }
   let localized = view
     .environment(\.locale, Locale(identifier: variant.rightToLeft ? "ar" : "en"))
     .environment(\.layoutDirection, variant.rightToLeft ? .rightToLeft : .leftToRight)
@@ -89,8 +104,13 @@ func assertSnapshot<V: View>(
 /// A text field's clear button is hidden (`hideClearButtons(in:)`): its glyph is drawn
 /// differently from one capture to the next, by up to 90/255 in a channel, even with time
 /// stopped.
+///
+/// `variant` must be in the app's direction (`RenderVariant.isRenderedInThisRun`).
 @MainActor
 func captureInKeyWindow(_ controller: UIViewController, in variant: RenderVariant) -> UIImage {
+  precondition(
+    variant.isRenderedInThisRun,
+    "\(variant) is rendered by the test plan's other configuration (ADR 0031)")
   let window = snapshotWindow()
   let previousRoot = window.rootViewController
   defer { window.rootViewController = previousRoot }

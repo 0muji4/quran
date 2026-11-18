@@ -29,6 +29,7 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 - The app is the `QuranRecitationApp` library plus a `QuranRecitationAppMain` executable that only holds `@main`. An Xcode test bundle can only link a library.
 - `assertSnapshot(of:in:)` prepares the capture itself (`captureInKeyWindow`). It sets the screen as the key window's root, applies the rendering through `traitOverrides` on the screen, and captures the window. swift-snapshot-testing only records, loads and compares the files. Its own preparation wraps the screen in a parent view controller, and under that parent a large navigation title loses its leading margin, whatever traits are overridden (#643).
 - The comparison is the harness's own: both images are read as 8-bit sRGB, every pixel is compared, and a colour channel matches when it differs by at most 3/255 (`snapshotChannelTolerance`).
+- The scheme runs the tests through a test plan, `TestHost/QuranRecitationAppTests.xctestplan`, with two configurations: the app as it is, laid out left-to-right, and the app launched with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`, laid out right-to-left. Each run renders only the variants in its own direction (`RenderVariant.isRenderedInThisRun`). UIKit places parts of some system controls by the app's direction (`UIApplication.userInterfaceLayoutDirection`), not by the trait: with right-to-left traits in a left-to-right app, the search field drew no magnifying glass, and with left-to-right traits in a right-to-left app it drew none either (#645).
 - Core Animation time is stopped in the screen's view (`layer.speed = 0`), so an animation such as a spinner is captured at its first frame. The render server would otherwise draw it as it is at the moment of the capture. Stopping time on the key window's own layer has no effect: in CI an animated square reached its end either way.
 - A text field's clear button is hidden during the capture: `clearButtonMode = .never`, and the field's buttons set to hidden. Setting the mode alone left an already shown button fading out at capture time, at a varying opacity. Its glyph is drawn differently from one capture to the next, even with time stopped. Over 15 captures of the Library no-match screen in each of the 8 renderings, the glyph differed by up to 90/255 in a channel, while every other pixel was identical (#646). swift-snapshot-testing has the same open report (pointfreeco/swift-snapshot-testing#804), and hiding the button in tests is the workaround reported there. The app's code is unchanged.
 - The continuous-border workaround is removed. `SnapshotHarnessTests` checks the following, with a baseline for the selection thumb:
@@ -36,7 +37,9 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
   - a continuous capsule border is drawn with curved ends;
   - an animation is captured at its first frame;
   - a large navigation title sits on the 16pt layout margin, mirrored in right-to-left;
+  - each run is laid out in the direction its configuration names (`SNAPSHOT_LAYOUT_DIRECTION`);
   - a search field holding text has its clear button hidden in every rendering, and captures the same way twice;
+  - the search field's magnifying glass sits on its leading side, with the prompt beside it;
   - the selection thumb is drawn.
 - CI builds the app from the package and runs the tests from the generated project.
 
@@ -52,6 +55,7 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 
 - Every iOS baseline is re-recorded once. Glass now appears in them, and layouts include the screen's safe area: the status bar and the home indicator.
 - Running the iOS tests needs `make test-project` first, and the CI job builds the package twice: once for the app and once for the tests.
+- Every test runs twice, once per direction. Tests that render nothing run in a right-to-left app too.
 - A change of up to 3/255 in a colour channel passes. A larger change in any channel of any pixel fails.
 - XcodeGen is a new pinned tool. Updating it is a change to `apps/ios/Makefile`.
 
@@ -71,5 +75,5 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 
 - [ADR 0027](./0027-native-snapshot-tests.md): the snapshot tests and their rendering environment
 - [ADR 0030](./0030-platform-standard-components.md): the platform components whose glass is now captured
-- `apps/ios/TestHost/project.yml`, `apps/ios/Makefile` (`test-project`)
+- `apps/ios/TestHost/project.yml`, `apps/ios/TestHost/QuranRecitationAppTests.xctestplan`, `apps/ios/Makefile` (`test-project`)
 - `apps/ios/Tests/QuranRecitationAppTests/SnapshotSupport.swift`, `SnapshotHarnessTests.swift`
