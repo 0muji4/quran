@@ -85,6 +85,10 @@ func assertSnapshot<V: View>(
 /// The render server draws animations as they are at the moment of the capture, such as the
 /// angle of a spinner, so Core Animation time is stopped in the screen and every animation
 /// is captured at its first frame.
+///
+/// A text field's clear button is hidden (`hideClearButtons(in:)`): its glyph is drawn
+/// differently from one capture to the next, by up to 90/255 in a channel, even with time
+/// stopped.
 @MainActor
 func captureInKeyWindow(_ controller: UIViewController, in variant: RenderVariant) -> UIImage {
   let window = snapshotWindow()
@@ -95,11 +99,42 @@ func captureInKeyWindow(_ controller: UIViewController, in variant: RenderVarian
   window.rootViewController = controller
   window.frame = CGRect(origin: .zero, size: snapshotSize)
   window.layoutIfNeeded()
+  hideClearButtons(in: window)
+  window.layoutIfNeeded()
   let format = UIGraphicsImageRendererFormat()
   format.scale = 1
   format.preferredRange = .standard
   return UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
     _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+  }
+}
+
+/// Hides every text field's clear button under `root`. The button is system UI, and its
+/// glyph cannot be captured the same way twice. swift-snapshot-testing has the same open
+/// report (pointfreeco/swift-snapshot-testing#804), where hiding it in tests is the
+/// workaround; here it happens only in the capture, so the app's code is unchanged.
+///
+/// Setting `clearButtonMode` to `.never` alone was not enough: the button already shown was
+/// still captured at a varying opacity in some renderings, even with time stopped. The
+/// field's buttons are therefore also hidden; `isHidden` is not animated, so the render
+/// server applies it at once. They are the clear button and the dictation button, which iOS 26 does not draw
+/// in these captures.
+@MainActor
+func hideClearButtons(in root: UIView) {
+  if let field = root as? UITextField {
+    field.clearButtonMode = .never
+    field.layoutIfNeeded()
+    buttons(in: field).forEach { $0.isHidden = true }
+    return
+  }
+  root.subviews.forEach(hideClearButtons(in:))
+}
+
+/// The buttons inside `view`, at any depth.
+@MainActor
+func buttons(in view: UIView) -> [UIButton] {
+  view.subviews.flatMap { subview in
+    (subview as? UIButton).map { [$0] } ?? buttons(in: subview)
   }
 }
 

@@ -30,11 +30,13 @@ Once every screen ran this way, the glass back button differed by up to 2/255 in
 - `assertSnapshot(of:in:)` prepares the capture itself (`captureInKeyWindow`). It sets the screen as the key window's root, applies the rendering through `traitOverrides` on the screen, and captures the window. swift-snapshot-testing only records, loads and compares the files. Its own preparation wraps the screen in a parent view controller, and under that parent a large navigation title loses its leading margin, whatever traits are overridden (#643).
 - The comparison is the harness's own: both images are read as 8-bit sRGB, every pixel is compared, and a colour channel matches when it differs by at most 3/255 (`snapshotChannelTolerance`).
 - Core Animation time is stopped in the screen's view (`layer.speed = 0`), so an animation such as a spinner is captured at its first frame. The render server would otherwise draw it as it is at the moment of the capture. Stopping time on the key window's own layer has no effect: in CI an animated square reached its end either way.
+- A text field's clear button is hidden during the capture: `clearButtonMode = .never`, and the field's buttons set to hidden. Setting the mode alone left an already shown button fading out at capture time, at a varying opacity. Its glyph is drawn differently from one capture to the next, even with time stopped. Over 15 captures of the Library no-match screen in each of the 8 renderings, the glyph differed by up to 90/255 in a channel, while every other pixel was identical (#646). swift-snapshot-testing has the same open report (pointfreeco/swift-snapshot-testing#804), and hiding the button in tests is the workaround reported there. The app's code is unchanged.
 - The continuous-border workaround is removed. `SnapshotHarnessTests` checks the following, with a baseline for the selection thumb:
   - the tests run in a host app with a key window;
   - a continuous capsule border is drawn with curved ends;
   - an animation is captured at its first frame;
   - a large navigation title sits on the 16pt layout margin, mirrored in right-to-left;
+  - a search field holding text has its clear button hidden in every rendering, and captures the same way twice;
   - the selection thumb is drawn.
 - CI builds the app from the package and runs the tests from the generated project.
 
