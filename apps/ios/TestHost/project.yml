@@ -56,5 +56,9 @@ schemes:
       targets:
         TestHost: all
         QuranRecitationAppTests: [test]
+    # The test plan runs every test twice, once per layout direction of the
+    # app (ADR 0031).
     test:
-      targets: [QuranRecitationAppTests]
+      testPlans:
+        - path: QuranRecitationAppTests.xctestplan
+          defaultPlan: true

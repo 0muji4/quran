@@ -121,6 +121,11 @@ When a comparison fails in CI, the job uploads the images it rendered as
 the `ios-snapshots` artifact. Those images can also be committed as the new
 references.
 
+The scheme's test plan, `TestHost/QuranRecitationAppTests.xctestplan`, runs
+every test twice: in the app laid out left-to-right, and in the app forced
+right-to-left. Each run renders the snapshots in its own direction, so a
+full test run records or compares all 8 renderings.
+
 To update the pinned values, change them in the workflow and in this
 table, and re-record the references in the same pull request.
 
@@ -137,10 +142,15 @@ its glyph is drawn differently every time. Glass varies
 by up to 2/255 in a colour channel between captures, so the comparison reads
 both images as 8-bit sRGB and a colour channel matches when it differs by at
 most 3/255 (`snapshotChannelTolerance`), and
-every pixel is compared. `SnapshotHarnessTests` checks that the tests run
-in the host app, that animations are stopped, that a large title keeps its
-layout margin, that a search field with text captures the same every time,
-and that glass and continuous-corner borders are drawn.
+every pixel is compared. UIKit places parts of some system controls, such as
+the search field's magnifying glass, by the app's layout direction rather
+than the trait, so right-to-left renderings come from the test plan's
+right-to-left run. `SnapshotHarnessTests` checks that the tests run in the
+host app, in the direction its test plan configuration names, that
+animations are stopped, that a large title keeps its layout margin, that a
+search field with text captures the same every time, that the search
+field's magnifying glass is on its leading side, and that glass and
+continuous-corner borders are drawn.
 
 ## Open in Xcode
 

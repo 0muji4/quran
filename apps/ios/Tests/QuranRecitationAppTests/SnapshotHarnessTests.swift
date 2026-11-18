@@ -2,7 +2,8 @@ import SwiftUI
 import XCTest
 
 /// Checks that snapshots are captured the way `assertSnapshot(of:in:)` relies on (ADR 0031):
-/// in the TestHost app's key window, through the render server, with animations stopped.
+/// in the TestHost app's key window, through the render server, with animations stopped, and
+/// in the app's own layout direction.
 @MainActor
 final class SnapshotHarnessTests: XCTestCase {
   /// Without a host app there is no connected scene, and `drawHierarchy` returns a blank
@@ -12,6 +13,20 @@ final class SnapshotHarnessTests: XCTestCase {
       .compactMap { $0 as? UIWindowScene }
       .flatMap(\.windows)
     XCTAssertTrue(windows.contains(where: \.isKeyWindow))
+  }
+
+  /// Each configuration of the test plan names the direction it lays the app out in
+  /// (`SNAPSHOT_LAYOUT_DIRECTION`), and the app is laid out that way. This fails when the
+  /// tests run outside the test plan, or when a configuration's launch arguments stop taking
+  /// effect, either of which would leave one direction's snapshots unchecked.
+  func test_runsInTheDirectionOfItsTestPlanConfiguration() throws {
+    let expected = try XCTUnwrap(
+      ProcessInfo.processInfo.environment["SNAPSHOT_LAYOUT_DIRECTION"],
+      "Run the tests through QuranRecitationAppTests.xctestplan (ADR 0031)")
+    let actual =
+      UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft
+      ? "rightToLeft" : "leftToRight"
+    XCTAssertEqual(actual, expected)
   }
 
   /// `CALayer.render(in:)` draws a border with continuous corners with straight edges
@@ -110,7 +125,8 @@ final class SnapshotHarnessTests: XCTestCase {
   /// A large navigation title sits on the 16pt layout margin, mirrored in right-to-left.
   /// Under swift-snapshot-testing's own preparation it lost its leading margin.
   func test_largeTitleKeepsTheLayoutMargin() throws {
-    for variant in RenderVariant.all where !variant.dark && !variant.largeText {
+    for variant in RenderVariant.all
+    where !variant.dark && !variant.largeText && variant.isRenderedInThisRun {
       let controller = UIHostingController(
         rootView: NavigationStack {
           List { Text(verbatim: "Row") }
@@ -133,7 +149,7 @@ final class SnapshotHarnessTests: XCTestCase {
   /// A search field holding text, whose clear button was drawn differently from capture to
   /// capture, has its clear button hidden in every rendering and captures the same way twice.
   func test_searchFieldWithTextHidesItsClearButton() throws {
-    for variant in RenderVariant.all {
+    for variant in RenderVariant.all where variant.isRenderedInThisRun {
       var captures: [UIImage] = []
       for _ in 0..<2 {
         let controller = UIHostingController(
@@ -154,6 +170,44 @@ final class SnapshotHarnessTests: XCTestCase {
       XCTAssertNil(
         channelMismatch(captures[0], captures[1], tolerance: snapshotChannelTolerance),
         "\(variant)")
+    }
+  }
+
+  /// The system search field places its magnifying glass by the app's direction, not by the
+  /// trait: with right-to-left traits in an app laid out left-to-right, it drew no glass at
+  /// all. Each run renders its own direction, so the glass sits on the leading side with the
+  /// prompt beside it: on the left in left-to-right, and on the right in right-to-left, as on
+  /// a device in Arabic.
+  func test_searchFieldShowsTheMagnifyingGlassOnTheLeadingSide() throws {
+    for variant in RenderVariant.all
+    where !variant.dark && !variant.largeText && variant.isRenderedInThisRun {
+      let controller = UIHostingController(
+        rootView: NavigationStack {
+          List { Text(verbatim: "Row") }
+            .navigationTitle(Text(verbatim: "Library"))
+            .searchable(
+              text: .constant(""), placement: .navigationBarDrawer(displayMode: .always),
+              prompt: Text(verbatim: "Search"))
+        })
+      _ = captureInKeyWindow(controller, in: variant)
+      let field = try XCTUnwrap(
+        Self.views(in: controller.view).compactMap { $0 as? UISearchTextField }.first,
+        "\(variant)")
+      let shown = Self.views(in: field).filter { !$0.isHidden && $0.alpha > 0 }
+      let glass = try XCTUnwrap(
+        shown.compactMap { $0 as? UIImageView }.first { $0.image != nil },
+        "\(variant): no magnifying glass")
+      let prompt = try XCTUnwrap(
+        shown.compactMap { $0 as? UILabel }.first { $0.text == "Search" }, "\(variant)")
+      let glassFrame = glass.convert(glass.bounds, to: field)
+      let promptFrame = prompt.convert(prompt.bounds, to: field)
+      if variant.rightToLeft {
+        XCTAssertGreaterThan(glassFrame.minX, field.bounds.midX, "\(variant)")
+        XCTAssertLessThanOrEqual(promptFrame.maxX, glassFrame.minX, "\(variant)")
+      } else {
+        XCTAssertLessThan(glassFrame.maxX, field.bounds.midX, "\(variant)")
+        XCTAssertGreaterThanOrEqual(promptFrame.minX, glassFrame.maxX, "\(variant)")
+      }
     }
   }
 
