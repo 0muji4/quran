@@ -132,13 +132,15 @@ root of the host app's key window, applies the rendering through
 what the render server draws, including iOS 26 glass. swift-snapshot-testing
 only records, loads and compares the files. Core Animation time is stopped
 in the view, so animations such as spinners are captured at their first
-frame. Glass varies
+frame. A text field's clear button is hidden during the capture, because
+its glyph is drawn differently every time. Glass varies
 by up to 2/255 in a colour channel between captures, so the comparison reads
 both images as 8-bit sRGB and a colour channel matches when it differs by at
 most 3/255 (`snapshotChannelTolerance`), and
 every pixel is compared. `SnapshotHarnessTests` checks that the tests run
 in the host app, that animations are stopped, that a large title keeps its
-layout margin, and that glass and continuous-corner borders are drawn.
+layout margin, that a search field with text captures the same every time,
+and that glass and continuous-corner borders are drawn.
 
 ## Open in Xcode
 

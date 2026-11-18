@@ -130,6 +130,33 @@ final class SnapshotHarnessTests: XCTestCase {
     }
   }
 
+  /// A search field holding text, whose clear button was drawn differently from capture to
+  /// capture, has its clear button hidden in every rendering and captures the same way twice.
+  func test_searchFieldWithTextHidesItsClearButton() throws {
+    for variant in RenderVariant.all {
+      var captures: [UIImage] = []
+      for _ in 0..<2 {
+        let controller = UIHostingController(
+          rootView: NavigationStack {
+            List { Text(verbatim: "Row") }
+              .navigationTitle(Text(verbatim: "Library"))
+              .searchable(
+                text: .constant("Yasin"), placement: .navigationBarDrawer(displayMode: .always))
+          })
+        captures.append(captureInKeyWindow(controller, in: variant))
+        let fields = Self.views(in: controller.view).compactMap { $0 as? UISearchTextField }
+        XCTAssertFalse(fields.isEmpty, "\(variant)")
+        for field in fields {
+          XCTAssertEqual(field.clearButtonMode, .never, "\(variant)")
+          XCTAssertTrue(buttons(in: field).allSatisfy(\.isHidden), "\(variant)")
+        }
+      }
+      XCTAssertNil(
+        channelMismatch(captures[0], captures[1], tolerance: snapshotChannelTolerance),
+        "\(variant)")
+    }
+  }
+
   /// The selection thumb of a segmented control is iOS 26 glass, which only the render
   /// server draws. The baselines show it on "Mecca".
   func test_segmentedControl() {
