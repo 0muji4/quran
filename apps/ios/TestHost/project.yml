@@ -58,3 +58,14 @@ schemes:
         QuranRecitationAppTests: [test]
     test:
       targets: [QuranRecitationAppTests]
+  # Diagnostic only: the same tests in the host app launched in Arabic.
+  QuranRecitationAppTestsArabic:
+    build:
+      targets:
+        TestHost: all
+        QuranRecitationAppTests: [test]
+    test:
+      targets: [QuranRecitationAppTests]
+      commandLineArguments:
+        "-AppleLanguages (ar)": true
+        "-AppleLocale ar": true

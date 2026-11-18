@@ -417,6 +417,18 @@ jobs:
           -clonedSourcePackagesDirPath .build/SourcePackages
           test
 
+      - name: Diagnostic in the host app launched in Arabic
+        if: always()
+        env:
+          TEST_RUNNER_SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/ios-snapshots
+        run: >-
+          xcodebuild -project TestHost/QuranRecitationAppTests.xcodeproj
+          -scheme QuranRecitationAppTestsArabic
+          -destination "$SIMULATOR"
+          -clonedSourcePackagesDirPath .build/SourcePackages
+          -only-testing:QuranRecitationAppTests/SearchFieldDirectionDiagnosticTests
+          test
+
       - name: Upload rendered snapshots
         if: failure()
         uses: actions/upload-artifact@v7
