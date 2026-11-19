@@ -5,25 +5,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.PrimaryButton
-import com.tilawah.android.designsystem.components.PrimaryButtonTint
-import com.tilawah.android.features.auth.components.AuthTextField
+import com.tilawah.android.designsystem.AppTheme
 
 /**
- * Destructive confirmation sheet for `DELETE /auth/me`. Mirrors iOS
- * `DeleteAccountSheet` — the user must type `DELETE` to enable the
- * destructive button. Soft-deletes per ADR-0024 §4 with a 30-day
- * grace window for reactivation via sign-in.
+ * Delete account, as a Material 3 modal bottom sheet on [AppTheme] (ADR 0030).
+ * It leads with what deleting does, on the error container, and asks for
+ * DELETE before its red confirm button enables. The sheet will not close
+ * while deleting.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,24 +34,24 @@ fun DeleteAccountSheet(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberSubmitLockedSheetState(state.isSubmitting)
-
-    ModalBottomSheet(
-        onDismissRequest = {
-            if (!state.isSubmitting) onDismiss()
-        },
-        sheetState = sheetState,
-        modifier = modifier,
-    ) {
-        DeleteAccountSheetContent(
-            state = state,
-            canSubmit = viewModel.canSubmit(),
-            onConfirmTextChange = viewModel::setConfirmText,
-            onSubmit = { viewModel.submit(onSuccess = onDismiss) },
-            onCancel = onDismiss,
-        )
+    AppTheme {
+        ModalBottomSheet(
+            onDismissRequest = { if (!state.isSubmitting) onDismiss() },
+            sheetState = sheetState,
+            modifier = modifier,
+        ) {
+            DeleteAccountSheetContent(
+                state = state,
+                canSubmit = viewModel.canSubmit(),
+                onConfirmTextChange = viewModel::setConfirmText,
+                onSubmit = { viewModel.submit(onSuccess = onDismiss) },
+                onCancel = onDismiss,
+            )
+        }
     }
 }
 
+/** The sheet's content drawn from its state, so any state renders without a ViewModel. */
 @Composable
 internal fun DeleteAccountSheetContent(
     state: DeleteAccountUiState,
@@ -61,59 +61,40 @@ internal fun DeleteAccountSheetContent(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = BrandTheme.colors
-    val spacing = BrandTheme.spacing
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(spacing.lg),
-    ) {
-        Text(
-            text = ProfileCopy.deleteAccountTitle,
-            style = BrandTheme.typography.pageTitle,
-            color = colors.textPrimary,
-        )
-        Text(
-            text = ProfileCopy.deleteAccountBody,
-            style = BrandTheme.typography.body,
-            color = colors.textSecondary,
-        )
-
-        AuthTextField(
+    ProfileSheetBody(title = ProfileCopy.deleteAccountTitle, modifier = modifier) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = AppTheme.colorScheme.errorContainer,
+                contentColor = AppTheme.colorScheme.onErrorContainer,
+            ),
+        ) {
+            Row(
+                modifier = Modifier.padding(AppTheme.spacing.space4),
+                horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.space3),
+            ) {
+                Icon(imageVector = Icons.Outlined.WarningAmber, contentDescription = null)
+                Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.space1)) {
+                    Text(text = ProfileCopy.deleteAccountWarningTitle, style = AppTheme.typography.titleMedium)
+                    Text(text = ProfileCopy.deleteAccountBody, style = AppTheme.typography.bodyMedium)
+                }
+            }
+        }
+        ProfileTextField(
             label = ProfileCopy.deleteAccountConfirmLabel,
             value = state.confirmText,
             onValueChange = onConfirmTextChange,
             enabled = !state.isSubmitting,
+            supporting = ProfileCopy.deleteAccountConfirmHelper,
         )
-
-        when (val status = state.status) {
-            is DeleteAccountStatus.Error -> Text(
-                text = status.message,
-                style = BrandTheme.typography.caption,
-                color = colors.recording,
-            )
-            else -> Unit
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            TextButton(
-                onClick = onCancel,
-                enabled = !state.isSubmitting,
-                colors = ButtonDefaults.textButtonColors(),
-            ) {
-                Text(text = ProfileCopy.editCancel, color = colors.textSecondary)
-            }
-            PrimaryButton(
-                label = if (state.isSubmitting) ProfileCopy.deleteAccountSavePending else ProfileCopy.deleteAccountSave,
-                onClick = onSubmit,
-                enabled = canSubmit,
-                tint = PrimaryButtonTint.Accent,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        (state.status as? DeleteAccountStatus.Error)?.let { ProfileSheetError(it.message) }
+        ProfileSheetActions(
+            confirmLabel = if (state.isSubmitting) ProfileCopy.deleteAccountSavePending else ProfileCopy.deleteAccountSave,
+            confirmEnabled = canSubmit,
+            submitting = state.isSubmitting,
+            onCancel = onCancel,
+            onConfirm = onSubmit,
+            destructive = true,
+        )
     }
 }

@@ -13,35 +13,36 @@ object ProfileCopy {
     const val deleteAccountEntryLabel: String = "Delete account"
 
     const val editTitle: String = "Edit profile"
-    const val editDisplayNameLabel: String = "DISPLAY NAME"
-    // Figma "Android _ Edit profile" labels this field "SKILL LEVEL"
-    // (was "YOUR LEVEL"). The on-screen copy lives in strings.xml; this
-    // constant is retained for any caller still reading it.
-    const val editLevelLabel: String = "SKILL LEVEL"
     const val editCancel: String = "Cancel"
     const val editSave: String = "Save"
     const val editSavePending: String = "Saving…"
 
+    const val showPasswordA11y: String = "Show password"
+    const val hidePasswordA11y: String = "Hide password"
+
     const val changeEmailTitle: String = "Change email"
-    const val changeEmailNewLabel: String = "NEW EMAIL"
-    const val changeEmailCurrentPasswordLabel: String = "CURRENT PASSWORD"
-    const val changeEmailCurrentPasswordHelper: String =
-        "We re-verify your current password before rotating your email."
+    const val changeEmailNewLabel: String = "New email"
+    const val changeEmailNewHelper: String = "You'll sign in with this address next time."
+    const val changeEmailCurrentPasswordLabel: String = "Current password"
+    const val changeEmailCurrentPasswordHelper: String = "To confirm it's you."
     const val changeEmailSave: String = "Update email"
     const val changeEmailSavePending: String = "Updating…"
 
     const val updatePasswordTitle: String = "Update password"
-    const val updatePasswordCurrentLabel: String = "CURRENT PASSWORD"
-    const val updatePasswordNewLabel: String = "NEW PASSWORD"
+    const val updatePasswordCurrentLabel: String = "Current password"
+    const val updatePasswordNewLabel: String = "New password"
     const val updatePasswordNewHelper: String = "At least 8 characters."
-    const val updatePasswordConfirmLabel: String = "CONFIRM NEW PASSWORD"
+    const val updatePasswordConfirmLabel: String = "Confirm new password"
     const val updatePasswordSave: String = "Update password"
     const val updatePasswordSavePending: String = "Updating…"
 
     const val deleteAccountTitle: String = "Delete account"
+    const val deleteAccountWarningTitle: String = "This deactivates your account"
     const val deleteAccountBody: String =
-        "Your account will be soft-deleted. You have 30 days to recover it by signing in; after that the row is removed permanently."
-    const val deleteAccountConfirmLabel: String = "TYPE DELETE TO CONFIRM"
+        "Your account is closed now and kept for 30 days. Sign back in within 30 days to restore it. " +
+            "After that, your data is deleted for good."
+    const val deleteAccountConfirmLabel: String = "Type DELETE to confirm"
+    const val deleteAccountConfirmHelper: String = "In capital letters."
     const val deleteAccountSave: String = "Delete account"
     const val deleteAccountSavePending: String = "Deleting…"
 
