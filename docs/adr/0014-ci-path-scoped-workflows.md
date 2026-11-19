@@ -1,6 +1,6 @@
 # ADR 0014: CI Workflows Scoped to Changed Paths with a Stable Required Check
 
-- Status: Accepted
+- Status: Accepted. Amended 2026-11-20: `ci-summary` fails on any upstream result but `success` or `skipped`, so a job that never ran (`abandoned`) blocks the merge.
 - Date: 2026-05-12
 - Author: motoshi.suzuki
 - Tracks: [Issue #225](https://github.com/0muji4/quran-project/issues/225)
@@ -20,7 +20,7 @@ A naive fix — adding `on.paths` filters to each workflow — interacts badly w
 
 Adopt a two-tier CI scoping pattern, executed in a specific order:
 
-1. **Tier "required-check stability" (must land first).** Add a single umbrella job — `ci-summary` — that `needs:` every leaf job, runs `if: always()`, and fails when any upstream is `failure` or `cancelled`. Branch protection on `develop` and `main` requires only `ci-summary`. Individual jobs become free to skip without breaking merge.
+1. **Tier "required-check stability" (must land first).** Add a single umbrella job — `ci-summary` — that `needs:` every leaf job, runs `if: always()`, and fails when any upstream result is anything but `success` or `skipped`. Branch protection on `develop` and `main` requires only `ci-summary`. Individual jobs become free to skip without breaking merge.
 2. **Tier "path-based gating" (lands second, builds on tier 1).** Add `.github/filters.yml` keyed by stack (`js`, `go`, `ios`, `android`, `python`, `db`) plus a `shared` anchor expanded into each non-mobile stack. Each workflow's first job is `dorny/paths-filter@v3`; downstream jobs gate on its outputs.
 3. **Tier "safety net" (third, defensive).** A nightly cron workflow runs the full suite without filters against `develop` and `main`, so any silent under-execution caused by a `filters.yml` authoring mistake surfaces within 24 hours rather than weeks.
 

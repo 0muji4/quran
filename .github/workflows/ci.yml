@@ -428,9 +428,10 @@ jobs:
   ci-summary:
     # The single stable required check. Branch protection on develop/main
     # should require ONLY this job. It aggregates every upstream job's
-    # `needs.*.result` and fails on `failure` or `cancelled`; `skipped`
-    # (the natural outcome of a stack the PR did not touch) counts as
-    # success so partial-stack PRs remain mergeable. See ADR 0014.
+    # `needs.*.result` and fails on any result but `success` or `skipped`,
+    # including `abandoned`, which a job gets when no runner ever picks it
+    # up. `skipped` (the natural outcome of a stack the PR did not touch)
+    # counts as success so partial-stack PRs remain mergeable. See ADR 0014.
     needs:
       - changes
       - js-quality
@@ -455,9 +456,9 @@ jobs:
         run: |
           set -euo pipefail
           echo "$NEEDS_JSON"
-          failed=$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$NEEDS_JSON")
+          failed=$(jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"' <<<"$NEEDS_JSON")
           if [ -n "$failed" ]; then
-            echo "::error::Failed or cancelled upstream jobs:"
+            echo "::error::Upstream jobs that did not succeed or skip:"
             echo "$failed"
             exit 1
           fi
