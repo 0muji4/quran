@@ -1,73 +1,56 @@
 import SwiftUI
 
-/// 2×2 grid of summary statistics shown above the History list.
-/// Mirrors `docs/design/iOS _ History.png`: This Week, Average, Best,
-/// Streak. The Average tile uses the inverse (dark) BrandCard variant
-/// to match the design's emphasis treatment.
+/// The four totals above the History list: this week's attempts, the average
+/// score, the best score with its surah, and the day streak, as tiles in a
+/// 2×2 grid. The average is the emphasised one, its value in the primary
+/// colour. The totals always cover every attempt, whatever the list's filter.
 struct StatsGrid: View {
   let stats: HistoryStats
 
   var body: some View {
-    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Spacing.md) {
+    LazyVGrid(
+      columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
+      spacing: 10
+    ) {
+      tile("history.stats.thisWeek", value: "\(stats.thisWeekCount)", unit: Text("history.stats.attempts", bundle: .module))
       tile(
-        eyebrow: "history.stats.thisWeek",
-        big: "\(stats.thisWeekCount)",
-        small: "history.stats.attempts",
-        style: .standard
+        "history.stats.average",
+        value: stats.averageScore.map { "\(Int($0.rounded()))" } ?? "—",
+        unit: Text("history.stats.outOf", bundle: .module),
+        emphasis: true
       )
       tile(
-        eyebrow: "history.stats.average",
-        big: stats.averageScore.map { "\(Int($0))" } ?? "—",
-        small: "history.stats.outOf",
-        style: .inverse
+        "history.stats.best",
+        value: stats.bestScore.map { "\($0)" } ?? "—",
+        unit: stats.bestSurah.map { Text(verbatim: $0) } ?? Text("history.stats.bestUnknown", bundle: .module)
       )
-      tile(
-        eyebrow: "history.stats.best",
-        big: stats.bestScore.map { "\($0)" } ?? "—",
-        small: stats.bestSurah.map { LocalizedStringKey($0) } ?? "history.stats.bestUnknown",
-        style: .standard
-      )
-      tile(
-        eyebrow: "history.stats.streak",
-        big: "\(stats.streakDays)",
-        small: "history.stats.days",
-        style: .standard
-      )
+      tile("history.stats.streak", value: "\(stats.streakDays)", unit: Text("history.stats.days", bundle: .module))
     }
-    .padding(.horizontal, Spacing.screenHorizontal)
   }
 
   private func tile(
-    eyebrow: LocalizedStringKey,
-    big: String,
-    small: LocalizedStringKey,
-    style: BrandCardStyle
+    _ title: LocalizedStringKey, value: String, unit: Text, emphasis: Bool = false
   ) -> some View {
-    BrandCard(style: style) {
-      VStack(alignment: .leading, spacing: Spacing.xs) {
-        Text(eyebrow, bundle: .module)
-          .font(Font.brand.eyebrow)
-          .foregroundColor(textOnStyle(style, secondary: true))
-          .textCase(.uppercase)
-        Text(big)
-          .font(Font.brand.scoreDisplay)
-          .foregroundColor(textOnStyle(style, secondary: false))
-        Text(small, bundle: .module)
-          .font(Font.brand.caption)
-          .foregroundColor(textOnStyle(style, secondary: true))
-      }
+    VStack(alignment: .leading, spacing: 2) {
+      Text(title, bundle: .module)
+        .font(AppTheme.Typography.footnote.weight(.medium))
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+      Text(verbatim: value)
+        .font(AppTheme.Typography.title.weight(.bold).monospacedDigit())
+        .foregroundStyle(emphasis ? AppTheme.Colors.primary : AppTheme.Colors.onSurface)
+      unit
+        .font(AppTheme.Typography.footnote)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+        .lineLimit(1)
     }
-  }
-
-  private func textOnStyle(_ style: BrandCardStyle, secondary: Bool) -> Color {
-    switch style {
-    case .standard, .paper:
-      return secondary ? Color.brand.textSecondary : Color.brand.textPrimary
-    case .inverse:
-      return secondary
-        ? Color.brand.textOnInverse.opacity(0.65)
-        : Color.brand.accent
-    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.vertical, 14)
+    .padding(.horizontal, AppTheme.Spacing.space4)
+    .background(
+      AppTheme.Colors.surfaceContainer,
+      in: RoundedRectangle(cornerRadius: AppTheme.Shape.large, style: .continuous)
+    )
+    .accessibilityElement(children: .combine)
   }
 }
 
