@@ -1,170 +1,82 @@
 import SwiftUI
 
-/// Modal sheet that drives `PATCH /auth/me`. Brand-styled: a cream
-/// surface (not the default grouped-table grey), "PROFILE"-overlined
-/// disclosure rows for the two editable fields, and a footer that points
-/// at the other Profile sections for everything not edited here. Cancel
-/// dismisses without persisting; Save persists then dismisses on success,
-/// leaving the sheet open with an error banner on failure.
+/// Edit profile: drives `PATCH /auth/me` through `EditProfileViewModel`.
+/// Cancel dismisses without persisting; Save persists, then dismisses on
+/// success and stays open with the error on failure.
 struct EditProfileSheet: View {
   let viewModel: EditProfileViewModel
   let onDismiss: () -> Void
 
   var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(spacing: Spacing.xl) {
-          VStack(alignment: .leading, spacing: Spacing.md) {
-            ProfileSectionLabel("profile.edit.section")
-            fieldsCard
-            crossLinkFooter
-          }
-
-          if case let .error(message) = viewModel.status {
-            Text(message)
-              .font(Font.brand.caption)
-              .foregroundColor(Color.brand.recording)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .accessibilityIdentifier("profile.edit.error")
-          }
-        }
-        .padding(.horizontal, Spacing.screenHorizontal)
-        .padding(.vertical, Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .background(Color.brand.surface.ignoresSafeArea())
-      .navigationTitle(Text("profile.edit.title", bundle: .module))
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button {
-            onDismiss()
-          } label: {
-            Text("profile.edit.cancel", bundle: .module)
-          }
-          .disabled(viewModel.isSubmitting)
-        }
-        ToolbarItem(placement: .confirmationAction) {
-          Button {
-            Task {
-              if await viewModel.submit() {
-                onDismiss()
-              }
-            }
-          } label: {
-            if viewModel.isSubmitting {
-              ProgressView()
-            } else {
-              Text("profile.edit.save", bundle: .module)
-                .fontWeight(.semibold)
-            }
-          }
-          .tint(Color.brand.primary)
-          .disabled(!viewModel.canSubmit)
-        }
-      }
-    }
-  }
-
-  // MARK: - Sections
-
-  private var fieldsCard: some View {
-    VStack(spacing: Spacing.md) {
-      displayNameRow
-      Divider().background(Color.brand.tile)
-      levelRow
-    }
-    .padding(Spacing.lg)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.brand.card)
-    .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
-  }
-
-  /// Display name — overline + inline-editable value. Directly editable
-  /// (rather than pushing a sub-screen) keeps the single PATCH flow the
-  /// ViewModel already owns.
-  private var displayNameRow: some View {
-    VStack(alignment: .leading, spacing: Spacing.xs) {
-      fieldOverline("profile.edit.displayName.label")
-      TextField(
-        "profile.edit.displayName.placeholder",
-        text: Binding(
-          get: { viewModel.displayName },
-          set: { newValue in
-            viewModel.displayName = newValue
-            viewModel.clearError()
-          }
-        )
-      )
-      .font(Font.brand.body)
-      .foregroundColor(Color.brand.textPrimary)
-      .textContentType(.name)
-      .autocapitalization(.words)
-      .disabled(viewModel.isSubmitting)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  /// Skill level — overline + a menu showing the current value and a
-  /// disclosure chevron, matching the mock's value+chevron row.
-  private var levelRow: some View {
-    Menu {
-      Button {
-        viewModel.level = nil
-        viewModel.clearError()
-      } label: {
-        Text("profile.edit.level.unset", bundle: .module)
-      }
-      ForEach(EditProfileViewModel.levelOptions, id: \.self) { option in
-        Button {
-          viewModel.level = option
-          viewModel.clearError()
-        } label: {
-          Text(LocalizedStringKey(Self.levelLabelKey(option)), bundle: .module)
-        }
-      }
-    } label: {
-      VStack(alignment: .leading, spacing: Spacing.xs) {
-        fieldOverline("profile.edit.level.label")
-        HStack {
-          Text(LocalizedStringKey(Self.levelLabelKey(viewModel.level ?? "")), bundle: .module)
-            .font(Font.brand.body)
-            .foregroundColor(Color.brand.textPrimary)
-          Spacer()
-          Image(systemName: "chevron.right")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(Color.brand.textSecondary)
-        }
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .contentShape(Rectangle())
-    }
-    .disabled(viewModel.isSubmitting)
-  }
-
-  /// Footer pointing at the sibling Profile sections for everything not
-  /// edited here. Informational (the sheet is modal, so these aren't
-  /// navigable links) — the destination names are tinted to read as
-  /// references, matching the design.
-  private var crossLinkFooter: some View {
-    (
-      Text("profile.edit.footer.lead", bundle: .module)
-        + Text("profile.edit.footer.account", bundle: .module).foregroundColor(Color.brand.primary)
-        + Text("profile.edit.footer.mid", bundle: .module)
-        + Text("profile.edit.footer.prefs", bundle: .module).foregroundColor(Color.brand.primary)
-        + Text(verbatim: ".")
+    EditProfileForm(
+      displayName: Binding(
+        get: { viewModel.displayName },
+        set: { viewModel.displayName = $0; viewModel.clearError() }),
+      level: Binding(
+        get: { viewModel.level },
+        set: { viewModel.level = $0; viewModel.clearError() }),
+      canSubmit: viewModel.canSubmit,
+      isSubmitting: viewModel.isSubmitting,
+      error: viewModel.status.errorMessage,
+      onCancel: onDismiss,
+      onSubmit: { Task { if await viewModel.submit() { onDismiss() } } }
     )
-    .font(Font.brand.caption)
-    .foregroundColor(Color.brand.textSecondary)
-    .fixedSize(horizontal: false, vertical: true)
+  }
+}
+
+/// The edit-profile form drawn from values, so any state renders without a
+/// ViewModel: the display name and a skill-level menu in one section, with
+/// where to change everything else in the footer.
+struct EditProfileForm: View {
+  @Binding var displayName: String
+  @Binding var level: String?
+  let canSubmit: Bool
+  let isSubmitting: Bool
+  let error: String?
+  let onCancel: () -> Void
+  let onSubmit: () -> Void
+
+  var body: some View {
+    ProfileSheetForm(
+      title: "profile.edit.title", confirm: "profile.edit.save",
+      canSubmit: canSubmit, isSubmitting: isSubmitting, error: error,
+      onCancel: onCancel, onSubmit: onSubmit
+    ) {
+      Section {
+        TextField(text: $displayName, prompt: Text("profile.edit.displayName.placeholder", bundle: .module)) {
+          Text("profile.edit.displayName.label", bundle: .module)
+        }
+        .textContentType(.name)
+        .textInputAutocapitalization(.words)
+        .disabled(isSubmitting)
+        .profileSheetRow()
+        Picker(selection: $level) {
+          Text("profile.edit.level.unset", bundle: .module).tag(String?.none)
+          ForEach(EditProfileViewModel.levelOptions, id: \.self) { option in
+            Text(LocalizedStringKey(Self.levelLabelKey(option)), bundle: .module).tag(String?.some(option))
+          }
+        } label: {
+          Text("profile.edit.level.label", bundle: .module)
+        }
+        .disabled(isSubmitting)
+        .profileSheetRow()
+      } footer: {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.space3) {
+          Text("profile.edit.displayName.helper", bundle: .module)
+          elsewhere
+        }
+      }
+    }
   }
 
-  private func fieldOverline(_ key: String) -> some View {
-    Text(LocalizedStringKey(key), bundle: .module)
-      .font(.system(size: 11, weight: .semibold))
-      .textCase(.uppercase)
-      .tracking(0.6)
-      .foregroundColor(Color.brand.textSecondary)
+  /// Where to change everything not edited here. Informational: the sheet is
+  /// modal, so the section names are emphasised, not links.
+  private var elsewhere: Text {
+    Text("profile.edit.footer.lead", bundle: .module)
+      + Text("profile.edit.footer.account", bundle: .module).fontWeight(.semibold)
+      + Text("profile.edit.footer.mid", bundle: .module)
+      + Text("profile.edit.footer.prefs", bundle: .module).fontWeight(.semibold)
+      + Text(verbatim: ".")
   }
 
   private static func levelLabelKey(_ raw: String) -> String {
@@ -174,5 +86,13 @@ struct EditProfileSheet: View {
     case "advanced": return "profile.badge.level.advanced"
     default: return "profile.edit.level.unset"
     }
+  }
+}
+
+extension EditProfileViewModel.Status {
+  /// The message of a failed save, or nil.
+  var errorMessage: String? {
+    if case .error(let message) = self { return message }
+    return nil
   }
 }
