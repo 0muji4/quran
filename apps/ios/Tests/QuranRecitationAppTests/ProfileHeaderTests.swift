@@ -66,9 +66,8 @@ final class ProfileHeaderTests: XCTestCase {
 
   // MARK: - streakText(_:)
 
-  func test_streakText_includesStarAndCount() {
-    let text = ProfileHeader.streakText(5)
-    XCTAssertTrue(text.contains("5"), "expected day count in '\(text)'")
-    XCTAssertTrue(text.contains("✦"), "expected ✦ glyph in '\(text)'")
+  func test_streakText_saysTheCountWithoutAGlyph() {
+    // The badge shows a flame icon beside the text, so the text carries no ✦.
+    XCTAssertEqual(ProfileHeader.streakText(5), "5-day streak")
   }
 }
