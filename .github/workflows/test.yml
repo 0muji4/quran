@@ -150,9 +150,46 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  web-tests:
+  # Lists the workspace packages that have a `test` script, so a new package
+  # is tested without editing this file. bff is left out because bff-tests
+  # runs it with the Postgres and RustFS services it needs.
+  js-packages:
     if: inputs.js == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: List packages with tests
+        id: list
+        run: |
+          set -euo pipefail
+          packages=$(
+            for manifest in apps/*/package.json packages/*/package.json; do
+              jq -c --arg dir "$(dirname "$manifest")" '
+                select(.scripts.test and .name != "@quran-project/bff")
+                | {
+                    name,
+                    short: (.name | sub("^@quran-project/"; "")),
+                    dir: $dir,
+                    coverage: (.scripts["test:coverage"] != null)
+                  }' "$manifest"
+            done | jq -sc .
+          )
+          echo "$packages" | jq .
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+  # Runs `test:coverage` where a package defines it, and `test` otherwise.
+  js-tests:
+    needs: js-packages
+    name: js-tests (${{ matrix.package.short }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.js-packages.outputs.packages) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -171,47 +208,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run Web tests with coverage
-        run: pnpm --filter @quran-project/web run test:coverage
+      - name: Run tests
+        env:
+          PACKAGE: ${{ matrix.package.name }}
+          SCRIPT: ${{ matrix.package.coverage && 'test:coverage' || 'test' }}
+        run: pnpm --filter "$PACKAGE" run "$SCRIPT"
 
-      - name: Upload Web coverage artifact
-        if: ${{ !cancelled() }}
+      - name: Upload coverage artifact
+        if: ${{ matrix.package.coverage && !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: web-coverage
-          path: apps/web/coverage/
-          if-no-files-found: error
-          retention-days: 30
-
-  ui-tests:
-    if: inputs.js == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 12.18.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 26
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run UI tests with coverage
-        run: pnpm --filter @quran-project/ui run test:coverage
-
-      - name: Upload UI coverage artifact
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: ui-coverage
-          path: packages/ui/coverage/
+          name: ${{ matrix.package.short }}-coverage
+          path: ${{ matrix.package.dir }}/coverage/
           if-no-files-found: error
           retention-days: 30

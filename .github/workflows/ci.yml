@@ -101,16 +101,7 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
-      # web, bff and ui run their suites with coverage in test.yml, so only
-      # the remaining packages run here.
-      - name: Run tests
-        run: >-
-          pnpm -r
-          --filter '!@quran-project/web'
-          --filter '!@quran-project/bff'
-          --filter '!@quran-project/ui'
-          test
-
+      # The tests run in test.yml, one job per package.
       - name: Run build
         run: pnpm build
 
