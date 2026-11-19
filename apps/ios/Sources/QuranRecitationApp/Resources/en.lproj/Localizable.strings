@@ -130,10 +130,15 @@
 "result.action.continue %lld" = "Continue to ayah %lld";
 
 /* History tab */
-"history.eyebrow" = "Your practice";
 "history.title" = "History";
 "history.filter.all" = "All";
-"history.empty" = "No attempts yet — record one to start your history.";
+"history.empty" = "No attempts yet";
+"history.emptyBody" = "Record an ayah and it shows up here.";
+"history.filter.a11y" = "Filter by surah";
+"history.section.all" = "All attempts";
+"history.attempt.title %@ %lld" = "%1$@ · ayah %2$lld";
+"history.attempt.failed" = "Failed";
+"history.notScored" = "Not scored yet";
 "history.signedOutTitle" = "Sign in to track your practice";
 "history.signedOutSubtitle" = "Your attempts, best scores and continue-from progress sync across devices when you have an account.";
 "history.stats.thisWeek" = "This week";

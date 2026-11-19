@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// History tab. List of recent attempts with a chip filter row.
-/// Signed-out users see a "Sign in to track" empty state per ADR 0021
-/// (history is an account feature); the stats / chips / list collapse
-/// to that empty state so anonymous users do not see zeroed metrics.
+/// History tab: feeds `HistoryViewModel` into `HistoryContent` and reloads the
+/// attempts when they change or the user signs in or out.
 struct HistoryView: View {
   @State private var viewModel: HistoryViewModel
   let session: SessionStore
@@ -17,103 +15,127 @@ struct HistoryView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        header
-        if session.isSignedIn {
-          StatsGrid(stats: HistoryStats.compute(from: viewModel.attempts))
-          chipFilter
-          list
-        } else {
-          signedOutEmpty
-        }
-      }
-      .padding(.vertical, Spacing.lg)
-    }
-    .background(Color.brand.surface.ignoresSafeArea())
+    HistoryContent(
+      attempts: viewModel.attempts,
+      visibleAttempts: viewModel.filteredAttempts,
+      filter: $viewModel.filter,
+      filterOptions: viewModel.filterOptions,
+      isSignedIn: session.isSignedIn
+    )
     .onAppear { viewModel.reload() }
     .onReceive(viewModel.historyChanges) { viewModel.reload() }
     .onChange(of: session.currentUser?.id) {
-      // Sign-in flips the gated store from empty to "real reads";
-      // sign-out flips it the other way. Re-fetch so the in-memory
-      // `attempts` snapshot matches the new state without waiting
-      // for the next tab-appear.
+      // Sign-in flips the gated store from empty to real reads, and sign-out
+      // the other way, so the attempts are read again.
       viewModel.reload()
     }
   }
+}
 
-  private var header: some View {
-    VStack(alignment: .leading, spacing: Spacing.xs) {
-      BrandEyebrow("history.eyebrow")
-      Text("history.title", bundle: .module)
-        .font(Font.brand.pageTitle)
-        .foregroundColor(Color.brand.textPrimary)
-    }
-    .padding(.horizontal, Spacing.screenHorizontal)
-  }
+/// History on `AppTheme` and system controls (ADR 0030). The agreed mockup is
+/// the History page of the canvas linked from #596. A large title heads an
+/// inset grouped list: the four totals, then the attempts under a section
+/// header. The surah filter is a pull-down menu in the navigation bar. Takes
+/// state rather than the ViewModel, so any state renders without one.
+///
+/// History is an account feature (ADR 0021): signed out, the screen says so
+/// instead of showing totals. With no attempts, an empty state replaces the
+/// totals and the list.
+struct HistoryContent: View {
+  /// Every attempt, newest first; the totals cover all of them.
+  let attempts: [Attempt]
+  /// The attempts that pass `filter`.
+  let visibleAttempts: [Attempt]
+  @Binding var filter: HistoryViewModel.Filter
+  let filterOptions: [HistoryViewModel.Filter]
+  let isSignedIn: Bool
+  /// The time the totals and the "Today" / "Yesterday" labels count from.
+  var now: Date = Date()
 
-  private var chipFilter: some View {
-    ChipFilter<HistoryViewModel.Filter>(
-      items: viewModel.filterOptions.map { filter in
-        switch filter {
-        case .all:
-          return ChipFilter<HistoryViewModel.Filter>.Item(.all, "history.filter.all")
-        case .surah(_, let name):
-          return ChipFilter<HistoryViewModel.Filter>.Item(filter, .init(stringLiteral: name))
-        }
-      },
-      selection: $viewModel.filter
-    )
-  }
-
-  @ViewBuilder
-  private var list: some View {
-    let visible = viewModel.filteredAttempts
-    if visible.isEmpty {
-      empty
-    } else {
-      LazyVStack(spacing: 0) {
-        ForEach(Array(visible.enumerated()), id: \.element.id) { index, attempt in
-          if index > 0 {
-            Divider().background(Color.brand.tile)
-          }
-          AttemptRow(attempt: attempt)
+  var body: some View {
+    content
+      .background(AppTheme.Colors.surface.ignoresSafeArea())
+      .tint(AppTheme.Colors.primary)
+      .navigationTitle(Text("history.title", bundle: .module))
+      .toolbar {
+        if showsAttempts {
+          ToolbarItem(placement: .topBarTrailing) { filterMenu }
         }
       }
-      .padding(.horizontal, Spacing.md)
-      .background(Color.brand.card)
-      .clipShape(RoundedRectangle(cornerRadius: Spacing.cardCornerRadius, style: .continuous))
-      .padding(.horizontal, Spacing.screenHorizontal)
+  }
+
+  private var showsAttempts: Bool { isSignedIn && !attempts.isEmpty }
+
+  @ViewBuilder
+  private var content: some View {
+    if !isSignedIn {
+      ContentUnavailableView {
+        Label {
+          Text("history.signedOutTitle", bundle: .module)
+        } icon: {
+          Image(systemName: "person.crop.circle")
+        }
+      } description: {
+        Text("history.signedOutSubtitle", bundle: .module)
+      }
+    } else if attempts.isEmpty {
+      ContentUnavailableView {
+        Label {
+          Text("history.empty", bundle: .module)
+        } icon: {
+          Image(systemName: "clock")
+        }
+      } description: {
+        Text("history.emptyBody", bundle: .module)
+      }
+    } else {
+      List {
+        Section {
+          StatsGrid(stats: HistoryStats.compute(from: attempts, now: now))
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+        Section {
+          ForEach(visibleAttempts) { attempt in
+            AttemptRow(attempt: attempt, now: now)
+              .listRowBackground(AppTheme.Colors.surfaceContainer)
+              .alignmentGuide(.listRowSeparatorLeading) { _ in AppTheme.Spacing.space12 }
+          }
+        } header: {
+          sectionTitle
+        }
+      }
+      .listStyle(.insetGrouped)
+      .listSectionSpacing(AppTheme.Spacing.space3)
+      .scrollContentBackground(.hidden)
     }
   }
 
-  private var empty: some View {
-    VStack(spacing: Spacing.sm) {
-      Image(systemName: "clock")
-        .foregroundColor(Color.brand.textSecondary)
-      Text("history.empty", bundle: .module)
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
+  private var sectionTitle: Text {
+    switch filter {
+    case .all: Text("history.section.all", bundle: .module)
+    case .surah(_, let nameEn): Text(verbatim: nameEn)
     }
-    .frame(maxWidth: .infinity)
-    .padding(.top, Spacing.xxl)
   }
 
-  private var signedOutEmpty: some View {
-    VStack(spacing: Spacing.md) {
-      Image(systemName: "person.crop.circle.badge.questionmark")
-        .font(.system(size: 40))
-        .foregroundColor(Color.brand.textSecondary)
-      Text("history.signedOutTitle", bundle: .module)
-        .font(Font.brand.sectionTitle)
-        .foregroundColor(Color.brand.textPrimary)
-      Text("history.signedOutSubtitle", bundle: .module)
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
-        .multilineTextAlignment(.center)
+  private var filterMenu: some View {
+    Menu {
+      Picker(selection: $filter) {
+        ForEach(filterOptions, id: \.self) { option in
+          switch option {
+          case .all: Text("history.filter.all", bundle: .module).tag(option)
+          case .surah(_, let nameEn): Text(verbatim: nameEn).tag(option)
+          }
+        }
+      } label: {
+        Text("history.filter.a11y", bundle: .module)
+      }
+    } label: {
+      Label {
+        Text("history.filter.a11y", bundle: .module)
+      } icon: {
+        Image(systemName: "line.3.horizontal.decrease")
+      }
     }
-    .frame(maxWidth: .infinity)
-    .padding(.horizontal, Spacing.screenHorizontal)
-    .padding(.top, Spacing.xxl)
   }
 }

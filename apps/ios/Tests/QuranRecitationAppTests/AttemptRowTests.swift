@@ -3,14 +3,14 @@ import SwiftUI
 @testable import QuranRecitationApp
 
 final class AttemptRowTests: XCTestCase {
-  func test_scoreColor_bands() {
-    // ≥ 80 green, 60–79 amber, < 60 coral. Boundaries are inclusive at
-    // the lower edge of each band.
-    XCTAssertEqual(AttemptRow.scoreColor(92), Color.brand.success)
-    XCTAssertEqual(AttemptRow.scoreColor(80), Color.brand.success)
-    XCTAssertEqual(AttemptRow.scoreColor(79), Color.brand.accent)
-    XCTAssertEqual(AttemptRow.scoreColor(60), Color.brand.accent)
-    XCTAssertEqual(AttemptRow.scoreColor(59), Color.brand.recording)
+  func test_verdict_followsTheResultBands() {
+    // The Result screen's bands: 70 and up pass, 40 to 69 warn, below 40 fail.
+    // Boundaries are inclusive at the lower edge of each band.
+    XCTAssertEqual(AttemptRow.verdict(for: 92), .pass)
+    XCTAssertEqual(AttemptRow.verdict(for: 70), .pass)
+    XCTAssertEqual(AttemptRow.verdict(for: 69), .warn)
+    XCTAssertEqual(AttemptRow.verdict(for: 40), .warn)
+    XCTAssertEqual(AttemptRow.verdict(for: 39), .fail)
   }
 
   func test_relativeText_today_includesTodayPrefix() {

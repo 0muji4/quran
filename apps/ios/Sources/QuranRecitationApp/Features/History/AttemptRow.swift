@@ -1,62 +1,56 @@
 import SwiftUI
 
-/// One row of the History list: a tan index circle, surah name + ayah, a
-/// relative date, and a score-coloured "NN/100" on the right. The row
-/// carries no surface of its own — `HistoryView` groups the rows into a
-/// single divider-separated card.
+/// One attempt in the History list: the surah's number, the surah and ayah,
+/// when it was recorded, and the score.
+///
+/// The score is an `AppVerdictChip` in the Result screen's bands
+/// (`verdictForScore`), so a score reads the same on both screens. An attempt
+/// still being scored shows a dash; one whose scoring failed says so.
 struct AttemptRow: View {
   let attempt: Attempt
+  var now: Date = Date()
 
   var body: some View {
-    HStack(spacing: Spacing.md) {
-      Text("\(attempt.ayahNumber)")
-        .font(Font.brand.caption.weight(.semibold))
-        .foregroundColor(Color.brand.textSecondary)
-        .frame(width: 28, height: 28)
-        .background(Color.brand.tile)
-        .clipShape(Circle())
+    HStack(spacing: AppTheme.Spacing.space3) {
+      Text(verbatim: attempt.surahId)
+        .font(AppTheme.Typography.footnote.weight(.semibold).monospacedDigit())
+        .foregroundStyle(AppTheme.Colors.primary)
+        .frame(width: 32, height: 32)
+        .background(AppTheme.Colors.primary.opacity(0.14), in: Circle())
+        .accessibilityHidden(true)
       VStack(alignment: .leading, spacing: 2) {
-        Text("\(attempt.surahNameEn) · ayah \(attempt.ayahNumber)")
-          .font(Font.brand.body.weight(.semibold))
-          .foregroundColor(Color.brand.textPrimary)
-        Text(Self.relativeText(for: attempt.createdAt))
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
+        Text("history.attempt.title \(attempt.surahNameEn) \(attempt.ayahNumber)", bundle: .module)
+          .font(AppTheme.Typography.body)
+          .foregroundStyle(AppTheme.Colors.onSurface)
+        Text(verbatim: Self.relativeText(for: attempt.createdAt, now: now))
+          .font(AppTheme.Typography.footnote)
+          .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
       }
-      Spacer()
-      scoreLabel
+      Spacer(minLength: AppTheme.Spacing.space2)
+      score
     }
-    .padding(.vertical, Spacing.sm)
+    .accessibilityElement(children: .combine)
   }
 
   @ViewBuilder
-  private var scoreLabel: some View {
-    if let score = attempt.score {
-      HStack(spacing: 0) {
-        Text("\(score)")
-          .font(.system(size: 19, weight: .bold, design: .serif))
-          .foregroundColor(Self.scoreColor(score))
-        Text("/100")
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.textSecondary)
-      }
-      .monospacedDigit()
+  private var score: some View {
+    if attempt.status == .failed {
+      Text("history.attempt.failed", bundle: .module)
+        .font(AppTheme.Typography.subheadline)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+    } else if let score = attempt.score, let verdict = Self.verdict(for: score) {
+      AppVerdictChip(verdict: verdict, label: "\(score)")
     } else {
-      Text("—")
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
+      Text(verbatim: "—")
+        .font(AppTheme.Typography.body)
+        .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+        .accessibilityLabel(Text("history.notScored", bundle: .module))
     }
   }
 
-  // MARK: - Score banding
-
-  /// Colour bands shared with the web History list: ≥ 80 reads as a
-  /// strong attempt (green), 60–79 is mid (amber), below 60 is a fail
-  /// (coral). Pure so the thresholds are unit-testable.
-  static func scoreColor(_ score: Int) -> Color {
-    if score >= 80 { return Color.brand.success }
-    if score >= 60 { return Color.brand.accent }
-    return Color.brand.recording
+  /// The Result screen's verdict for a score: 70 and up pass, 40 to 69 warn, below 40 fail.
+  static func verdict(for score: Int) -> AppVerdict? {
+    verdictForScore(score).verdict
   }
 
   // MARK: - Relative date
