@@ -1,6 +1,6 @@
 # ADR 0029: Faster CI from the Existing Tools, Without Bazel
 
-- Status: Accepted
+- Status: Accepted. Amended 2026-11-17: e2e runs as one job instead of three Playwright shards (see "One e2e job, not shards" below).
 - Date: 2026-11-10
 - Author: motoshi.suzuki
 - Related: [ADR 0014](./0014-ci-path-scoped-workflows.md), [ADR 0027](./0027-native-snapshot-tests.md)
@@ -26,9 +26,10 @@ Keep the current tools, and remove the repeated work in each job:
 
 - **e2e** ([#611](https://github.com/0muji4/quran/pull/611)):
   - Images are built with `docker/bake-action`, and their layers are read from the GitHub Actions cache.
-  - Only runs outside pull requests write that cache, from one shard.
+  - Only runs outside pull requests write that cache.
   - Only `web` and its dependencies start.
   - The runner no longer installs Chromium.
+  - The suite runs in one job, not three shards.
 - **iOS** ([#612](https://github.com/0muji4/quran/pull/612)):
   - One `xcodebuild test` builds and tests.
   - Swift package checkouts are cached.
@@ -54,6 +55,22 @@ Do not adopt Bazel.
   - content-addressed caching: BuildKit layers, the Go build cache, the Gradle cache, SPM checkouts
   - pinned inputs: lockfiles, pinned images and runners (ADR 0027)
   - change-scoped runs: path filters (ADR 0014)
+
+### One e2e job, not shards
+
+After the changes above, e2e ran as three Playwright shards. Six runs on 2026-11-15 showed where each shard's time went:
+
+| Step                                     | Per shard                             |
+| ---------------------------------------- | ------------------------------------- |
+| The tests, as Playwright reports them    | 7.6–19.1s                             |
+| Building the app images                  | 8–17s cached, 92–111s without a cache |
+| Pulling the Playwright image             | 13–31s                                |
+| Buildx, `docker compose up` and teardown | about 40s                             |
+| Whole job                                | 109–154s cached, 180–314s uncached    |
+
+The suite is about 40 tests and 40 seconds in total. Each shard repeated the image builds and the Playwright image pull, so a run without a cache built the same three images three times.
+
+One job adds about 25 seconds to a run, the time the other two shards' tests took. In return it uses one runner instead of three, builds and pulls once, and gives one Playwright report instead of three.
 
 ## Consequences
 
@@ -92,6 +109,7 @@ Negative:
 ## Reconsideration Triggers
 
 - After these changes, the p50 of a Linux job exceeds 5 minutes.
+- The e2e tests take longer than the job's setup, about 1.5 minutes. Shards then save more time than they repeat.
 - Generated code between Go and TypeScript grows until path filters can no longer express what a change affects.
 - More people contribute, and sharing a build cache between their machines and CI becomes worth running a remote cache.
 
