@@ -194,14 +194,13 @@
     <string name="profile_edit_title">Edit profile</string>
     <string name="profile_edit_cancel">Cancel</string>
     <string name="profile_edit_save">Save</string>
-    <string name="profile_edit_saving">Saving…</string>
-    <string name="profile_edit_section">PROFILE</string>
-    <string name="profile_edit_display_name_label">DISPLAY NAME</string>
-    <string name="profile_edit_skill_level_label">SKILL LEVEL</string>
+    <string name="profile_edit_display_name_label">Display name</string>
+    <string name="profile_edit_display_name_helper">How your name appears across the app.</string>
+    <string name="profile_edit_skill_level_label">Skill level</string>
     <string name="profile_edit_skill_level_placeholder">Choose a level</string>
-    <string name="profile_edit_footer_lead">To change your email or password, head to </string>
-    <string name="profile_edit_footer_account">Account &amp; data</string>
-    <string name="profile_edit_footer_mid">. For reciter and playback settings, see </string>
+    <string name="profile_edit_footer_lead">"To change your email or password, go to "</string>
+    <string name="profile_edit_footer_account">Account</string>
+    <string name="profile_edit_footer_mid">". For reciter and playback, see "</string>
     <string name="profile_edit_footer_prefs">Practice preferences</string>
     <string name="profile_edit_footer_end">.</string>
 </resources>

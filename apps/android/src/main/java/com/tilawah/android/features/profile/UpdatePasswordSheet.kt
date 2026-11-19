@@ -1,27 +1,18 @@
 package com.tilawah.android.features.profile
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.PrimaryButton
-import com.tilawah.android.features.auth.components.PasswordField
+import com.tilawah.android.designsystem.AppTheme
 
 /**
- * Modal sheet that drives `POST /auth/me/password`. Mirrors iOS
- * `UpdatePasswordSheet` and the web `UpdatePasswordButton`. Cancel
- * dismisses without persisting; Update persists then dismisses on
- * success, leaving the sheet open with an error banner on failure.
+ * Update password, as a Material 3 modal bottom sheet on [AppTheme] (ADR 0030).
+ * Cancel dismisses without persisting; the confirm button persists, then
+ * dismisses on success and stays open with the error on failure. The sheet
+ * will not close while saving.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,26 +23,26 @@ fun UpdatePasswordSheet(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberSubmitLockedSheetState(state.isSubmitting)
-
-    ModalBottomSheet(
-        onDismissRequest = {
-            if (!state.isSubmitting) onDismiss()
-        },
-        sheetState = sheetState,
-        modifier = modifier,
-    ) {
-        UpdatePasswordSheetContent(
-            state = state,
-            canSubmit = viewModel.canSubmit(),
-            onCurrentPasswordChange = viewModel::setCurrentPassword,
-            onNewPasswordChange = viewModel::setNewPassword,
-            onConfirmPasswordChange = viewModel::setConfirmPassword,
-            onSubmit = { viewModel.submit(onSuccess = onDismiss) },
-            onCancel = onDismiss,
-        )
+    AppTheme {
+        ModalBottomSheet(
+            onDismissRequest = { if (!state.isSubmitting) onDismiss() },
+            sheetState = sheetState,
+            modifier = modifier,
+        ) {
+            UpdatePasswordSheetContent(
+                state = state,
+                canSubmit = viewModel.canSubmit(),
+                onCurrentPasswordChange = viewModel::setCurrentPassword,
+                onNewPasswordChange = viewModel::setNewPassword,
+                onConfirmPasswordChange = viewModel::setConfirmPassword,
+                onSubmit = { viewModel.submit(onSuccess = onDismiss) },
+                onCancel = onDismiss,
+            )
+        }
     }
 }
 
+/** The sheet's content drawn from its state, so any state renders without a ViewModel. */
 @Composable
 internal fun UpdatePasswordSheetContent(
     state: UpdatePasswordUiState,
@@ -63,67 +54,36 @@ internal fun UpdatePasswordSheetContent(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = BrandTheme.colors
-    val spacing = BrandTheme.spacing
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = spacing.screenHorizontal, vertical = spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(spacing.lg),
-    ) {
-        Text(
-            text = ProfileCopy.updatePasswordTitle,
-            style = BrandTheme.typography.pageTitle,
-            color = colors.textPrimary,
-        )
-
-        PasswordField(
+    ProfileSheetBody(title = ProfileCopy.updatePasswordTitle, modifier = modifier) {
+        ProfileTextField(
             label = ProfileCopy.updatePasswordCurrentLabel,
             value = state.currentPassword,
             onValueChange = onCurrentPasswordChange,
             enabled = !state.isSubmitting,
+            password = true,
         )
-
-        PasswordField(
+        ProfileTextField(
             label = ProfileCopy.updatePasswordNewLabel,
             value = state.newPassword,
             onValueChange = onNewPasswordChange,
             enabled = !state.isSubmitting,
-            helperText = ProfileCopy.updatePasswordNewHelper,
+            supporting = ProfileCopy.updatePasswordNewHelper,
+            password = true,
         )
-
-        PasswordField(
+        ProfileTextField(
             label = ProfileCopy.updatePasswordConfirmLabel,
             value = state.confirmPassword,
             onValueChange = onConfirmPasswordChange,
             enabled = !state.isSubmitting,
+            password = true,
         )
-
-        when (val status = state.status) {
-            is UpdatePasswordStatus.Error -> Text(
-                text = status.message,
-                style = BrandTheme.typography.caption,
-                color = colors.recording,
-            )
-            else -> Unit
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            TextButton(
-                onClick = onCancel,
-                enabled = !state.isSubmitting,
-            ) {
-                Text(text = ProfileCopy.editCancel, color = colors.textSecondary)
-            }
-            PrimaryButton(
-                label = if (state.isSubmitting) ProfileCopy.updatePasswordSavePending else ProfileCopy.updatePasswordSave,
-                onClick = onSubmit,
-                enabled = canSubmit,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        (state.status as? UpdatePasswordStatus.Error)?.let { ProfileSheetError(it.message) }
+        ProfileSheetActions(
+            confirmLabel = if (state.isSubmitting) ProfileCopy.updatePasswordSavePending else ProfileCopy.updatePasswordSave,
+            confirmEnabled = canSubmit,
+            submitting = state.isSubmitting,
+            onCancel = onCancel,
+            onConfirm = onSubmit,
+        )
     }
 }
