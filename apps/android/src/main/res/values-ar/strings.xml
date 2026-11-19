@@ -150,9 +150,15 @@
     <string name="result_listen_back_pause_a11y">Pause %1$s</string>
 
     <!-- History tab -->
-    <string name="history_eyebrow">YOUR PRACTICE</string>
     <string name="history_title">History</string>
-    <string name="history_empty">No attempts yet. Record an ayah to see it here.</string>
+    <string name="history_empty">No attempts yet</string>
+    <string name="history_empty_body">Record an ayah and it shows up here.</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_attempt_title">%1$s · ayah %2$d</string>
+    <string name="history_attempt_failed">Failed</string>
+    <string name="history_not_scored">Not scored yet</string>
+    <string name="history_relative_today">Today · %1$s</string>
+    <string name="history_relative_yesterday">Yesterday</string>
     <string name="history_stats_week">This week</string>
     <string name="history_stats_week_unit">attempts</string>
     <string name="history_stats_average">Average</string>

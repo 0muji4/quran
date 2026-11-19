@@ -1,20 +1,20 @@
 package com.tilawah.android.features.history
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import com.tilawah.android.R
-import com.tilawah.android.designsystem.BrandTheme
+import com.tilawah.android.designsystem.AppTheme
 import com.tilawah.android.storage.Attempt
 import com.tilawah.android.storage.AttemptStatus
 import java.time.Duration
@@ -22,15 +22,11 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * 2x2 grid of four independent rounded tiles (This week / Average /
- * Best / Streak) shown above the attempts list on the History tab.
- *
- * The Figma export renders four separate tiles (not one card with a
- * borderless grid); the AVERAGE tile is the dark inverse variant
- * (`colors.cardInverse` forest-green background, light label, gold
- * value). Each tile carries
- * three lines: eyebrow label / large serif value / subtitle unit.
- * Mirrors `apps/ios/.../Features/History/StatsGrid.swift`.
+ * The four totals above the History list: this week's attempts, the average
+ * score, the best score with its surah, and the day streak. Each is a filled
+ * Material 3 card; the average is the emphasised one, in the secondary
+ * container colour. The totals always cover every attempt, whatever the
+ * list's filter.
  */
 @Composable
 fun StatsGrid(
@@ -39,18 +35,12 @@ fun StatsGrid(
     now: Instant = Instant.now(),
 ) {
     val stats = computeStats(attempts, now)
-    val spacing = BrandTheme.spacing
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.md),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-        ) {
+    val gap = AppTheme.spacing.space2
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
             StatTile(
                 title = stringResource(R.string.history_stats_week),
-                value = stats.thisWeekCount.toString(),
+                value = "%d".format(stats.thisWeekCount),
                 unit = stringResource(R.string.history_stats_week_unit),
                 modifier = Modifier.weight(1f),
             )
@@ -58,23 +48,20 @@ fun StatsGrid(
                 title = stringResource(R.string.history_stats_average),
                 value = stats.averageValue?.let { "%.0f".format(it) } ?: "—",
                 unit = stringResource(R.string.history_stats_average_unit),
-                inverse = true,
+                emphasis = true,
                 modifier = Modifier.weight(1f),
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
             StatTile(
                 title = stringResource(R.string.history_stats_best),
-                value = stats.bestValue?.toString() ?: "—",
+                value = stats.bestValue?.let { "%d".format(it) } ?: "—",
                 unit = stats.bestSurahName ?: stringResource(R.string.history_stats_best_unit_empty),
                 modifier = Modifier.weight(1f),
             )
             StatTile(
                 title = stringResource(R.string.history_stats_streak),
-                value = stats.streakDays.toString(),
+                value = "%d".format(stats.streakDays),
                 unit = stringResource(R.string.history_stats_streak_unit),
                 modifier = Modifier.weight(1f),
             )
@@ -88,41 +75,32 @@ private fun StatTile(
     value: String,
     unit: String,
     modifier: Modifier = Modifier,
-    inverse: Boolean = false,
+    emphasis: Boolean = false,
 ) {
-    val colors = BrandTheme.colors
-    val typography = BrandTheme.typography
-    val spacing = BrandTheme.spacing
-
-    val background = if (inverse) colors.cardInverse else colors.paper
-    // On the inverse tile only the value is gold; the label stays a pale tint.
-    val labelColor = if (inverse) colors.textOnInverse.copy(alpha = 0.65f) else colors.textSecondary
-    val valueColor = if (inverse) colors.goldOnDark else colors.textPrimary
-    val unitColor = if (inverse) colors.textOnInverse else colors.textSecondary
-
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(spacing.cardCornerRadius))
-            .background(background)
-            .padding(spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(spacing.xs),
+    val colors = AppTheme.colorScheme
+    Card(
+        modifier = modifier.semantics(mergeDescendants = true) {},
+        colors = if (emphasis) {
+            CardDefaults.cardColors(
+                containerColor = colors.secondaryContainer,
+                contentColor = colors.onSecondaryContainer,
+            )
+        } else {
+            CardDefaults.cardColors(containerColor = colors.surfaceContainerHighest)
+        },
     ) {
-        Text(
-            text = title.uppercase(),
-            style = typography.eyebrow,
-            color = labelColor,
-        )
-        Text(
-            text = value,
-            style = typography.pageTitle,
-            color = valueColor,
-        )
-        Text(
-            text = unit,
-            style = typography.caption,
-            color = unitColor,
-            maxLines = 1,
-        )
+        val secondary = if (emphasis) colors.onSecondaryContainer else colors.onSurfaceVariant
+        Column(modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.space4)) {
+            Text(text = title, style = AppTheme.typography.labelMedium, color = secondary)
+            Text(text = value, style = AppTheme.typography.headlineLarge)
+            Text(
+                text = unit,
+                style = AppTheme.typography.bodySmall,
+                color = secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
