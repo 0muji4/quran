@@ -236,22 +236,20 @@
 
 /* Profile tab — edit sheet */
 "profile.edit.title" = "Edit profile";
-"profile.edit.cancel" = "Cancel";
+"profile.sheet.cancel" = "Cancel";
 "profile.edit.save" = "Save";
 "profile.edit.displayName.label" = "Display name";
 "profile.edit.displayName.placeholder" = "Your name";
 "profile.edit.displayName.helper" = "How your name appears across the app.";
 "profile.edit.level.label" = "Skill level";
 "profile.edit.level.unset" = "—";
-"profile.edit.section" = "Profile";
-"profile.edit.footer.lead" = "To change your **email or password**, head to ";
-"profile.edit.footer.account" = "Account & data";
-"profile.edit.footer.mid" = ". For reciter and playback settings, see ";
+"profile.edit.footer.lead" = "To change your email or password, go to ";
+"profile.edit.footer.account" = "Account";
+"profile.edit.footer.mid" = ". For reciter and playback, see ";
 "profile.edit.footer.prefs" = "Practice preferences";
 
 /* Profile tab — update password sheet */
 "profile.updatePassword.title" = "Update password";
-"profile.updatePassword.cancel" = "Cancel";
 "profile.updatePassword.save" = "Update";
 "profile.updatePassword.field.current" = "Current password";
 "profile.updatePassword.field.current.placeholder" = "Enter current password";
@@ -259,26 +257,25 @@
 "profile.updatePassword.field.new.placeholder" = "Enter new password";
 "profile.updatePassword.field.confirm" = "Confirm new password";
 "profile.updatePassword.field.confirm.placeholder" = "Re-enter new password";
-"profile.updatePassword.helper" = "Use 8+ characters with a mix of letters and numbers.";
+"profile.updatePassword.helper" = "At least 8 characters.";
 
 /* Profile tab — change email sheet */
 "profile.changeEmail.title" = "Change email";
-"profile.changeEmail.cancel" = "Cancel";
 "profile.changeEmail.save" = "Save";
 "profile.changeEmail.field.current" = "Current password";
 "profile.changeEmail.field.current.placeholder" = "Enter current password";
 "profile.changeEmail.field.new" = "New email";
 "profile.changeEmail.field.new.placeholder" = "you@example.com";
-"profile.changeEmail.helper" = "We'll use this address for sign-in next time.";
+"profile.changeEmail.helper" = "You'll sign in with this address next time.";
+"profile.changeEmail.field.current.helper" = "To confirm it's you.";
 
 /* Profile tab — delete account sheet */
 "profile.deleteAccount.title" = "Delete account";
-"profile.deleteAccount.cancel" = "Cancel";
-"profile.deleteAccount.confirm" = "Delete account";
-"profile.deleteAccount.warning.title" = "This will deactivate your account";
-"profile.deleteAccount.warning.body" = "We'll soft-delete your account immediately. You have 30 days to restore it by signing in again. After that, your data is permanently removed.";
-"profile.deleteAccount.confirm.header" = "Confirm";
-"profile.deleteAccount.confirm.helper" = "Type DELETE in capital letters to confirm.";
+"profile.deleteAccount.confirm" = "Delete";
+"profile.deleteAccount.warning.title" = "This deactivates your account";
+"profile.deleteAccount.warning.body" = "Your account is closed now and kept for 30 days. Sign back in within 30 days to restore it. After that, your data is deleted for good.";
+"profile.deleteAccount.confirm.header" = "Type DELETE to confirm";
+"profile.deleteAccount.confirm.helper" = "In capital letters.";
 "profile.deleteAccount.confirm.placeholder" = "DELETE";
 
 /* Profile tab — reactivation banner */
