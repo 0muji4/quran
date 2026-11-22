@@ -16,6 +16,7 @@
     "format:check": "pnpm --filter @quran-project/eslint-config exec prettier --check --ignore-path ../shared-ts/.prettierignore ../shared-ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
   "devDependencies": {
@@ -24,6 +25,7 @@
     "@graphql-codegen/typescript-resolvers": "^6.1.1",
     "@quran-project/eslint-config": "workspace:*",
     "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
