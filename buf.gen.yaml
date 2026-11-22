@@ -17,3 +17,4 @@ plugins:
       - env=node
       - useDate=true
       - unrecognizedEnum=false
+      - importSuffix=.js

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // scoringJobs.ts reaches object storage and Postgres through ../infra and the
 // Go backend through ../infra/backendClient. Mock both so these are pure unit
 // tests of the feedback-mapping wiring, not integration tests.
-vi.mock('../../infra', () => ({
+vi.mock('../../infra/index.js', () => ({
   ensureReferenceAudio: vi.fn(),
   findSessionIdForUploadKey: vi.fn(),
   getDatabasePool: vi.fn(),
@@ -11,17 +11,17 @@ vi.mock('../../infra', () => ({
   recordUploadKey: vi.fn()
 }));
 
-vi.mock('../../infra/backendClient', () => ({
+vi.mock('../../infra/backendClient.js', () => ({
   fetchWithTracing: vi.fn()
 }));
 
-vi.mock('../../infra/backendGrpc', () => ({
+vi.mock('../../infra/backendGrpc.js', () => ({
   getBackendGrpc: vi.fn(() => null)
 }));
 
-import { getDatabasePool } from '../../infra';
-import { UploadNotFoundError } from '../errors';
-import { createScoringJob, getScoringJob, mapEvaluationToFeedback } from '../scoringJobs';
+import { getDatabasePool } from '../../infra/index.js';
+import { UploadNotFoundError } from '../errors.js';
+import { createScoringJob, getScoringJob, mapEvaluationToFeedback } from '../scoringJobs.js';
 
 // A representative completed-job evaluation blob, matching the backend's
 // persisted shape (snake_case alignment keys, pre-computed dimensions).
@@ -117,19 +117,19 @@ describe('createScoringJob upload ownership', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     vi.mocked(getDatabasePool).mockReturnValue({ query: vi.fn() } as never);
   });
 
   it('rejects an upload the user does not own', async () => {
-    const { findSessionIdForUploadKey } = await import('../../infra');
+    const { findSessionIdForUploadKey } = await import('../../infra/index.js');
     vi.mocked(findSessionIdForUploadKey).mockResolvedValue(null);
 
     await expect(createScoringJob(input)).rejects.toBeInstanceOf(UploadNotFoundError);
   });
 
   it('rejects a session id that does not match the upload', async () => {
-    const { findSessionIdForUploadKey } = await import('../../infra');
+    const { findSessionIdForUploadKey } = await import('../../infra/index.js');
     vi.mocked(findSessionIdForUploadKey).mockResolvedValue('own-session');
 
     await expect(createScoringJob({ ...input, sessionId: 'other-session' })).rejects.toBeInstanceOf(
@@ -157,7 +157,7 @@ describe('getScoringJob (pool path)', () => {
   });
 
   it('queries only the jobs owned by the user', async () => {
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     const query = vi.fn().mockResolvedValue({ rowCount: 0, rows: [] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
@@ -169,7 +169,7 @@ describe('getScoringJob (pool path)', () => {
   });
 
   it('returns populated feedback mapped from scoring_jobs.evaluation, with status straight from the row', async () => {
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     const query = vi.fn().mockResolvedValue({ rowCount: 1, rows: [makeRow()] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
@@ -189,7 +189,7 @@ describe('getScoringJob (pool path)', () => {
   });
 
   it('regression: the query no longer joins the empty asr_results table', async () => {
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     const query = vi.fn().mockResolvedValue({ rowCount: 1, rows: [makeRow()] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
@@ -200,7 +200,7 @@ describe('getScoringJob (pool path)', () => {
   });
 
   it('yields null feedback for a job still running (no evaluation yet)', async () => {
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     const query = vi.fn().mockResolvedValue({
       rowCount: 1,
       rows: [makeRow({ status: 'RUNNING', score: null, evaluation: null })]
@@ -214,7 +214,7 @@ describe('getScoringJob (pool path)', () => {
   });
 
   it('returns null when no row matches', async () => {
-    const { getDatabasePool } = await import('../../infra');
+    const { getDatabasePool } = await import('../../infra/index.js');
     const query = vi.fn().mockResolvedValue({ rowCount: 0, rows: [] });
     vi.mocked(getDatabasePool).mockReturnValue({ query } as never);
 
@@ -228,8 +228,8 @@ describe('createScoringJob immediate response', () => {
   });
 
   it('enriches the backend create response with the full feedback breakdown', async () => {
-    const { ensureReferenceAudio } = await import('../../infra');
-    const { fetchWithTracing } = await import('../../infra/backendClient');
+    const { ensureReferenceAudio } = await import('../../infra/index.js');
+    const { fetchWithTracing } = await import('../../infra/backendClient.js');
     vi.mocked(ensureReferenceAudio).mockResolvedValue({
       key: 'refs/1_1.mp3'
     } as never);
@@ -280,9 +280,9 @@ describe('scoring over gRPC', () => {
   });
 
   it('creates the job through the gRPC client when it is configured', async () => {
-    const { ensureReferenceAudio } = await import('../../infra');
-    const { fetchWithTracing } = await import('../../infra/backendClient');
-    const { getBackendGrpc } = await import('../../infra/backendGrpc');
+    const { ensureReferenceAudio } = await import('../../infra/index.js');
+    const { fetchWithTracing } = await import('../../infra/backendClient.js');
+    const { getBackendGrpc } = await import('../../infra/backendGrpc.js');
     vi.mocked(ensureReferenceAudio).mockResolvedValue({ key: 'refs/1_1.mp3' } as never);
     const create = vi.fn().mockResolvedValue({ ...grpcJob });
     vi.mocked(getBackendGrpc).mockReturnValueOnce({ createScoringJob: create } as never);
@@ -304,8 +304,8 @@ describe('scoring over gRPC', () => {
   });
 
   it('reads the job through the gRPC client when there is no database', async () => {
-    const { getDatabasePool } = await import('../../infra');
-    const { getBackendGrpc } = await import('../../infra/backendGrpc');
+    const { getDatabasePool } = await import('../../infra/index.js');
+    const { getBackendGrpc } = await import('../../infra/backendGrpc.js');
     vi.mocked(getDatabasePool).mockReturnValue(null);
     const get = vi
       .fn()

@@ -1,5 +1,5 @@
-import { getDatabasePool } from '../infra/storage';
-import { USER_COLUMNS, mapRow, type UserRow } from './users';
+import { getDatabasePool } from '../infra/storage.js';
+import { USER_COLUMNS, mapRow, type UserRow } from './users.js';
 
 // Federated-identity persistence. Keyed on `(provider, subject)` — the
 // provider's stable `sub` — never email, which can change provider-side.

@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
-import { meRouter } from '../routes';
-import { composeSuggestion, FALLBACK_SURAH_ID } from '../suggestions';
-import { getSuggestion } from '../suggestions';
+import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth/index.js';
+import { meRouter } from '../routes.js';
+import { composeSuggestion, FALLBACK_SURAH_ID } from '../suggestions.js';
+import { getSuggestion } from '../suggestions.js';
 
-vi.mock('../suggestions', async () => {
-  const actual = await vi.importActual<typeof import('../suggestions')>('../suggestions');
+vi.mock('../suggestions.js', async () => {
+  const actual = await vi.importActual<typeof import('../suggestions.js')>('../suggestions');
   return {
     ...actual,
     getSuggestion: vi.fn()
   };
 });
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   telemetry: {
     meter: {
       createHistogram: vi.fn(() => ({ record: vi.fn() }))

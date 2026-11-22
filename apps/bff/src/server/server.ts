@@ -1,8 +1,8 @@
-import '../telemetry';
-import { logger } from '../telemetry';
-import { ensureBucketPolicy } from '../infra';
-import { startSoftDeletePurger } from '../auth/purge-job';
-import { createApp } from './app';
+import '../telemetry/index.js';
+import { logger } from '../telemetry/index.js';
+import { ensureBucketPolicy } from '../infra/index.js';
+import { startSoftDeletePurger } from '../auth/purge-job.js';
+import { createApp } from './app.js';
 
 void ensureBucketPolicy().catch((error) => {
   logger.error('failed to ensure bucket policy', { error: error.message });

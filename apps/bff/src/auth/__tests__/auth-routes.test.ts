@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
-import { authMiddleware } from '../auth';
-import { authRouter } from '../routes';
+import { authMiddleware } from '../auth.js';
+import { authRouter } from '../routes.js';
 import {
   createUserWithPassword,
   findUserByEmail,
@@ -13,11 +13,11 @@ import {
   updateUserEmail,
   updateUserPassword,
   updateUserProfile
-} from '../users';
-import { hashPassword, verifyPassword } from '../credentials';
-import { recordIssuedRefreshToken, revokeAllRefreshTokensForUser } from '../refresh-tokens';
+} from '../users.js';
+import { hashPassword, verifyPassword } from '../credentials.js';
+import { recordIssuedRefreshToken, revokeAllRefreshTokensForUser } from '../refresh-tokens.js';
 
-vi.mock('../users', () => ({
+vi.mock('../users.js', () => ({
   findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
   createUserWithPassword: vi.fn(),
@@ -37,8 +37,8 @@ vi.mock('../users', () => ({
 const TEST_CREATED_AT = new Date('2026-01-15T12:00:00Z');
 const TEST_PASSWORD_CHANGED_AT = new Date('2026-03-20T09:30:00Z');
 
-vi.mock('../refresh-tokens', async () => {
-  const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
+vi.mock('../refresh-tokens.js', async () => {
+  const actual = await vi.importActual<typeof import('../refresh-tokens.js')>('../refresh-tokens');
   return {
     ...actual,
     recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined),
@@ -46,8 +46,8 @@ vi.mock('../refresh-tokens', async () => {
   };
 });
 
-vi.mock('../credentials', async () => {
-  const actual = await vi.importActual<typeof import('../credentials')>('../credentials');
+vi.mock('../credentials.js', async () => {
+  const actual = await vi.importActual<typeof import('../credentials.js')>('../credentials');
   return {
     ...actual,
     hashPassword: vi.fn(actual.hashPassword),
@@ -55,7 +55,7 @@ vi.mock('../credentials', async () => {
   };
 });
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }
 }));
 

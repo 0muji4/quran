@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { consumeScoringQuota, resetScoringQuota, ScoringQuotaExceededError } from '../scoringQuota';
+import {
+  consumeScoringQuota,
+  resetScoringQuota,
+  ScoringQuotaExceededError
+} from '../scoringQuota.js';
 
 const HOUR_MS = 60 * 60 * 1000;
 

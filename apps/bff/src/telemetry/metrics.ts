@@ -1,4 +1,4 @@
-import { telemetry } from './telemetry';
+import { telemetry } from './telemetry.js';
 
 const meter = telemetry.meter;
 

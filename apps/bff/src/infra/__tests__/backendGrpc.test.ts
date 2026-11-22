@@ -6,10 +6,10 @@ import {
   ScoringStatus,
   type CreateScoringJobRequest,
   type ScoringServiceServer
-} from '../../gen/quran/v1/scoring';
-import { SurahServiceService, type SurahServiceServer } from '../../gen/quran/v1/surah';
+} from '../../gen/quran/v1/scoring.js';
+import { SurahServiceService, type SurahServiceServer } from '../../gen/quran/v1/surah.js';
 
-vi.mock('../../telemetry/telemetry', async () => {
+vi.mock('../../telemetry/telemetry.js', async () => {
   const { trace } = await import('@opentelemetry/api');
   return { telemetry: { tracer: trace.getTracer('test') } };
 });
@@ -19,8 +19,8 @@ import {
   fetchAyahsFromBackend,
   fetchSurahFromBackend,
   fetchSurahsFromBackend
-} from '../backendClient';
-import { getBackendGrpc, resetBackendGrpc } from '../backendGrpc';
+} from '../backendClient.js';
+import { getBackendGrpc, resetBackendGrpc } from '../backendGrpc.js';
 
 const surah = {
   id: 1,

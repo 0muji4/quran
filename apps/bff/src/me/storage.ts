@@ -1,4 +1,4 @@
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // Row shapes returned to the Web client. Mirror the TS types in
 // apps/web/app/lib/storage.ts so the Server Action wrapper in PR

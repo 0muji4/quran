@@ -1,3 +1,3 @@
-export * from './backendClient';
-export * from './storage';
-export * from './referenceAudio';
+export * from './backendClient.js';
+export * from './storage.js';
+export * from './referenceAudio.js';

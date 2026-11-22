@@ -18,8 +18,8 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import { ListValue, Struct } from "../../google/protobuf/struct";
-import { Timestamp } from "../../google/protobuf/timestamp";
+import { ListValue, Struct } from "../../google/protobuf/struct.js";
+import { Timestamp } from "../../google/protobuf/timestamp.js";
 
 export const protobufPackage = "quran.v1";
 

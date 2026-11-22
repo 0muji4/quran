@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
-import { resolvers } from '../resolvers';
-import type { SurahRecord, AyahRecord } from '../../infra/backendClient';
-import { ScoringQuotaExceededError } from '../../jobs/scoringQuota';
+import { resolvers } from '../resolvers.js';
+import type { SurahRecord, AyahRecord } from '../../infra/backendClient.js';
+import { ScoringQuotaExceededError } from '../../jobs/scoringQuota.js';
 
 /**
  * Returns a defined resolver entry, throwing if it is absent. Replaces
@@ -24,16 +24,16 @@ function getResolver<T extends keyof Resolvers, F extends keyof NonNullable<Reso
 }
 
 // Mock the infra module
-vi.mock('../../infra', () => ({
+vi.mock('../../infra/index.js', () => ({
   fetchSurahsFromBackend: vi.fn(),
   fetchSurahFromBackend: vi.fn(),
   fetchAyahFromBackend: vi.fn()
 }));
 
 // Mock the jobs module
-vi.mock('../../jobs', async () => {
-  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
-  const { UploadNotFoundError } = await import('../../jobs/errors');
+vi.mock('../../jobs/index.js', async () => {
+  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota.js');
+  const { UploadNotFoundError } = await import('../../jobs/errors.js');
   return {
     createScoringJob: vi.fn(),
     createSignedUploadUrl: vi.fn(),
@@ -111,7 +111,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Query.surahs', () => {
     it('returns all surahs without pagination', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
       const result = await getResolver('Query', 'surahs')(null, {}, mockContext);
@@ -122,7 +122,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('applies limit when provided', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
       const result = await getResolver('Query', 'surahs')(null, { limit: 2 }, mockContext);
@@ -133,7 +133,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('applies offset when provided', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
       const result = await getResolver('Query', 'surahs')(null, { offset: 1 }, mockContext);
@@ -144,7 +144,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('applies both limit and offset', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
       const result = await getResolver('Query', 'surahs')(
@@ -158,7 +158,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('returns empty array when offset exceeds array length', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockResolvedValue(mockSurahs);
 
       const result = await getResolver('Query', 'surahs')(null, { offset: 10 }, mockContext);
@@ -167,7 +167,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('propagates errors from backend', async () => {
-      const { fetchSurahsFromBackend } = await import('../../infra');
+      const { fetchSurahsFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahsFromBackend).mockRejectedValue(new Error('Backend error'));
 
       await expect(getResolver('Query', 'surahs')(null, {}, mockContext)).rejects.toThrow(
@@ -178,7 +178,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Query.surah', () => {
     it('returns surah by id', async () => {
-      const { fetchSurahFromBackend } = await import('../../infra');
+      const { fetchSurahFromBackend } = await import('../../infra/index.js');
       const surahWithAyahs = { ...mockSurahs[0], ayahs: mockAyahs };
       vi.mocked(fetchSurahFromBackend).mockResolvedValue(surahWithAyahs);
 
@@ -191,7 +191,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('returns null when surah not found', async () => {
-      const { fetchSurahFromBackend } = await import('../../infra');
+      const { fetchSurahFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahFromBackend).mockResolvedValue(null);
 
       const result = await getResolver('Query', 'surah')(null, { id: '999' }, mockContext);
@@ -200,7 +200,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('propagates errors from backend', async () => {
-      const { fetchSurahFromBackend } = await import('../../infra');
+      const { fetchSurahFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchSurahFromBackend).mockRejectedValue(new Error('Backend error'));
 
       await expect(getResolver('Query', 'surah')(null, { id: '1' }, mockContext)).rejects.toThrow(
@@ -211,7 +211,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Query.ayah', () => {
     it('returns ayah by surahId and ayahNumber', async () => {
-      const { fetchAyahFromBackend } = await import('../../infra');
+      const { fetchAyahFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(mockAyahs[0]);
 
       const result = await getResolver('Query', 'ayah')(
@@ -226,7 +226,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('returns null when ayah not found', async () => {
-      const { fetchAyahFromBackend } = await import('../../infra');
+      const { fetchAyahFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchAyahFromBackend).mockResolvedValue(null);
 
       const result = await getResolver('Query', 'ayah')(
@@ -239,7 +239,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('propagates errors from backend', async () => {
-      const { fetchAyahFromBackend } = await import('../../infra');
+      const { fetchAyahFromBackend } = await import('../../infra/index.js');
       vi.mocked(fetchAyahFromBackend).mockRejectedValue(new Error('Backend error'));
 
       await expect(
@@ -250,7 +250,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Query.scoringJob', () => {
     it('returns scoring job by jobId', async () => {
-      const { getScoringJob } = await import('../../jobs');
+      const { getScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-123',
         status: 'completed',
@@ -278,7 +278,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('returns null when job not found', async () => {
-      const { getScoringJob } = await import('../../jobs');
+      const { getScoringJob } = await import('../../jobs/index.js');
       vi.mocked(getScoringJob).mockResolvedValue(null);
 
       const result = await getResolver('Query', 'scoringJob')(
@@ -293,7 +293,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Mutation.getSignedUploadUrl', () => {
     it('creates signed upload URL with user session', async () => {
-      const { createSignedUploadUrl } = await import('../../jobs');
+      const { createSignedUploadUrl } = await import('../../jobs/index.js');
       const mockUploadUrl = {
         sessionId: 'session-123',
         uploadKey: 'uploads/test.opus',
@@ -322,7 +322,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('rejects a request without a session', async () => {
-      const { createSignedUploadUrl } = await import('../../jobs');
+      const { createSignedUploadUrl } = await import('../../jobs/index.js');
       const context: GraphQLContext = { session: null, requestId: 'test-request' };
       const input = { filename: 'anonymous.opus', contentType: 'audio/opus' };
 
@@ -335,7 +335,7 @@ describe('GraphQL Resolvers', () => {
 
   describe('Mutation.createScoringJob', () => {
     it('creates scoring job with all parameters', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-789',
         status: 'pending',
@@ -366,7 +366,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('handles null ayahNumber', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-null-ayah',
         status: 'pending',
@@ -396,7 +396,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('rejects a request without a session', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       const context: GraphQLContext = { session: null, requestId: 'test-request' };
       const input = { uploadKey: 'uploads/anonymous.opus', surahId: '1', ayahNumber: 1 };
 
@@ -407,7 +407,7 @@ describe('GraphQL Resolvers', () => {
     });
 
     it('reports the scoring job limit as RATE_LIMITED', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       vi.mocked(createScoringJob).mockRejectedValue(new ScoringQuotaExceededError());
       const input = { uploadKey: 'uploads/test.opus', surahId: '1', ayahNumber: 1 };
 

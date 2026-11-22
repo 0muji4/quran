@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
-import { restRouter } from '../rest';
-import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
-import { expectZodPathError } from '../../__tests__/zodAssertions';
+import { restRouter } from '../rest.js';
+import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth/index.js';
+import { expectZodPathError } from '../../__tests__/zodAssertions.js';
 
 // Mock dependencies
-vi.mock('../../jobs', async () => {
-  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota');
-  const { UploadNotFoundError } = await import('../../jobs/errors');
+vi.mock('../../jobs/index.js', async () => {
+  const { ScoringQuotaExceededError } = await import('../../jobs/scoringQuota.js');
+  const { UploadNotFoundError } = await import('../../jobs/errors.js');
   return {
     createSignedUploadUrl: vi.fn(),
     createScoringJob: vi.fn(),
@@ -19,12 +19,12 @@ vi.mock('../../jobs', async () => {
   };
 });
 
-vi.mock('../../infra', () => ({
+vi.mock('../../infra/index.js', () => ({
   deleteUserData: vi.fn()
 }));
 
-vi.mock('../../auth/refresh-tokens', async () => {
-  const actual = await vi.importActual<typeof import('../../auth/refresh-tokens')>(
+vi.mock('../../auth/refresh-tokens.js', async () => {
+  const actual = await vi.importActual<typeof import('../../auth/refresh-tokens.js')>(
     '../../auth/refresh-tokens'
   );
   return {
@@ -36,7 +36,7 @@ vi.mock('../../auth/refresh-tokens', async () => {
   };
 });
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   telemetry: {
     meter: {
       createHistogram: vi.fn(() => ({
@@ -73,7 +73,7 @@ describe('REST API Integration', () => {
 
   describe('POST /signed-upload-url', () => {
     it('returns signed upload URL with valid payload', async () => {
-      const { createSignedUploadUrl } = await import('../../jobs');
+      const { createSignedUploadUrl } = await import('../../jobs/index.js');
       const mockResponse = {
         sessionId: 'session-123',
         uploadKey: 'uploads/test.opus',
@@ -116,7 +116,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 502 when createSignedUploadUrl fails', async () => {
-      const { createSignedUploadUrl } = await import('../../jobs');
+      const { createSignedUploadUrl } = await import('../../jobs/index.js');
       vi.mocked(createSignedUploadUrl).mockRejectedValue(new Error('MinIO error'));
 
       const response = await request(app).post('/signed-upload-url').send({
@@ -149,7 +149,7 @@ describe('REST API Integration', () => {
 
   describe('POST /scoring-jobs', () => {
     it('creates scoring job with valid payload', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-123',
         status: 'pending',
@@ -176,7 +176,7 @@ describe('REST API Integration', () => {
     });
 
     it('uses sessionId from request body if provided', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-456',
         status: 'pending',
@@ -244,7 +244,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 404 for an upload the user does not own', async () => {
-      const { createScoringJob, UploadNotFoundError } = await import('../../jobs');
+      const { createScoringJob, UploadNotFoundError } = await import('../../jobs/index.js');
       vi.mocked(createScoringJob).mockRejectedValue(new UploadNotFoundError());
 
       const response = await request(app).post('/scoring-jobs').send({
@@ -257,7 +257,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 429 when the scoring job limit is reached', async () => {
-      const { createScoringJob, ScoringQuotaExceededError } = await import('../../jobs');
+      const { createScoringJob, ScoringQuotaExceededError } = await import('../../jobs/index.js');
       vi.mocked(createScoringJob).mockRejectedValue(new ScoringQuotaExceededError());
 
       const response = await request(app).post('/scoring-jobs').send({
@@ -270,7 +270,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 502 when createScoringJob fails', async () => {
-      const { createScoringJob } = await import('../../jobs');
+      const { createScoringJob } = await import('../../jobs/index.js');
       vi.mocked(createScoringJob).mockRejectedValue(new Error('Backend error'));
 
       const response = await request(app).post('/scoring-jobs').send({
@@ -305,7 +305,7 @@ describe('REST API Integration', () => {
 
   describe('GET /scoring-jobs/:jobId', () => {
     it('returns scoring job by jobId', async () => {
-      const { getScoringJob } = await import('../../jobs');
+      const { getScoringJob } = await import('../../jobs/index.js');
       const mockJob = {
         jobId: 'job-789',
         status: 'completed',
@@ -330,7 +330,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 404 when job not found', async () => {
-      const { getScoringJob } = await import('../../jobs');
+      const { getScoringJob } = await import('../../jobs/index.js');
       vi.mocked(getScoringJob).mockResolvedValue(null);
 
       const response = await request(app).get('/scoring-jobs/nonexistent');
@@ -342,7 +342,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 502 when getScoringJob fails', async () => {
-      const { getScoringJob } = await import('../../jobs');
+      const { getScoringJob } = await import('../../jobs/index.js');
       vi.mocked(getScoringJob).mockRejectedValue(new Error('Backend error'));
 
       const response = await request(app).get('/scoring-jobs/job-error');
@@ -380,7 +380,7 @@ describe('REST API Integration', () => {
       userId: string,
       row: { usedAt?: Date | null; revokedAt?: Date | null } = {}
     ) => {
-      const { findRefreshToken } = await import('../../auth/refresh-tokens');
+      const { findRefreshToken } = await import('../../auth/refresh-tokens.js');
       const token = jwt.sign({ sub: userId, email: 'a@b.com' }, refreshSecret, {
         expiresIn: '30d'
       });
@@ -396,7 +396,7 @@ describe('REST API Integration', () => {
     it('rotates: marks the old token used, returns a new access + refresh pair, persists the new hash', async () => {
       const token = await mintAndStub('user-123');
       const { markRefreshTokenUsed, recordIssuedRefreshToken } =
-        await import('../../auth/refresh-tokens');
+        await import('../../auth/refresh-tokens.js');
 
       const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
 
@@ -418,7 +418,7 @@ describe('REST API Integration', () => {
     it('on replay (same token used twice), revokes every refresh token for the user and returns 401', async () => {
       const token = await mintAndStub('user-123', { usedAt: new Date(Date.now() - 60_000) });
       const { revokeAllRefreshTokensForUser, recordIssuedRefreshToken, markRefreshTokenUsed } =
-        await import('../../auth/refresh-tokens');
+        await import('../../auth/refresh-tokens.js');
 
       const response = await request(app).post('/auth/refresh').send({ refreshToken: token });
 
@@ -430,7 +430,7 @@ describe('REST API Integration', () => {
 
     it('returns 401 when the token verifies but is not in the database (never issued or pruned)', async () => {
       const { findRefreshToken, revokeAllRefreshTokensForUser } =
-        await import('../../auth/refresh-tokens');
+        await import('../../auth/refresh-tokens.js');
       vi.mocked(findRefreshToken).mockResolvedValue(null);
 
       const token = jwt.sign({ sub: 'user-x' }, refreshSecret, { expiresIn: '7d' });
@@ -455,7 +455,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 401 for an invalid refresh token (signature fails before DB lookup)', async () => {
-      const { findRefreshToken } = await import('../../auth/refresh-tokens');
+      const { findRefreshToken } = await import('../../auth/refresh-tokens.js');
       const response = await request(app)
         .post('/auth/refresh')
         .send({ refreshToken: 'invalid.token.here' });
@@ -480,7 +480,7 @@ describe('REST API Integration', () => {
 
   describe('DELETE /user-data/:sessionId', () => {
     it('deletes user data successfully', async () => {
-      const { deleteUserData } = await import('../../infra');
+      const { deleteUserData } = await import('../../infra/index.js');
       vi.mocked(deleteUserData).mockResolvedValue({
         audioKey: 'uploads/test.opus',
         alignmentKey: 'alignments/test.json'
@@ -500,7 +500,7 @@ describe('REST API Integration', () => {
     });
 
     it('returns 404 when user data not found', async () => {
-      const { deleteUserData } = await import('../../infra');
+      const { deleteUserData } = await import('../../infra/index.js');
       vi.mocked(deleteUserData).mockResolvedValue(null);
 
       const response = await request(app).delete('/user-data/nonexistent');

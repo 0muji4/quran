@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 import { ipKeyGenerator, rateLimit, type Options } from 'express-rate-limit';
-import type { AuthedRequest } from './auth';
+import type { AuthedRequest } from './auth.js';
 
 const MINUTE_MS = 60 * 1000;
 

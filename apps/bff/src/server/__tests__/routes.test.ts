@@ -1,10 +1,10 @@
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp } from '../app';
-import { createSignedUploadUrl } from '../../jobs';
-import { expectZodPathError } from '../../__tests__/zodAssertions';
+import { createApp } from '../app.js';
+import { createSignedUploadUrl } from '../../jobs/index.js';
+import { expectZodPathError } from '../../__tests__/zodAssertions.js';
 
-vi.mock('../../jobs', () => ({
+vi.mock('../../jobs/index.js', () => ({
   createSignedUploadUrl: vi.fn(),
   createScoringJob: vi.fn(),
   getScoringJob: vi.fn()

@@ -1,10 +1,10 @@
 import { createHash } from 'crypto';
 import { Router } from 'express';
-import type { AuthedRequest } from '../auth';
-import { requireAuth } from '../auth';
-import { fetchSurahsFromBackend, fetchSurahFromBackend } from '../infra';
-import { getScoringJob } from '../jobs';
-import { telemetry } from '../telemetry';
+import type { AuthedRequest } from '../auth/index.js';
+import { requireAuth } from '../auth/index.js';
+import { fetchSurahsFromBackend, fetchSurahFromBackend } from '../infra/index.js';
+import { getScoringJob } from '../jobs/index.js';
+import { telemetry } from '../telemetry/index.js';
 
 export const rscRouter = Router();
 

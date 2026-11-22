@@ -2,26 +2,31 @@ import { Router } from 'express';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import type { AuthedRequest } from '../auth';
-import { requireAuth } from '../auth';
-import { issueAccessToken, issueRefreshToken } from '../auth/credentials';
+import type { AuthedRequest } from '../auth/index.js';
+import { requireAuth } from '../auth/index.js';
+import { issueAccessToken, issueRefreshToken } from '../auth/credentials.js';
 import {
   findRefreshToken,
   hashRefreshToken,
   markRefreshTokenUsed,
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
-} from '../auth/refresh-tokens';
+} from '../auth/refresh-tokens.js';
 import {
   createScoringJob,
   createSignedUploadUrl,
   getScoringJob,
   ScoringQuotaExceededError,
   UploadNotFoundError
-} from '../jobs';
-import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra';
-import { logger, telemetry, recordSessionCreated, recordSessionCompleted } from '../telemetry';
-import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
+} from '../jobs/index.js';
+import { deleteUserData, ensureReferenceAudio, ReferenceUnavailableError } from '../infra/index.js';
+import {
+  logger,
+  telemetry,
+  recordSessionCreated,
+  recordSessionCompleted
+} from '../telemetry/index.js';
+import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation.js';
 
 // #region Schemas
 const signedUploadUrlSchema = z.object({

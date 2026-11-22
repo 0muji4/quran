@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import express, { type Express } from 'express';
 import request from 'supertest';
-import { otelMiddleware } from '../middleware';
+import { otelMiddleware } from '../middleware.js';
 
 describe('OTEL Middleware', () => {
   let app: Express;

@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loginAccountLimiter, signupLimiter } from '../rateLimits';
+import { loginAccountLimiter, signupLimiter } from '../rateLimits.js';
 
 const appWith = (limiter: express.RequestHandler) => {
   const app = express();

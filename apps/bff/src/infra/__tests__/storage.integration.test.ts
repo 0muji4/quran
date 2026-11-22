@@ -9,8 +9,8 @@ import {
   findSessionIdForUploadKey,
   deleteUserData,
   resetDatabasePool
-} from '../storage';
-import { setupTestDB, setupTestMinIO } from '../../__tests__/setup';
+} from '../storage.js';
+import { setupTestDB, setupTestMinIO } from '../../__tests__/setup.js';
 
 // Check if PostgreSQL is available
 const isPostgresAvailable = async (): Promise<boolean> => {

@@ -1,14 +1,18 @@
 import { GraphQLScalarType, Kind, valueFromASTUntyped, GraphQLError } from 'graphql';
 import type { GraphQLContext, Resolvers } from '@quran-project/shared-ts';
-import { fetchSurahsFromBackend, fetchSurahFromBackend, fetchAyahFromBackend } from '../infra';
+import {
+  fetchSurahsFromBackend,
+  fetchSurahFromBackend,
+  fetchAyahFromBackend
+} from '../infra/index.js';
 import {
   createScoringJob,
   createSignedUploadUrl,
   getScoringJob,
   ScoringQuotaExceededError,
   UploadNotFoundError
-} from '../jobs';
-import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation';
+} from '../jobs/index.js';
+import { surahIdSchema, ayahNumberSchema } from '../validation/quranValidation.js';
 
 const JSONObjectScalar = new GraphQLScalarType({
   name: 'JSONObject',

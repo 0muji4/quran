@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recordSessionCreated, recordSessionCompleted } from '../metrics';
+import { recordSessionCreated, recordSessionCompleted } from '../metrics.js';
 
 describe('Metrics', () => {
   it('should record session created without errors', () => {

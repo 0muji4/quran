@@ -1,10 +1,10 @@
-export * from './auth';
-export { authRouter } from './routes';
+export * from './auth.js';
+export { authRouter } from './routes.js';
 export {
   hashPassword,
   issueAccessToken,
   issueRefreshToken,
   verifyPassword,
   type TokenPayload
-} from './credentials';
-export { createUserWithPassword, findUserByEmail, findUserById, type UserRow } from './users';
+} from './credentials.js';
+export { createUserWithPassword, findUserByEmail, findUserById, type UserRow } from './users.js';

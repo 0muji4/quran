@@ -1,4 +1,4 @@
-export * from './telemetry';
-export { logger } from './logger';
-export { otelMiddleware } from './middleware';
-export * from './metrics';
+export * from './telemetry.js';
+export { logger } from './logger.js';
+export { otelMiddleware } from './middleware.js';
+export * from './metrics.js';
