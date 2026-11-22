@@ -1,6 +1,7 @@
 {
   "name": "@quran-project/web",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "description": "Next.js RSC app",
   "scripts": {
