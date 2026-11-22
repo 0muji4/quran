@@ -203,4 +203,34 @@
     <string name="profile_edit_footer_mid">". For reciter and playback, see "</string>
     <string name="profile_edit_footer_prefs">Practice preferences</string>
     <string name="profile_edit_footer_end">.</string>
+
+    <!-- Sign in and create account (opened from the signed-out Profile tab) -->
+    <string name="auth_back">Back</string>
+    <string name="auth_sign_in_title">Sign in</string>
+    <string name="auth_sign_in_lede">Welcome back. Sign in to continue your practice.</string>
+    <string name="auth_sign_up_title">Create account</string>
+    <string name="auth_sign_up_lede">Practise daily, track every attempt.</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_display_name">Display name</string>
+    <string name="auth_display_name_helper">Optional. How your name appears across the app.</string>
+    <string name="auth_password_helper">At least 8 characters.</string>
+    <string name="auth_show_password">Show password</string>
+    <string name="auth_hide_password">Hide password</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_signing_in">Signing in…</string>
+    <string name="auth_create_account">Create account</string>
+    <string name="auth_creating_account">Creating account…</string>
+    <string name="auth_or">or</string>
+    <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_continue_apple">Continue with Apple</string>
+    <string name="auth_new_here">New here?</string>
+    <string name="auth_create_account_link">Create an account</string>
+    <string name="auth_have_account">Already have an account?</string>
+    <string name="auth_sign_in_link">Sign in</string>
+    <string name="auth_level_title">Your level</string>
+    <string name="auth_level_helper">You can change this later in your profile.</string>
+    <string name="auth_terms">I agree to the Terms of Service and Privacy Policy.</string>
+    <string name="auth_terms_error">Accept the Terms of Service to continue.</string>
 </resources>

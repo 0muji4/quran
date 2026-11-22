@@ -1,18 +1,7 @@
 package com.tilawah.android.features.auth
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,25 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tilawah.android.R
 import com.tilawah.android.app.AppConfig
-import com.tilawah.android.designsystem.BrandTheme
-import com.tilawah.android.designsystem.components.PrimaryButton
-import com.tilawah.android.features.auth.components.AuthDivider
-import com.tilawah.android.features.auth.components.AuthTextField
-import com.tilawah.android.features.auth.components.OAuthButtons
-import com.tilawah.android.features.auth.components.PasswordField
+import com.tilawah.android.designsystem.AppTheme
 
 /**
- * Sign-in screen. Matches `docs/design/Android _ Sign in.png` (hero
- * arch / "Welcome back" / email / password / forgot link / sign-in
- * CTA / OR divider / OAuth / footer link). Mirrors the web
- * `(auth)/sign-in/page.tsx` + `AuthForm.tsx` shape.
+ * Sign in, on [AppTheme] and Material 3 components (ADR 0030): a top app bar
+ * with back, the email form, then Google and Apple, and the way across to
+ * create an account. Back and system back leave the screen, except while
+ * signing in.
  */
 @Composable
 fun SignInScreen(
@@ -52,9 +33,6 @@ fun SignInScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler { if (!state.pending) onBack() }
-    val copy = AuthCopyByMode.getValue(AuthMode.SignIn)
-    val colors = BrandTheme.colors
-    val spacing = BrandTheme.spacing
 
     val context = LocalContext.current
     val googleClient = remember {
@@ -63,102 +41,85 @@ fun SignInScreen(
             ?.let { GoogleCredentialClient(context, it) }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(spacing.lg),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.screenHorizontal, vertical = spacing.xl),
-        ) {
-            AuthArchIcon()
-            Text(
-                text = copy.title,
-                style = BrandTheme.typography.pageTitle,
-                color = colors.textPrimary,
-            )
-            Text(
-                text = copy.lede,
-                style = BrandTheme.typography.body,
-                color = colors.textSecondary,
-            )
-
-            AuthTextField(
-                label = "EMAIL",
-                value = state.email,
-                onValueChange = viewModel::setEmail,
-                keyboardType = KeyboardType.Email,
-                enabled = !state.pending,
-            )
-            PasswordField(
-                label = "PASSWORD",
-                value = state.password,
-                onValueChange = viewModel::setPassword,
-                enabled = !state.pending,
-            )
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = {}, enabled = false) {
-                    Text(
-                        text = "Forgot password?",
-                        color = colors.primary,
-                        style = BrandTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+    AppTheme {
+        SignInContent(
+            state = state,
+            onEmailChange = viewModel::setEmail,
+            onPasswordChange = viewModel::setPassword,
+            onSubmit = { viewModel.signIn(onAuthenticated) },
+            onGoogle = googleClient?.let { client ->
+                {
+                    viewModel.signInWithGoogle(
+                        getIdToken = { nonce -> client.getIdToken(nonce) },
+                        onSuccess = onAuthenticated,
                     )
                 }
-            }
-
-            state.error?.let { error ->
-                Text(
-                    text = stringResource(error.titleRes),
-                    color = colors.recording,
-                    style = BrandTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
-                )
-            }
-
-            PrimaryButton(
-                label = if (state.pending) copy.submitPending else copy.submit,
-                onClick = { viewModel.signIn(onAuthenticated) },
-                enabled = !state.pending && state.email.isNotBlank() && state.password.isNotBlank(),
-                trailingIcon = Icons.AutoMirrored.Filled.ArrowForward,
-            )
-
-            AuthDivider(label = "OR")
-            OAuthButtons(
-                onGoogle = googleClient?.let { client ->
-                    {
-                        viewModel.signInWithGoogle(
-                            getIdToken = { nonce -> client.getIdToken(nonce) },
-                            onSuccess = onAuthenticated,
-                        )
-                    }
-                },
-            )
-
-            // Two spans per the design: the lead-in stays muted secondary
-            // text while only the actionable "Create an account" reads as a
-            // primary (teal, semibold) link.
-            val footer = buildAnnotatedString {
-                withStyle(SpanStyle(color = colors.textSecondary)) {
-                    append("New here? ")
-                }
-                withStyle(
-                    SpanStyle(
-                        color = colors.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                ) {
-                    append("Create an account")
-                }
-            }
-            TextButton(onClick = onCreateAccount, enabled = !state.pending) {
-                Text(
-                    text = footer,
-                    style = BrandTheme.typography.caption,
-                )
-            }
-        }
+            },
+            onCreateAccount = onCreateAccount,
+            onBack = onBack,
+            modifier = modifier,
+        )
     }
 }
 
+/**
+ * The sign-in screen drawn from its state, so any state renders without a
+ * ViewModel. [onGoogle] is null when the app is not configured for Google.
+ */
+@Composable
+internal fun SignInContent(
+    state: AuthUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onGoogle: (() -> Unit)?,
+    onCreateAccount: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val idle = !state.pending
+    AuthScaffold(
+        title = stringResource(R.string.auth_sign_in_title),
+        onBack = onBack,
+        backEnabled = idle,
+        modifier = modifier,
+    ) {
+        AuthLede(text = stringResource(R.string.auth_sign_in_lede))
+        AuthTextField(
+            label = stringResource(R.string.auth_email),
+            value = state.email,
+            onValueChange = onEmailChange,
+            enabled = idle,
+            keyboardType = KeyboardType.Email,
+        )
+        Column {
+            AuthTextField(
+                label = stringResource(R.string.auth_password),
+                value = state.password,
+                onValueChange = onPasswordChange,
+                enabled = idle,
+                password = true,
+            )
+            // Password reset is not built yet (ADR 0010): shown, but disabled.
+            TextButton(onClick = {}, enabled = false, modifier = Modifier.align(Alignment.End)) {
+                Text(text = stringResource(R.string.auth_forgot_password))
+            }
+        }
+        state.error?.let { AuthError(error = it) }
+        AuthSubmitButton(
+            label = stringResource(R.string.auth_sign_in),
+            pendingLabel = stringResource(R.string.auth_signing_in),
+            pending = state.pending,
+            enabled = state.email.isNotBlank() && state.password.isNotBlank(),
+            onClick = onSubmit,
+        )
+        AuthOrDivider()
+        AuthProviderButtons(onGoogle = onGoogle, enabled = idle)
+        AuthFooter(
+            prompt = stringResource(R.string.auth_new_here),
+            action = stringResource(R.string.auth_create_account_link),
+            onAction = onCreateAccount,
+            enabled = idle,
+        )
+    }
+}

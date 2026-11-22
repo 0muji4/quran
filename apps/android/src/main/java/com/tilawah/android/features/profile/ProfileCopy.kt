@@ -3,8 +3,7 @@ package com.tilawah.android.features.profile
 /**
  * UI strings for the Profile tab and its modal sheets. Lives in code
  * rather than `strings.xml` until the deferred Arabic translation pass
- * lands (ADR 0009 update 2026-05-09) — same convention as
- * `apps/android/.../features/auth/AuthCopy.kt`.
+ * lands (ADR 0009 update 2026-05-09).
  */
 object ProfileCopy {
     const val editEntryLabel: String = "Edit profile"
