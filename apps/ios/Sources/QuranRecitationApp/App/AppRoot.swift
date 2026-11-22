@@ -54,7 +54,7 @@ struct AppRoot: View {
       historyTab
       profileTab
     }
-    .tint(Color.brand.primary)
+    .tint(AppTheme.Colors.primary)
     .onChange(of: selectedTab) { _, newValue in
       if newValue == .library {
         telemetry.event(TelemetryEvent.libraryTabSelected)
