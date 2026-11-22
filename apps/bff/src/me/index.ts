@@ -1,4 +1,4 @@
-export { meRouter } from './routes';
+export { meRouter } from './routes.js';
 export {
   getBestScores,
   getLastPracticed,
@@ -12,7 +12,7 @@ export {
   type LastPracticedRow,
   type PracticeAttemptInput,
   type PracticeAttemptRow
-} from './storage';
+} from './storage.js';
 export {
   composeSuggestion,
   getSuggestion,
@@ -20,7 +20,7 @@ export {
   type SuggestedSurah,
   type SuggestionReason,
   type SuggestionResponse
-} from './suggestions';
+} from './suggestions.js';
 export {
   DEFAULT_PREFERENCES,
   KNOWN_RECITER_IDS,
@@ -29,4 +29,4 @@ export {
   type PracticePreferences,
   type PracticePreferencesPatch,
   type ReciterId
-} from './preferences';
+} from './preferences.js';

@@ -1,6 +1,6 @@
 import { Client as MinioClient } from 'minio';
 import { Pool } from 'pg';
-import { logger } from '../telemetry/logger';
+import { logger } from '../telemetry/logger.js';
 
 let pool: Pool | null = null;
 let minio: MinioClient | null = null;

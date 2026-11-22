@@ -23,20 +23,20 @@ const mockSurahs = [
 
 const fetchSurahsFromBackend = vi.fn();
 
-vi.mock('../../infra/backendClient', () => ({
+vi.mock('../../infra/backendClient.js', () => ({
   fetchSurahsFromBackend,
   fetchSurahFromBackend: vi.fn(),
   fetchAyahFromBackend: vi.fn()
 }));
 
-vi.mock('../../infra/backendGrpc', () => ({
+vi.mock('../../infra/backendGrpc.js', () => ({
   getBackendGrpc: vi.fn(() => null)
 }));
 
 let app: Express;
 
 beforeAll(async () => {
-  const { createApp } = await import('../app');
+  const { createApp } = await import('../app.js');
   app = createApp();
 });
 

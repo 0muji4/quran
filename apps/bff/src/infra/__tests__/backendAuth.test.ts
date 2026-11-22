@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { backendAuthorization } from '../backendAuth';
-import { fetchWithTracing } from '../backendClient';
+import { backendAuthorization } from '../backendAuth.js';
+import { fetchWithTracing } from '../backendClient.js';
 
 describe('backend authorization', () => {
   afterEach(() => {

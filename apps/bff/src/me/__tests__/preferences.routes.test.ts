@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth';
-import { meRouter } from '../routes';
-import { getUserPreferences, upsertUserPreferences } from '../preferences';
-import type { PracticePreferences } from '../preferences';
+import { authMiddleware, MOCK_SESSION_USER_ID } from '../../auth/index.js';
+import { meRouter } from '../routes.js';
+import { getUserPreferences, upsertUserPreferences } from '../preferences.js';
+import type { PracticePreferences } from '../preferences.js';
 
 // importActual keeps the real KNOWN_RECITER_IDS so the route's enum
 // validates the shipped set; only the storage fns are stubbed.
-vi.mock('../preferences', async () => {
-  const actual = await vi.importActual<typeof import('../preferences')>('../preferences');
+vi.mock('../preferences.js', async () => {
+  const actual = await vi.importActual<typeof import('../preferences.js')>('../preferences');
   return {
     ...actual,
     getUserPreferences: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('../preferences', async () => {
   };
 });
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   telemetry: {
     meter: {
       createHistogram: vi.fn(() => ({ record: vi.fn() }))

@@ -6,11 +6,11 @@ import {
   getDatabasePool,
   getMinioClientForPresignedUrls,
   recordUploadKey
-} from '../infra';
-import { fetchWithTracing } from '../infra/backendClient';
-import { getBackendGrpc } from '../infra/backendGrpc';
-import { UploadNotFoundError } from './errors';
-import { consumeScoringQuota } from './scoringQuota';
+} from '../infra/index.js';
+import { fetchWithTracing } from '../infra/backendClient.js';
+import { getBackendGrpc } from '../infra/backendGrpc.js';
+import { UploadNotFoundError } from './errors.js';
+import { consumeScoringQuota } from './scoringQuota.js';
 
 const secondsFromNow = (seconds: number): string =>
   new Date(Date.now() + seconds * 1000).toISOString();

@@ -2,39 +2,39 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import jwt from 'jsonwebtoken';
-import { authMiddleware } from '../auth';
-import { authRouter } from '../routes';
-import { exchangeGoogleCode, verifyGoogleIdToken } from '../google';
-import { consumeNonce } from '../auth-nonces';
+import { authMiddleware } from '../auth.js';
+import { authRouter } from '../routes.js';
+import { exchangeGoogleCode, verifyGoogleIdToken } from '../google.js';
+import { consumeNonce } from '../auth-nonces.js';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
   linkOAuthIdentity
-} from '../oauth-identities';
-import { findUserByEmail, reactivateUser } from '../users';
+} from '../oauth-identities.js';
+import { findUserByEmail, reactivateUser } from '../users.js';
 
-vi.mock('../google', () => ({ exchangeGoogleCode: vi.fn(), verifyGoogleIdToken: vi.fn() }));
+vi.mock('../google.js', () => ({ exchangeGoogleCode: vi.fn(), verifyGoogleIdToken: vi.fn() }));
 
-vi.mock('../auth-nonces', () => ({ consumeNonce: vi.fn(), issueNonce: vi.fn() }));
+vi.mock('../auth-nonces.js', () => ({ consumeNonce: vi.fn(), issueNonce: vi.fn() }));
 
-vi.mock('../oauth-identities', () => ({
+vi.mock('../oauth-identities.js', () => ({
   findUserByOAuthIdentity: vi.fn(),
   linkOAuthIdentity: vi.fn(),
   createUserFromOAuth: vi.fn()
 }));
 
-vi.mock('../users', () => ({
+vi.mock('../users.js', () => ({
   findUserByEmail: vi.fn(),
   reactivateUser: vi.fn().mockResolvedValue(false),
   VALID_LEVELS: ['beginner', 'intermediate', 'advanced'] as const
 }));
 
-vi.mock('../refresh-tokens', async () => {
-  const actual = await vi.importActual<typeof import('../refresh-tokens')>('../refresh-tokens');
+vi.mock('../refresh-tokens.js', async () => {
+  const actual = await vi.importActual<typeof import('../refresh-tokens.js')>('../refresh-tokens');
   return { ...actual, recordIssuedRefreshToken: vi.fn().mockResolvedValue(undefined) };
 });
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }
 }));
 

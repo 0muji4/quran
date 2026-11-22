@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // Server-issued single-use nonces for the native ID-token path (DD Q3).
 // Only the hash is stored, mirroring refresh-tokens.

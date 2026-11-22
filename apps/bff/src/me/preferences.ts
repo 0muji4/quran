@@ -1,4 +1,4 @@
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // Mirror of the web reciter list in apps/web/app/lib/reciters.ts — keep in
 // sync until a reciters source of truth lands (Issue #476).

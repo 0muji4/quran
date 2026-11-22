@@ -10,7 +10,7 @@ import {
   MOCK_SESSION_USER_ID,
   buildContext,
   type AuthedRequest
-} from '../auth';
+} from '../auth.js';
 
 const mockEnv = {
   JWT_SECRET: 'test-secret-key-for-testing',

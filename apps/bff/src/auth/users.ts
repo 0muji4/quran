@@ -1,4 +1,4 @@
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // Subset of `PracticeLevel` that the auth layer is willing to persist.
 // Kept narrow so the BFF rejects garbage values at the API boundary

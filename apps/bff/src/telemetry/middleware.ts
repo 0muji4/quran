@@ -10,8 +10,8 @@ import {
   ATTR_HTTP_ROUTE,
   ATTR_HTTP_RESPONSE_STATUS_CODE
 } from '@opentelemetry/semantic-conventions';
-import { telemetry } from './telemetry';
-import { logger } from './logger';
+import { telemetry } from './telemetry.js';
+import { logger } from './logger.js';
 
 const tracer = telemetry.tracer;
 const meter = telemetry.meter;

@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { everyAyahSourceUrl, referenceAudioKey } from '@quran-project/shared-ts';
-import { getMinioClient, getMinioClientForPresignedUrls } from './storage';
+import { getMinioClient, getMinioClientForPresignedUrls } from './storage.js';
 
 export class ReferenceUnavailableError extends Error {
   constructor(

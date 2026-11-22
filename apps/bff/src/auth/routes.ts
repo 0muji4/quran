@@ -1,21 +1,26 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { requireAuth, type AuthedRequest } from './auth';
-import { logger } from '../telemetry';
-import { hashPassword, issueAccessToken, issueRefreshToken, verifyPassword } from './credentials';
+import { requireAuth, type AuthedRequest } from './auth.js';
+import { logger } from '../telemetry/index.js';
+import {
+  hashPassword,
+  issueAccessToken,
+  issueRefreshToken,
+  verifyPassword
+} from './credentials.js';
 import {
   hashRefreshToken,
   recordIssuedRefreshToken,
   revokeAllRefreshTokensForUser
-} from './refresh-tokens';
-import { exchangeGoogleCode, verifyGoogleIdToken } from './google';
-import { consumeNonce, issueNonce } from './auth-nonces';
+} from './refresh-tokens.js';
+import { exchangeGoogleCode, verifyGoogleIdToken } from './google.js';
+import { consumeNonce, issueNonce } from './auth-nonces.js';
 import {
   createUserFromOAuth,
   findUserByOAuthIdentity,
   linkOAuthIdentity
-} from './oauth-identities';
+} from './oauth-identities.js';
 import {
   createUserWithPassword,
   findUserByEmail,
@@ -28,14 +33,14 @@ import {
   VALID_LEVELS,
   type UserLevel,
   type UserRow
-} from './users';
+} from './users.js';
 import {
   credentialChangeLimiter,
   googleLimiter,
   loginAccountLimiter,
   loginIpLimiter,
   signupLimiter
-} from './rateLimits';
+} from './rateLimits.js';
 
 export const authRouter = Router();
 

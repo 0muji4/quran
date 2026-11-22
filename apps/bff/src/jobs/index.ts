@@ -1,3 +1,3 @@
-export * from './scoringJobs';
-export { UploadNotFoundError } from './errors';
-export { ScoringQuotaExceededError } from './scoringQuota';
+export * from './scoringJobs.js';
+export { UploadNotFoundError } from './errors.js';
+export { ScoringQuotaExceededError } from './scoringQuota.js';

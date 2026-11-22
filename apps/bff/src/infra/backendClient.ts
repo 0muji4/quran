@@ -3,10 +3,10 @@
  */
 
 import { context, propagation } from '@opentelemetry/api';
-import type { Ayah, Surah } from '../gen/quran/v1/surah';
-import { telemetry } from '../telemetry/telemetry';
-import { backendAuthorization } from './backendAuth';
-import { getBackendGrpc } from './backendGrpc';
+import type { Ayah, Surah } from '../gen/quran/v1/surah.js';
+import { telemetry } from '../telemetry/telemetry.js';
+import { backendAuthorization } from './backendAuth.js';
+import { getBackendGrpc } from './backendGrpc.js';
 
 const tracer = telemetry.tracer;
 

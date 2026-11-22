@@ -18,15 +18,15 @@ import {
   ScoringServiceService,
   ScoringStatus as ProtoScoringStatus,
   type ScoringJob
-} from '../gen/quran/v1/scoring';
+} from '../gen/quran/v1/scoring.js';
 import {
   SurahServiceClient,
   SurahServiceService,
   type Ayah,
   type Surah
-} from '../gen/quran/v1/surah';
-import { telemetry } from '../telemetry/telemetry';
-import { backendAuthorization } from './backendAuth';
+} from '../gen/quran/v1/surah.js';
+import { telemetry } from '../telemetry/telemetry.js';
+import { backendAuthorization } from './backendAuth.js';
 
 const READ_DEADLINE_MS = 10_000;
 // Exceeds the backend's 30s scoring.DefaultJobTimeout so its status arrives first.

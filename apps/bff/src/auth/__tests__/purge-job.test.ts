@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runSoftDeletePurgeOnce, startSoftDeletePurger } from '../purge-job';
-import { purgeExpiredSoftDeletedUsers } from '../users';
-import { logger } from '../../telemetry';
+import { runSoftDeletePurgeOnce, startSoftDeletePurger } from '../purge-job.js';
+import { purgeExpiredSoftDeletedUsers } from '../users.js';
+import { logger } from '../../telemetry/index.js';
 
-vi.mock('../users', () => ({
+vi.mock('../users.js', () => ({
   purgeExpiredSoftDeletedUsers: vi.fn()
 }));
 
-vi.mock('../../telemetry', () => ({
+vi.mock('../../telemetry/index.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }
 }));
 

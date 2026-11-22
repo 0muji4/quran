@@ -4,12 +4,12 @@ import express, { type Response } from 'express';
 import cors from 'cors';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createYoga } from 'graphql-yoga';
-import { authMiddleware, authRouter, buildContext, type AuthedRequest } from '../auth';
-import { graphqlHttpStatusPlugin } from '../graphql/httpStatus';
-import { resolvers } from '../graphql';
-import { meRouter } from '../me';
-import { rscRouter, restRouter } from '../rest';
-import { otelMiddleware } from '../telemetry';
+import { authMiddleware, authRouter, buildContext, type AuthedRequest } from '../auth/index.js';
+import { graphqlHttpStatusPlugin } from '../graphql/httpStatus.js';
+import { resolvers } from '../graphql/index.js';
+import { meRouter } from '../me/index.js';
+import { rscRouter, restRouter } from '../rest/index.js';
+import { otelMiddleware } from '../telemetry/index.js';
 
 // Navigate up from bff app to project root for schema file
 // In dev: __dirname is apps/bff/dist/server (go up 4 levels)

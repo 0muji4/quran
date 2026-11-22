@@ -1,6 +1,7 @@
 {
   "name": "@quran-project/bff",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "description": "GraphQL and REST BFF placeholder",
   "main": "dist/server/server.js",

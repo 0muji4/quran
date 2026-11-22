@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { trace, context as otelContext } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { TracerProvider } from '@opentelemetry/sdk-trace';
-import { logger } from '../logger';
+import { logger } from '../logger.js';
 
 describe('Logger', () => {
   let provider: TracerProvider;

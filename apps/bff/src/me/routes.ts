@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { AuthedRequest } from '../auth';
-import { requireAuth } from '../auth';
-import { logger } from '../telemetry';
+import type { AuthedRequest } from '../auth/index.js';
+import { requireAuth } from '../auth/index.js';
+import { logger } from '../telemetry/index.js';
 import {
   getBestScores,
   getLastPracticed,
@@ -10,9 +10,9 @@ import {
   recordPracticeAttempt,
   upsertBestScore,
   upsertLastPracticed
-} from './storage';
-import { KNOWN_RECITER_IDS, getUserPreferences, upsertUserPreferences } from './preferences';
-import { getSuggestion } from './suggestions';
+} from './storage.js';
+import { KNOWN_RECITER_IDS, getUserPreferences, upsertUserPreferences } from './preferences.js';
+import { getSuggestion } from './suggestions.js';
 
 // All handlers gate on requireAuth. Under MOCK_SESSION=true (dev / CI)
 // the session resolves to MOCK_SESSION_USER_ID, which is seeded in the

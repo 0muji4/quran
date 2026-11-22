@@ -1,4 +1,4 @@
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // Personalised "what to practice next" + per-surah difficulty hints.
 //

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { logger } from '../../telemetry/logger';
-import { getDatabasePool, resetDatabasePool } from '../storage';
+import { logger } from '../../telemetry/logger.js';
+import { getDatabasePool, resetDatabasePool } from '../storage.js';
 
 describe('getDatabasePool', () => {
   const originalUrl = process.env.DATABASE_URL;

@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
-import { resetDatabasePool } from '../../infra/storage';
-import { setupTestDB } from '../../__tests__/setup';
-import { DEFAULT_PREFERENCES, getUserPreferences, upsertUserPreferences } from '../preferences';
+import { resetDatabasePool } from '../../infra/storage.js';
+import { setupTestDB } from '../../__tests__/setup.js';
+import { DEFAULT_PREFERENCES, getUserPreferences, upsertUserPreferences } from '../preferences.js';
 
 const isPostgresAvailable = async (): Promise<boolean> => {
   const probe = new Pool({

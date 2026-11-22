@@ -1,2 +1,2 @@
-export * from './rest';
-export * from './rsc';
+export * from './rest.js';
+export * from './rsc.js';

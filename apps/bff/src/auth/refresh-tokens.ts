@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { getDatabasePool } from '../infra/storage';
+import { getDatabasePool } from '../infra/storage.js';
 
 // SHA-256 of the JWT string. We never persist the raw refresh token —
 // only its hash — so a DB leak does not yield usable session tokens.
