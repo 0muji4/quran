@@ -3,8 +3,8 @@ package com.tilawah.android.features.auth
 import androidx.compose.runtime.Immutable
 
 /**
- * Self-declared recitation level shown in the sign-up `YOUR LEVEL`
- * selector (matches `LEVEL_OPTIONS` in `apps/web/app/(auth)/copy.ts`).
+ * Self-declared recitation level, chosen under "Your level" when creating an
+ * account (matches `LEVEL_OPTIONS` in `apps/web/app/(auth)/copy.ts`).
  * [wireValue] is the value the BFF stores.
  */
 enum class Level(val label: String, val description: String, val wireValue: String) {
