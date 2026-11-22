@@ -15,10 +15,9 @@ src/main/java/tv/every/tilawah/android/
 ├── app/             AppRoot, AppConfig, AppError, Routing, HistoryDataStore
 ├── designsystem/    AppTheme (binds generated/ to Compose, ADR 0026),
 │                    generated/ (ColorTokens, DimensionTokens; `make tokens-gen`),
-│                    BrandColors, BrandTypography, BrandSpacing, BrandTheme,
-│                    components/ (BrandCard, ChipFilter, PlaybackRow,
-│                                  PrimaryButton, BrandProgressBar, WaveformView,
-│                                  BrandCardStyle)
+│                    components/ (AppAyah, AppButtons, AppChip, AppProgress,
+│                                  AppSurfaces, AppVerdictChip, AppWaveform,
+│                                  AppSpecimenSurface)
 ├── audio/           Recorder + MediaRecorderRecorder, Player + MediaPlayerPlayer,
 │                    AudioFocusCoordinator
 ├── backend/         QuranBackend (interface), ApolloQuranBackend,
