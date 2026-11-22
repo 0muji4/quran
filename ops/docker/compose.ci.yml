@@ -1,6 +1,7 @@
-# CI-only overrides for compose.dev.yml, used by .github/workflows/e2e.yml.
+# CI-only overrides for compose.dev.yml, used by .github/actions/e2e-stack,
+# which e2e.yml, visual-baseline.yml and nightly-ci.yml start the stack with.
 #
-# The e2e job builds these images with docker/bake-action before
+# The action builds these images with docker/bake-action before
 # `docker compose up --no-build`. Fixed image names let compose find the
 # images bake loaded. Layers are read from the GitHub Actions cache, one
 # scope per image; compose.ci-cache-write.yml adds the matching writes.

@@ -5,8 +5,8 @@
 # stack's filter matched the diff.
 #
 # The `&shared` YAML anchor is expanded (via `*shared`) into every
-# non-mobile stack so cross-cutting changes — workflows, root config,
-# lockfiles, the prettier/node toolchain — re-trigger every relevant
+# non-mobile stack so cross-cutting changes — workflows, local actions,
+# root config, lockfiles, the prettier/node toolchain — re-trigger every relevant
 # stack by construction. Mobile stacks deliberately do NOT inherit
 # `shared` because macOS runners are expensive; instead they list the
 # narrow set of files that genuinely affect their builds (workflows,
@@ -19,6 +19,7 @@
 
 shared: &shared
   - '.github/workflows/**'
+  - '.github/actions/**'
   - '.github/filters.yml'
   - 'Makefile'
   - 'pnpm-lock.yaml'
