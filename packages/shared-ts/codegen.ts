@@ -19,7 +19,7 @@ const config: CodegenConfig = {
         declarationKind: 'interface',
         // Emit `import type` for type-only imports (Google Style Guide).
         useTypeImports: true,
-        contextType: '../types#GraphQLContext',
+        contextType: '../types.js#GraphQLContext',
         scalars: {
           DateTime: 'string',
           JSONObject: 'Record<string, unknown>'

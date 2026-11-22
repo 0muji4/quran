@@ -1,6 +1,7 @@
 {
   "name": "@quran-project/shared-ts",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "description": "Shared TypeScript utilities",
   "main": "dist/src/index.js",

@@ -1,3 +1,3 @@
-export * from './types';
-export * from './graphql/types.generated';
-export * from './referenceAudio';
+export * from './types.js';
+export * from './graphql/types.generated.js';
+export * from './referenceAudio.js';

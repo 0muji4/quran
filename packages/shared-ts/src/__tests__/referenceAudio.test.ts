@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { everyAyahSourceUrl, referenceAudioKey } from '../referenceAudio';
+import { everyAyahSourceUrl, referenceAudioKey } from '../referenceAudio.js';
 
 describe('referenceAudioKey', () => {
   it('formats Surah 1 / Ayah 1 with three-digit padding', () => {
