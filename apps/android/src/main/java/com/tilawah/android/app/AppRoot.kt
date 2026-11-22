@@ -198,9 +198,8 @@ fun AppRoot(
                         onClick = { selectedTab = tab },
                         icon = {
                             Icon(
-                                // Icons match the Android Figma exports: search
-                                // glass (Library), microphone (Practice), clock
-                                // (History). See docs/design/Android _ Practice *.
+                                // Search glass (Library), microphone (Practice),
+                                // clock (History), account (Profile).
                                 imageVector = when (tab) {
                                     TopLevelTab.Library -> Icons.Filled.Search
                                     TopLevelTab.Practice -> Icons.Filled.Mic

@@ -306,7 +306,7 @@
   gap: var(--spacing-2);
   font-size: 13px;
   /* Cream digits on the green recording panel; only the pulsing dot
-     stays red (see .recordingTimerDot). Matches docs/design/3. Practice. */
+     stays red (see .recordingTimerDot). */
   color: var(--colors-ink-on-dark);
   font-variant-numeric: tabular-nums;
 }
