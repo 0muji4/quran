@@ -20,7 +20,7 @@ import { resolve } from 'node:path';
 
 const QURAN_JSON_REF = 'v3.1.2'; // pin upstream version for reproducibility
 const QURAN_JSON_URL = `https://raw.githubusercontent.com/risan/quran-json/${QURAN_JSON_REF}/dist/quran.json`;
-const OUTPUT_PATH = resolve(__dirname, '..', 'db', 'seed_quran.sql');
+const OUTPUT_PATH = resolve(import.meta.dirname, '..', 'db', 'seed_quran.sql');
 
 interface UpstreamVerse {
   id: number;

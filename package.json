@@ -1,6 +1,7 @@
 {
   "name": "quran-project",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@12.18.0",
   "dependencies": {
