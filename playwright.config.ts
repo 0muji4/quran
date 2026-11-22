@@ -16,8 +16,11 @@ export default defineConfig({
   // Forbid test.only in CI
   forbidOnly: !!process.env.CI,
 
-  // Retry failed tests in CI
-  retries: process.env.CI ? 2 : 0,
+  // In CI a failed test runs once more, only so Playwright can tell a
+  // flaky test from a broken one. A test that passes on the retry still
+  // fails the run: flakiness is a bug to fix, not to retry away.
+  retries: process.env.CI ? 1 : 0,
+  failOnFlakyTests: !!process.env.CI,
 
   // Single worker to avoid DB/Redis conflicts
   workers: 1,
