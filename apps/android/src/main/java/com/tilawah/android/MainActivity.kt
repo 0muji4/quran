@@ -1,9 +1,7 @@
 package com.tilawah.android
 
-import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
@@ -13,7 +11,7 @@ import com.tilawah.android.app.AppRoot
 import com.tilawah.android.app.authDataStore
 import com.tilawah.android.backend.AuthApi
 import com.tilawah.android.backend.OkHttpAuthApi
-import com.tilawah.android.designsystem.BrandTheme
+import com.tilawah.android.designsystem.AppTheme
 import com.tilawah.android.storage.AuthSession
 import com.tilawah.android.storage.DataStoreAuthSession
 import com.tilawah.android.storage.InMemoryAuthSession
@@ -24,10 +22,9 @@ import com.tilawah.android.telemetry.TraceTelemetry
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // BrandTheme is light-only, so the bars need dark icons even when
-        // the system is in dark mode, which rules out the default auto style.
-        val lightBars = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-        enableEdgeToEdge(statusBarStyle = lightBars, navigationBarStyle = lightBars)
+        // AppTheme follows the system's light or dark setting, so the bars
+        // take the default auto style, which follows it too.
+        enableEdgeToEdge()
         val telemetry: Telemetry = TraceTelemetry(tag = AppConfig.TELEMETRY_SUBSYSTEM)
         val authApi: AuthApi = OkHttpAuthApi()
         // Mirrors the HistoryStore fallback in AppRoot: degrade to a
@@ -39,7 +36,7 @@ class MainActivity : ComponentActivity() {
             InMemoryAuthSession()
         }
         setContent {
-            BrandTheme {
+            AppTheme {
                 AppRoot(
                     telemetry = telemetry,
                     authApi = authApi,
@@ -53,7 +50,7 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 private fun AppRootPreview() {
-    BrandTheme {
+    AppTheme {
         AppRoot(
             telemetry = NoOpTelemetry,
             authApi = OkHttpAuthApi(),

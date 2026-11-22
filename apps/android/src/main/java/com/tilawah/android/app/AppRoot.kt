@@ -54,7 +54,7 @@ import com.tilawah.android.backend.PreferencesClient
 import com.tilawah.android.backend.ProfileService
 import com.tilawah.android.backend.QuranBackend
 import com.tilawah.android.backend.TokenRefresher
-import com.tilawah.android.designsystem.BrandTheme
+import com.tilawah.android.designsystem.AppTheme
 import com.tilawah.android.features.library.LibraryScreen
 import com.tilawah.android.features.library.LibraryViewModel
 import com.tilawah.android.features.practice.PracticeScreen
@@ -84,7 +84,7 @@ import com.tilawah.android.telemetry.Telemetry
 import com.tilawah.android.telemetry.TelemetryEvent
 
 /**
- * Composable root. Sits inside a [BrandTheme] block in [MainActivity]
+ * Composable root. Sits inside an [AppTheme] block in [MainActivity]
  * and presents the three-tab Tilawah experience (Library / Practice /
  * History). Mirrors iOS's `AppRoot.swift` (`TabView` + per-tab
  * `NavigationStack`).
@@ -224,7 +224,7 @@ fun AppRoot(
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .imePadding(),
-            color = BrandTheme.colors.surface,
+            color = AppTheme.colorScheme.surface,
         ) {
             when (selectedTab) {
                 TopLevelTab.Library -> LibraryTabHost(
