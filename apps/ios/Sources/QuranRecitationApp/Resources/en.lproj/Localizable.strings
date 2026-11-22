@@ -156,19 +156,18 @@
 "library.surah.a11yHint" = "Opens Practice for this surah";
 
 /* Auth — shared */
-"auth.divider.or" = "OR";
-"auth.divider.orWithEmail" = "OR WITH EMAIL";
+"auth.divider.or" = "or";
 "auth.social.google" = "Continue with Google";
-"auth.social.apple" = "Continue with Apple";
-"auth.field.email" = "EMAIL";
-"auth.field.password" = "PASSWORD";
-"auth.field.name" = "YOUR NAME";
-"auth.password.show" = "Show";
-"auth.password.hide" = "Hide";
+"auth.field.email" = "Email";
+"auth.field.password" = "Password";
+"auth.field.name" = "Display name";
+"auth.field.name.helper" = "Optional. How your name appears across the app.";
+"auth.password.show" = "Show password";
+"auth.password.hide" = "Hide password";
 
 /* Auth — sign in */
-"auth.signin.title" = "Welcome back";
-"auth.signin.subtitle" = "Sign in to continue your practice";
+"auth.signin.title" = "Sign in";
+"auth.signin.lede" = "Welcome back. Sign in to continue your practice.";
 "auth.signin.submit" = "Sign in";
 "auth.signin.submitPending" = "Signing in…";
 "auth.forgotPassword" = "Forgot password?";
@@ -176,15 +175,15 @@
 "auth.signin.footerAction" = "Create an account";
 
 /* Auth — sign up */
-"auth.signup.eyebrow" = "Begin your journey";
-"auth.signup.title" = "Create your account";
+"auth.signup.title" = "Create account";
 "auth.signup.lede" = "Practise daily, track every attempt.";
 "auth.signup.submit" = "Create account";
 "auth.signup.submitPending" = "Creating account…";
 "auth.signup.footerPrompt" = "Already have an account?";
 "auth.signup.footerAction" = "Sign in";
-"auth.password.helper" = "Use 8+ characters with a mix of letters and numbers";
-"auth.level.title" = "YOUR LEVEL";
+"auth.password.helper" = "At least 8 characters.";
+"auth.level.title" = "Your level";
+"auth.level.helper" = "You can change this later in your profile.";
 "auth.level.beginner.label" = "Beginner";
 "auth.level.beginner.description" = "Learning Arabic";
 "auth.level.intermediate.label" = "Intermediate";
@@ -192,10 +191,9 @@
 "auth.level.advanced.label" = "Advanced";
 "auth.level.advanced.description" = "Polishing recitation";
 "auth.terms.label" = "I agree to the Terms of Service and Privacy Policy.";
-"auth.terms.error" = "Please accept the Terms of Service to continue.";
+"auth.terms.error" = "Accept the Terms of Service to continue.";
 
 /* Auth — accessibility */
-"auth.password.toggle.a11y" = "Show or hide password";
 
 /* Profile tab */
 "profile.signedOut.title" = "Welcome";

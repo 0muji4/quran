@@ -1,20 +1,17 @@
 import SwiftUI
 
-/// Sign up screen — pushed onto the Profile tab's `NavigationStack`.
-/// Social buttons (deferred), name / email / password fields, the
-/// "Your level" picker, the Terms-of-Service gate, the primary
-/// "Create account" action, and a link across to sign-in. Matches
-/// `docs/design/iOS _ Sign up`.
+/// Create account, pushed onto the Profile tab's `NavigationStack`: feeds the
+/// shared `AuthViewModel` into `SignUpForm`.
 ///
-/// Shares its `AuthViewModel` with `SignInView` (owned by
-/// `ProfileView`) so typed input survives the sign-in ↔ sign-up toggle.
+/// Shares its `AuthViewModel` with `SignInView` (owned by `ProfileView`) so
+/// typed input survives the sign-in ↔ sign-up toggle.
 struct SignUpView: View {
   @Bindable var viewModel: AuthViewModel
   let onNavigateToSignIn: () -> Void
   let onAuthenticated: () -> Void
 
   /// Configured only when both Google client IDs are present; otherwise
-  /// the Google button stays on its disabled placeholder.
+  /// the Google button stays disabled.
   private var googleClient: GoogleSignInClient? {
     let ios = AppConfig.googleIOSClientID
     let server = AppConfig.googleServerClientID
@@ -33,146 +30,126 @@ struct SignUpView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: Spacing.lg) {
-        topBar
-        heading
+    SignUpForm(
+      displayName: $viewModel.displayName,
+      email: $viewModel.email,
+      password: $viewModel.password,
+      isPasswordVisible: $viewModel.isPasswordVisible,
+      level: $viewModel.selectedLevel,
+      agreedToTerms: $viewModel.agreedToTerms,
+      termsError: viewModel.termsError,
+      canSubmit: viewModel.canSubmitSignUp,
+      isSubmitting: viewModel.isSubmitting,
+      error: viewModel.error,
+      googleAvailable: googleClient != nil,
+      onSubmit: { Task { await viewModel.signUp(onSuccess: onAuthenticated) } },
+      onGoogle: signInWithGoogle,
+      onSignIn: onNavigateToSignIn
+    )
+  }
+}
 
-        if let error = viewModel.error {
-          AuthErrorBanner(error: error)
+/// The create-account form drawn from values, so any state renders without a
+/// ViewModel: the display name, email and password, the level, the terms,
+/// the error, Create account, then Apple and Google, and the way across to
+/// sign in.
+struct SignUpForm: View {
+  @Binding var displayName: String
+  @Binding var email: String
+  @Binding var password: String
+  @Binding var isPasswordVisible: Bool
+  @Binding var level: PracticeLevel
+  @Binding var agreedToTerms: Bool
+  let termsError: Bool
+  let canSubmit: Bool
+  let isSubmitting: Bool
+  let error: AppError?
+  let googleAvailable: Bool
+  let onSubmit: () -> Void
+  let onGoogle: () -> Void
+  let onSignIn: () -> Void
+
+  var body: some View {
+    AuthForm(title: "auth.signup.title") {
+      Group {
+        Section {
+          TextField(text: $displayName, prompt: Text("auth.field.name", bundle: .module)) {
+            Text("auth.field.name", bundle: .module)
+          }
+          .textContentType(.name)
+          .textInputAutocapitalization(.words)
+          .authRow()
+        } header: {
+          AuthLede(text: "auth.signup.lede")
+        } footer: {
+          Text("auth.field.name.helper", bundle: .module)
         }
 
-        VStack(spacing: Spacing.md) {
-          SocialButton(
-            provider: .google,
-            isEnabled: googleClient != nil,
-            action: signInWithGoogle
-          )
-          SocialButton(provider: .apple)
+        Section {
+          AuthEmailField(text: $email)
+            .authRow()
+          AuthPasswordField(text: $password, isVisible: $isPasswordVisible, textContentType: .newPassword)
+            .authRow()
+        } footer: {
+          Text("auth.password.helper", bundle: .module)
         }
 
-        AuthDivider(label: "auth.divider.orWithEmail")
+        Section {
+          Picker(selection: $level) {
+            ForEach(PracticeLevel.allCases, id: \.self) { option in
+              VStack(alignment: .leading, spacing: 2) {
+                Text(option.label, bundle: .module)
+                Text(option.description, bundle: .module)
+                  .font(AppTheme.Typography.subheadline)
+                  .foregroundStyle(AppTheme.Colors.onSurfaceVariant)
+              }
+              .tag(option)
+            }
+          } label: {
+            Text("auth.level.title", bundle: .module)
+          }
+          .pickerStyle(.inline)
+          .labelsHidden()
+          .authRow()
+        } header: {
+          Text("auth.level.title", bundle: .module)
+        } footer: {
+          Text("auth.level.helper", bundle: .module)
+        }
 
-        AuthTextField(
-          label: "auth.field.name",
-          text: $viewModel.displayName,
-          textContentType: .name,
-          autocapitalization: .words
-        )
-        AuthTextField(
-          label: "auth.field.email",
-          text: $viewModel.email,
-          keyboardType: .emailAddress,
-          textContentType: .username
-        )
-        AuthPasswordField(
-          label: "auth.field.password",
-          text: $viewModel.password,
-          isVisible: $viewModel.isPasswordVisible,
-          textContentType: .newPassword,
-          helperText: "auth.password.helper"
-        )
-
-        LevelSelector(selection: $viewModel.selectedLevel)
-        termsRow
-        submitButton
-        footer
-      }
-      .padding(.horizontal, Spacing.screenHorizontal)
-      .padding(.top, Spacing.lg)
-      .padding(.bottom, Spacing.xxl)
-    }
-    .background(Color.brand.surface.ignoresSafeArea())
-    .scrollDismissesKeyboard(.interactively)
-    .toolbar(.hidden, for: .navigationBar)
-  }
-
-  /// Top spacer so the eyebrow clears the navigation area, rather than
-  /// butting the heading against the status bar.
-  private var topBar: some View {
-    Color.clear.frame(height: Spacing.lg)
-  }
-
-  private var heading: some View {
-    VStack(alignment: .leading, spacing: Spacing.xs) {
-      BrandEyebrow("auth.signup.eyebrow")
-      Text("auth.signup.title", bundle: .module)
-        .font(Font.brand.pageTitle)
-        .foregroundColor(Color.brand.textPrimary)
-      Text("auth.signup.lede", bundle: .module)
-        .font(Font.brand.body)
-        .foregroundColor(Color.brand.textSecondary)
-    }
-  }
-
-  private var termsRow: some View {
-    VStack(alignment: .leading, spacing: Spacing.xs) {
-      Button {
-        viewModel.agreedToTerms.toggle()
-      } label: {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-          Image(systemName: viewModel.agreedToTerms ? "checkmark.square.fill" : "square")
-            .font(.system(size: 20))
-            .foregroundColor(
-              viewModel.agreedToTerms ? Color.brand.primary : Color.brand.textSecondary
-            )
-          Text("auth.terms.label", bundle: .module)
-            .font(Font.brand.caption)
-            .foregroundColor(
-              viewModel.termsError ? Color.brand.recording : Color.brand.textPrimary
-            )
-            .multilineTextAlignment(.leading)
-          Spacer(minLength: 0)
+        Section {
+          Toggle(isOn: $agreedToTerms) {
+            Text("auth.terms.label", bundle: .module)
+              .font(AppTheme.Typography.subheadline)
+          }
+          .authRow()
+        } footer: {
+          if termsError {
+            Text("auth.terms.error", bundle: .module)
+              .foregroundStyle(AppTheme.Colors.error)
+          }
         }
       }
-      .buttonStyle(.plain)
-      .accessibilityAddTraits(viewModel.agreedToTerms ? .isSelected : [])
+      .disabled(isSubmitting)
 
-      if viewModel.termsError {
-        Text("auth.terms.error", bundle: .module)
-          .font(Font.brand.caption)
-          .foregroundColor(Color.brand.recording)
+      if let error {
+        AuthErrorSection(error: error)
       }
-    }
-  }
 
-  private var submitButton: some View {
-    Button {
-      Task { await viewModel.signUp(onSuccess: onAuthenticated) }
-    } label: {
-      HStack(spacing: Spacing.sm) {
-        if viewModel.isSubmitting {
-          ProgressView()
-            .tint(Color.brand.textOnPrimary)
-        }
-        Text(
-          viewModel.isSubmitting ? "auth.signup.submitPending" : "auth.signup.submit",
-          bundle: .module
-        )
-        if !viewModel.isSubmitting {
-          Image(systemName: "arrow.right")
-        }
-      }
+      AuthSubmitSection(
+        label: "auth.signup.submit",
+        pendingLabel: "auth.signup.submitPending",
+        canSubmit: canSubmit,
+        isSubmitting: isSubmitting,
+        onSubmit: onSubmit
+      )
+      AuthProvidersSection(googleEnabled: googleAvailable && !isSubmitting, onGoogle: onGoogle)
+      AuthFooterSection(
+        prompt: "auth.signup.footerPrompt",
+        action: "auth.signup.footerAction",
+        onAction: onSignIn
+      )
+      .disabled(isSubmitting)
     }
-    .buttonStyle(.brandPrimary)
-    .disabled(!viewModel.canSubmitSignUp || viewModel.isSubmitting)
-    .padding(.top, Spacing.sm)
-  }
-
-  private var footer: some View {
-    HStack(spacing: Spacing.xs) {
-      Text("auth.signup.footerPrompt", bundle: .module)
-        .foregroundColor(Color.brand.textSecondary)
-      Button {
-        onNavigateToSignIn()
-      } label: {
-        Text("auth.signup.footerAction", bundle: .module)
-          .fontWeight(.semibold)
-          .foregroundColor(Color.brand.primary)
-      }
-      .buttonStyle(.plain)
-    }
-    .font(Font.brand.body)
-    .frame(maxWidth: .infinity, alignment: .center)
   }
 }

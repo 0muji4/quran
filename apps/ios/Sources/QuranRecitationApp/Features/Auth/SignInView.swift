@@ -1,21 +1,18 @@
 import SwiftUI
 
-/// Sign in screen — pushed onto the Profile tab's `NavigationStack`.
-/// Brand mark, email + password fields, the primary "Sign in" action,
-/// the deferred social buttons, and a link across to sign-up. Matches
-/// `docs/design/iOS _ Sign in`. Users leave the screen by signing in,
-/// crossing to sign-up via the footer, swiping back, or switching tabs.
+/// Sign in, pushed onto the Profile tab's `NavigationStack`: feeds the shared
+/// `AuthViewModel` into `SignInForm`. Users leave by signing in, crossing to
+/// create account, or going back.
 ///
 /// The `AuthViewModel` is owned by `ProfileView` and shared with
-/// `SignUpView`, so anything typed survives the sign-in ↔ sign-up
-/// toggle.
+/// `SignUpView`, so anything typed survives the sign-in ↔ sign-up toggle.
 struct SignInView: View {
   @Bindable var viewModel: AuthViewModel
   let onNavigateToSignUp: () -> Void
   let onAuthenticated: () -> Void
 
   /// Configured only when both Google client IDs are present; otherwise
-  /// the Google button stays on its disabled placeholder.
+  /// the Google button stays disabled.
   private var googleClient: GoogleSignInClient? {
     let ios = AppConfig.googleIOSClientID
     let server = AppConfig.googleServerClientID
@@ -34,114 +31,67 @@ struct SignInView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: Spacing.xl) {
-        VStack(spacing: Spacing.md) {
-          MihrabMark()
-          VStack(spacing: Spacing.xs) {
-            Text("auth.signin.title", bundle: .module)
-              .font(Font.brand.pageTitle)
-              .foregroundColor(Color.brand.textPrimary)
-            Text("auth.signin.subtitle", bundle: .module)
-              .font(Font.brand.body)
-              .foregroundColor(Color.brand.textSecondary)
-          }
-          .multilineTextAlignment(.center)
-        }
-
-        if let error = viewModel.error {
-          AuthErrorBanner(error: error)
-        }
-
-        formSection
-        submitButton
-
-        AuthDivider(label: "auth.divider.or")
-
-        VStack(spacing: Spacing.md) {
-          SocialButton(
-            provider: .google,
-            isEnabled: googleClient != nil,
-            action: signInWithGoogle
-          )
-          SocialButton(provider: .apple)
-        }
-
-        footer
-      }
-      .padding(.horizontal, Spacing.screenHorizontal)
-      .padding(.top, Spacing.lg)
-      .padding(.bottom, Spacing.xxl)
-    }
-    .background(Color.brand.surface.ignoresSafeArea())
-    .scrollDismissesKeyboard(.interactively)
-    .toolbar(.hidden, for: .navigationBar)
+    SignInForm(
+      email: $viewModel.email,
+      password: $viewModel.password,
+      isPasswordVisible: $viewModel.isPasswordVisible,
+      canSubmit: viewModel.canSubmit,
+      isSubmitting: viewModel.isSubmitting,
+      error: viewModel.error,
+      googleAvailable: googleClient != nil,
+      onSubmit: { Task { await viewModel.signIn(onSuccess: onAuthenticated) } },
+      onGoogle: signInWithGoogle,
+      onCreateAccount: onNavigateToSignUp
+    )
   }
+}
 
-  private var formSection: some View {
-    VStack(alignment: .leading, spacing: Spacing.lg) {
-      AuthTextField(
-        label: "auth.field.email",
-        text: $viewModel.email,
-        keyboardType: .emailAddress,
-        textContentType: .username
+/// The sign-in form drawn from values, so any state renders without a
+/// ViewModel: email and password, the error, Sign in, then Apple and Google,
+/// and the way across to create an account.
+struct SignInForm: View {
+  @Binding var email: String
+  @Binding var password: String
+  @Binding var isPasswordVisible: Bool
+  let canSubmit: Bool
+  let isSubmitting: Bool
+  let error: AppError?
+  let googleAvailable: Bool
+  let onSubmit: () -> Void
+  let onGoogle: () -> Void
+  let onCreateAccount: () -> Void
+
+  var body: some View {
+    AuthForm(title: "auth.signin.title") {
+      Section {
+        AuthEmailField(text: $email)
+          .authRow()
+        AuthPasswordField(text: $password, isVisible: $isPasswordVisible)
+          .authRow()
+      } header: {
+        AuthLede(text: "auth.signin.lede")
+      }
+      .disabled(isSubmitting)
+
+      if let error {
+        AuthErrorSection(error: error)
+      }
+
+      AuthSubmitSection(
+        label: "auth.signin.submit",
+        pendingLabel: "auth.signin.submitPending",
+        canSubmit: canSubmit,
+        isSubmitting: isSubmitting,
+        showsForgotPassword: true,
+        onSubmit: onSubmit
       )
-      VStack(alignment: .trailing, spacing: Spacing.sm) {
-        AuthPasswordField(
-          label: "auth.field.password",
-          text: $viewModel.password,
-          isVisible: $viewModel.isPasswordVisible
-        )
-        // "Forgot password?" is deferred per ADR 0010 — disabled, like
-        // the social buttons and the web client's link.
-        Button {} label: {
-          Text("auth.forgotPassword", bundle: .module)
-            .font(Font.brand.caption.weight(.semibold))
-            .foregroundColor(Color.brand.primary)
-        }
-        .buttonStyle(.plain)
-        .disabled(true)
-        .opacity(0.55)
-        .accessibilityHint(Text("Coming soon"))
-      }
+      AuthProvidersSection(googleEnabled: googleAvailable && !isSubmitting, onGoogle: onGoogle)
+      AuthFooterSection(
+        prompt: "auth.signin.footerPrompt",
+        action: "auth.signin.footerAction",
+        onAction: onCreateAccount
+      )
+      .disabled(isSubmitting)
     }
-  }
-
-  private var submitButton: some View {
-    Button {
-      Task { await viewModel.signIn(onSuccess: onAuthenticated) }
-    } label: {
-      HStack(spacing: Spacing.sm) {
-        if viewModel.isSubmitting {
-          ProgressView()
-            .tint(Color.brand.textOnPrimary)
-        }
-        Text(
-          viewModel.isSubmitting ? "auth.signin.submitPending" : "auth.signin.submit",
-          bundle: .module
-        )
-        if !viewModel.isSubmitting {
-          Image(systemName: "arrow.right")
-        }
-      }
-    }
-    .buttonStyle(.brandPrimary)
-    .disabled(!viewModel.canSubmit || viewModel.isSubmitting)
-  }
-
-  private var footer: some View {
-    HStack(spacing: Spacing.xs) {
-      Text("auth.signin.footerPrompt", bundle: .module)
-        .foregroundColor(Color.brand.textSecondary)
-      Button {
-        onNavigateToSignUp()
-      } label: {
-        Text("auth.signin.footerAction", bundle: .module)
-          .fontWeight(.semibold)
-          .foregroundColor(Color.brand.primary)
-      }
-      .buttonStyle(.plain)
-    }
-    .font(Font.brand.body)
   }
 }
