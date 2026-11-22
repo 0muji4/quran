@@ -37,18 +37,10 @@ jobs:
         id: playwright
         run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Start Docker Compose services
-        run: docker compose -f ops/docker/compose.dev.yml up -d
-
-      - name: Wait for services to be healthy
-        run: |
-          timeout 180 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; echo "Waiting for web service..."; done'
-
-      - name: Run database migrations
-        run: make db-migrate
-
-      - name: Seed database with test data
-        run: make db-seed
+      # The same images and services as e2e.yml, so the baselines are
+      # rendered against what the e2e visual job compares.
+      - name: Start the e2e stack
+        uses: ./.github/actions/e2e-stack
 
       # Match e2e.yml's image + host networking so the PNGs match what the
       # e2e visual job compares against.

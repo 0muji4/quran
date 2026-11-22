@@ -123,18 +123,8 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Start Docker Compose services
-        run: docker compose -f ops/docker/compose.dev.yml up -d
-
-      - name: Wait for services to be healthy
-        run: |
-          timeout 180 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
-
-      - name: Run database migrations
-        run: make db-migrate
-
-      - name: Seed database with test data
-        run: make db-seed
+      - name: Start the e2e stack
+        uses: ./.github/actions/e2e-stack
 
       - name: Run Playwright (${{ matrix.browser }})
         env:
