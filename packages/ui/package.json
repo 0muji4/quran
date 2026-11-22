@@ -1,6 +1,7 @@
 {
   "name": "@quran-project/ui",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "description": "Shared UI components package placeholder",
   "main": "src/index.ts",

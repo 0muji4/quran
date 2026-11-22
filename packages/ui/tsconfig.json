@@ -2,7 +2,7 @@
   "extends": "../ts-config/tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "commonjs",
+    "module": "esnext",
     "declaration": true,
     "declarationDir": "dist",
     "rootDir": "src",
