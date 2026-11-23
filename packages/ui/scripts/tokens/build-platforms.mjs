@@ -2,6 +2,7 @@
 //
 //   Android  designsystem/generated/ColorTokens.kt, DimensionTokens.kt
 //   iOS      DesignSystem/Generated/ColorTokens.swift, DimensionTokens.swift
+//   Web      packages/ui/src/theme/generated/tokens.ts (Panda)
 //
 // Usage: node packages/ui/scripts/tokens/build-platforms.mjs
 
@@ -11,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { renderKotlin } from './kotlin.mjs';
 import { loadSemanticTokens } from './load.mjs';
 import { writeOwnedDir } from './output.mjs';
+import { renderPanda } from './panda.mjs';
 import { renderSwift } from './swift.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -21,8 +23,10 @@ const ANDROID_DIR = join(
   'apps/android/src/main/java/com/tilawah/android/designsystem/generated'
 );
 const IOS_DIR = join(repoRoot, 'apps/ios/Sources/QuranRecitationApp/DesignSystem/Generated');
+const WEB_DIR = join(repoRoot, 'packages/ui/src/theme/generated');
 
 const tokens = await loadSemanticTokens(join(scriptDir, '..', '..', 'tokens'));
 
 writeOwnedDir(ANDROID_DIR, renderKotlin(tokens));
 writeOwnedDir(IOS_DIR, renderSwift(tokens));
+writeOwnedDir(WEB_DIR, renderPanda(tokens));

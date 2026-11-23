@@ -1,5 +1,6 @@
 import { defineConfig } from '@pandacss/dev';
 import { tokens } from '@quran-project/ui/theme/tokens';
+import { colorRoles, shape, spacing } from '@quran-project/ui/theme/generated';
 import { recipes, slotRecipes } from '@quran-project/ui/theme/recipes';
 import { globalCss } from '@quran-project/ui/theme/global-css';
 
@@ -19,8 +20,19 @@ export default defineConfig({
   include: ['./app/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
   exclude: ['**/*.module.css'],
   outdir: 'styled-system',
+  // Colour roles take their `_dark` values when the operating system is in
+  // dark mode (ADR 0032).
+  conditions: {
+    extend: {
+      dark: '@media (prefers-color-scheme: dark)'
+    }
+  },
   theme: {
-    tokens,
+    // The generated tokens (ADR 0026) sit next to the hand-written ones until
+    // every screen has moved to them. Spacing has the same steps and values
+    // in both, so it comes from the generated set only.
+    tokens: { ...tokens, spacing, radii: { ...tokens.radii, ...shape } },
+    semanticTokens: { colors: colorRoles },
     recipes,
     slotRecipes,
     // Match the @media widths the existing CSS modules already use:

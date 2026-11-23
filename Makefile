@@ -70,9 +70,9 @@ proto-check: proto-lint proto-gen ## Fail when generated protobuf code is stale
 		exit 1; \
 	fi
 
-TOKEN_OUTPUTS := packages/ui/tokens apps/android/src/main/java/com/tilawah/android/designsystem/generated apps/ios/Sources/QuranRecitationApp/DesignSystem/Generated
+TOKEN_OUTPUTS := packages/ui/tokens packages/ui/src/theme/generated apps/android/src/main/java/com/tilawah/android/designsystem/generated apps/ios/Sources/QuranRecitationApp/DesignSystem/Generated
 
-tokens-gen: ## Generate design tokens and the Android / iOS token code (ADR 0026)
+tokens-gen: ## Generate design tokens and the Android / iOS / Web token code (ADR 0026)
 	@pnpm --filter @quran-project/ui run tokens:gen
 
 tokens-check: tokens-gen ## Fail when generated design token files are stale
