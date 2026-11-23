@@ -32,9 +32,9 @@ describe('SideStats', () => {
 
     render(tree(1));
 
-    expect(valueOf('PERSONAL BEST')).toBe('91');
-    expect(valueOf('ATTEMPTS TODAY')).toBe('2');
-    expect(valueOf('DURATION')).toBe('1:05');
+    expect(valueOf('Personal best')).toBe('91');
+    expect(valueOf('Attempts today')).toBe('2');
+    expect(valueOf('Duration')).toBe('1:05');
   });
 
   it('falls back to empty values when nothing is stored', () => {
@@ -43,8 +43,8 @@ describe('SideStats', () => {
 
     render(tree(1));
 
-    expect(valueOf('PERSONAL BEST')).toBe('—');
-    expect(valueOf('ATTEMPTS TODAY')).toBe('0');
+    expect(valueOf('Personal best')).toBe('—');
+    expect(valueOf('Attempts today')).toBe('0');
   });
 
   it('reads the new ayah when the props change', () => {
@@ -57,6 +57,6 @@ describe('SideStats', () => {
     result.rerender(tree(2));
 
     expect(storage.getBestScore).toHaveBeenLastCalledWith('1', 2);
-    expect(valueOf('PERSONAL BEST')).toBe('70');
+    expect(valueOf('Personal best')).toBe('70');
   });
 });

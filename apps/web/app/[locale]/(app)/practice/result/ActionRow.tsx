@@ -2,8 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/navigation';
-import { ArrowLeftIcon, ArrowRightIcon } from '../../../../components/icons/ArrowRightIcon';
-import styles from '../../../../styles/practice.module.css';
+import { css, cx } from '../../../../../styled-system/css';
+import { appButton } from '../../../../../styled-system/recipes';
+import { fullRowClass } from './ResultFrame';
 
 interface Props {
   surahId: string;
@@ -11,6 +12,14 @@ interface Props {
   ayahNumber: number;
   totalAyahs: number;
 }
+
+const rowClass = cx(
+  fullRowClass,
+  css({ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '2' })
+);
+
+// Full-width buttons stacked in a compact window; side by side from medium.
+const actionClass = css({ flex: '[1 1 100%]', medium: { flex: '[0 0 auto]' } });
 
 export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props) {
   const t = useTranslations('result.action');
@@ -29,12 +38,12 @@ export function ActionRow({ surahId, surahName, ayahNumber, totalAyahs }: Props)
   // the iOS client has none either, and a placeholder "Save" button confused
   // users into thinking the save was opt-in.
   return (
-    <div className={styles.resultActionRow}>
-      <Link href={tryAgainHref} className={styles.btnGhost}>
-        <ArrowLeftIcon /> {t('tryAgain')}
+    <div className={rowClass}>
+      <Link href={tryAgainHref} className={cx(appButton({ variant: 'outlined' }), actionClass)}>
+        {t('tryAgain')}
       </Link>
-      <Link href={continueHref} className={`${styles.btnGreen} ${styles.resultPrimaryBtn}`}>
-        {continueLabel} <ArrowRightIcon />
+      <Link href={continueHref} className={cx(appButton({ variant: 'filled' }), actionClass)}>
+        {continueLabel}
       </Link>
     </div>
   );

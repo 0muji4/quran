@@ -2,7 +2,9 @@
 
 import { useRef, useState, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
-import styles from '../../../../styles/practice.module.css';
+import { PauseIcon, PlayIcon } from '../../../../components/icons/MediaIcons';
+import { css, cx } from '../../../../../styled-system/css';
+import { appButton, appCard, appIconButton } from '../../../../../styled-system/recipes';
 
 interface Props {
   teacherUrl: string | null;
@@ -10,11 +12,36 @@ interface Props {
   teacherLabel?: string;
 }
 
-// Static, decorative waveform silhouette (the players are not scrubbable;
-// the bars stand in for the recording's shape, matching the mockup).
-const WAVE = [
-  34, 58, 30, 76, 46, 64, 38, 88, 52, 70, 40, 82, 36, 60, 44, 90, 50, 66, 32, 78, 48, 62, 42, 72
-];
+const sectionClass = cx(
+  appCard({ variant: 'filled' }),
+  css({ alignSelf: 'start', display: 'flex', flexDirection: 'column', gap: '2', padding: '4' })
+);
+
+const headClass = css({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '2'
+});
+
+const titleClass = css({ margin: '0', color: '[inherit]', textStyle: 'titleMedium' });
+
+const subtleClass = css({ margin: '0', textStyle: 'bodySmall', color: 'onSurfaceVariant' });
+
+const playBothClass = cx(appButton({ variant: 'text' }), css({ flexShrink: 0 }));
+
+const rowClass = css({ display: 'flex', alignItems: 'center', gap: '3', minHeight: '[56px]' });
+
+const rowTextClass = css({
+  flexGrow: 1,
+  minWidth: '[0]',
+  display: 'flex',
+  flexDirection: 'column'
+});
+
+const rowLabelClass = css({ textStyle: 'bodyLarge' });
+
+const missingClass = css({ paddingBlock: '2' });
 
 // Side-by-side playback so the user can compare their recitation against the
 // teacher's reference. Both URLs are presigned and short-lived (~1h); if one
@@ -48,52 +75,45 @@ export function ListenBack({ teacherUrl, userRecordingUrl, teacherLabel }: Props
   if (!teacherUrl && !userRecordingUrl) return null;
 
   return (
-    <section className={styles.listenBackSection} aria-labelledby="listen-back-heading">
-      <header className={styles.listenBackHead}>
+    <section className={sectionClass} aria-labelledby="listen-back-heading">
+      <div className={headClass}>
         <div>
-          <h2 id="listen-back-heading" className={styles.listenBackTitle}>
+          <h2 id="listen-back-heading" className={titleClass}>
             {t('title')}
           </h2>
-          <p className={styles.listenBackSubtitle}>{t('subtitle')}</p>
+          <p className={subtleClass}>{t('subtitle')}</p>
         </div>
         {canPlayBoth && (
-          <button type="button" className={styles.listenBackPlayBoth} onClick={handlePlayBoth}>
+          <button type="button" className={playBothClass} onClick={handlePlayBoth}>
             {t('playBoth')}
-            <span aria-hidden="true">▶▶</span>
           </button>
         )}
-      </header>
-
-      <div className={styles.listenBackGrid}>
-        {teacherUrl ? (
-          <ListenBackTile
-            audioRef={teacherRef}
-            kind="teacher"
-            title={t('teacher')}
-            subtitle={resolvedTeacherLabel}
-            src={teacherUrl}
-            fallback={t('audioFallback')}
-          />
-        ) : null}
-        {userRecordingUrl ? (
-          <ListenBackTile
-            audioRef={userRef}
-            kind="user"
-            title={t('you')}
-            subtitle={t('youJustNow')}
-            src={userRecordingUrl}
-            fallback={t('audioFallback')}
-          />
-        ) : (
-          <div className={`${styles.listenBackTile} ${styles.listenBackTileMuted}`}>
-            <div className={styles.listenBackTileHead}>
-              <span className={styles.listenBackTileTitle}>{t('you')}</span>
-              <span className={styles.listenBackTileSubtitle}>{t('youNotAvailable')}</span>
-            </div>
-            <p className={styles.listenBackEmpty}>{t('youEmpty')}</p>
-          </div>
-        )}
       </div>
+
+      {teacherUrl ? (
+        <ListenBackRow
+          audioRef={teacherRef}
+          title={t('teacher')}
+          subtitle={resolvedTeacherLabel}
+          src={teacherUrl}
+          fallback={t('audioFallback')}
+        />
+      ) : null}
+      {userRecordingUrl ? (
+        <ListenBackRow
+          audioRef={userRef}
+          title={t('you')}
+          subtitle={t('youJustNow')}
+          src={userRecordingUrl}
+          fallback={t('audioFallback')}
+        />
+      ) : (
+        <div className={missingClass}>
+          <span className={rowLabelClass}>{t('you')}</span>
+          <p className={subtleClass}>{t('youNotAvailable')}</p>
+          <p className={subtleClass}>{t('youEmpty')}</p>
+        </div>
+      )}
     </section>
   );
 }
@@ -104,16 +124,14 @@ const formatTime = (seconds: number): string => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
 
-function ListenBackTile({
+function ListenBackRow({
   audioRef,
-  kind,
   title,
   subtitle,
   src,
   fallback
 }: {
   audioRef: RefObject<HTMLAudioElement | null>;
-  kind: 'teacher' | 'user';
   title: string;
   subtitle: string;
   src: string;
@@ -130,43 +148,24 @@ function ListenBackTile({
     else audio.pause();
   };
 
-  const tileClass =
-    kind === 'teacher'
-      ? `${styles.listenBackTile} ${styles.listenBackTileTeacher}`
-      : `${styles.listenBackTile} ${styles.listenBackTileUser}`;
-  const buttonClass =
-    kind === 'teacher'
-      ? `${styles.listenBackPlayBtn} ${styles.listenBackPlayBtnTeacher}`
-      : `${styles.listenBackPlayBtn} ${styles.listenBackPlayBtnUser}`;
-  const waveClass =
-    kind === 'teacher'
-      ? `${styles.listenBackWave} ${styles.listenBackWaveTeacher}`
-      : `${styles.listenBackWave} ${styles.listenBackWaveUser}`;
-
   return (
-    <div className={tileClass}>
-      <div className={styles.listenBackTileHead}>
-        <span className={styles.listenBackTileTitle}>{title}</span>
-        <span className={styles.listenBackTileSubtitle}>{subtitle}</span>
+    <div className={rowClass}>
+      <button
+        type="button"
+        className={appIconButton({ variant: 'tonal' })}
+        onClick={toggle}
+        aria-label={`${playing ? t('pause') : t('play')} ${title}`}
+      >
+        {playing ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
+      </button>
+      <div className={rowTextClass}>
+        <span className={rowLabelClass}>{title}</span>
+        <span className={subtleClass}>{subtitle}</span>
       </div>
-      <div className={styles.listenBackPlayer} data-testid="listen-back-player">
-        <button
-          type="button"
-          className={buttonClass}
-          onClick={toggle}
-          aria-label={`${playing ? t('pause') : t('play')} ${title}`}
-        >
-          <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
-        </button>
-        <span className={waveClass} aria-hidden="true">
-          {WAVE.map((h, i) => (
-            <span key={i} style={{ height: `${h}%` }} />
-          ))}
-        </span>
-        <span className={styles.listenBackDuration}>
-          {duration === null ? '–:--' : formatTime(duration)}
-        </span>
-      </div>
+      {/* The duration appears once the audio's metadata loads. */}
+      <span className={subtleClass} data-testid="listen-back-duration">
+        {duration === null ? '–:--' : formatTime(duration)}
+      </span>
       <audio
         ref={audioRef}
         src={src}

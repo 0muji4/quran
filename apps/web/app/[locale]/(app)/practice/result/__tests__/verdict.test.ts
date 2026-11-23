@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verdictForScore } from '../verdict';
+import { toneForVerdict, verdictForScore } from '../verdict';
 
 describe('verdictForScore', () => {
   it('returns "awaiting" for null', () => {
@@ -30,5 +30,21 @@ describe('verdictForScore', () => {
     expect(verdictForScore(0)).toBe('beginner');
     expect(verdictForScore(39)).toBe('beginner');
     expect(verdictForScore(10)).toBe('beginner');
+  });
+});
+
+describe('toneForVerdict', () => {
+  it('draws the two upper bands as a pass', () => {
+    expect(toneForVerdict('mastered')).toBe('pass');
+    expect(toneForVerdict('great')).toBe('pass');
+  });
+
+  it('draws the middle band as a warning and the lowest as a fail', () => {
+    expect(toneForVerdict('midway')).toBe('warn');
+    expect(toneForVerdict('beginner')).toBe('fail');
+  });
+
+  it('keeps a missing score neutral', () => {
+    expect(toneForVerdict('awaiting')).toBe('neutral');
   });
 });

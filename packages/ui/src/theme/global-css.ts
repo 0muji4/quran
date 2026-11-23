@@ -5,9 +5,6 @@
 // animation has to be available globally before its only definition site
 // goes away. Re-defining the same @keyframes name in both places is safe —
 // CSS keyframe rules are global and the two definitions are identical.
-//
-// pulseDot / pulseRing / spin stay in practice.module.css; that file is
-// intentionally never migrated (ADR 0022).
 export const globalCss = {
   // The circular progress indicator of the Web redesign (ADR 0032).
   '@keyframes appSpin': {

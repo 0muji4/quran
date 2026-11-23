@@ -34,10 +34,10 @@ describe('ScoreDial', () => {
   });
 
   it('hides the inner number+unit text from screen readers (covered by the wrapper label)', () => {
-    const { container } = renderDial({ score: 58 });
+    renderDial({ score: 58 });
     // The visual center text is duplicated info; aria-hidden on the center
-    // prevents AT from announcing "58 OUT OF 100" twice.
-    const center = container.querySelector('[class*="scoreDialCenter"]');
+    // prevents AT from announcing "58 out of 100" twice.
+    const center = screen.getByText('58').parentElement;
     expect(center).toHaveAttribute('aria-hidden', 'true');
   });
 });

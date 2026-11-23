@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
-import { Link } from '../../../../../i18n/navigation';
 import type { ScoringResult } from '@quran-project/shared-ts';
 import type { AyahRecord, SurahSummary } from '../../../../lib/types';
-import styles from '../../../../styles/practice.module.css';
+import { css, cx } from '../../../../../styled-system/css';
+import { appCard } from '../../../../../styled-system/recipes';
 import { ScoreDial } from './ScoreDial';
 import { VerdictBlock } from './VerdictBlock';
 import { SideStats } from './SideStats';
@@ -11,6 +11,7 @@ import { WordByWord } from './WordByWord';
 import { ListenBack } from './ListenBack';
 import { ActionRow } from './ActionRow';
 import { ResultViewedTracker } from './ResultViewedTracker';
+import { ResultFrame, fullRowClass } from './ResultFrame';
 import { verdictForScore } from './verdict';
 
 interface Props {
@@ -27,6 +28,37 @@ const toScoreOutOf100 = (raw: number | null | undefined): number | null => {
   return Math.round(raw * 100);
 };
 
+// The page's main card: the score dial beside the verdict and the stats.
+const heroClass = cx(
+  appCard({ variant: 'elevated' }),
+  fullRowClass,
+  css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '4',
+    padding: '4',
+    medium: { gap: '8', padding: '6' }
+  })
+);
+
+const heroBodyClass = css({
+  flex: '[1 1 260px]',
+  minWidth: '[0]',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2'
+});
+
+const metricsClass = cx(
+  fullRowClass,
+  css({
+    display: 'grid',
+    gap: '3',
+    medium: { gridTemplateColumns: '[repeat(3, minmax(0, 1fr))]', gap: '4' }
+  })
+);
+
 export async function ResultDetail({
   job,
   surah,
@@ -35,10 +67,7 @@ export async function ResultDetail({
   durationMs,
   teacherAudioUrl
 }: Props) {
-  const [t, navT] = await Promise.all([
-    getTranslations('result'),
-    getTranslations('practice.page')
-  ]);
+  const t = await getTranslations('result');
   const score = toScoreOutOf100(job.score ?? job.feedback?.overall);
   const verdict = verdictForScore(score);
   const feedback = job.feedback;
@@ -50,39 +79,18 @@ export async function ResultDetail({
   const userRecordingUrl = job.recordingUrl ?? null;
 
   return (
-    <>
+    <ResultFrame surahId={surah.id} surahName={surah.nameEn} ayahNumber={ayah.ayahNumber}>
       <ResultViewedTracker surahId={surah.id} ayahNumber={ayah.ayahNumber} score={score} />
-      <div className={styles.topRow}>
-        <nav className={styles.breadcrumb} aria-label={navT('breadcrumbAriaLabel')}>
-          <Link href="/" className={styles.breadcrumbLink}>
-            {navT('breadcrumbLibrary')}
-          </Link>
-          <span className={styles.breadcrumbSep} aria-hidden="true">
-            ›
-          </span>
-          <Link href={`/practice/${surah.id}/${ayah.ayahNumber}`} className={styles.breadcrumbLink}>
-            {surah.nameEn}
-          </Link>
-          <span className={styles.breadcrumbSep} aria-hidden="true">
-            ›
-          </span>
-          <span className={styles.breadcrumbCurrent} aria-current="page">
-            {t('breadcrumb', { ayah: ayah.ayahNumber })}
-          </span>
-        </nav>
-      </div>
 
-      <section className={styles.resultHero} aria-label={t('heroAriaLabel')}>
-        <div className={styles.resultHeroDial}>
-          <ScoreDial score={score} />
-        </div>
-        <div className={styles.resultHeroBody}>
+      <section className={heroClass} aria-label={t('heroAriaLabel')}>
+        <ScoreDial score={score} />
+        <div className={heroBodyClass}>
           <VerdictBlock verdict={verdict} />
           <SideStats surahId={surah.id} ayahNumber={ayah.ayahNumber} durationMs={durationMs} />
         </div>
       </section>
 
-      <section className={styles.metricsRow} aria-label={t('metricsAriaLabel')}>
+      <section className={metricsClass} aria-label={t('metricsAriaLabel')}>
         <MetricCard kind="accuracy" value={feedback?.accuracy} />
         <MetricCard
           kind="characterMatch"
@@ -101,6 +109,6 @@ export async function ResultDetail({
         ayahNumber={ayah.ayahNumber}
         totalAyahs={totalAyahs}
       />
-    </>
+    </ResultFrame>
   );
 }
