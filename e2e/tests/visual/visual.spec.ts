@@ -89,6 +89,18 @@ const stableSnapshot = async (page: Page): Promise<void> => {
   await page.waitForTimeout(120);
 };
 
+/**
+ * Wait until the teacher recitation's metadata has loaded on the practice
+ * page. Until then the play button is disabled and the time reads 0:00 / 0:00,
+ * so a capture taken earlier would depend on network timing.
+ */
+const teacherAudioReady = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const audio = document.querySelector('audio');
+    return audio !== null && audio.readyState >= 1 && audio.duration > 0;
+  });
+};
+
 test.use({ viewport: VIEWPORT });
 
 test.describe('visual regression — desktop 1280x720', () => {
@@ -140,6 +152,7 @@ test.describe('visual regression — desktop 1280x720', () => {
   test('practice page in its idle ready state', async ({ page }) => {
     await page.goto('/practice/1/1');
     await page.getByRole('heading', { name: /now you recite/i }).waitFor();
+    await teacherAudioReady(page);
     await stableSnapshot(page);
 
     await expect(page).toHaveScreenshot('practice-idle.png', {
@@ -191,18 +204,51 @@ test.describe('visual regression — desktop 1280x720', () => {
     // stream backs MediaRecorder.
     await page.getByRole('button', { name: /start recording/i }).click();
     await page.getByRole('heading', { name: /^recording/i }).waitFor();
+    await teacherAudioReady(page);
     await stableSnapshot(page);
 
     // Two regions are inherently non-deterministic and must be masked:
     //   - The mm:ss timer ticks once per second.
     //   - The waveform bars are driven by live mic levels from the
     //     fake stream and vary frame to frame.
-    // Class names are CSS-modules hashed (e.g. practice_recordingTimer__abc),
-    // so we match by `class*="..."` substring rather than exact equality.
     await expect(page).toHaveScreenshot('practice-recording.png', {
       fullPage: true,
       maxDiffPixels: 300,
-      mask: [page.locator('[class*="recordingTimer"]'), page.locator('[class*="recorderBars"]')]
+      mask: [
+        page.locator('[data-testid="recording-timer"]'),
+        page.locator('[data-testid="recording-waveform"]')
+      ]
+    });
+  });
+
+  // The rebuilt practice page follows the system colour scheme and the
+  // window size class (ADR 0032), so it is also captured in dark mode and in
+  // a compact window, where the navigation is a bottom bar.
+  test('practice page in dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/practice/1/1');
+    await page.getByRole('heading', { name: /now you recite/i }).waitFor();
+    await teacherAudioReady(page);
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('practice-idle-dark.png', {
+      fullPage: true,
+      maxDiffPixels: 200,
+      mask: [page.locator('[data-testid="last-attempt"]')]
+    });
+  });
+
+  test('practice page in a compact window', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/practice/1/1');
+    await page.getByRole('heading', { name: /now you recite/i }).waitFor();
+    await teacherAudioReady(page);
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('practice-idle-compact.png', {
+      fullPage: true,
+      maxDiffPixels: 200,
+      mask: [page.locator('[data-testid="last-attempt"]')]
     });
   });
 });

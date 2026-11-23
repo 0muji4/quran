@@ -4,8 +4,7 @@ interface Props {
 
 // Decorative line-art mihrab (prayer-niche arch) with an 8-pointed star at
 // the apex and a hanging lamp — the centrepiece of the auth brand panel.
-// Strokes use the gold-on-dark token so it reads on the dark panel; the
-// star reuses the 8-point geometry from components/icons/StarOrnament.tsx.
+// Strokes use the gold-on-dark token so it reads on the dark panel.
 // Purely decorative: aria-hidden, the ayah text below carries the meaning.
 export function MihrabIllustration({ className }: Props) {
   return (

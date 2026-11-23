@@ -1,9 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { MicIcon } from '../../../components/icons/MediaIcons';
-import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
-import styles from '../../../styles/practice.module.css';
+import { css, cx } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
 
 interface Props {
   reasons: string[];
@@ -13,58 +12,50 @@ interface Props {
   onRecordAgain: () => void;
 }
 
-// Inset body of the "could not score" panel (docs/4b. Practice _ error
-// _could not score_.png). The surrounding panel head (red mic icon, title,
-// "COULDN'T PROCESS" badge) lives in RecorderPanel; this component owns
-// only the dashed mic, reasons list, hint copy, and the two CTAs.
+const cardClass = css({ display: 'flex', flexDirection: 'column', gap: '3', paddingTop: '2' });
+
+const reasonsClass = css({ margin: '0', paddingInlineStart: '5', textStyle: 'bodyMedium' });
+
+const hintClass = css({ margin: '0', textStyle: 'bodyMedium' });
+
+const actionsClass = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+  gap: '2'
+});
+
+// Text on the error container takes the container's own colour.
+const replayClass = cx(appButton({ variant: 'text' }), css({ color: 'onErrorContainer' }));
+
+// The body of the "could not score" panel: why, what to do, and the two
+// actions. The panel's title and subtitle live in RecorderPanel.
 export function ScoringErrorCard({ reasons, hint, canReplay, onReplay, onRecordAgain }: Props) {
   const t = useTranslations('practice.scoringError');
   const resolvedHint = hint ?? t('defaultHint');
 
   return (
-    <div className={styles.scoringErrorCard} role="alert">
-      <span className={styles.scoringErrorMic} aria-hidden="true">
-        <MicIcon size={22} />
-      </span>
-
+    <div className={cardClass} role="alert">
       {reasons.length > 0 ? (
-        <ul className={styles.scoringErrorReasons}>
+        <ul className={reasonsClass}>
           {reasons.map((reason, i) => (
-            <li key={i} className={styles.scoringErrorReason}>
-              {reason}
-            </li>
+            <li key={i}>{reason}</li>
           ))}
         </ul>
       ) : null}
 
-      <p className={styles.scoringErrorHint}>{resolvedHint}</p>
+      <p className={hintClass}>{resolvedHint}</p>
 
-      <div className={styles.scoringErrorActions}>
+      <div className={actionsClass}>
         {canReplay ? (
-          <button
-            type="button"
-            className={`${styles.btnGhost} ${styles.scoringErrorReplay}`}
-            onClick={onReplay}
-          >
-            <PlayGlyph /> {t('replay')}
+          <button type="button" className={replayClass} onClick={onReplay}>
+            {t('replay')}
           </button>
         ) : null}
-        <button
-          type="button"
-          className={`${styles.btnGreen} ${styles.scoringErrorPrimary}`}
-          onClick={onRecordAgain}
-        >
-          <ArrowRightIcon size={14} /> {t('recordAgain')}
+        <button type="button" className={appButton({ variant: 'filled' })} onClick={onRecordAgain}>
+          {t('recordAgain')}
         </button>
       </div>
     </div>
-  );
-}
-
-function PlayGlyph() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-      <path d="M3 2 L10 6 L3 10 Z" />
-    </svg>
   );
 }

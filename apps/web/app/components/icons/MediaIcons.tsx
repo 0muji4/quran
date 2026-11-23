@@ -71,27 +71,6 @@ export function StopIcon({ size = 22, className }: Props) {
   );
 }
 
-export function SpeakerIcon({ size = 18, className }: Props) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z" />
-      <path d="M16 8a5 5 0 0 1 0 8" />
-      <path d="M19 5a9 9 0 0 1 0 14" />
-    </svg>
-  );
-}
-
 export function LoopIcon({ size = 14, className }: Props) {
   return (
     <svg
