@@ -10,7 +10,7 @@ interface SearchParams {
 // `/practice?surah=1&ayah=2` are 308-redirected to the canonical
 // `/practice/1/2`. Bare `/practice` falls back to Al-Fatihah 1:1 to
 // match the iOS Practice tab default (AppRoot.swift PracticeContext).
-// TopNav's smart link normally bypasses this route for signed-in
+// The navigation's Practice link normally bypasses this route for
 // users with a LastPracticed entry; this fallback exists for no-JS,
 // SSR pre-hydration, and legacy bookmark access.
 export default async function LegacyPracticeRedirect({

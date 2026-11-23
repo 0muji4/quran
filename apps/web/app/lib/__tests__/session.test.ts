@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE } from '../auth-cookies';
-import { getCurrentSession, initialFor } from '../session';
+import { getCurrentSession } from '../session';
 import { __resetCookies, cookies } from '../../../test/mocks/next-headers';
 
 const fakeJwt = (payload: Record<string, unknown>): string => {
@@ -48,11 +48,5 @@ describe('session', () => {
     store.set(ACCESS_COOKIE, 'not-a-jwt');
 
     expect(await getCurrentSession()).toBeNull();
-  });
-
-  it('initialFor prefers displayName, then email, with sensible fallback', () => {
-    expect(initialFor({ id: '1', email: 'b@c.co', displayName: 'Aisha' })).toBe('A');
-    expect(initialFor({ id: '1', email: 'b@c.co', displayName: null })).toBe('B');
-    expect(initialFor({ id: '1', email: '', displayName: null })).toBe('·');
   });
 });
