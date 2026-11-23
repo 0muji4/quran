@@ -41,13 +41,3 @@ export const getCurrentSession = async (): Promise<Session | null> => {
 
   return { id: payload.sub, email, displayName };
 };
-
-export const initialFor = (session: Session): string => {
-  if (session.displayName && session.displayName.length > 0) {
-    return session.displayName.charAt(0).toUpperCase();
-  }
-  if (session.email && session.email.length > 0) {
-    return session.email.charAt(0).toUpperCase();
-  }
-  return '·';
-};

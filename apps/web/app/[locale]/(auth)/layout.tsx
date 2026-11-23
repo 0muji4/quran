@@ -11,7 +11,7 @@ const viewportClass = css({
   [AUTH_MOBILE_MQ]: { gridTemplateColumns: '1fr' }
 });
 
-// The auth route group renders full-bleed with no TopNav — the two-panel
+// The auth route group renders full-bleed with no navigation — the two-panel
 // sign-in / sign-up design owns the whole viewport. This layout still
 // provides the <main> landmark that the root layout no longer supplies.
 export default function AuthLayout({ children }: { children: ReactNode }) {

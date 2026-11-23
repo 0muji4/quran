@@ -78,19 +78,12 @@
     "forgotPassword": "Forgot password?"
   },
   "nav": {
-    "brand": {
-      "wordmark": "Tilawah",
-      "kicker": "Recitation Practice"
-    },
     "tab": {
-      "library": "Surah library",
+      "library": "Library",
       "practice": "Practice",
-      "history": "History"
+      "history": "History",
+      "profile": "Profile"
     },
-    "signIn": "Sign in",
-    "signOut": "Sign out",
-    "signingOut": "Signing out…",
-    "signedInAs": "Signed in as {label}",
     "skipToContent": "Skip to main content",
     "primaryNavAriaLabel": "Primary"
   },
