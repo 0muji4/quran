@@ -22,7 +22,8 @@ import {
   type Attempt
 } from '../../../lib/storage';
 import type { AyahRecord, SurahSummary } from '../../../lib/types';
-import styles from '../../../styles/practice.module.css';
+import { css, cx } from '../../../../styled-system/css';
+import { appButton, appCard, appFab } from '../../../../styled-system/recipes';
 
 // Render with a `key` per ayah: navigating between ayahs relies on the remount
 // to drop the recording, the scoring job, and the panel state.
@@ -156,12 +157,6 @@ export function RecorderPanel({ surah, ayah }: Props) {
   // (recordingError) stay in their own banner since the remediation is
   // different (browser-level permission grant rather than re-recording).
   const isScoringError = !recordingError && (stage === 'error' || tooShortReason !== null);
-  // Only the live-recording state uses the dark panel chrome; the analysing
-  // and error states stay on the cream paper background per the redesigned
-  // mockups (docs/4. Practice _ analysing.png, 4b. Practice _ error _could
-  // not score_.png).
-  const isDarkPanel = isRecording;
-
   const handleStart = useCallback(async () => {
     setTooShortReason(null);
     setLastBlob(null);
@@ -235,14 +230,6 @@ export function RecorderPanel({ surah, ayah }: Props) {
 
   const handleMicClick = isRecording ? handleStop : handleStart;
 
-  const panelClass = isDarkPanel ? `${styles.panel} ${styles.panelDark}` : styles.panel;
-  const titleIconClass =
-    isRecording || isScoringError
-      ? `${styles.panelIcon} ${styles.panelIconRed}`
-      : isAnalysing
-        ? `${styles.panelIcon} ${styles.panelIconGreen}`
-        : `${styles.panelIcon} ${styles.panelIconTan}`;
-
   // Recording again closer to the mic cannot help here, so the panel
   // explains the limit in the header and drops the hearing hints.
   const limitReached = isScoringError && job.failure === 'limit_reached';
@@ -283,101 +270,147 @@ export function RecorderPanel({ surah, ayah }: Props) {
     (key, values) => liveStatusT(key, values)
   );
 
+  const isIdle = !isRecording && !isAnalysing && !isScoringError;
+
   return (
-    <div className={panelClass}>
-      <div role="status" aria-live="polite" className="sr-only">
+    <section
+      className={cx(panelClass, isScoringError ? errorPanelClass : null)}
+      aria-labelledby="recorder-title"
+    >
+      <div role="status" aria-live="polite" className={srOnlyClass}>
         {liveStatus}
       </div>
-      <div className={styles.panelHead}>
-        <div className={styles.panelTitleRow}>
-          <span className={titleIconClass}>
-            <MicIcon size={18} />
-          </span>
-          <div>
-            <h2 className={styles.panelTitle}>{headerTitle}</h2>
-            {headerSubtitle && <p className={styles.panelSubtitle}>{headerSubtitle}</p>}
-          </div>
-        </div>
+      <div className={headClass}>
+        <h2 id="recorder-title" className={titleClass}>
+          {headerTitle}
+        </h2>
         {isRecording && (
-          <span className={styles.recordingTimer}>
-            <span className={styles.recordingTimerDot} aria-hidden="true" />
+          <span className={timerClass} data-testid="recording-timer">
+            <span className={timerDotClass} aria-hidden="true" />
             {formatElapsed(recorder.elapsedMs)}
           </span>
         )}
-        {isAnalysing && (
-          <span className={styles.scoringBadge}>
-            <span className={styles.scoringBadgeDot} aria-hidden="true" />
-            {t('badgeScoring')}
-          </span>
-        )}
-        {isScoringError && <span className={styles.errorBadge}>{t('badgeCouldntProcess')}</span>}
       </div>
+      {headerSubtitle && (
+        <p className={cx(subtitleClass, isScoringError ? onErrorClass : null)}>{headerSubtitle}</p>
+      )}
 
-      <div className={styles.recorderInner}>
-        {isAnalysing ? (
-          <>
-            <AnalysingCard elapsedMs={scoringElapsedMs} />
-            {isStuck ? (
-              <button type="button" className={styles.recorderCancel} onClick={handleCancelScoring}>
-                {t('cancel')}
-              </button>
-            ) : null}
-          </>
-        ) : isScoringError ? (
-          <ScoringErrorCard
-            reasons={limitReached ? [] : errorReasons}
-            hint={limitReached ? scoringErrorT('limitReachedHint') : undefined}
-            canReplay={lastBlob !== null && !limitReached}
-            onReplay={handleReplay}
-            onRecordAgain={handleRecordAgain}
-          />
-        ) : (
-          <>
-            <RecorderBars live={isRecording} levels={recorder.levels} />
-            <div style={{ position: 'relative', display: 'inline-flex' }}>
-              {isRecording && (
-                <>
-                  <span className={styles.pulseRing} />
-                  <span className={styles.pulseRing} />
-                  <span className={styles.pulseRing} />
-                </>
-              )}
-              <button
-                type="button"
-                className={
-                  isRecording ? `${styles.micButton} ${styles.micButtonStop}` : styles.micButton
-                }
-                onClick={handleMicClick}
-                aria-label={isRecording ? t('ariaStop') : t('ariaStart')}
-              >
-                {isRecording ? <StopIcon size={22} /> : <MicIcon size={28} />}
-              </button>
-            </div>
-            <p className={styles.recorderCaption}>
-              {isRecording ? t('captionRecording') : t('captionIdle')}
-            </p>
-          </>
-        )}
-      </div>
+      {isAnalysing ? (
+        <>
+          <AnalysingCard elapsedMs={scoringElapsedMs} />
+          {isStuck ? (
+            <button
+              type="button"
+              className={cx(appButton({ variant: 'text' }), css({ alignSelf: 'center' }))}
+              onClick={handleCancelScoring}
+            >
+              {t('cancel')}
+            </button>
+          ) : null}
+        </>
+      ) : isScoringError ? (
+        <ScoringErrorCard
+          reasons={limitReached ? [] : errorReasons}
+          hint={limitReached ? scoringErrorT('limitReachedHint') : undefined}
+          canReplay={lastBlob !== null && !limitReached}
+          onReplay={handleReplay}
+          onRecordAgain={handleRecordAgain}
+        />
+      ) : (
+        <div className={recorderClass}>
+          {isRecording && <RecorderBars levels={recorder.levels} />}
+          <button
+            type="button"
+            className={appFab({ tone: isRecording ? 'error' : 'primary' })}
+            onClick={handleMicClick}
+            aria-label={isRecording ? t('ariaStop') : t('ariaStart')}
+          >
+            {isRecording ? <StopIcon size={30} /> : <MicIcon size={36} />}
+          </button>
+          <p className={captionClass}>{isRecording ? t('captionRecording') : t('captionIdle')}</p>
+        </div>
+      )}
 
-      {recordingError && <p className="status error">{recordingError}</p>}
+      {recordingError && (
+        <p className={deviceErrorClass} role="alert">
+          {recordingError}
+        </p>
+      )}
 
-      {!isRecording &&
-        !isScoringError &&
-        stage === 'idle' &&
-        lastAttempt &&
-        lastAttempt.score !== null && (
-          // `data-testid` lets the visual-regression idle scene mask this
-          // line: `when` is a relative time ("yesterday", "2 days ago") that
-          // drifts daily and would otherwise make the baseline flaky.
-          <p className={styles.recorderFooter} data-testid="last-attempt">
-            {t.rich('lastAttempt', {
-              score: lastAttempt.score,
-              when: formatPracticedAt(lastAttempt.createdAt),
-              span: (chunks) => <span className={styles.lastScore}>{chunks}</span>
-            })}
-          </p>
-        )}
-    </div>
+      {isIdle && stage === 'idle' && lastAttempt && lastAttempt.score !== null && (
+        // `data-testid` lets the visual-regression idle scene mask this
+        // line: `when` is a relative time ("yesterday", "2 days ago") that
+        // drifts daily and would otherwise make the baseline flaky.
+        <p className={captionClass} data-testid="last-attempt">
+          {t.rich('lastAttempt', {
+            score: lastAttempt.score,
+            when: formatPracticedAt(lastAttempt.createdAt),
+            span: (chunks) => <span className={lastScoreClass}>{chunks}</span>
+          })}
+        </p>
+      )}
+    </section>
   );
 }
+
+const panelClass = cx(
+  appCard({ variant: 'filled' }),
+  css({ display: 'flex', flexDirection: 'column', gap: '1', padding: '4' })
+);
+
+const errorPanelClass = css({ background: 'errorContainer', color: 'onErrorContainer' });
+
+const headClass = css({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '2'
+});
+
+const titleClass = css({ margin: '0', textStyle: 'titleMedium', color: '[inherit]' });
+
+const subtitleClass = css({ margin: '0', textStyle: 'bodyMedium', color: 'onSurfaceVariant' });
+
+const onErrorClass = css({ color: 'onErrorContainer' });
+
+const timerClass = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '2',
+  textStyle: 'labelLarge',
+  color: 'recording',
+  fontVariantNumeric: 'tabular-nums'
+});
+
+const timerDotClass = css({
+  width: '[8px]',
+  height: '[8px]',
+  borderRadius: 'full',
+  background: 'recording'
+});
+
+const recorderClass = css({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '3',
+  paddingTop: '3'
+});
+
+const captionClass = css({
+  margin: '0',
+  textAlign: 'center',
+  textStyle: 'bodySmall',
+  color: 'onSurfaceVariant'
+});
+
+const lastScoreClass = css({ fontWeight: 500, color: 'onSurface' });
+
+const deviceErrorClass = css({
+  margin: '0',
+  paddingTop: '2',
+  textStyle: 'bodyMedium',
+  color: 'error'
+});
+
+const srOnlyClass = css({ srOnly: true });

@@ -137,13 +137,13 @@
   },
   "practice": {
     "page": {
-      "h1": "Practice {surahName} ayah {ayah} of {total}",
       "breadcrumbAriaLabel": "Breadcrumb",
       "breadcrumbLibrary": "Surah library",
-      "breadcrumbThe": "The {meaning}",
       "prev": "Previous ayah",
       "next": "Next ayah",
-      "tip": "Tip: tap the mic to record, tap again to stop and submit."
+      "library": "Library",
+      "ayahOf": "Ayah {ayah} of {total}",
+      "ayahNavAriaLabel": "Ayahs"
     },
     "recorder": {
       "headerIdleTitle": "Now you recite",
@@ -155,8 +155,6 @@
       "headerAnalysingStuckSubtitle": "Taking longer than usual",
       "headerErrorTitle": "We couldn't hear that clearly",
       "headerErrorSubtitle": "Your recording was too quiet or too short",
-      "badgeScoring": "Scoring",
-      "badgeCouldntProcess": "Couldn't process",
       "captionIdle": "Tap the mic to begin",
       "captionRecording": "Tap to stop and submit for scoring",
       "lastAttempt": "Last attempt: {score} / 100 · {when}",

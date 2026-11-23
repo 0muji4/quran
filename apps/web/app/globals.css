@@ -175,6 +175,16 @@
     }
   }
 
+  /* A page rebuilt for the Web redesign (#673) lays itself out edge to edge
+   * and paints its own surface. This goes with .page-content once every
+   * page is rebuilt. */
+  .page-content:has(> [data-full-bleed]) {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    max-width: none;
+  }
+
   /* Status / error banners reused across screens */
   .status {
     padding: var(--spacing-3) var(--spacing-4);

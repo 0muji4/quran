@@ -57,22 +57,17 @@ test.describe('Recording Flow', () => {
     await expect(recordPage.micButton).toBeVisible();
   });
 
-  test('should switch teacher playback rate via the speed pills', async ({ page, recordPage }) => {
+  test('should switch teacher playback rate via the speed select', async ({ page, recordPage }) => {
     await recordPage.goto(testSurahs.alFatihah.id, 1);
 
-    const oneX = page.getByRole('button', { name: /^1\.00×$/ });
-    const slowX = page.getByRole('button', { name: /^0\.75×$/ });
-    const fastX = page.getByRole('button', { name: /^1\.25×$/ });
+    const speed = page.getByRole('combobox', { name: /playback speed/i });
+    await expect(speed).toHaveValue('1');
 
-    await expect(oneX).toHaveAttribute('aria-pressed', 'true');
+    await speed.selectOption({ label: '0.75×' });
+    await expect(speed).toHaveValue('0.75');
 
-    await slowX.click();
-    await expect(slowX).toHaveAttribute('aria-pressed', 'true');
-    await expect(oneX).toHaveAttribute('aria-pressed', 'false');
-
-    await fastX.click();
-    await expect(fastX).toHaveAttribute('aria-pressed', 'true');
-    await expect(slowX).toHaveAttribute('aria-pressed', 'false');
+    await speed.selectOption({ label: '1.25×' });
+    await expect(speed).toHaveValue('1.25');
   });
 
   test('should toggle the loop ayah control on the teacher panel', async ({ page, recordPage }) => {

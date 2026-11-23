@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTeacherAudio, type PlaybackRate } from '../../../hooks/useTeacherAudio';
-import { LoopIcon, PauseIcon, PlayIcon, SpeakerIcon } from '../../../components/icons/MediaIcons';
-import { Waveform } from './Waveform';
+import { LoopIcon, PauseIcon, PlayIcon } from '../../../components/icons/MediaIcons';
 import { onRecordingStarted } from './recordingEvents';
 import { trackUiEvent } from '../../../telemetry/use-ui-event';
-import styles from '../../../styles/practice.module.css';
+import { css, cx } from '../../../../styled-system/css';
+import { appCard, appChip, appIconButton, appSelect } from '../../../../styled-system/recipes';
 
 const RATES: PlaybackRate[] = [0.75, 1, 1.25];
 
@@ -17,6 +17,49 @@ const formatTime = (seconds: number): string => {
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
+
+const panelClass = cx(
+  appCard({ variant: 'filled' }),
+  css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '3',
+    paddingInline: '4',
+    paddingBlock: '3'
+  })
+);
+
+const textClass = css({
+  flex: '[1 1 140px]',
+  minWidth: '[0]',
+  display: 'flex',
+  flexDirection: 'column'
+});
+
+const titleClass = css({ margin: '0', textStyle: 'bodyLarge', color: '[inherit]' });
+
+const subtitleClass = css({ margin: '0', textStyle: 'bodyMedium', color: 'onSurfaceVariant' });
+
+const controlsClass = css({ display: 'flex', alignItems: 'center', gap: '2' });
+
+const selectWrapClass = css({ position: 'relative', display: 'inline-flex', alignItems: 'center' });
+
+const selectArrowClass = css({
+  position: 'absolute',
+  insetInlineEnd: '[6px]',
+  pointerEvents: 'none',
+  color: 'onSurfaceVariant'
+});
+
+const errorClass = css({
+  flexBasis: '[100%]',
+  margin: '0',
+  textStyle: 'bodyMedium',
+  color: 'error'
+});
+
+const srOnly = css({ srOnly: true });
 
 interface Props {
   surahId: number;
@@ -29,86 +72,77 @@ export function TeacherPanel({ surahId, ayahNumber }: Props) {
 
   useEffect(() => onRecordingStarted(() => audio.pause()), [audio]);
 
-  const progress = audio.duration > 0 ? audio.currentTime / audio.duration : 0;
-  const seed = surahId * 1000 + ayahNumber;
-
   return (
-    <div className={styles.panel}>
-      <div className={styles.panelHead}>
-        <div className={styles.panelTitleRow}>
-          <span className={`${styles.panelIcon} ${styles.panelIconMint}`}>
-            <SpeakerIcon size={18} />
-          </span>
-          <div>
-            <h2 className={styles.panelTitle}>{t('title')}</h2>
-            <p className={styles.panelSubtitle}>{t('subtitle')}</p>
-          </div>
-        </div>
-        <span className={styles.panelDuration}>{formatTime(audio.duration)}</span>
+    <section className={panelClass} aria-labelledby="teacher-title">
+      <audio ref={audioRef} src={audio.url ?? undefined} preload="metadata" className={srOnly} />
+
+      <button
+        type="button"
+        className={appIconButton({ variant: 'tonal' })}
+        onClick={audio.togglePlay}
+        disabled={!audio.url}
+        aria-label={audio.isPlaying ? t('pause') : t('play')}
+      >
+        {audio.isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
+      </button>
+
+      <div className={textClass}>
+        <h2 id="teacher-title" className={titleClass}>
+          {t('title')}
+        </h2>
+        <p className={subtitleClass}>
+          {t('subtitle')} · {formatTime(audio.currentTime)} / {formatTime(audio.duration)}
+        </p>
       </div>
 
-      <audio ref={audioRef} src={audio.url ?? undefined} preload="metadata" className="sr-only" />
-
-      <div className={styles.teacherPlayer}>
+      <div className={controlsClass}>
         <button
           type="button"
-          className={styles.playButton}
-          onClick={audio.togglePlay}
-          disabled={!audio.url}
-          aria-label={audio.isPlaying ? t('pause') : t('play')}
-        >
-          {audio.isPlaying ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
-        </button>
-        <Waveform seed={seed} progress={progress} />
-        <span className={styles.waveTime}>
-          {formatTime(audio.currentTime)} / {formatTime(audio.duration)}
-        </span>
-      </div>
-
-      <div className={styles.teacherControls}>
-        <div className={styles.speedPills} role="group" aria-label={t('speedAriaLabel')}>
-          {RATES.map((r) => {
-            const active = audio.rate === r;
-            return (
-              <button
-                key={r}
-                type="button"
-                className={
-                  active ? `${styles.speedPill} ${styles.speedPillActive}` : styles.speedPill
-                }
-                onClick={() => {
-                  audio.setRate(r);
-                  trackUiEvent('web.ui.speed_changed', {
-                    surahId,
-                    ayahNumber,
-                    rate: r
-                  });
-                }}
-                aria-pressed={active}
-              >
-                {r.toFixed(2)}×
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          className={audio.loop ? `${styles.loopBtn} ${styles.loopBtnActive}` : styles.loopBtn}
+          className={appChip()}
           onClick={() => {
             audio.toggleLoop();
-            trackUiEvent('web.ui.loop_toggled', {
-              surahId,
-              ayahNumber,
-              loop: !audio.loop
-            });
+            trackUiEvent('web.ui.loop_toggled', { surahId, ayahNumber, loop: !audio.loop });
           }}
           aria-pressed={audio.loop}
         >
-          {t('loop')} <LoopIcon />
+          <LoopIcon />
+          {t('loop')}
         </button>
+        <label className={selectWrapClass}>
+          <span className={srOnly}>{t('speedAriaLabel')}</span>
+          <select
+            className={appSelect()}
+            value={String(audio.rate)}
+            onChange={(event) => {
+              const rate = Number(event.target.value) as PlaybackRate;
+              audio.setRate(rate);
+              trackUiEvent('web.ui.speed_changed', { surahId, ayahNumber, rate });
+            }}
+          >
+            {RATES.map((r) => (
+              <option key={r} value={String(r)}>
+                {r}×
+              </option>
+            ))}
+          </select>
+          <svg
+            className={selectArrowClass}
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M7 10l5 5 5-5z" />
+          </svg>
+        </label>
       </div>
 
-      {audio.error && <p className="status error">{t('unavailable', { message: audio.error })}</p>}
-    </div>
+      {audio.error && (
+        <p className={errorClass} role="alert">
+          {t('unavailable', { message: audio.error })}
+        </p>
+      )}
+    </section>
   );
 }

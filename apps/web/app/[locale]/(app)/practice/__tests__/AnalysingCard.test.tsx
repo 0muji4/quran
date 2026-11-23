@@ -21,12 +21,7 @@ const itemFor = (container: HTMLElement, label: string): HTMLElement => {
   return match;
 };
 
-const status = (el: HTMLElement): 'done' | 'active' | 'pending' => {
-  const cls = el.className;
-  if (cls.includes('checklistItemDone')) return 'done';
-  if (cls.includes('checklistItemActive')) return 'active';
-  return 'pending';
-};
+const status = (el: HTMLElement): string | undefined => el.dataset.status;
 
 describe('AnalysingCard checklist progression', () => {
   it('shows step 1 active and the rest pending immediately', () => {
