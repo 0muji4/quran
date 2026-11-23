@@ -3,6 +3,7 @@ import { tokens } from '@quran-project/ui/theme/tokens';
 import { colorRoles, shape, spacing } from '@quran-project/ui/theme/generated';
 import { recipes, slotRecipes } from '@quran-project/ui/theme/recipes';
 import { fonts, textStyles } from '@quran-project/ui/theme/typography';
+import { elevation, roundedShape } from '@quran-project/ui/theme/platform';
 import { globalCss } from '@quran-project/ui/theme/global-css';
 
 // preflight is off because globals.css owns the reset. strictTokens is
@@ -35,8 +36,9 @@ export default defineConfig({
     tokens: {
       ...tokens,
       spacing,
-      radii: { ...tokens.radii, ...shape },
-      fonts: { ...tokens.fonts, ...fonts }
+      radii: { ...tokens.radii, ...shape, ...roundedShape },
+      fonts: { ...tokens.fonts, ...fonts },
+      shadows: { ...tokens.shadows, ...elevation }
     },
     semanticTokens: { colors: colorRoles },
     textStyles,

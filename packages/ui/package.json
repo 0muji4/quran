@@ -23,6 +23,10 @@
       "types": "./src/theme/generated/tokens.ts",
       "default": "./src/theme/generated/tokens.ts"
     },
+    "./theme/platform": {
+      "types": "./src/theme/platform.ts",
+      "default": "./src/theme/platform.ts"
+    },
     "./theme/typography": {
       "types": "./src/theme/typography.ts",
       "default": "./src/theme/typography.ts"
