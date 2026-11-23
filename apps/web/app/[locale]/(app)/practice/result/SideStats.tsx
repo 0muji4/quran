@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useStoredValue } from '../../../../hooks/useLocalStorageState';
-import styles from '../../../../styles/practice.module.css';
 import { getAttemptsForToday, getBestScore } from '../../../../lib/storage';
+import { css } from '../../../../../styled-system/css';
 
 interface Props {
   surahId: string;
@@ -24,6 +24,25 @@ const EMPTY_STATS: { personalBest: number | null; attemptsToday: number } = {
   attemptsToday: 0
 };
 
+const listClass = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  rowGap: '2',
+  columnGap: '8',
+  margin: '0',
+  marginTop: '2',
+  paddingTop: '3',
+  borderTopWidth: '1px',
+  borderTopStyle: 'solid',
+  borderTopColor: 'outlineVariant'
+});
+
+const statClass = css({ display: 'flex', flexDirection: 'column', gap: '[2px]' });
+
+const labelClass = css({ textStyle: 'bodySmall', color: 'onSurfaceVariant' });
+
+const valueClass = css({ margin: '0', textStyle: 'titleLarge' });
+
 export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
   const [{ personalBest, attemptsToday }] = useStoredValue(
     () => ({
@@ -36,18 +55,18 @@ export function SideStats({ surahId, ayahNumber, durationMs }: Props) {
   const t = useTranslations('result.sideStats');
 
   return (
-    <dl className={styles.sideStats}>
-      <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>{t('personalBest')}</dt>
-        <dd className={styles.sideStatValue}>{personalBest ?? '—'}</dd>
+    <dl className={listClass}>
+      <div className={statClass}>
+        <dt className={labelClass}>{t('personalBest')}</dt>
+        <dd className={valueClass}>{personalBest ?? '—'}</dd>
       </div>
-      <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>{t('attemptsToday')}</dt>
-        <dd className={styles.sideStatValue}>{attemptsToday}</dd>
+      <div className={statClass}>
+        <dt className={labelClass}>{t('attemptsToday')}</dt>
+        <dd className={valueClass}>{attemptsToday}</dd>
       </div>
-      <div className={styles.sideStat}>
-        <dt className={styles.sideStatLabel}>{t('duration')}</dt>
-        <dd className={styles.sideStatValue}>{formatDuration(durationMs)}</dd>
+      <div className={statClass}>
+        <dt className={labelClass}>{t('duration')}</dt>
+        <dd className={valueClass}>{formatDuration(durationMs)}</dd>
       </div>
     </dl>
   );

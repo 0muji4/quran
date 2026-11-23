@@ -22,11 +22,32 @@ const alignments: WordAlignment[] = [
   { op: 'insert', refWord: null, hypWord: 'كان' }
 ];
 
+const tileOf = (word: string) => screen.getByText(word).parentElement;
+
 describe('WordByWord', () => {
-  it('renders both EXPECTED and WHAT WE HEARD rows', () => {
+  it('draws one tile per alignment in a single row, with its kind', () => {
     renderWords({ wordAlignments: alignments, wer: 0.5 });
-    expect(screen.getByText('EXPECTED (TEACHER)')).toBeInTheDocument();
-    expect(screen.getByText('WHAT WE HEARD')).toBeInTheDocument();
+    expect(tileOf('بِسْمِ')).toHaveAttribute('data-kind', 'match');
+    expect(tileOf('الله')).toHaveAttribute('data-kind', 'substitution');
+    expect(tileOf('الرَّحْمَٰنِ')).toHaveAttribute('data-kind', 'missing');
+    expect(tileOf('كان')).toHaveAttribute('data-kind', 'inserted');
+  });
+
+  it('writes what was heard under a substituted word', () => {
+    renderWords({ wordAlignments: alignments, wer: 0.5 });
+    expect(tileOf('الله')).toHaveTextContent('heard إله');
+  });
+
+  it('names missing and extra words on their tiles', () => {
+    renderWords({ wordAlignments: alignments, wer: 0.5 });
+    expect(tileOf('الرَّحْمَٰنِ')).toHaveTextContent('Missing');
+    expect(tileOf('كان')).toHaveTextContent('Extra');
+  });
+
+  it('lists every kind in the legend', () => {
+    renderWords({ wordAlignments: alignments, wer: 0.5 });
+    const legend = screen.getByRole('list', { name: 'Legend' });
+    expect(legend).toHaveTextContent('MatchSubstitutionMissingExtra');
   });
 
   it('formats WER as percent', () => {
@@ -43,19 +64,12 @@ describe('WordByWord', () => {
     expect(werNode?.textContent).toBe('—');
   });
 
-  it('falls back to "…" placeholder for missing words', () => {
-    renderWords({ wordAlignments: alignments, wer: 0.5 });
-    // delete op has no hypWord; insert op has no refWord.
-    expect(screen.getAllByText('…').length).toBeGreaterThanOrEqual(2);
-  });
-
   it('renders a single combined empty-state copy when there are no alignments', () => {
     renderWords({ wordAlignments: [], wer: null });
     expect(
       screen.getByText(/Word-level alignment is not available for this attempt yet/)
     ).toBeInTheDocument();
-    // Section labels are not rendered in the empty branch.
-    expect(screen.queryByText('EXPECTED (TEACHER)')).not.toBeInTheDocument();
-    expect(screen.queryByText('WHAT WE HEARD')).not.toBeInTheDocument();
+    // Neither tiles nor the legend are rendered in the empty branch.
+    expect(screen.queryByRole('list', { name: 'Legend' })).not.toBeInTheDocument();
   });
 });

@@ -6,8 +6,8 @@
  * packages/ui/src/theme/tokens.ts and Panda emits them as
  * `--colors-*` / `--spacing-*` / `--radii-*` / `--shadows-*` /
  * `--fonts-*` CSS variables (still under :root). All references in
- * this file, in practice.module.css, and in the SVG icon components
- * resolve against those Panda-emitted variables. */
+ * this file and in the SVG icon components resolve against those
+ * Panda-emitted variables. */
 @layer base {
   * {
     box-sizing: border-box;

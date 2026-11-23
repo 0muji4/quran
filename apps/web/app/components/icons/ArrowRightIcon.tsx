@@ -23,26 +23,6 @@ export function ArrowRightIcon({ size = 16, className }: Props) {
   );
 }
 
-export function ArrowLeftIcon({ size = 16, className }: Props) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M19 12H5" />
-      <path d="m11 18-6-6 6-6" />
-    </svg>
-  );
-}
-
 export function ChevronRightIcon({ size = 18, className }: Props) {
   return (
     <svg

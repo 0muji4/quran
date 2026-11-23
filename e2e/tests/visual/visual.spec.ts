@@ -181,8 +181,8 @@ test.describe('visual regression — desktop 1280x720', () => {
 
     await expect(page).toHaveScreenshot('practice-result.png', {
       fullPage: true,
-      // The branded ListenBack player surfaces a duration that depends
-      // on async audio-metadata load timing, so mask the player(s) and
+      // Listen back shows each recording's duration once its audio
+      // metadata loads, which depends on timing, so mask the durations and
       // let only the deterministic layout (score dial, metrics,
       // word-by-word) drive the diff. This is the busiest scene (dial
       // arc + metric bars + word tiles + Arabic), so it carries the
@@ -190,7 +190,35 @@ test.describe('visual regression — desktop 1280x720', () => {
       // between the Docker baseline host and CI); keep the threshold
       // generous enough to absorb it while still catching real changes.
       maxDiffPixels: 2000,
-      mask: [page.locator('[data-testid="listen-back-player"]')]
+      mask: [page.locator('[data-testid="listen-back-duration"]')]
+    });
+  });
+
+  // The rebuilt result page follows the system colour scheme and the window
+  // size class too (ADR 0032).
+  test('practice page result view in dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/practice/1/1/result/visual-baseline-fatihah-1');
+    await page.getByRole('heading', { level: 1, name: /beautifully recited/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('practice-result-dark.png', {
+      fullPage: true,
+      maxDiffPixels: 2000,
+      mask: [page.locator('[data-testid="listen-back-duration"]')]
+    });
+  });
+
+  test('practice page result view in a compact window', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/practice/1/1/result/visual-baseline-fatihah-1');
+    await page.getByRole('heading', { level: 1, name: /beautifully recited/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('practice-result-compact.png', {
+      fullPage: true,
+      maxDiffPixels: 2000,
+      mask: [page.locator('[data-testid="listen-back-duration"]')]
     });
   });
 

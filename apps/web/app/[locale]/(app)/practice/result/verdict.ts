@@ -10,3 +10,20 @@ export const verdictForScore = (score: number | null): VerdictKind => {
   if (score >= 40) return 'midway';
   return 'beginner';
 };
+
+/** The verdict chip's colour: the pass, warn and fail roles shared with the apps. */
+export type VerdictTone = 'pass' | 'warn' | 'fail' | 'neutral';
+
+export const toneForVerdict = (verdict: VerdictKind): VerdictTone => {
+  switch (verdict) {
+    case 'mastered':
+    case 'great':
+      return 'pass';
+    case 'midway':
+      return 'warn';
+    case 'beginner':
+      return 'fail';
+    case 'awaiting':
+      return 'neutral';
+  }
+};

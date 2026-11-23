@@ -8,7 +8,9 @@ import type { AyahRecord, SurahSummary } from '../../../../lib/types';
 import { fetchScoringJob } from '../../../../actions';
 import { ResultDetail } from './ResultDetail';
 import { ResultError } from './ResultError';
-import styles from '../../../../styles/practice.module.css';
+import { ResultFrame, fullRowClass } from './ResultFrame';
+import { css, cx } from '../../../../../styled-system/css';
+import { appButton, appCard } from '../../../../../styled-system/recipes';
 
 interface Props {
   initialJob: ScoringResult;
@@ -23,6 +25,36 @@ const POLL_INTERVAL_MS = 2000;
 // polling. The poll itself does not stop — the worker may still finish.
 const SLOW_HINT_AT_MS = 10_000;
 const STUCK_HINT_AT_MS = 30_000;
+
+const cardClass = cx(
+  appCard({ variant: 'filled' }),
+  fullRowClass,
+  css({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '3',
+    paddingBlock: '8',
+    paddingInline: '6',
+    textAlign: 'center'
+  })
+);
+
+// A Material 3 circular progress indicator.
+const spinnerClass = css({
+  color: 'primary',
+  animation: '[appSpin 1s linear infinite]',
+  _motionReduce: { animation: 'none' }
+});
+
+const titleClass = css({ margin: '0', color: '[inherit]', textStyle: 'titleLarge' });
+
+const subtitleClass = css({
+  margin: '0',
+  maxWidth: '[420px]',
+  textStyle: 'bodyMedium',
+  color: 'onSurfaceVariant'
+});
 
 // Client wrapper that keeps the page alive while a scoring job is QUEUED or
 // RUNNING. We never render the detailed UI with partial data: we only swap to
@@ -86,18 +118,31 @@ export function ResultPolling({ initialJob, surah, ayah, totalAyahs, teacherAudi
   const subtitle = isStuck ? t('subtitleStuck') : isSlow ? t('subtitleSlow') : t('subtitleInitial');
 
   return (
-    <section className={styles.resultPending} aria-live="polite" aria-busy="true">
-      <div className={styles.resultPendingSpinner} aria-hidden="true" />
-      <h1 className={styles.resultPendingTitle}>{t('title')}</h1>
-      <p className={styles.resultPendingSubtitle}>{subtitle}</p>
-      {isStuck ? (
-        <Link
-          href={`/practice/${surah.id}/${ayah.ayahNumber}`}
-          className={styles.resultPendingCancel}
-        >
-          {t('cancel')}
-        </Link>
-      ) : null}
-    </section>
+    <ResultFrame surahId={surah.id} surahName={surah.nameEn} ayahNumber={ayah.ayahNumber}>
+      <section className={cardClass} aria-live="polite" aria-busy="true">
+        <svg className={spinnerClass} width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+          <circle
+            cx="24"
+            cy="24"
+            r="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray="40 200"
+          />
+        </svg>
+        <h1 className={titleClass}>{t('title')}</h1>
+        <p className={subtitleClass}>{subtitle}</p>
+        {isStuck ? (
+          <Link
+            href={`/practice/${surah.id}/${ayah.ayahNumber}`}
+            className={appButton({ variant: 'outlined' })}
+          >
+            {t('cancel')}
+          </Link>
+        ) : null}
+      </section>
+    </ResultFrame>
   );
 }
