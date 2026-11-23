@@ -86,6 +86,7 @@ proto:
 tokens:
   - *shared
   - 'packages/ui/tokens/**'
+  - 'packages/ui/src/theme/generated/**'
   - 'packages/ui/scripts/**'
   - 'packages/ui/package.json'
   - 'apps/android/src/main/java/com/tilawah/android/designsystem/generated/**'

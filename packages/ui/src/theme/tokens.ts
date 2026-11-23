@@ -64,18 +64,6 @@ export const tokens = defineTokens({
       fail: { value: '#dc2626' }
     }
   },
-  // 4px base, matches the --space-N scale globals.css has shipped with.
-  spacing: {
-    '1': { value: '4px' },
-    '2': { value: '8px' },
-    '3': { value: '12px' },
-    '4': { value: '16px' },
-    '5': { value: '20px' },
-    '6': { value: '24px' },
-    '8': { value: '32px' },
-    '10': { value: '40px' },
-    '12': { value: '48px' }
-  },
   radii: {
     xs: { value: '6px' },
     sm: { value: '10px' },
