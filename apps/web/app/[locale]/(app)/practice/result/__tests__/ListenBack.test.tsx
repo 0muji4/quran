@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { ListenBack } from '../ListenBack';
@@ -7,12 +8,22 @@ import messages from '../../../../../../messages/en.json';
 
 afterEach(() => cleanup());
 
-const renderBack = (props: React.ComponentProps<typeof ListenBack>) =>
-  render(
-    <NextIntlClientProvider locale="en" messages={messages}>
-      <ListenBack {...props} />
-    </NextIntlClientProvider>
-  );
+const withMessages = (props: React.ComponentProps<typeof ListenBack>) => (
+  <NextIntlClientProvider locale="en" messages={messages}>
+    <ListenBack {...props} />
+  </NextIntlClientProvider>
+);
+
+const renderBack = (props: React.ComponentProps<typeof ListenBack>) => render(withMessages(props));
+
+// jsdom loads no media, so a test sets what a loaded element reports.
+const setMetadata = (audio: HTMLAudioElement, duration: number) => {
+  Object.defineProperty(audio, 'readyState', {
+    configurable: true,
+    value: HTMLMediaElement.HAVE_METADATA
+  });
+  Object.defineProperty(audio, 'duration', { configurable: true, value: duration });
+};
 
 // jsdom does not implement HTMLMediaElement.play / pause; stub them so the
 // "Play both" handler can drive the audio elements without throwing.
@@ -68,6 +79,38 @@ describe('ListenBack', () => {
   it('renders nothing when both URLs are null', () => {
     const { container } = renderBack({ teacherUrl: null, userRecordingUrl: null });
     expect(container).toBeEmptyDOMElement();
+  });
+
+  describe('duration', () => {
+    const props = { teacherUrl: 'https://t', userRecordingUrl: 'https://u' };
+    const durations = () =>
+      screen.getAllByTestId('listen-back-duration').map((node) => node.textContent);
+
+    it('shows a placeholder until the metadata loads', () => {
+      renderBack(props);
+      expect(durations()).toEqual(['–:--', '–:--']);
+    });
+
+    it('shows the duration of the player whose metadata loads', () => {
+      const { container } = renderBack(props);
+      const [teacher] = Array.from(container.querySelectorAll('audio'));
+      setMetadata(teacher, 72);
+      fireEvent(teacher, new Event('loadedmetadata'));
+      expect(durations()).toEqual(['1:12', '–:--']);
+    });
+
+    it('shows the duration when the metadata loaded before hydration', () => {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      container.innerHTML = renderToString(withMessages(props));
+      const [teacher, user] = Array.from(container.querySelectorAll('audio'));
+      setMetadata(teacher, 12);
+      setMetadata(user, 9);
+
+      render(withMessages(props), { container, hydrate: true });
+
+      expect(durations()).toEqual(['0:12', '0:09']);
+    });
   });
 
   describe('Play both', () => {
