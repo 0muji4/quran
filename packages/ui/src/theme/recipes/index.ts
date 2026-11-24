@@ -7,6 +7,7 @@ import {
   appListItem,
   appProgress,
   appSelect,
+  appSwitch,
   appTextField
 } from './app';
 import { button } from './button';
@@ -24,6 +25,7 @@ export const recipes = {
   appListItem,
   appSelect,
   appProgress,
+  appSwitch,
   appTextField
 };
 

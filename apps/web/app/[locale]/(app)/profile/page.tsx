@@ -1,36 +1,22 @@
 import { redirect } from 'next/navigation';
 import { getCurrentSession } from '../../../lib/session';
 import { fetchCurrentUserProfile, getPreferencesAction } from '../../../actions';
+import { PageFrame } from '../../../components/PageFrame';
 import { ProfileHeader } from './ProfileHeader';
 import { PracticePreferencesCard } from './PracticePreferencesCard';
 import { AccountDataCard } from './AccountDataCard';
 import { SignOutSection } from './SignOutSection';
 import { css } from '../../../../styled-system/css';
 
-const pageClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6',
-  maxWidth: '[920px]',
-  marginInline: 'auto'
+// Beside the profile in expanded windows, and below it otherwise.
+const layoutClass = css({
+  display: 'grid',
+  gridTemplateColumns: '[minmax(0, 1fr)]',
+  gap: '4',
+  expanded: { gridTemplateColumns: '[336px minmax(0, 1fr)]', columnGap: '8' }
 });
 
-const eyebrowClass = css({
-  fontSize: '[12px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.08em]',
-  color: 'gold.onLight'
-});
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[44px]',
-  lineHeight: '[1.1]',
-  color: 'ink.strong',
-  marginBlockStart: '1',
-  marginBlockEnd: '4'
-});
+const settingsClass = css({ display: 'flex', flexDirection: 'column', gap: '4', minWidth: '[0]' });
 
 // `/profile`. Signed-out users get bounced to sign-in. The page itself
 // is a Server Component so the BFF call happens on the server and the
@@ -54,26 +40,20 @@ export default async function ProfilePage() {
   const view = profile ?? { ...session, createdAt: null, level: null, passwordChangedAt: null };
 
   return (
-    <div className={pageClass}>
-      <header>
-        <p className={eyebrowClass}>
-          <span aria-hidden="true">✦ </span>Your account
-        </p>
-        <h1 className={titleClass}>Profile</h1>
-      </header>
-
-      <ProfileHeader
-        displayName={view.displayName}
-        email={view.email}
-        level={view.level ?? null}
-        createdAt={view.createdAt ?? null}
-      />
-
-      <PracticePreferencesCard preferences={preferences} />
-
-      <AccountDataCard email={view.email} passwordChangedAt={view.passwordChangedAt ?? null} />
-
-      <SignOutSection />
-    </div>
+    <PageFrame title="Profile">
+      <div className={layoutClass}>
+        <ProfileHeader
+          displayName={view.displayName}
+          email={view.email}
+          level={view.level ?? null}
+          createdAt={view.createdAt ?? null}
+        />
+        <div className={settingsClass}>
+          <PracticePreferencesCard preferences={preferences} />
+          <AccountDataCard email={view.email} passwordChangedAt={view.passwordChangedAt ?? null} />
+          <SignOutSection />
+        </div>
+      </div>
+    </PageFrame>
   );
 }

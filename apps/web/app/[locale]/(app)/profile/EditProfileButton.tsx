@@ -6,7 +6,6 @@ import { updateProfileAction, type UserLevel } from '../../../actions';
 import { AppDialog } from '../../../components/AppDialog';
 import { SelectField, TextField } from '../../../components/AppField';
 import { ErrorPanel } from '../../../components/ErrorPanel';
-import { css } from '../../../../styled-system/css';
 import { appButton } from '../../../../styled-system/recipes';
 import { actionsClass, bodyClass, footnoteClass, formClass } from './dialogStyles';
 
@@ -15,21 +14,6 @@ interface Props {
   email: string;
   level: UserLevel | null;
 }
-
-const buttonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  '&:hover': { borderColor: 'ink.muted' }
-});
 
 const LEVEL_OPTIONS: { value: UserLevel; label: string }[] = [
   { value: 'beginner', label: 'Beginner · Learning Arabic' },
@@ -94,7 +78,12 @@ export function EditProfileButton({ displayName, email, level }: Props) {
 
   return (
     <>
-      <button type="button" className={buttonClass} onClick={openDialog} aria-haspopup="dialog">
+      <button
+        type="button"
+        className={appButton({ variant: 'outlined' })}
+        onClick={openDialog}
+        aria-haspopup="dialog"
+      >
         Edit profile
       </button>
       {open && (

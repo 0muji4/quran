@@ -7,24 +7,11 @@ import { clearLocalCache } from '../../../lib/storage';
 import { AppDialog } from '../../../components/AppDialog';
 import { TextField } from '../../../components/AppField';
 import { ErrorPanel } from '../../../components/ErrorPanel';
-import { css } from '../../../../styled-system/css';
+import { css, cx } from '../../../../styled-system/css';
 import { appButton } from '../../../../styled-system/recipes';
 import { actionsClass, bodyClass, formClass } from './dialogStyles';
 
-const triggerClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'red',
-  backgroundColor: 'bg.paper',
-  color: 'red',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  '&:hover': { backgroundColor: '[rgba(192, 57, 43, 0.06)]' }
-});
+const triggerClass = cx(appButton({ variant: 'text' }), css({ color: 'error' }));
 
 const noticeClass = css({
   margin: '0',
@@ -81,7 +68,7 @@ export function DeleteAccountButton() {
 
   return (
     <>
-      <button type="button" className={triggerClass} onClick={openDialog}>
+      <button type="button" className={triggerClass} onClick={openDialog} aria-haspopup="dialog">
         Delete account
       </button>
       {open && (

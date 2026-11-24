@@ -5,54 +5,30 @@ import { useRouter } from '../../../../i18n/navigation';
 import { signOutAction } from '../../../actions';
 import { clearLocalCache } from '../../../lib/storage';
 import { DeleteAccountButton } from './DeleteAccountButton';
-import { css, cx } from '../../../../styled-system/css';
-import { panel } from '../../../../styled-system/recipes';
+import { css } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
 
-const cardClass = css({
-  padding: '6',
+const sectionClass = css({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '4',
-  flexWrap: 'wrap'
+  columnGap: '4',
+  rowGap: '3'
 });
 
 const copyClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1',
-  flex: '1',
-  minWidth: '[260px]'
-});
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[20px]',
-  color: 'ink.strong'
-});
-
-const helperClass = css({
-  fontSize: '[13px]',
-  color: 'ink.muted'
+  flex: '[1 1 260px]',
+  margin: '0',
+  textStyle: 'bodyMedium',
+  color: 'onSurfaceVariant'
 });
 
 const actionsClass = css({
+  marginInlineStart: 'auto',
   display: 'flex',
-  gap: '3',
-  flexWrap: 'wrap'
-});
-
-const signOutButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '[0]',
-  backgroundColor: 'tan',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  _disabled: { opacity: 0.6, cursor: 'progress' }
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+  gap: '2'
 });
 
 export function SignOutSection() {
@@ -72,14 +48,16 @@ export function SignOutSection() {
   };
 
   return (
-    <section className={cx(panel({ surface: 'paper' }).root, cardClass)} aria-label="Sign out">
-      <div className={copyClass}>
-        <span className={titleClass}>Sign out</span>
-        <span className={helperClass}>You can sign back in any time — your progress is saved.</span>
-      </div>
+    <section className={sectionClass} aria-label="Sign out">
+      <p className={copyClass}>You can sign back in any time — your progress is saved.</p>
       <div className={actionsClass}>
         <DeleteAccountButton />
-        <button type="button" className={signOutButtonClass} onClick={onSignOut} disabled={pending}>
+        <button
+          type="button"
+          className={appButton({ variant: 'outlined' })}
+          onClick={onSignOut}
+          disabled={pending}
+        >
           {pending ? 'Signing out…' : 'Sign out'}
         </button>
       </div>

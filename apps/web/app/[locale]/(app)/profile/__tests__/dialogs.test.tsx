@@ -39,7 +39,7 @@ describe('ChangeEmailButton', () => {
   it('focuses the first field and clears the draft and error on reopen', () => {
     render(<ChangeEmailButton currentEmail="a@test.dev" />);
 
-    open('Change');
+    open('Change email');
     expect(screen.getByLabelText('New email')).toHaveFocus();
     type('New email', 'not-an-email');
     type('Current password', 'secret');
@@ -49,7 +49,7 @@ describe('ChangeEmailButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    open('Change');
+    open('Change email');
     expect(screen.getByLabelText('New email')).toHaveValue('');
     expect(screen.getByLabelText('Current password')).toHaveValue('');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -61,18 +61,20 @@ describe('UpdatePasswordButton', () => {
   it('wipes every password field on reopen', async () => {
     render(<UpdatePasswordButton />);
 
-    open('Update');
+    open('Update password');
     expect(screen.getByLabelText('Current password')).toHaveFocus();
     type('Current password', 'old-password');
     type('New password', 'new-password');
     type('Confirm new password', 'other-password');
-    fireEvent.click(screen.getByRole('button', { name: 'Update password' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Update password' })
+    );
     expect(screen.getByRole('alert')).toBeInTheDocument();
 
     await pressEscape();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    open('Update');
+    open('Update password');
     expect(screen.getByLabelText('Current password')).toHaveValue('');
     expect(screen.getByLabelText('New password')).toHaveValue('');
     expect(screen.getByLabelText('Confirm new password')).toHaveValue('');

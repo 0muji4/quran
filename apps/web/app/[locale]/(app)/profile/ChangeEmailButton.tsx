@@ -6,7 +6,7 @@ import { updateEmailAction } from '../../../actions';
 import { AppDialog } from '../../../components/AppDialog';
 import { TextField } from '../../../components/AppField';
 import { ErrorPanel } from '../../../components/ErrorPanel';
-import { css } from '../../../../styled-system/css';
+import { css, cx } from '../../../../styled-system/css';
 import { appButton } from '../../../../styled-system/recipes';
 import { actionsClass, formClass } from './dialogStyles';
 
@@ -14,15 +14,11 @@ interface Props {
   currentEmail: string;
 }
 
-const triggerClass = css({
-  font: '[inherit]',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  color: 'green.deep',
-  backgroundColor: '[transparent]',
-  borderWidth: '[0]',
-  cursor: 'pointer'
-});
+// Its label lines up with the card's edge.
+const triggerClass = cx(
+  appButton({ variant: 'text' }),
+  css({ flexShrink: 0, marginInlineEnd: '[-12px]' })
+);
 
 // Phase 2.C-lite: change email without a confirmation-email round-trip.
 // Two fields — new email + current password — submitted to
@@ -85,7 +81,13 @@ export function ChangeEmailButton({ currentEmail }: Props) {
 
   return (
     <>
-      <button type="button" className={triggerClass} onClick={openDialog}>
+      <button
+        type="button"
+        className={triggerClass}
+        onClick={openDialog}
+        aria-haspopup="dialog"
+        aria-label="Change email"
+      >
         Change
       </button>
       {open && (
