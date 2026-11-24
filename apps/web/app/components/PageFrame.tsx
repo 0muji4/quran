@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
-import { css } from '../../../../styled-system/css';
+import { css } from '../../styled-system/css';
 
 interface Props {
+  title: string;
   children: ReactNode;
 }
 
@@ -50,14 +50,12 @@ const bodyClass = css(columnClass, {
   medium: { paddingBottom: '6' }
 });
 
-/** The library page's surface, title and content column, shared by every state. */
-export function LibraryFrame({ children }: Props) {
-  const t = useTranslations('library');
-
+/** A top-level page's surface, title and content column. */
+export function PageFrame({ title, children }: Props) {
   return (
     <div className={pageClass} data-full-bleed>
       <header className={headerClass}>
-        <h1 className={titleClass}>{t('title')}</h1>
+        <h1 className={titleClass}>{title}</h1>
       </header>
       <div className={bodyClass}>{children}</div>
     </div>

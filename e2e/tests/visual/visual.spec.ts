@@ -170,13 +170,40 @@ test.describe('visual regression — desktop 1280x720', () => {
     await page.clock.setFixedTime(new Date('2026-05-08T15:00:00.000Z'));
 
     await page.goto('/history');
-    await page.getByRole('heading', { name: /recent attempts/i }).waitFor();
+    await page.getByRole('region', { name: 'Attempts' }).waitFor();
     await stableSnapshot(page);
 
     await expect(page).toHaveScreenshot('history-three-attempts.png', {
       fullPage: true,
       maxDiffPixels: 200
     });
+  });
+
+  // Signed out, History explains that it needs an account.
+  test('history for a guest', async ({ page }) => {
+    await page.goto('/history');
+    await page.getByRole('heading', { name: /sign in to track/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('history.png', { maxDiffPixels: 200 });
+  });
+
+  test('history for a guest in dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/history');
+    await page.getByRole('heading', { name: /sign in to track/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('history-dark.png', { maxDiffPixels: 200 });
+  });
+
+  test('history for a guest in a compact window', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/history');
+    await page.getByRole('heading', { name: /sign in to track/i }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('history-compact.png', { maxDiffPixels: 200 });
   });
 
   test('practice page in its idle ready state', async ({ page }) => {

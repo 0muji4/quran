@@ -1,8 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { CheckIcon } from '../../../components/icons/ArrowRightIcon';
 import { css, cx } from '../../../../styled-system/css';
-import { panel } from '../../../../styled-system/recipes';
+import { appCard } from '../../../../styled-system/recipes';
 import type { HistoryStats, HistoryScope } from './historyStats';
 
 interface Props {
@@ -13,203 +14,167 @@ interface Props {
   onScopeChange: (scope: HistoryScope) => void;
 }
 
-// Matches HistoryList's breakpoint so the stats grid and the attempt rows
-// reflow at the same width on phones.
-const HISTORY_MOBILE_MQ = '@media (max-width: 640px)';
-
-const sectionWrapClass = css({ marginBottom: '6' });
-
-const headRowClass = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '4',
-  marginBottom: '3',
-  flexWrap: 'wrap'
-});
-
-const progressLabelClass = css({
-  fontSize: '[15px]',
-  fontWeight: 600,
-  color: 'ink.strong'
-});
-
-// Segmented "This week / Lifetime" range control.
-const toggleClass = css({
-  display: 'inline-flex',
-  backgroundColor: 'bg.page',
-  borderRadius: 'pill',
-  padding: '[3px]',
-  gap: '[2px]'
-});
-const toggleBtnClass = css({
-  font: '[inherit]',
-  fontSize: '[13px]',
-  fontWeight: 600,
-  paddingBlock: '1',
-  paddingInline: '3',
-  borderRadius: 'pill',
-  borderWidth: '[0]',
-  background: '[transparent]',
-  color: 'ink.muted',
-  cursor: 'pointer'
-});
-const toggleBtnActiveClass = css({
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  boxShadow: 'card'
-});
-
-const gridClass = css({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '3',
-  // Four narrow tiles overflow / wrap their labels on phones; drop to 2×2.
-  [HISTORY_MOBILE_MQ]: { gridTemplateColumns: 'repeat(2, 1fr)' }
-});
-
-const tileClass = css({
+const sectionClass = css({
+  alignSelf: 'start',
   display: 'flex',
   flexDirection: 'column',
-  gap: '1',
-  padding: '5',
-  [HISTORY_MOBILE_MQ]: { padding: '4' }
+  gap: '3'
 });
 
-const eyebrowClass = css({
-  fontSize: '[11px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.08em]'
+const headClass = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '2'
 });
 
-const eyebrowOnPaperClass = css({ color: 'ink.muted' });
-const eyebrowOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
+const titleClass = css({ margin: '0', color: '[inherit]', textStyle: 'titleMedium' });
 
-const bigClass = css({
-  fontFamily: 'serif',
-  fontSize: '[34px]',
-  lineHeight: '[1.1]',
-  fontVariantNumeric: 'tabular-nums',
-  [HISTORY_MOBILE_MQ]: { fontSize: '[28px]' }
+// A Material 3 segmented button: one outline around both segments, and the
+// selected one filled with a check.
+const segmentsClass = css({ display: 'flex' });
+
+const segmentClass = css({
+  position: 'relative',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '2',
+  minHeight: '[40px]',
+  paddingInline: '3',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'outline',
+  color: 'onSurface',
+  cursor: 'pointer',
+  textStyle: 'labelLarge',
+  whiteSpace: 'nowrap',
+  _first: { borderStartStartRadius: 'full', borderEndStartRadius: 'full' },
+  _last: {
+    marginInlineStart: '[-1px]',
+    borderStartEndRadius: 'full',
+    borderEndEndRadius: 'full'
+  },
+  _hover: { background: 'surfaceContainerHigh' },
+  _pressed: { background: 'secondaryContainer', color: 'onSecondaryContainer' },
+  _focusVisible: {
+    outlineWidth: '[3px]',
+    outlineStyle: 'solid',
+    outlineColor: 'secondary',
+    outlineOffset: '[2px]',
+    zIndex: 1
+  }
 });
 
-const bigOnPaperClass = css({ color: 'ink.strong' });
-const bigOnContinueClass = css({ color: 'gold.onDark' });
-
-const smallClass = css({
-  fontSize: '[12px]',
-  marginTop: '[2px]'
+// Beside the list in expanded windows the tiles are two by two again.
+const tilesClass = css({
+  margin: '0',
+  display: 'grid',
+  gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]',
+  gap: '3',
+  medium: { gridTemplateColumns: '[repeat(4, minmax(0, 1fr))]' },
+  expanded: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' }
 });
 
-const smallOnPaperClass = css({ color: 'ink.muted' });
-const smallOnContinueClass = css({ color: '[rgba(232, 217, 184, 0.65)]' });
+const tileClass = cx(
+  appCard({ variant: 'filled' }),
+  css({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '[2px]',
+    padding: '4',
+    '&[data-emphasis]': { background: 'secondaryContainer', color: 'onSecondaryContainer' }
+  })
+);
 
-// 1×4 summary tiles (this-week / average / best / streak). The Average
-// tile uses the dark "continue" surface to call out the running average,
-// matching iOS `StatsGrid`'s inverse BrandCard treatment.
+const mutedClass = css({
+  color: 'onSurfaceVariant',
+  '[data-emphasis] &': { color: '[inherit]' }
+});
+
+const labelClass = cx(mutedClass, css({ textStyle: 'labelMedium' }));
+
+const valueClass = css({
+  display: 'block',
+  textStyle: 'headlineLarge',
+  fontVariantNumeric: 'tabular-nums'
+});
+
+const unitClass = cx(mutedClass, css({ display: 'block', textStyle: 'bodySmall' }));
+
+const SCOPES: HistoryScope[] = ['week', 'lifetime'];
+
+/** The range control and the four totals: attempts, average, best and streak. */
 export function HistoryStatsGrid({ stats, attemptCount, scope, onScopeChange }: Props) {
   const t = useTranslations('history.stats');
-  // `panel(...)` is a slot recipe: it returns an object with one class
-  // per slot (root / body / title / …). We only need the outer surface
-  // here, so pluck `.root` for each variant up front.
-  const paperPanel = panel({ surface: 'paper' }).root;
-  const continuePanel = panel({ surface: 'continue' }).root;
   const unknown = t('bestUnknown');
+  const scopeLabels = { week: t('scopeWeek'), lifetime: t('scopeLifetime') };
 
   return (
-    <div className={sectionWrapClass}>
-      <div className={headRowClass}>
-        <p className={progressLabelClass}>{t('yourProgress')}</p>
-        <div className={toggleClass} role="group" aria-label={t('ariaLabel')}>
-          <button
-            type="button"
-            className={cx(toggleBtnClass, scope === 'week' && toggleBtnActiveClass)}
-            aria-pressed={scope === 'week'}
-            onClick={() => onScopeChange('week')}
-          >
-            {t('scopeWeek')}
-          </button>
-          <button
-            type="button"
-            className={cx(toggleBtnClass, scope === 'lifetime' && toggleBtnActiveClass)}
-            aria-pressed={scope === 'lifetime'}
-            onClick={() => onScopeChange('lifetime')}
-          >
-            {t('scopeLifetime')}
-          </button>
+    <section className={sectionClass} aria-label={t('ariaLabel')}>
+      <div className={headClass}>
+        <h2 className={titleClass}>{t('yourProgress')}</h2>
+        <div className={segmentsClass} role="group" aria-label={t('scopeAriaLabel')}>
+          {SCOPES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={segmentClass}
+              aria-pressed={scope === value}
+              onClick={() => onScopeChange(value)}
+            >
+              {scope === value && <CheckIcon />}
+              {scopeLabels[value]}
+            </button>
+          ))}
         </div>
       </div>
-      <section className={gridClass} aria-label={t('ariaLabel')}>
+      <dl className={tilesClass}>
         <Tile
-          eyebrow={t('attempts')}
-          big={String(attemptCount)}
-          small={scope === 'week' ? t('attemptsUnitWeek') : t('attemptsUnitLifetime')}
-          panelClass={paperPanel}
-          eyebrowClassName={eyebrowOnPaperClass}
-          bigClassName={bigOnPaperClass}
-          smallClassName={smallOnPaperClass}
+          label={t('attempts')}
+          value={String(attemptCount)}
+          unit={scope === 'week' ? t('attemptsUnitWeek') : t('attemptsUnitLifetime')}
         />
         <Tile
-          eyebrow={t('average')}
-          big={stats.averageScore === null ? unknown : String(Math.round(stats.averageScore))}
-          small={t('averageUnit')}
-          panelClass={continuePanel}
-          eyebrowClassName={eyebrowOnContinueClass}
-          bigClassName={bigOnContinueClass}
-          smallClassName={smallOnContinueClass}
+          label={t('average')}
+          value={stats.averageScore === null ? unknown : String(Math.round(stats.averageScore))}
+          unit={t('averageUnit')}
+          emphasis
         />
         <Tile
-          eyebrow={t('best')}
-          big={stats.bestScore === null ? unknown : String(Math.round(stats.bestScore))}
-          small={
+          label={t('best')}
+          value={stats.bestScore === null ? unknown : String(Math.round(stats.bestScore))}
+          unit={
             stats.bestSurah
               ? t('bestSubtitle', { surah: stats.bestSurah, ayah: stats.bestAyah ?? 0 })
               : unknown
           }
-          panelClass={paperPanel}
-          eyebrowClassName={eyebrowOnPaperClass}
-          bigClassName={bigOnPaperClass}
-          smallClassName={smallOnPaperClass}
         />
         <Tile
-          eyebrow={t('streak')}
-          big={String(stats.streakDays)}
-          small={t('streakSubtitle', { best: stats.longestStreak })}
-          panelClass={paperPanel}
-          eyebrowClassName={eyebrowOnPaperClass}
-          bigClassName={bigOnPaperClass}
-          smallClassName={smallOnPaperClass}
+          label={t('streak')}
+          value={String(stats.streakDays)}
+          unit={t('streakSubtitle', { best: stats.longestStreak })}
         />
-      </section>
-    </div>
+      </dl>
+    </section>
   );
 }
 
 interface TileProps {
-  eyebrow: string;
-  big: string;
-  small: string;
-  panelClass: string;
-  eyebrowClassName: string;
-  bigClassName: string;
-  smallClassName: string;
+  label: string;
+  value: string;
+  unit: string;
+  emphasis?: boolean;
 }
 
-function Tile({
-  eyebrow,
-  big,
-  small,
-  panelClass,
-  eyebrowClassName,
-  bigClassName,
-  smallClassName
-}: TileProps) {
+function Tile({ label, value, unit, emphasis = false }: TileProps) {
   return (
-    <div className={cx(panelClass, tileClass)}>
-      <span className={cx(eyebrowClass, eyebrowClassName)}>{eyebrow}</span>
-      <span className={cx(bigClass, bigClassName)}>{big}</span>
-      <span className={cx(smallClass, smallClassName)}>{small}</span>
+    <div className={tileClass} data-emphasis={emphasis ? '' : undefined}>
+      <dt className={labelClass}>{label}</dt>
+      <dd className={css({ margin: '0' })}>
+        <span className={valueClass}>{value}</span>
+        <span className={unitClass}>{unit}</span>
+      </dd>
     </div>
   );
 }

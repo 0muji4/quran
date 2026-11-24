@@ -1,25 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { CheckIcon } from '../../../components/icons/ArrowRightIcon';
 import { css, cx } from '../../../../styled-system/css';
-import { button } from '../../../../styled-system/recipes';
+import { appChip } from '../../../../styled-system/recipes';
 import { filterKey, type HistoryFilter } from './historyFilters';
 
-const rowClass = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '2',
-  marginBottom: '5'
-});
+const rowClass = css({ flex: '[1 1 280px]', display: 'flex', flexWrap: 'wrap', gap: '2' });
 
-// Pill recipe pairs with `button({ tone: 'nav' })` from the Library
-// filter row (`LibraryClient.tsx`) so the History chips look like the
-// Library chips by construction rather than by accident.
-const pillActiveClass = css({
-  backgroundColor: 'green',
-  borderColor: 'green',
-  color: 'bg.paper'
-});
+const chipClass = cx(appChip(), css({ _pressed: { paddingInlineStart: '2' } }));
 
 interface Props {
   options: HistoryFilter[];
@@ -29,7 +18,6 @@ interface Props {
 
 export function HistoryFilterChips({ options, selected, onSelect }: Props) {
   const t = useTranslations('history.filter');
-  const baseClass = button({ tone: 'nav', size: 'lg' });
   const selectedKey = filterKey(selected);
 
   return (
@@ -37,16 +25,16 @@ export function HistoryFilterChips({ options, selected, onSelect }: Props) {
       {options.map((option) => {
         const key = filterKey(option);
         const active = key === selectedKey;
-        const label = option.kind === 'all' ? t('all') : option.nameEn;
         return (
           <button
             key={key}
             type="button"
-            className={active ? cx(baseClass, pillActiveClass) : baseClass}
+            className={chipClass}
             onClick={() => onSelect(option)}
             aria-pressed={active}
           >
-            {label}
+            {active && <CheckIcon />}
+            {option.kind === 'all' ? t('all') : option.nameEn}
           </button>
         );
       })}

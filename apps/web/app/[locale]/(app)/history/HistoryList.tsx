@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link } from '../../../../i18n/navigation';
 import { fetchScoringJob } from '../../../actions';
 import { useStoredValue } from '../../../hooks/useLocalStorageState';
 import { getRecentAttempts, type Attempt } from '../../../lib/storage';
@@ -15,186 +14,61 @@ import {
   type HistoryFilter
 } from './historyFilters';
 import { computeHistoryStats, scoreTrendForAyah, type HistoryScope } from './historyStats';
-import { Sparkline } from './Sparkline';
-import { css, cx } from '../../../../styled-system/css';
-import { statusPill } from '../../../../styled-system/recipes';
-import { ArrowRightIcon } from '../../../components/icons/ArrowRightIcon';
-
-const HISTORY_MOBILE_MQ = '@media (max-width: 640px)';
+import { HistoryMessage } from './HistoryMessage';
+import { HistoryRow, type Playback } from './HistoryRow';
+import { css } from '../../../../styled-system/css';
+import { appSelect } from '../../../../styled-system/recipes';
 
 type HistorySort = 'recent' | 'score';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
-const listClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '3',
-  listStyle: 'none',
-  padding: '[0]',
-  margin: '[0]'
+// The totals above the attempts, and beside them in expanded windows.
+const layoutClass = css({
+  display: 'grid',
+  gridTemplateColumns: '[minmax(0, 1fr)]',
+  gap: '6',
+  expanded: { gridTemplateColumns: '[336px minmax(0, 1fr)]', columnGap: '8' }
 });
 
-const listItemClass = css({ listStyle: 'none' });
+const attemptsClass = css({ display: 'flex', flexDirection: 'column', gap: '2', minWidth: '[0]' });
 
-// Trend line column. Tinted by the row's score tier (currentColor) and
-// hidden on narrow phones where the row stacks.
-const sparklineWrapClass = css({
-  flexShrink: 0,
+const toolbarClass = css({
   display: 'flex',
-  alignItems: 'center',
-  [HISTORY_MOBILE_MQ]: { display: 'none' }
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  columnGap: '4',
+  rowGap: '3'
 });
 
-const sortRowClass = css({
+const sortClass = css({
+  marginInlineStart: 'auto',
   display: 'flex',
-  justifyContent: 'flex-end',
   alignItems: 'center',
   gap: '2',
-  marginBottom: '4'
-});
-const sortLabelClass = css({ fontSize: '[13px]', color: 'ink.muted' });
-const sortSelectClass = css({
-  font: '[inherit]',
-  fontSize: '[13px]',
-  fontWeight: 600,
-  color: 'ink.strong',
-  background: '[transparent]',
-  borderWidth: '[0]',
-  cursor: 'pointer',
-  '&:focus-visible': { outlineColor: 'green' }
+  textStyle: 'labelLarge',
+  color: 'onSurfaceVariant'
 });
 
-// A row is a navigable Link (avatar + info + score) with the playback
-// button as a *sibling* — a <button> must not nest inside an <a>.
-const rowClass = css({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4',
-  paddingBlock: '4',
-  paddingInline: '5',
-  backgroundColor: 'bg.paper',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md'
+const selectWrapClass = css({ position: 'relative', display: 'inline-flex', alignItems: 'center' });
+
+const selectArrowClass = css({
+  position: 'absolute',
+  insetInlineEnd: '[6px]',
+  pointerEvents: 'none',
+  color: 'onSurfaceVariant'
 });
 
-const rowLinkClass = css({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4',
-  flex: '1',
-  minWidth: '[0]',
-  textDecoration: 'none',
-  color: '[inherit]'
-});
-
-// Cream disc carrying the ayah number, mirroring the design's leading
-// avatar. Decorative — the row's accessible label lives on the title.
-const avatarClass = css({
-  flexShrink: '0',
-  width: '[40px]',
-  height: '[40px]',
-  borderRadius: 'pill',
-  backgroundColor: 'bg.page',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontFamily: 'serif',
-  fontSize: '[15px]',
-  color: 'ink.muted',
-  fontVariantNumeric: 'tabular-nums'
-});
-
-// Column so the serif title and the meta line stack; without an explicit
-// display the inline title/meta spans run together and wrap mid-text on
-// narrow phones ("ayah 1" + "22 Jun" → "ayah 122 Jun").
-const infoClass = css({ display: 'flex', flexDirection: 'column', flex: '1', minWidth: '[0]' });
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[18px]',
-  color: 'ink.strong'
-});
-
-const metaClass = css({
-  fontSize: '[13px]',
-  color: 'ink.muted',
-  marginTop: '[2px]'
-});
-
-const scoreClass = css({
-  fontFamily: 'serif',
-  fontSize: '[28px]',
-  fontVariantNumeric: 'tabular-nums',
-  display: 'inline-flex',
-  alignItems: 'baseline',
-  gap: '[2px]',
-  flexShrink: '0',
-  [HISTORY_MOBILE_MQ]: { fontSize: '[24px]' }
-});
-
-// ≥80 reads as the brand green, below that as the AA-safe warm gold
-// (ADR 0003 gold.onLight), and a failed attempt as red — so the colour
-// alone conveys the tier without relying on the number.
-const scorePassClass = css({ color: 'green' });
-const scoreMidClass = css({ color: 'gold.onLight' });
-const scoreFailedClass = css({ color: 'red', fontSize: '[16px]' });
-
-const scoreSuffixClass = css({ fontSize: '[13px]', color: 'ink.muted' });
-
-const playButtonClass = css({
-  flexShrink: '0',
-  width: '[40px]',
-  height: '[40px]',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'green',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '[14px]',
-  cursor: 'pointer',
-  _hover: { backgroundColor: 'bg.page' },
-  _disabled: { opacity: 0.5, cursor: 'progress' }
-});
-
-const playButtonErrorClass = css({ color: 'red', borderColor: 'red' });
-
-const emptyClass = css({
-  textAlign: 'center',
-  paddingBlock: '12',
-  paddingInline: '6',
-  backgroundColor: 'bg.paper',
-  borderRadius: 'md',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  color: 'ink.muted'
-});
-
-const emptyTitleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[24px]',
-  color: 'ink.strong',
-  marginBottom: '3'
-});
-
-const emptyCtaClass = css({ marginTop: '4', textDecoration: 'none' });
+// The rows' padding reaches into the page's gutter, so their content lines up
+// with the toolbar above.
+const listClass = css({ listStyle: 'none', margin: '0', marginInline: '[-16px]', padding: '0' });
 
 const filteredEmptyClass = css({
-  textAlign: 'center',
+  margin: '0',
   paddingBlock: '8',
-  paddingInline: '4',
-  color: 'ink.muted',
-  fontSize: '[14px]'
+  textAlign: 'center',
+  textStyle: 'bodyMedium',
+  color: 'onSurfaceVariant'
 });
 
 const startOfDay = (d: Date): number => {
@@ -204,7 +78,7 @@ const startOfDay = (d: Date): number => {
 };
 
 // "Today · 14:02" / "Yesterday · 21:14" / "May 5 · 09:22", optionally
-// with a "· m:ss" duration — matching the design's row meta line.
+// with a "· m:ss" duration — the row's meta line.
 const formatRowMeta = (iso: string, durationMs?: number | null): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
@@ -361,13 +235,18 @@ export function HistoryList({ signedIn }: Props) {
 
   if (!signedIn) {
     return (
-      <div className={emptyClass}>
-        <p className={emptyTitleClass}>{t('signedOut.title')}</p>
-        <p>{t('signedOut.body')}</p>
-        <Link href="/sign-in" className={cx(statusPill({ tone: 'completed' }), emptyCtaClass)}>
-          {t('signedOut.cta')} <ArrowRightIcon size={14} />
-        </Link>
-      </div>
+      <HistoryMessage
+        icon={
+          <>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+          </>
+        }
+        title={t('signedOut.title')}
+        body={t('signedOut.body')}
+        href="/sign-in"
+        cta={t('signedOut.cta')}
+      />
     );
   }
 
@@ -377,18 +256,29 @@ export function HistoryList({ signedIn }: Props) {
 
   if (attempts.length === 0) {
     return (
-      <div className={emptyClass}>
-        <p className={emptyTitleClass}>{t('empty.title')}</p>
-        <p>{t('empty.body')}</p>
-        <Link href="/" className={cx(statusPill({ tone: 'completed' }), emptyCtaClass)}>
-          {t('empty.cta')} <ArrowRightIcon size={14} />
-        </Link>
-      </div>
+      <HistoryMessage
+        icon={
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </>
+        }
+        title={t('empty.title')}
+        body={t('empty.body')}
+        href="/"
+        cta={t('empty.cta')}
+      />
     );
   }
 
+  const playbackOf = (id: string): Playback => {
+    if (errorId === id) return 'error';
+    if (loadingId === id) return 'loading';
+    return playingId === id ? 'playing' : 'idle';
+  };
+
   return (
-    <>
+    <div className={layoutClass}>
       {stats && (
         <HistoryStatsGrid
           stats={stats}
@@ -397,112 +287,55 @@ export function HistoryList({ signedIn }: Props) {
           onScopeChange={handleScopeChange}
         />
       )}
-      <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
-      <div className={sortRowClass}>
-        <label className={sortLabelClass} htmlFor="history-sort">
-          {t('sort.label')}:
-        </label>
-        <select
-          id="history-sort"
-          className={sortSelectClass}
-          value={sort}
-          onChange={(e) => setSort(e.target.value as HistorySort)}
-          aria-label={t('sort.ariaLabel')}
-        >
-          <option value="recent">{t('sort.recent')}</option>
-          <option value="score">{t('sort.score')}</option>
-        </select>
-      </div>
-      {/* Single shared element so only one recording sounds at a time. */}
-      <audio ref={audioRef} preload="none" onEnded={() => setPlayingId(null)} hidden />
-      {visibleAttempts.length === 0 ? (
-        <p className={filteredEmptyClass}>{t('filteredEmpty')}</p>
-      ) : (
-        <ul className={listClass}>
-          {visibleAttempts.map((a) => {
-            // null score → failed/unscored row (renders "—"); a number
-            // narrows the score branches below for TypeScript.
-            const score = a.status === 'COMPLETED' ? a.score : null;
-            const isPlaying = playingId === a.id;
-            const isLoading = loadingId === a.id;
-            const isError = errorId === a.id;
-            return (
-              <li key={a.id} className={listItemClass}>
-                <div className={rowClass}>
-                  <Link href={`/practice/${a.surahId}/${a.ayahNumber}`} className={rowLinkClass}>
-                    <span className={avatarClass} aria-hidden="true">
-                      {a.ayahNumber}
-                    </span>
-                    <span className={infoClass}>
-                      <span className={titleClass}>
-                        {t('row.title', { name: a.surahNameEn, ayah: a.ayahNumber })}
-                      </span>
-                      <span className={metaClass}>{formatRowMeta(a.createdAt, a.durationMs)}</span>
-                    </span>
-                    <span
-                      className={cx(
-                        sparklineWrapClass,
-                        score !== null
-                          ? score >= 80
-                            ? scorePassClass
-                            : scoreMidClass
-                          : scoreFailedClass
-                      )}
-                    >
-                      <Sparkline values={scoreTrendForAyah(attempts, a.surahId, a.ayahNumber)} />
-                    </span>
-                    <span
-                      className={cx(
-                        scoreClass,
-                        score !== null
-                          ? score >= 80
-                            ? scorePassClass
-                            : scoreMidClass
-                          : scoreFailedClass
-                      )}
-                      aria-label={
-                        score !== null
-                          ? t('row.scoreAriaLabel', { score })
-                          : t('row.failedAriaLabel')
-                      }
-                    >
-                      {score !== null ? (
-                        <>
-                          {score}
-                          <span className={scoreSuffixClass} aria-hidden="true">
-                            /100
-                          </span>
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </span>
-                  </Link>
-                  <button
-                    type="button"
-                    className={cx(playButtonClass, isError && playButtonErrorClass)}
-                    onClick={() => void handlePlay(a)}
-                    disabled={isLoading}
-                    aria-label={
-                      isError
-                        ? t('row.recordingUnavailable')
-                        : isLoading
-                          ? t('row.loadingRecording')
-                          : isPlaying
-                            ? t('row.pause')
-                            : t('row.play')
-                    }
-                  >
-                    <span aria-hidden="true">
-                      {isLoading ? '…' : isError ? '!' : isPlaying ? '❚❚' : '▶'}
-                    </span>
-                  </button>
-                </div>
+      <section className={attemptsClass} aria-label={t('listAriaLabel')}>
+        <div className={toolbarClass}>
+          <HistoryFilterChips options={filterOptions} selected={filter} onSelect={setFilter} />
+          <div className={sortClass}>
+            <label htmlFor="history-sort">{t('sort.label')}</label>
+            <span className={selectWrapClass}>
+              <select
+                id="history-sort"
+                className={appSelect()}
+                value={sort}
+                onChange={(e) => setSort(e.target.value as HistorySort)}
+                aria-label={t('sort.ariaLabel')}
+              >
+                <option value="recent">{t('sort.recent')}</option>
+                <option value="score">{t('sort.score')}</option>
+              </select>
+              <svg
+                className={selectArrowClass}
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M7 10l5 5 5-5z" />
+              </svg>
+            </span>
+          </div>
+        </div>
+        {/* Single shared element so only one recording sounds at a time. */}
+        <audio ref={audioRef} preload="none" onEnded={() => setPlayingId(null)} hidden />
+        {visibleAttempts.length === 0 ? (
+          <p className={filteredEmptyClass}>{t('filteredEmpty')}</p>
+        ) : (
+          <ul className={listClass}>
+            {visibleAttempts.map((a) => (
+              <li key={a.id}>
+                <HistoryRow
+                  attempt={a}
+                  meta={formatRowMeta(a.createdAt, a.durationMs)}
+                  trend={scoreTrendForAyah(attempts, a.surahId, a.ayahNumber)}
+                  playback={playbackOf(a.id)}
+                  onPlay={() => void handlePlay(a)}
+                />
               </li>
-            );
-          })}
-        </ul>
-      )}
-    </>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
