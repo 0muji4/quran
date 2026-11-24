@@ -50,7 +50,6 @@ function WelcomeBackToastInner() {
       body={t('body')}
       dismissLabel={t('dismiss')}
       onDismiss={onDismiss}
-      tone="success"
     />
   );
 }
