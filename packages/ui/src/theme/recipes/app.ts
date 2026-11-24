@@ -211,6 +211,33 @@ export const appSelect: RecipeConfig = defineRecipe({
   }
 });
 
+/** A text input or a select drawn as an outlined text field. */
+export const appTextField: RecipeConfig = defineRecipe({
+  className: 'appTextField',
+  description: 'Material 3 outlined text field on an input or select element.',
+  base: {
+    width: '[100%]',
+    minHeight: '[56px]',
+    paddingInline: '4',
+    borderRadius: 'extraSmall',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'outline',
+    background: 'transparent',
+    color: 'onSurface',
+    textStyle: 'bodyLarge',
+    _hover: { borderColor: 'onSurface' },
+    // The outline thickens inwards, so the text does not move.
+    _focusVisible: {
+      outlineWidth: '[2px]',
+      outlineStyle: 'solid',
+      outlineColor: 'primary',
+      outlineOffset: '[-2px]'
+    },
+    _disabled: { opacity: 0.38, cursor: 'default' }
+  }
+});
+
 /** Linear progress on a progress element: a primary indicator on its track. */
 export const appProgress: RecipeConfig = defineRecipe({
   className: 'appProgress',

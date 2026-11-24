@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ChangeEmailButton } from '../ChangeEmailButton';
 import { DeleteAccountButton } from '../DeleteAccountButton';
 import { EditProfileButton } from '../EditProfileButton';
@@ -27,7 +27,8 @@ const open = (name: string) => fireEvent.click(screen.getByRole('button', { name
 const type = (label: string | RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape' });
+// The browser closes a modal dialog on Escape; jsdom has no such behaviour.
+const pressEscape = () => act(async () => screen.getByRole<HTMLDialogElement>('dialog').close());
 
 afterEach(() => {
   cleanup();
@@ -57,7 +58,7 @@ describe('ChangeEmailButton', () => {
 });
 
 describe('UpdatePasswordButton', () => {
-  it('wipes every password field on reopen', () => {
+  it('wipes every password field on reopen', async () => {
     render(<UpdatePasswordButton />);
 
     open('Update');
@@ -68,7 +69,7 @@ describe('UpdatePasswordButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Update password' }));
     expect(screen.getByRole('alert')).toBeInTheDocument();
 
-    pressEscape();
+    await pressEscape();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     open('Update');
@@ -111,7 +112,7 @@ describe('EditProfileButton', () => {
     type('Display name', 'Draft');
     type('Skill level', 'beginner');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     open('Edit profile');
 
     expect(screen.getByLabelText('Display name')).toHaveValue('Amina');

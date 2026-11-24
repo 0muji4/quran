@@ -6,7 +6,8 @@ import {
   appIconButton,
   appListItem,
   appProgress,
-  appSelect
+  appSelect,
+  appTextField
 } from './app';
 import { button } from './button';
 import { panel } from './panel';
@@ -22,7 +23,8 @@ export const recipes = {
   appChip,
   appListItem,
   appSelect,
-  appProgress
+  appProgress,
+  appTextField
 };
 
 export const slotRecipes = {

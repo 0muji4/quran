@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
+import { useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from '../../../../i18n/navigation';
 import { updateEmailAction } from '../../../actions';
-import { css, cx } from '../../../../styled-system/css';
+import { AppDialog } from '../../../components/AppDialog';
+import { TextField } from '../../../components/AppField';
+import { ErrorPanel } from '../../../components/ErrorPanel';
+import { css } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
+import { actionsClass, formClass } from './dialogStyles';
 
 interface Props {
   currentEmail: string;
@@ -17,124 +22,6 @@ const triggerClass = css({
   backgroundColor: '[transparent]',
   borderWidth: '[0]',
   cursor: 'pointer'
-});
-
-const overlayClass = css({
-  position: 'fixed',
-  inset: '[0]',
-  backgroundColor: '[rgba(36, 30, 25, 0.45)]',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: '[40]',
-  padding: '4'
-});
-
-const modalClass = css({
-  backgroundColor: 'bg.paper',
-  borderRadius: 'md',
-  width: '[100%]',
-  maxWidth: '[480px]',
-  padding: '6',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '5',
-  boxShadow: 'card'
-});
-
-const eyebrowClass = css({
-  fontSize: '[12px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.08em]',
-  color: 'gold.onLight'
-});
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[24px]',
-  color: 'ink.strong'
-});
-
-const fieldClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2'
-});
-
-const labelClass = css({
-  fontSize: '[11px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
-  color: 'ink.muted'
-});
-
-const inputClass = css({
-  width: '[100%]',
-  font: '[inherit]',
-  fontSize: '[15px]',
-  paddingBlock: '3',
-  paddingInline: '4',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'green' }
-});
-
-const helperClass = css({
-  fontSize: '[12px]',
-  color: 'ink.muted'
-});
-
-const errorClass = css({
-  backgroundColor: '[rgba(192, 57, 43, 0.08)]',
-  color: 'red',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '[rgba(192, 57, 43, 0.25)]',
-  borderRadius: 'md',
-  paddingBlock: '3',
-  paddingInline: '4',
-  fontSize: '[13px]'
-});
-
-const actionsClass = css({
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '3',
-  flexWrap: 'wrap'
-});
-
-const cancelButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer'
-});
-
-const saveButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '[0]',
-  backgroundColor: 'green',
-  color: 'tan.soft',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  _disabled: { opacity: 0.6, cursor: 'progress' }
 });
 
 // Phase 2.C-lite: change email without a confirmation-email round-trip.
@@ -152,7 +39,6 @@ export function ChangeEmailButton({ currentEmail }: Props) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   const openDialog = (): void => {
     setNewEmail('');
@@ -160,19 +46,6 @@ export function ChangeEmailButton({ currentEmail }: Props) {
     setError(null);
     setOpen(true);
   };
-
-  useEffect(() => {
-    if (open) firstFieldRef.current?.focus();
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -216,80 +89,48 @@ export function ChangeEmailButton({ currentEmail }: Props) {
         Change
       </button>
       {open && (
-        <div
-          className={overlayClass}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Change email"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <form className={modalClass} onSubmit={onSubmit} noValidate>
-            <div>
-              <p className={eyebrowClass}>
-                <span aria-hidden="true">✦ </span>Account & data
-              </p>
-              <h2 className={titleClass}>Change email</h2>
-            </div>
+        <AppDialog title="Change email" onClose={() => setOpen(false)}>
+          <form className={formClass} onSubmit={onSubmit} noValidate>
+            {error && <ErrorPanel>{error}</ErrorPanel>}
 
-            {error && (
-              <div className={errorClass} role="alert" aria-live="polite">
-                {String(error)}
-              </div>
-            )}
+            <TextField
+              id="email-new"
+              label="New email"
+              helper={`Current: ${currentEmail}. You'll sign in with the new address next time.`}
+              type="email"
+              autoComplete="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              disabled={pending}
+              required
+            />
 
-            <div className={fieldClass}>
-              <label className={labelClass} htmlFor="email-new">
-                New email
-              </label>
-              <input
-                ref={firstFieldRef}
-                id="email-new"
-                className={inputClass}
-                type="email"
-                autoComplete="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                disabled={pending}
-                required
-              />
-              <span className={helperClass}>
-                Current: {currentEmail}. You&apos;ll sign in with the new address next time.
-              </span>
-            </div>
-
-            <div className={fieldClass}>
-              <label className={labelClass} htmlFor="email-current-pw">
-                Current password
-              </label>
-              <input
-                id="email-current-pw"
-                className={inputClass}
-                type="password"
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                disabled={pending}
-                required
-              />
-            </div>
+            <TextField
+              id="email-current-pw"
+              label="Current password"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              disabled={pending}
+              required
+            />
 
             <div className={actionsClass}>
               <button
                 type="button"
-                className={cancelButtonClass}
+                className={appButton({ variant: 'text' })}
                 onClick={() => setOpen(false)}
                 disabled={pending}
               >
                 Cancel
               </button>
-              <button type="submit" className={cx(saveButtonClass)} disabled={pending}>
+              <button type="submit" className={appButton({ variant: 'filled' })} disabled={pending}>
                 {pending ? 'Updating…' : 'Update email'}
               </button>
             </div>
           </form>
-        </div>
+        </AppDialog>
       )}
     </>
   );

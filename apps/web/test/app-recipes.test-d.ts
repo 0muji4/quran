@@ -8,7 +8,8 @@ import {
   appIconButton,
   appListItem,
   appProgress,
-  appSelect
+  appSelect,
+  appTextField
 } from '../styled-system/recipes';
 
 appButton({ variant: 'filled' });
@@ -27,6 +28,7 @@ appChip();
 appListItem();
 appSelect();
 appProgress();
+appTextField();
 
 // @ts-expect-error — not a Material 3 button variant
 appButton({ variant: 'gold' });
