@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
+import { useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from '../../../../i18n/navigation';
 import { deleteAccountAction } from '../../../actions';
 import { clearLocalCache } from '../../../lib/storage';
-import { css, cx } from '../../../../styled-system/css';
+import { AppDialog } from '../../../components/AppDialog';
+import { TextField } from '../../../components/AppField';
+import { ErrorPanel } from '../../../components/ErrorPanel';
+import { css } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
+import { actionsClass, bodyClass, formClass } from './dialogStyles';
 
 const triggerClass = css({
   paddingBlock: '2',
@@ -21,129 +26,13 @@ const triggerClass = css({
   '&:hover': { backgroundColor: '[rgba(192, 57, 43, 0.06)]' }
 });
 
-const overlayClass = css({
-  position: 'fixed',
-  inset: '[0]',
-  backgroundColor: '[rgba(36, 30, 25, 0.45)]',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: '[40]',
-  padding: '4'
-});
-
-const modalClass = css({
-  backgroundColor: 'bg.paper',
-  borderRadius: 'md',
-  width: '[100%]',
-  maxWidth: '[520px]',
-  padding: '6',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4',
-  boxShadow: 'card'
-});
-
-const eyebrowClass = css({
-  fontSize: '[12px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.08em]',
-  color: 'red'
-});
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[24px]',
-  color: 'ink.strong'
-});
-
-const bodyClass = css({
-  fontSize: '[14px]',
-  lineHeight: '[1.55]',
-  color: 'ink.default'
-});
-
-const calloutClass = css({
-  backgroundColor: 'tan.soft',
-  borderRadius: 'md',
+const noticeClass = css({
+  margin: '0',
   paddingBlock: '3',
   paddingInline: '4',
-  fontSize: '[13px]',
-  color: 'ink.default'
-});
-
-const fieldClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2'
-});
-
-const labelClass = css({
-  fontSize: '[12px]',
-  color: 'ink.muted'
-});
-
-const inputClass = css({
-  width: '[100%]',
-  font: '[inherit]',
-  fontSize: '[15px]',
-  paddingBlock: '3',
-  paddingInline: '4',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'red' }
-});
-
-const errorClass = css({
-  backgroundColor: '[rgba(192, 57, 43, 0.08)]',
-  color: 'red',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '[rgba(192, 57, 43, 0.25)]',
-  borderRadius: 'md',
-  paddingBlock: '3',
-  paddingInline: '4',
-  fontSize: '[13px]'
-});
-
-const actionsClass = css({
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '3',
-  flexWrap: 'wrap'
-});
-
-const cancelButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer'
-});
-
-const confirmButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '[0]',
-  backgroundColor: 'red',
-  color: 'bg.paper',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  _disabled: { opacity: 0.55, cursor: 'not-allowed' }
+  borderRadius: 'medium',
+  background: 'surfaceContainerHighest',
+  textStyle: 'bodyMedium'
 });
 
 const CONFIRM_PHRASE = 'DELETE';
@@ -158,26 +47,12 @@ export function DeleteAccountButton() {
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   const openDialog = (): void => {
     setConfirmText('');
     setError(null);
     setOpen(true);
   };
-
-  useEffect(() => {
-    if (open) firstFieldRef.current?.focus();
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
 
   const canConfirm = confirmText === CONFIRM_PHRASE && !pending;
 
@@ -210,62 +85,41 @@ export function DeleteAccountButton() {
         Delete account
       </button>
       {open && (
-        <div
-          className={overlayClass}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Delete account"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <form className={modalClass} onSubmit={onSubmit} noValidate>
-            <div>
-              <p className={eyebrowClass}>
-                <span aria-hidden="true">! </span>Delete account
-              </p>
-              <h2 className={titleClass}>Are you sure?</h2>
-            </div>
-
+        <AppDialog title="Delete your account?" onClose={() => setOpen(false)}>
+          <form className={formClass} onSubmit={onSubmit} noValidate>
             <p className={bodyClass}>
               Your account will be scheduled for deletion. All practice attempts, best scores, and
               streak history will be removed from Tilawah.
             </p>
 
-            <p className={calloutClass}>
+            <p className={noticeClass}>
               You have <strong>30 days</strong> to change your mind. Sign in again with this email
               and password before then and your account — and everything in it — comes back exactly
               as it was.
             </p>
 
-            {error && (
-              <div className={errorClass} role="alert" aria-live="polite">
-                {String(error)}
-              </div>
-            )}
+            {error && <ErrorPanel>{error}</ErrorPanel>}
 
-            <div className={fieldClass}>
-              <label className={labelClass} htmlFor="delete-confirm">
-                Type <strong>{CONFIRM_PHRASE}</strong> below to confirm.
-              </label>
-              <input
-                ref={firstFieldRef}
-                id="delete-confirm"
-                className={inputClass}
-                type="text"
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                disabled={pending}
-              />
-            </div>
+            <TextField
+              id="delete-confirm"
+              label={
+                <>
+                  Type <strong>{CONFIRM_PHRASE}</strong> below to confirm.
+                </>
+              }
+              type="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              disabled={pending}
+            />
 
             <div className={actionsClass}>
               <button
                 type="button"
-                className={cancelButtonClass}
+                className={appButton({ variant: 'text' })}
                 onClick={() => setOpen(false)}
                 disabled={pending}
               >
@@ -273,15 +127,14 @@ export function DeleteAccountButton() {
               </button>
               <button
                 type="submit"
-                className={cx(confirmButtonClass)}
+                className={appButton({ variant: 'error' })}
                 disabled={!canConfirm}
-                aria-disabled={!canConfirm}
               >
                 {pending ? 'Deleting…' : 'Delete account'}
               </button>
             </div>
           </form>
-        </div>
+        </AppDialog>
       )}
     </>
   );

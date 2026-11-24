@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
+import { useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from '../../../../i18n/navigation';
 import { updateProfileAction, type UserLevel } from '../../../actions';
+import { AppDialog } from '../../../components/AppDialog';
+import { SelectField, TextField } from '../../../components/AppField';
+import { ErrorPanel } from '../../../components/ErrorPanel';
 import { css } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
+import { actionsClass, bodyClass, footnoteClass, formClass } from './dialogStyles';
 
 interface Props {
   displayName: string | null;
@@ -26,174 +31,6 @@ const buttonClass = css({
   '&:hover': { borderColor: 'ink.muted' }
 });
 
-const overlayClass = css({
-  position: 'fixed',
-  inset: '[0]',
-  backgroundColor: '[rgba(36, 30, 25, 0.45)]',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: '[40]',
-  padding: '4'
-});
-
-const modalClass = css({
-  backgroundColor: 'bg.paper',
-  borderRadius: 'md',
-  width: '[100%]',
-  maxWidth: '[520px]',
-  padding: '6',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '5',
-  boxShadow: 'card'
-});
-
-const eyebrowClass = css({
-  fontSize: '[12px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.08em]',
-  color: 'gold.onLight'
-});
-
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[26px]',
-  color: 'ink.strong'
-});
-
-const fieldClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2'
-});
-
-const labelClass = css({
-  fontSize: '[11px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
-  color: 'ink.muted'
-});
-
-const inputClass = css({
-  width: '[100%]',
-  font: '[inherit]',
-  fontSize: '[15px]',
-  paddingBlock: '3',
-  paddingInline: '4',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'green' }
-});
-
-const helperClass = css({
-  fontSize: '[12px]',
-  color: 'ink.muted'
-});
-
-const errorClass = css({
-  backgroundColor: '[rgba(192, 57, 43, 0.08)]',
-  color: 'red',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '[rgba(192, 57, 43, 0.25)]',
-  borderRadius: 'md',
-  paddingBlock: '3',
-  paddingInline: '4',
-  fontSize: '[13px]'
-});
-
-const actionsClass = css({
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '3',
-  flexWrap: 'wrap'
-});
-
-const cancelButtonClass = css({
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer'
-});
-
-const saveButtonClass = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '2',
-  paddingBlock: '2',
-  paddingInline: '5',
-  borderRadius: 'pill',
-  borderWidth: '[0]',
-  backgroundColor: 'green',
-  color: 'tan.soft',
-  fontSize: '[14px]',
-  fontWeight: 600,
-  cursor: 'pointer',
-  _disabled: { opacity: 0.6, cursor: 'progress' }
-});
-
-const headerRowClass = css({
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '4'
-});
-
-const closeButtonClass = css({
-  flexShrink: 0,
-  width: '[32px]',
-  height: '[32px]',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  backgroundColor: 'bg.paper',
-  color: 'ink.muted',
-  fontSize: '[18px]',
-  lineHeight: '[1]',
-  cursor: 'pointer',
-  '&:hover': { borderColor: 'ink.muted', color: 'ink.strong' }
-});
-
-// Tan info callout pointing email/password + preferences to where they
-// actually live, so this modal stays scoped to name + level.
-const calloutClass = css({
-  display: 'flex',
-  gap: '2',
-  backgroundColor: 'tan.soft',
-  borderRadius: 'md',
-  paddingBlock: '3',
-  paddingInline: '4',
-  fontSize: '[13px]',
-  color: 'ink.default',
-  lineHeight: '[1.5]'
-});
-
-const footerClass = css({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '4',
-  flexWrap: 'wrap'
-});
-
-const syncTextClass = css({ fontSize: '[12px]', color: 'ink.muted' });
-
 const LEVEL_OPTIONS: { value: UserLevel; label: string }[] = [
   { value: 'beginner', label: 'Beginner · Learning Arabic' },
   { value: 'intermediate', label: 'Intermediate · Working on tajweed' },
@@ -212,7 +49,6 @@ export function EditProfileButton({ displayName, email, level }: Props) {
   const [levelValue, setLevelValue] = useState<UserLevel>(level ?? 'beginner');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   // Reset modal state whenever it opens so a Cancel → re-open doesn't
   // carry over a stale draft.
@@ -222,21 +58,6 @@ export function EditProfileButton({ displayName, email, level }: Props) {
     setError(null);
     setOpen(true);
   };
-
-  // Focus the first field for keyboard users.
-  useEffect(() => {
-    if (open) firstFieldRef.current?.focus();
-  }, [open]);
-
-  // Esc closes the modal — table-stakes affordance.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -277,108 +98,60 @@ export function EditProfileButton({ displayName, email, level }: Props) {
         Edit profile
       </button>
       {open && (
-        <div
-          className={overlayClass}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Edit profile"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <form className={modalClass} onSubmit={onSubmit} noValidate>
-            <div className={headerRowClass}>
-              <div>
-                <p className={eyebrowClass}>
-                  <span aria-hidden="true">✦ </span>Your account
-                </p>
-                <h2 className={titleClass}>Edit profile</h2>
-              </div>
-              <button
-                type="button"
-                className={closeButtonClass}
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
+        <AppDialog title="Edit profile" onClose={() => setOpen(false)}>
+          <form className={formClass} onSubmit={onSubmit} noValidate>
+            {error && <ErrorPanel>{error}</ErrorPanel>}
 
-            {error && (
-              <div className={errorClass} role="alert" aria-live="polite">
-                {error}
-              </div>
-            )}
-
-            <div className={fieldClass}>
-              <label className={labelClass} htmlFor="edit-display-name">
-                Display name
-              </label>
-              <input
-                ref={firstFieldRef}
-                id="edit-display-name"
-                className={inputClass}
-                type="text"
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
-                maxLength={64}
-                autoComplete="name"
-                disabled={pending}
-                required
-              />
-              <span className={helperClass}>Shown on your profile and in practice history.</span>
-            </div>
-
-            <div className={fieldClass}>
-              <label className={labelClass} htmlFor="edit-level">
-                Skill level
-              </label>
-              <select
-                id="edit-level"
-                className={inputClass}
-                value={levelValue}
-                onChange={(e) => setLevelValue(e.target.value as UserLevel)}
-                disabled={pending}
-              >
-                {LEVEL_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <span className={helperClass}>
-                Used on your profile and to suggest surahs at your level.
-              </span>
-            </div>
-
-            <p className={calloutClass}>
-              <span aria-hidden="true">ⓘ</span>
-              <span>
-                Looking to change your <strong>email or password</strong>? They live in{' '}
-                <strong>Account &amp; data</strong> on the Profile page. Practice{' '}
-                <strong>preferences</strong> (reciter, speed, reminders) are right next to it.
-              </span>
+            <p className={bodyClass}>
+              Your email and password are in <strong>Account &amp; data</strong> on the Profile
+              page, next to <strong>Practice preferences</strong>.
             </p>
 
-            <div className={footerClass}>
-              <span className={syncTextClass}>Changes sync to every signed-in device.</span>
-              <div className={actionsClass}>
-                <button
-                  type="button"
-                  className={cancelButtonClass}
-                  onClick={() => setOpen(false)}
-                  disabled={pending}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className={saveButtonClass} disabled={pending}>
-                  <span aria-hidden="true">✓</span>
-                  {pending ? 'Saving…' : 'Save changes'}
-                </button>
-              </div>
+            <TextField
+              id="edit-display-name"
+              label="Display name"
+              helper="Shown on your profile and in practice history."
+              type="text"
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              maxLength={64}
+              autoComplete="name"
+              disabled={pending}
+              required
+            />
+
+            <SelectField
+              id="edit-level"
+              label="Skill level"
+              helper="Used on your profile and to suggest surahs at your level."
+              value={levelValue}
+              onChange={(e) => setLevelValue(e.target.value as UserLevel)}
+              disabled={pending}
+            >
+              {LEVEL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectField>
+
+            <p className={footnoteClass}>Changes sync to every signed-in device.</p>
+
+            <div className={actionsClass}>
+              <button
+                type="button"
+                className={appButton({ variant: 'text' })}
+                onClick={() => setOpen(false)}
+                disabled={pending}
+              >
+                Cancel
+              </button>
+              <button type="submit" className={appButton({ variant: 'filled' })} disabled={pending}>
+                {pending ? 'Saving…' : 'Save changes'}
+              </button>
             </div>
           </form>
-        </div>
+        </AppDialog>
       )}
     </>
   );
