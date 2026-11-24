@@ -1,8 +1,9 @@
 import { EditProfileButton } from './EditProfileButton';
 import { StreakBadge } from './StreakBadge';
+import { badgeClass } from './badgeStyles';
 import type { UserLevel } from '../../../actions';
 import { css, cx } from '../../../../styled-system/css';
-import { panel } from '../../../../styled-system/recipes';
+import { appCard } from '../../../../styled-system/recipes';
 
 interface Props {
   displayName: string | null;
@@ -11,63 +12,48 @@ interface Props {
   createdAt: string | null;
 }
 
-const cardClass = css({
-  padding: '6',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6',
-  flexWrap: 'wrap'
-});
+const cardClass = cx(
+  appCard({ variant: 'elevated' }),
+  css({ alignSelf: 'start', display: 'flex', flexDirection: 'column', gap: '4', padding: '4' })
+);
+
+const identityClass = css({ display: 'flex', alignItems: 'center', gap: '4', minWidth: '[0]' });
 
 const avatarClass = css({
-  width: '[88px]',
-  height: '[88px]',
-  borderRadius: '[50%]',
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: 'bg.paper',
-  fontFamily: 'serif',
-  fontSize: '[32px]',
-  // Olive / gold radial gradient mirroring the design mock.
-  background:
-    '[radial-gradient(circle at 35% 30%, var(--colors-gold-surface), var(--colors-bg-nav))]',
-  flexShrink: 0
-});
-
-const identityClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2',
-  flex: '1',
-  minWidth: '[240px]'
+  width: '[64px]',
+  height: '[64px]',
+  borderRadius: 'full',
+  background: 'primaryContainer',
+  color: 'onPrimaryContainer',
+  textStyle: 'headlineSmall'
 });
 
 const nameClass = css({
-  fontFamily: 'serif',
-  fontSize: '[26px]',
-  color: 'ink.strong'
+  margin: '0',
+  color: '[inherit]',
+  textStyle: 'titleLarge',
+  overflowWrap: 'anywhere'
+});
+
+const emailClass = css({
+  margin: '0',
+  textStyle: 'bodyMedium',
+  color: 'onSurfaceVariant',
+  overflowWrap: 'anywhere'
 });
 
 const badgeRowClass = css({
   display: 'flex',
   flexWrap: 'wrap',
   gap: '2',
-  marginTop: '1'
+  _empty: { display: 'none' }
 });
 
-const badgeBaseClass = css({
-  fontSize: '[11px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
-  paddingBlock: '1',
-  paddingInline: '3',
-  borderRadius: 'pill'
-});
-
-const badgeLevelClass = css({ backgroundColor: 'mint.bg', color: 'green.deep' });
-const badgeJoinedClass = css({ backgroundColor: 'tan.soft', color: 'ink.muted' });
+const actionsClass = css({ display: 'flex', justifyContent: 'flex-end' });
 
 const initialFor = (displayName: string | null, email: string): string => {
   const source = (displayName ?? email).trim();
@@ -85,8 +71,8 @@ const joinedLabel = (iso: string | null): string | null => {
   if (!iso) return null;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
-  // "Joined March 2026". Month + year matches the design mock and
-  // avoids exposing the exact day (which has no UX value here).
+  // "Joined March 2026". Month and year avoid exposing the exact day, which
+  // has no use here.
   const formatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
   return `Joined ${formatter.format(date)}`;
 };
@@ -97,19 +83,24 @@ export function ProfileHeader({ displayName, email, level, createdAt }: Props) {
   const joinedText = joinedLabel(createdAt);
 
   return (
-    <section className={cx(panel({ surface: 'paper' }).root, cardClass)} aria-label="Your account">
-      <div className={avatarClass} aria-hidden="true">
-        {initial}
-      </div>
+    <section className={cardClass} aria-label="Your account">
       <div className={identityClass}>
-        <span className={nameClass}>{displayName ?? email}</span>
-        <div className={badgeRowClass}>
-          {levelText && <span className={cx(badgeBaseClass, badgeLevelClass)}>{levelText}</span>}
-          {joinedText && <span className={cx(badgeBaseClass, badgeJoinedClass)}>{joinedText}</span>}
-          <StreakBadge />
+        <div className={avatarClass} aria-hidden="true">
+          {initial}
+        </div>
+        <div>
+          <h2 className={nameClass}>{displayName ?? email}</h2>
+          {displayName && <p className={emailClass}>{email}</p>}
         </div>
       </div>
-      <EditProfileButton displayName={displayName} email={email} level={level} />
+      <div className={badgeRowClass}>
+        {levelText && <span className={badgeClass}>{levelText}</span>}
+        {joinedText && <span className={badgeClass}>{joinedText}</span>}
+        <StreakBadge />
+      </div>
+      <div className={actionsClass}>
+        <EditProfileButton displayName={displayName} email={email} level={level} />
+      </div>
     </section>
   );
 }

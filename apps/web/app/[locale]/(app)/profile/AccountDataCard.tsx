@@ -1,62 +1,24 @@
 import { ChangeEmailButton } from './ChangeEmailButton';
 import { UpdatePasswordButton } from './UpdatePasswordButton';
 import { css, cx } from '../../../../styled-system/css';
-import { panel } from '../../../../styled-system/recipes';
+import {
+  cardTitleClass,
+  dividedClass,
+  filledCardClass,
+  helperClass,
+  primaryClass,
+  rowClass,
+  rowTextClass
+} from './cardStyles';
 
 interface Props {
   email: string;
   passwordChangedAt: string | null;
 }
 
-const cardClass = css({
-  padding: '6',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '5'
-});
+const itemClass = cx(rowClass, css({ minHeight: '[72px]', paddingBlock: '2' }));
 
-const cardTitleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[20px]',
-  color: 'ink.strong'
-});
-
-const rowClass = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '4',
-  paddingBlockStart: '4',
-  borderTopWidth: '1px',
-  borderTopStyle: 'solid',
-  borderTopColor: 'border'
-});
-
-const firstRowClass = css({ borderTopWidth: '[0]', paddingBlockStart: '[0]' });
-
-const labelStackClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1'
-});
-
-const eyebrowClass = css({
-  fontSize: '[11px]',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '[0.06em]',
-  color: 'ink.muted'
-});
-
-const primaryClass = css({
-  fontSize: '[15px]',
-  color: 'ink.strong'
-});
-
-const helperClass = css({
-  fontSize: '[13px]',
-  color: 'ink.muted'
-});
+const labelClass = css({ textStyle: 'labelMedium', color: 'onSurfaceVariant' });
 
 const changedDateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -76,24 +38,23 @@ export function AccountDataCard({ email, passwordChangedAt }: Props) {
     ? `Last changed ${changedOn}`
     : 'Rotate when you suspect a leak or every few months.';
   return (
-    <section
-      className={cx(panel({ surface: 'paper' }).root, cardClass)}
-      aria-label="Account & data"
-    >
-      <h2 className={cardTitleClass}>Account & data</h2>
+    <section className={filledCardClass} aria-labelledby="account-title">
+      <h2 id="account-title" className={cardTitleClass}>
+        Account & data
+      </h2>
 
-      <div className={cx(rowClass, firstRowClass)}>
-        <div className={labelStackClass}>
-          <span className={eyebrowClass}>Email</span>
+      <div className={itemClass}>
+        <div className={rowTextClass}>
+          <span className={labelClass}>Email</span>
           <span className={primaryClass}>{email}</span>
           <span className={helperClass}>Used for sign-in and account recovery</span>
         </div>
         <ChangeEmailButton currentEmail={email} />
       </div>
 
-      <div className={rowClass}>
-        <div className={labelStackClass}>
-          <span className={eyebrowClass}>Password</span>
+      <div className={cx(itemClass, dividedClass)}>
+        <div className={rowTextClass}>
+          <span className={labelClass}>Password</span>
           <span className={primaryClass}>•••••••••••</span>
           <span className={helperClass}>{passwordHelper}</span>
         </div>

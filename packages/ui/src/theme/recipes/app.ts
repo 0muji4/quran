@@ -197,6 +197,8 @@ export const appSelect: RecipeConfig = defineRecipe({
   base: {
     ...interactive,
     appearance: 'none',
+    // What the browser draws, such as the menu, follows the system setting.
+    colorScheme: 'light dark',
     minHeight: '[32px]',
     paddingInlineStart: '3',
     paddingInlineEnd: '8',
@@ -211,11 +213,56 @@ export const appSelect: RecipeConfig = defineRecipe({
   }
 });
 
+/** A switch, on a button with the switch role; aria-checked shows its state. */
+export const appSwitch: RecipeConfig = defineRecipe({
+  className: 'appSwitch',
+  description: 'Material 3 switch on a button element with role=switch.',
+  base: {
+    ...interactive,
+    flexShrink: 0,
+    width: '[52px]',
+    height: '[32px]',
+    borderRadius: 'full',
+    borderWidth: '2px',
+    borderStyle: 'solid',
+    borderColor: 'outline',
+    background: 'surfaceContainerHighest',
+    // The handle, which grows when the switch is on.
+    _after: {
+      content: '""',
+      position: 'absolute',
+      top: '[50%]',
+      insetInlineStart: '[6px]',
+      width: '[16px]',
+      height: '[16px]',
+      marginTop: '[-8px]',
+      borderRadius: 'full',
+      background: 'outline',
+      transition: '[all 0.15s ease]',
+      _motionReduce: { transition: 'none' }
+    },
+    '&[aria-checked=true]': {
+      borderColor: 'primary',
+      background: 'primary',
+      _after: {
+        insetInlineStart: '[22px]',
+        width: '[24px]',
+        height: '[24px]',
+        marginTop: '[-12px]',
+        background: 'onPrimary'
+      }
+    }
+  }
+});
+
 /** A text input or a select drawn as an outlined text field. */
 export const appTextField: RecipeConfig = defineRecipe({
   className: 'appTextField',
   description: 'Material 3 outlined text field on an input or select element.',
   base: {
+    // What the browser draws, such as a menu or a picker's icon, follows the
+    // system setting.
+    colorScheme: 'light dark',
     width: '[100%]',
     minHeight: '[56px]',
     paddingInline: '4',

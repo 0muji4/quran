@@ -9,6 +9,7 @@ import {
   appListItem,
   appProgress,
   appSelect,
+  appSwitch,
   appTextField
 } from '../styled-system/recipes';
 
@@ -28,6 +29,7 @@ appChip();
 appListItem();
 appSelect();
 appProgress();
+appSwitch();
 appTextField();
 
 // @ts-expect-error — not a Material 3 button variant
