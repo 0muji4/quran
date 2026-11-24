@@ -35,7 +35,7 @@ test.describe('keyboard-only flow', () => {
 
   test('surah card on the library is keyboard-activatable', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('heading', { name: /choose a surah to recite/i }).waitFor();
+    await page.getByRole('heading', { level: 1, name: 'Library' }).waitFor();
 
     const surahLink = page.getByRole('link', { name: /al-fatihah/i }).first();
     await surahLink.focus();

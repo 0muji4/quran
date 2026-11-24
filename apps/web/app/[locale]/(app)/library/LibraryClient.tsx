@@ -1,17 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { SurahSummary } from '../../../lib/types';
 import type { BffSuggestionResponse } from '../../../lib/classify';
 import { countByRevelation, filterSurahs, type RevelationFilter } from '../../../lib/surahFilters';
-import { SearchIcon } from '../../../components/icons/ArrowRightIcon';
+import { CheckIcon, CloseIcon, SearchIcon } from '../../../components/icons/ArrowRightIcon';
 import { ContinueCard } from './ContinueCard';
 import { LibraryErrorState } from './LibraryErrorState';
+import { LibraryFrame } from './LibraryFrame';
 import { SuggestedCard } from './SuggestedCard';
 import { SurahGrid } from './SurahGrid';
 import { css, cx } from '../../../../styled-system/css';
-import { button } from '../../../../styled-system/recipes';
+import { appChip, appIconButton } from '../../../../styled-system/recipes';
 
 interface Props {
   surahs: SurahSummary[];
@@ -25,96 +26,72 @@ interface Props {
   loadError?: boolean;
 }
 
-const SEARCH_MOBILE_MQ = '@media (max-width: 600px)';
-const HERO_CARDS_MOBILE_MQ = '@media (max-width: 900px)';
-
-const heroClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4',
-  marginBottom: '8',
-  maxWidth: '[720px]'
-});
-
-const heroDescriptionClass = css({
-  fontSize: '[17px]',
-  color: 'ink.muted',
-  maxWidth: '[540px]',
-  lineHeight: '[1.55]'
-});
-
-const heroCardsClass = css({
+const cardsClass = css({
   display: 'grid',
-  gridTemplateColumns: '1.1fr 1fr',
-  gap: '5',
-  marginBottom: '8',
-  [HERO_CARDS_MOBILE_MQ]: { gridTemplateColumns: '1fr' }
-});
-
-const searchRowClass = css({
-  display: 'flex',
+  gridTemplateColumns: '[minmax(0, 1fr)]',
   gap: '3',
-  alignItems: 'center',
-  marginBottom: '6',
-  flexWrap: 'wrap'
+  medium: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' }
 });
 
-const searchBoxClass = css({
-  flex: '1',
-  minWidth: '[280px]',
-  position: 'relative',
+// The search bar and the filter chips share a row where both fit.
+const toolbarClass = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  columnGap: '4',
+  rowGap: '3'
+});
+
+// A Material 3 search bar. The field fills it, so the bar shows the field's
+// keyboard focus.
+const searchBarClass = css({
+  flex: '[1 1 320px]',
+  minWidth: '[0]',
   display: 'flex',
   alignItems: 'center',
-  backgroundColor: 'bg.paper',
-  borderRadius: 'pill',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  paddingBlock: '[0]',
-  paddingInline: '5',
-  height: '[52px]',
-  boxShadow: 'card',
-  [SEARCH_MOBILE_MQ]: { minWidth: '[0]', flex: '[1 1 200px]' }
+  gap: '4',
+  minHeight: '[56px]',
+  paddingInlineStart: '4',
+  paddingInlineEnd: '1',
+  borderRadius: 'full',
+  background: 'surfaceContainerHigh',
+  color: 'onSurfaceVariant',
+  '&:has(input:focus-visible)': {
+    outlineWidth: '[3px]',
+    outlineStyle: 'solid',
+    outlineColor: 'secondary',
+    outlineOffset: '[2px]'
+  }
 });
 
-const searchIconClass = css({
-  color: 'ink.muted',
-  marginRight: '3',
-  flexShrink: 0
-});
+const searchIconClass = css({ flexShrink: 0 });
 
+// The clear button below replaces the one some browsers draw.
 const searchInputClass = css({
   flex: '1',
+  minWidth: '[0]',
+  height: '[56px]',
   border: 'none',
   outline: 'none',
-  backgroundColor: '[transparent]',
-  fontSize: '[15px]',
-  fontFamily: '[inherit]',
-  color: 'ink.strong',
-  '&::placeholder': { color: 'ink.muted' },
-  [SEARCH_MOBILE_MQ]: { fontSize: '[14px]' }
+  appearance: 'none',
+  background: 'transparent',
+  color: 'onSurface',
+  textStyle: 'bodyLarge',
+  textOverflow: 'ellipsis',
+  _placeholder: { color: 'onSurfaceVariant', opacity: 1 },
+  '&::-webkit-search-cancel-button': { display: 'none' }
 });
 
-const filterPillsClass = css({
-  display: 'inline-flex',
-  gap: '2',
-  flexWrap: 'wrap',
-  [SEARCH_MOBILE_MQ]: { gap: '1' }
-});
+const filtersClass = css({ display: 'flex', flexWrap: 'wrap', gap: '2' });
 
-// .pillBtnActive overrides .pillBtn's light surface with dark ink.
-// Paired with button({tone:'nav'}) which already matches .pillBtn.
-const pillActiveClass = css({
-  backgroundColor: 'ink.strong',
-  borderColor: 'ink.strong',
-  color: 'bg.paper'
-});
+const filterChipClass = cx(appChip(), css({ _pressed: { paddingInlineStart: '2' } }));
 
 const FILTER_VALUES: RevelationFilter[] = ['all', 'mecca', 'medina', 'short'];
 
 export function LibraryClient({ surahs, suggestion = null, loadError = false }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<RevelationFilter>('all');
+  const searchRef = useRef<HTMLInputElement>(null);
   const t = useTranslations('library');
 
   const counts = useMemo(() => countByRevelation(surahs), [surahs]);
@@ -122,35 +99,30 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
 
   if (loadError) {
     return (
-      <>
-        <header className={heroClass}>
-          <h1>{t('title')}</h1>
-          <p className={heroDescriptionClass}>{t('description')}</p>
-        </header>
+      <LibraryFrame>
         <LibraryErrorState />
-      </>
+      </LibraryFrame>
     );
   }
 
-  return (
-    <>
-      <header className={heroClass}>
-        <span className="eyebrow" aria-hidden="true">
-          {t('eyebrow')}
-        </span>
-        <h1>{t('title')}</h1>
-        <p className={heroDescriptionClass}>{t('description')}</p>
-      </header>
+  const clearSearch = () => {
+    setQuery('');
+    // The button leaves with the query, so focus goes back to the field.
+    searchRef.current?.focus();
+  };
 
-      <section className={heroCardsClass}>
+  return (
+    <LibraryFrame>
+      <section className={cardsClass}>
         <ContinueCard surahs={surahs} />
         <SuggestedCard surahs={surahs} suggestion={suggestion} />
       </section>
 
-      <section className={searchRowClass}>
-        <div className={searchBoxClass}>
-          <SearchIcon className={searchIconClass} />
+      <section className={toolbarClass}>
+        <div className={searchBarClass}>
+          <SearchIcon size={24} className={searchIconClass} />
           <input
+            ref={searchRef}
             type="search"
             className={searchInputClass}
             placeholder={t('searchPlaceholder')}
@@ -158,21 +130,31 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
             onChange={(e) => setQuery(e.target.value)}
             aria-label={t('searchAriaLabel')}
           />
+          {query !== '' && (
+            <button
+              type="button"
+              className={appIconButton({ variant: 'standard' })}
+              onClick={clearSearch}
+              aria-label={t('searchClearAriaLabel')}
+            >
+              <CloseIcon size={24} />
+            </button>
+          )}
         </div>
-        <div className={filterPillsClass} role="group" aria-label={t('filterAriaLabel')}>
+        <div className={filtersClass} role="group" aria-label={t('filterAriaLabel')}>
           {FILTER_VALUES.map((value) => {
             const active = filter === value;
-            const baseClass = button({ tone: 'nav', size: 'lg' });
             const label =
               value === 'all' ? t('filter.all', { count: counts.all }) : t(`filter.${value}`);
             return (
               <button
                 key={value}
                 type="button"
-                className={active ? cx(baseClass, pillActiveClass) : baseClass}
+                className={filterChipClass}
                 onClick={() => setFilter(value)}
                 aria-pressed={active}
               >
+                {active && <CheckIcon />}
                 {label}
               </button>
             );
@@ -181,6 +163,6 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
       </section>
 
       <SurahGrid surahs={filtered} />
-    </>
+    </LibraryFrame>
   );
 }

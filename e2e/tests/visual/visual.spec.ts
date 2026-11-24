@@ -116,13 +116,43 @@ test.describe('visual regression — desktop 1280x720', () => {
     }, SEEDED_LAST_PRACTICED);
 
     await page.goto('/');
-    await page.getByRole('heading', { name: /choose a surah to recite/i }).waitFor();
+    await page.getByRole('heading', { level: 1, name: 'Library' }).waitFor();
     await stableSnapshot(page);
 
     await expect(page).toHaveScreenshot('library-with-continue.png', {
       fullPage: true,
       maxDiffPixels: 200
     });
+  });
+
+  // Signed out: no session is seeded, so the first card offers to start.
+  // Captured at the window's height; the list below it is every surah.
+  test('library landing for a guest', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('heading', { level: 1, name: 'Library' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('library.png', { maxDiffPixels: 200 });
+  });
+
+  // The rebuilt library page follows the system colour scheme and the window
+  // size class (ADR 0032).
+  test('library landing for a guest in dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await page.getByRole('heading', { level: 1, name: 'Library' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('library-dark.png', { maxDiffPixels: 200 });
+  });
+
+  test('library landing for a guest in a compact window', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.getByRole('heading', { level: 1, name: 'Library' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('library-compact.png', { maxDiffPixels: 200 });
   });
 
   test.skip('history with three seeded attempts (signed-in path)', async ({ page, context }) => {

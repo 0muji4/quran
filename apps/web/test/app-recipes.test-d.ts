@@ -6,6 +6,7 @@ import {
   appChip,
   appFab,
   appIconButton,
+  appListItem,
   appProgress,
   appSelect
 } from '../styled-system/recipes';
@@ -23,6 +24,7 @@ appCard({ variant: 'elevated' });
 appCard({ variant: 'filled' });
 appCard({ variant: 'outlined' });
 appChip();
+appListItem();
 appSelect();
 appProgress();
 

@@ -8,7 +8,8 @@ import { BasePage } from './BasePage';
  */
 export class HomePage extends BasePage {
   readonly heading: Locator = this.page.getByRole('heading', {
-    name: /choose a surah to recite/i
+    level: 1,
+    name: 'Library'
   });
 
   readonly searchInput: Locator = this.page.getByPlaceholder(/search by surah/i);

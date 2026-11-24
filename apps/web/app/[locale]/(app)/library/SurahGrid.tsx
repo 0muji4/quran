@@ -1,9 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useLocalStorageState } from '../../../hooks/useLocalStorageState';
 import type { SurahSummary } from '../../../lib/types';
 import { getBestScores, getLastPracticed } from '../../../lib/storage';
-import { SurahCard } from './SurahCard';
+import { SearchIcon } from '../../../components/icons/ArrowRightIcon';
+import { SurahRow } from './SurahRow';
 import { css } from '../../../../styled-system/css';
 
 interface Props {
@@ -17,20 +19,32 @@ interface Snapshot {
 
 const EMPTY_SNAPSHOT: Snapshot = { bestScores: {}, lastPracticedSurahId: null };
 
-const GRID_MOBILE_MQ = '@media (max-width: 760px)';
+// One column, and two in expanded windows. The rows' padding reaches into the
+// page's gutter, so their content lines up with the cards above.
+const listClass = css({
+  listStyle: 'none',
+  margin: '0',
+  marginInline: '[-16px]',
+  padding: '0',
+  display: 'grid',
+  gridTemplateColumns: '[minmax(0, 1fr)]',
+  columnGap: '4',
+  expanded: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' }
+});
 
 const emptyClass = css({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '2',
+  paddingBlock: '12',
   textAlign: 'center',
-  padding: '10',
-  color: 'ink.muted'
+  color: 'onSurfaceVariant'
 });
 
-const gridClass = css({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '4',
-  [GRID_MOBILE_MQ]: { gridTemplateColumns: '1fr' }
-});
+const emptyTitleClass = css({ margin: '0', textStyle: 'titleMedium', color: 'onSurface' });
+
+const emptyBodyClass = css({ margin: '0', textStyle: 'bodyMedium' });
 
 const buildSnapshot = (): Snapshot => {
   const all = getBestScores();
@@ -50,21 +64,29 @@ const buildSnapshot = (): Snapshot => {
 
 export function SurahGrid({ surahs }: Props) {
   const [snapshot] = useLocalStorageState(buildSnapshot, EMPTY_SNAPSHOT);
+  const t = useTranslations('library.empty');
 
   if (surahs.length === 0) {
-    return <p className={emptyClass}>No surahs match your search.</p>;
+    return (
+      <div className={emptyClass}>
+        <SearchIcon size={40} />
+        <p className={emptyTitleClass}>{t('title')}</p>
+        <p className={emptyBodyClass}>{t('body')}</p>
+      </div>
+    );
   }
 
   return (
-    <div className={gridClass}>
+    <ul className={listClass}>
       {surahs.map((surah) => (
-        <SurahCard
-          key={surah.id}
-          surah={surah}
-          bestScore={snapshot.bestScores[surah.id] ?? null}
-          isLastPracticed={snapshot.lastPracticedSurahId === surah.id}
-        />
+        <li key={surah.id}>
+          <SurahRow
+            surah={surah}
+            bestScore={snapshot.bestScores[surah.id] ?? null}
+            isLastPracticed={snapshot.lastPracticedSurahId === surah.id}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
