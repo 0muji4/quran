@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl';
 import type { SurahSummary } from '../../../lib/types';
 import type { BffSuggestionResponse } from '../../../lib/classify';
 import { countByRevelation, filterSurahs, type RevelationFilter } from '../../../lib/surahFilters';
+import { PageFrame } from '../../../components/PageFrame';
 import { CheckIcon, CloseIcon, SearchIcon } from '../../../components/icons/ArrowRightIcon';
 import { ContinueCard } from './ContinueCard';
 import { LibraryErrorState } from './LibraryErrorState';
-import { LibraryFrame } from './LibraryFrame';
 import { SuggestedCard } from './SuggestedCard';
 import { SurahGrid } from './SurahGrid';
 import { css, cx } from '../../../../styled-system/css';
@@ -99,9 +99,9 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
 
   if (loadError) {
     return (
-      <LibraryFrame>
+      <PageFrame title={t('title')}>
         <LibraryErrorState />
-      </LibraryFrame>
+      </PageFrame>
     );
   }
 
@@ -112,7 +112,7 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
   };
 
   return (
-    <LibraryFrame>
+    <PageFrame title={t('title')}>
       <section className={cardsClass}>
         <ContinueCard surahs={surahs} />
         <SuggestedCard surahs={surahs} suggestion={suggestion} />
@@ -163,6 +163,6 @@ export function LibraryClient({ surahs, suggestion = null, loadError = false }: 
       </section>
 
       <SurahGrid surahs={filtered} />
-    </LibraryFrame>
+    </PageFrame>
   );
 }
