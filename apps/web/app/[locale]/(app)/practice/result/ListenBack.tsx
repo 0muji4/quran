@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type RefObject } from 'react';
+import { useCallback, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
 import { PauseIcon, PlayIcon } from '../../../../components/icons/MediaIcons';
 import { css, cx } from '../../../../../styled-system/css';
@@ -124,6 +124,28 @@ const formatTime = (seconds: number): string => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
 
+// The length of the audio in seconds, or null until its metadata loads. The
+// server-rendered element can load its metadata before hydration attaches any
+// listener, so the length is read from the element, not taken from the event.
+function useDuration(audioRef: RefObject<HTMLAudioElement | null>): number | null {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const audio = audioRef.current;
+      audio?.addEventListener('loadedmetadata', onChange);
+      return () => audio?.removeEventListener('loadedmetadata', onChange);
+    },
+    [audioRef]
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      const audio = audioRef.current;
+      return audio && audio.readyState >= audio.HAVE_METADATA ? audio.duration : null;
+    },
+    () => null
+  );
+}
+
 function ListenBackRow({
   audioRef,
   title,
@@ -139,7 +161,7 @@ function ListenBackRow({
 }) {
   const t = useTranslations('result.listenBack');
   const [playing, setPlaying] = useState(false);
-  const [duration, setDuration] = useState<number | null>(null);
+  const duration = useDuration(audioRef);
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -174,7 +196,6 @@ function ListenBackRow({
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       >
         {fallback}
       </audio>
