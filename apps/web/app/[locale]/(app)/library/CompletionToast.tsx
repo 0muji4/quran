@@ -49,7 +49,6 @@ export function CompletionToast() {
       body={t('body')}
       dismissLabel={t('dismiss')}
       onDismiss={onDismiss}
-      tone="success"
     />
   );
 }

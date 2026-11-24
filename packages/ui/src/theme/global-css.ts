@@ -1,16 +1,11 @@
-// Keyframes that need to outlive the CSS Modules they live in today.
-//
-// completionToastIn currently sits in apps/web/app/styles/library.module.css.
-// PR 9c deletes that file once the library surfaces are migrated, so the
-// animation has to be available globally before its only definition site
-// goes away. Re-defining the same @keyframes name in both places is safe —
-// CSS keyframe rules are global and the two definitions are identical.
+// Keyframes, which Panda's recipes and css() refer to by name.
 export const globalCss = {
   // The circular progress indicator of the Web redesign (ADR 0032).
   '@keyframes appSpin': {
     from: { transform: 'rotate(0deg)' },
     to: { transform: 'rotate(360deg)' }
   },
+  // The toast rising into place.
   '@keyframes completionToastIn': {
     from: { opacity: 0, transform: 'translateY(8px)' },
     to: { opacity: 1, transform: 'translateY(0)' }

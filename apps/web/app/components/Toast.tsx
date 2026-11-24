@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { css, cx } from '../../styled-system/css';
+import { appIconButton } from '../../styled-system/recipes';
+import { CloseIcon } from './icons/ArrowRightIcon';
 
 // `polite` reads after the user's current statement finishes — the
 // default for non-urgent confirmations. `assertive` is rude and is
 // reserved for errors / blocking issues; we don't use it yet but the
 // surface is here so the day we need it, callers don't have to
 // learn ARIA values.
-export type ToastTone = 'success' | 'info';
 export type ToastUrgency = 'polite' | 'assertive';
 
 interface Props {
@@ -21,7 +22,6 @@ interface Props {
   // so callers that forget i18n still ship something pronounceable.
   dismissLabel: string;
   onDismiss: () => void;
-  tone?: ToastTone;
   urgency?: ToastUrgency;
   // Milliseconds before the toast auto-dismisses. `0` (or undefined)
   // disables the timer entirely — caller takes responsibility for the
@@ -30,79 +30,42 @@ interface Props {
   autoDismissMs?: number;
 }
 
-const TOAST_MOBILE_MQ = '@media (max-width: 600px)';
-
+// A Material 3 snackbar: above the navigation bar in a compact window, and at
+// the bottom of the page beside the rail from the medium window size class.
 const containerClass = css({
   position: 'fixed',
-  bottom: '6',
-  right: '6',
-  display: 'grid',
-  gridTemplateColumns: 'auto 1fr auto',
-  alignItems: 'flex-start',
-  gap: '3',
-  color: 'bg.paper',
-  paddingBlock: '4',
-  paddingInline: '5',
-  borderRadius: 'md',
-  boxShadow: '[0 12px 40px rgba(0, 0, 0, 0.18)]',
-  maxWidth: '[360px]',
+  bottom: '[calc(96px + env(safe-area-inset-bottom))]',
+  insetInline: '4',
   zIndex: '[100]',
-  // Same keyframes block as the legacy CompletionToast used (the
-  // animation rule lives in `app/styles/globals.css`).
+  display: 'flex',
+  alignItems: 'center',
+  gap: '3',
+  maxWidth: '[560px]',
+  minHeight: '[68px]',
+  marginInline: 'auto',
+  paddingBlock: '2',
+  paddingInlineStart: '4',
+  paddingInlineEnd: '1',
+  borderRadius: 'extraSmall',
+  background: 'inverseSurface',
+  color: 'inverseOnSurface',
+  fontFamily: 'ui',
+  boxShadow: 'level3',
   animation: '[completionToastIn 220ms ease-out]',
   '@media (prefers-reduced-motion: reduce)': { animation: '[none]' },
-  [TOAST_MOBILE_MQ]: {
-    left: '4',
-    right: '4',
-    bottom: '4',
-    maxWidth: '[none]'
-  }
+  medium: { bottom: '6', insetInlineStart: '[104px]', insetInlineEnd: '6' }
 });
 
-const toneSuccessClass = css({ backgroundColor: 'green' });
-const toneInfoClass = css({ backgroundColor: 'ink.strong' });
+const textClass = css({ flex: '1', minWidth: '[0]' });
 
-const iconClass = css({
-  fontFamily: 'serif',
-  fontSize: '[22px]',
-  lineHeight: '[1]',
-  color: 'tan',
-  marginTop: '[2px]'
-});
+const titleClass = css({ display: 'block', textStyle: 'titleSmall' });
 
-const titleClass = css({
-  fontFamily: 'serif',
-  fontSize: '[16px]',
-  display: 'block'
-});
+const bodyClass = css({ margin: '0', textStyle: 'bodyMedium' });
 
-const bodyClass = css({
-  fontSize: '[13px]',
-  marginTop: '[4px]',
-  marginBottom: '[0]',
-  color: '[rgba(255, 255, 255, 0.85)]',
-  lineHeight: '[1.5]'
-});
-
-const closeClass = css({
-  backgroundColor: '[transparent]',
-  borderWidth: '[0]',
-  color: '[rgba(255, 255, 255, 0.7)]',
-  fontSize: '[22px]',
-  lineHeight: '[1]',
-  cursor: 'pointer',
-  paddingBlock: '[0]',
-  paddingInline: '[4px]',
-  _hover: { color: 'bg.paper' }
-});
-
-// Glyph by tone so screen-readers — which ignore `aria-hidden="true"`
-// here — don't need to learn brand semantics; the title carries the
-// meaning.
-const ICONS: Record<ToastTone, string> = {
-  success: '✦',
-  info: 'i'
-};
+const closeClass = cx(
+  appIconButton({ variant: 'standard' }),
+  css({ color: 'inverseOnSurface', _focusVisible: { outlineColor: 'inversePrimary' } })
+);
 
 /**
  * Toast notification, accessible by default.
@@ -120,11 +83,6 @@ const ICONS: Record<ToastTone, string> = {
  *   reading the message slowly is not cut off (§3.3.2).
  * - `@media (prefers-reduced-motion: reduce)` switches off the
  *   slide-in animation.
- *
- * Visual styling is opinionated for this app — same look as the
- * legacy CompletionToast we factored out of — but tone variants let
- * callers pick green for celebrations and ink-strong for neutral
- * "informational" messages.
  */
 export function Toast({
   id,
@@ -132,7 +90,6 @@ export function Toast({
   body,
   dismissLabel,
   onDismiss,
-  tone = 'success',
   urgency = 'polite',
   autoDismissMs = 6_000
 }: Props) {
@@ -171,7 +128,7 @@ export function Toast({
 
   return (
     <div
-      className={cx(containerClass, tone === 'info' ? toneInfoClass : toneSuccessClass)}
+      className={containerClass}
       role="status"
       aria-live={urgency}
       aria-atomic="true"
@@ -180,15 +137,12 @@ export function Toast({
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
     >
-      <span className={iconClass} aria-hidden="true">
-        {ICONS[tone]}
-      </span>
-      <div>
+      <div className={textClass}>
         <strong className={titleClass}>{title}</strong>
         {body !== undefined && body !== null && <p className={bodyClass}>{body}</p>}
       </div>
       <button type="button" className={closeClass} onClick={dismiss} aria-label={dismissLabel}>
-        ×
+        <CloseIcon />
       </button>
     </div>
   );
