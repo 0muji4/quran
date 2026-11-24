@@ -1,4 +1,13 @@
-import { appButton, appCard, appChip, appFab, appIconButton, appProgress, appSelect } from './app';
+import {
+  appButton,
+  appCard,
+  appChip,
+  appFab,
+  appIconButton,
+  appListItem,
+  appProgress,
+  appSelect
+} from './app';
 import { button } from './button';
 import { panel } from './panel';
 import { statusPill } from './status-pill';
@@ -11,6 +20,7 @@ export const recipes = {
   appFab,
   appCard,
   appChip,
+  appListItem,
   appSelect,
   appProgress
 };

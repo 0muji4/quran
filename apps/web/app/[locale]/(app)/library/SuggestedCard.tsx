@@ -11,7 +11,17 @@ import { difficultyOf, pickSuggestion } from '../../../lib/classify';
 import { ArrowRightIcon, PlusIcon } from '../../../components/icons/ArrowRightIcon';
 import { trackUiEvent } from '../../../telemetry/use-ui-event';
 import { css, cx } from '../../../../styled-system/css';
-import { panel } from '../../../../styled-system/recipes';
+import { appButton, appCard } from '../../../../styled-system/recipes';
+import {
+  actionsClass,
+  arrowButtonClass,
+  bodyClass,
+  cardLayoutClass,
+  eyebrowClass,
+  titleClass,
+  titleRowClass
+} from './libraryCard';
+import { SurahNameArabic } from './SurahNameArabic';
 
 interface Props {
   surahs: SurahSummary[];
@@ -20,52 +30,15 @@ interface Props {
   suggestion?: BffSuggestionResponse | null;
 }
 
-// panel(surface:'paper') already covers the white bg + card shadow +
-// mint badge + ink.strong title + ink.muted 15px subtitle. SuggestedCard
-// needs three tweaks: a 320px min-height to align with ContinueCard in
-// the hero grid, justify-content:space-between so the footer sticks to
-// the bottom, and gap:0 because the legacy CSS used per-slot margin-top
-// (5 / 3 / 6) instead of a uniform parent gap.
-const rootExtras = css({
-  minHeight: '[320px]',
-  justifyContent: 'space-between',
-  gap: '[0]'
-});
-
-const titleExtras = css({ marginTop: '5' });
-const descExtras = css({ marginTop: '3' });
-
-const footerClass = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginTop: '6'
-});
+const cardClass = cx(appCard({ variant: 'filled' }), cardLayoutClass);
 
 const metaClass = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '3',
-  fontSize: '[13px]',
-  color: 'ink.muted'
-});
-
-const dotClass = css({
-  display: 'inline-block',
-  width: '[3px]',
-  height: '[3px]',
-  borderRadius: '[50%]',
-  backgroundColor: 'ink.muted'
-});
-
-const linkGreenClass = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '[4px]',
-  color: 'green',
-  fontWeight: 600,
-  fontSize: '[14px]',
-  _hover: { color: 'green.deep' }
+  flexGrow: 1,
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '1',
+  textStyle: 'bodySmall',
+  color: 'onSurfaceVariant'
 });
 
 export function SuggestedCard({ surahs, suggestion = null }: Props) {
@@ -81,27 +54,27 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
   }
 
   const difficulty = difficultyOf(picked, suggestion?.difficulties);
-  const p = panel({ surface: 'paper' });
   const blurbKey =
     picked.ayahCount <= 5 ? 'blurbShort' : picked.ayahCount <= 15 ? 'blurbMedium' : 'blurbLong';
 
   return (
-    <div className={cx(p.root, rootExtras)}>
-      <span className={p.badge}>
-        <PlusIcon /> {t('badge')}
+    <div className={cardClass}>
+      <span className={eyebrowClass}>
+        <PlusIcon size={16} /> {t('badge')}
       </span>
-      <h2 className={cx(p.title, titleExtras)}>{picked.nameEn}</h2>
-      <p className={cx(p.subtitle, descExtras)}>{t(blurbKey, { count: picked.ayahCount })}</p>
-      <div className={footerClass}>
+      <div className={titleRowClass}>
+        <h2 className={titleClass}>{picked.nameEn}</h2>
+        <SurahNameArabic name={picked.nameAr} />
+      </div>
+      <p className={bodyClass}>{t(blurbKey, { count: picked.ayahCount })}</p>
+      <div className={actionsClass}>
         <span className={metaClass}>
-          <span>{t('meta', { count: picked.ayahCount })}</span>
-          <span className={dotClass} aria-hidden="true" />
           <span>{picked.revelationPlace}</span>
-          <span className={dotClass} aria-hidden="true" />
+          <span aria-hidden="true">·</span>
           <span>{difficulty}</span>
         </span>
         <Link
-          className={linkGreenClass}
+          className={cx(appButton({ variant: 'tonal' }), arrowButtonClass)}
           href={`/practice/${picked.id}/1`}
           onClick={() =>
             trackUiEvent('web.ui.suggested_clicked', {
@@ -113,7 +86,7 @@ export function SuggestedCard({ surahs, suggestion = null }: Props) {
             })
           }
         >
-          {t('begin')} <ArrowRightIcon size={14} />
+          {t('begin')} <ArrowRightIcon size={18} />
         </Link>
       </div>
     </div>

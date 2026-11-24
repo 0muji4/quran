@@ -1,7 +1,12 @@
+import { css, cx } from '../../../styled-system/css';
+
 interface Props {
   size?: number;
   className?: string;
 }
+
+// The arrow points to the end of the line, so it flips with the text direction.
+const flipInRtl = css({ _rtl: { transform: 'scaleX(-1)' } });
 
 export function ArrowRightIcon({ size = 16, className }: Props) {
   return (
@@ -14,30 +19,11 @@ export function ArrowRightIcon({ size = 16, className }: Props) {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      className={cx(flipInRtl, className)}
       aria-hidden="true"
     >
       <path d="M5 12h14" />
       <path d="m13 6 6 6-6 6" />
-    </svg>
-  );
-}
-
-export function ChevronRightIcon({ size = 18, className }: Props) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m9 6 6 6-6 6" />
     </svg>
   );
 }
@@ -82,7 +68,7 @@ export function PlusIcon({ size = 14, className }: Props) {
   );
 }
 
-export function WarningTriangleIcon({ size = 32, className }: Props) {
+export function CheckIcon({ size = 18, className }: Props) {
   return (
     <svg
       width={size}
@@ -90,15 +76,33 @@ export function WarningTriangleIcon({ size = 32, className }: Props) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="2.4"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
+      <path d="M5 12l5 5L20 7" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 24, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
     </svg>
   );
 }
@@ -109,15 +113,26 @@ export function BookmarkIcon({ size = 14, className }: Props) {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill="currentColor"
       className={className}
       aria-hidden="true"
     >
-      <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16l7-4 7 4z" />
+      <path d="M6 3h12v18l-6-4-6 4z" />
+    </svg>
+  );
+}
+
+export function StarIcon({ size = 16, className }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 2l2.6 6.9L22 9.3l-5.8 4.6 2 7.1L12 17l-6.2 4 2-7.1L2 9.3l7.4-.4z" />
     </svg>
   );
 }

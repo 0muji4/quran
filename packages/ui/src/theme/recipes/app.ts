@@ -173,6 +173,23 @@ export const appChip: RecipeConfig = defineRecipe({
   }
 });
 
+/** A list item that is a link or button: leading element, text, trailing element. */
+export const appListItem: RecipeConfig = defineRecipe({
+  className: 'appListItem',
+  description: 'Material 3 two-line list item on a button or link element.',
+  base: {
+    ...interactive,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4',
+    minHeight: '[72px]',
+    paddingBlock: '2',
+    paddingInline: '4',
+    borderRadius: 'medium',
+    color: 'onSurface'
+  }
+});
+
 /** A select drawn as an outlined field. */
 export const appSelect: RecipeConfig = defineRecipe({
   className: 'appSelect',

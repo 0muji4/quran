@@ -88,11 +88,10 @@
     "primaryNavAriaLabel": "Primary"
   },
   "library": {
-    "eyebrow": "✦ Continue your practice",
-    "title": "Choose a surah to recite",
-    "description": "Listen to a teacher's recitation, then record your own. We'll score your pronunciation against the reference.",
-    "searchPlaceholder": "Search by surah name or number...",
+    "title": "Library",
+    "searchPlaceholder": "Search by surah name or number…",
     "searchAriaLabel": "Search surahs",
+    "searchClearAriaLabel": "Clear search",
     "filterAriaLabel": "Filter surahs",
     "filter": {
       "all": "All {count}",
@@ -115,13 +114,16 @@
       "begin": "Begin",
       "blurbShort": "Short surah · {count} ayahs · ~90 seconds. A great warm-up before longer practice.",
       "blurbMedium": "{count} ayahs · perfect for a focused practice session.",
-      "blurbLong": "{count} ayahs · build endurance with regular reading.",
-      "meta": "{count} ayahs"
+      "blurbLong": "{count} ayahs · build endurance with regular reading."
     },
-    "surahCard": {
-      "the": "The {meaning}",
+    "surahRow": {
       "ayahs": "{count} ayahs",
-      "bestScore": "Best score {score}"
+      "bestScore": "best {score}",
+      "lastPracticed": "where you left off"
+    },
+    "empty": {
+      "title": "No surahs match",
+      "body": "Try another name or clear the filter."
     },
     "error": {
       "title": "Couldn't load the surah list",

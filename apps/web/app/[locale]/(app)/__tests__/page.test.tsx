@@ -39,14 +39,14 @@ describe('Surah library', () => {
     cleanup();
   });
 
-  it('renders the hero copy and the search input', () => {
+  it('renders the title and the search input', () => {
     renderLibrary({ surahs: mockSurahs });
 
-    expect(screen.getByRole('heading', { name: /Choose a surah to recite/i })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Search by surah name or number...')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Library' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by surah name or number…')).toBeInTheDocument();
   });
 
-  it('renders a card per surah with a link to the practice page', () => {
+  it('renders a row per surah with a link to the practice page', () => {
     renderLibrary({ surahs: mockSurahs });
 
     const fatihahLink = screen.getByRole('link', { name: /Al-Fatihah/i });
@@ -57,7 +57,7 @@ describe('Surah library', () => {
     const user = userEvent.setup();
     renderLibrary({ surahs: mockSurahs });
 
-    const search = screen.getByPlaceholderText('Search by surah name or number...');
+    const search = screen.getByPlaceholderText('Search by surah name or number…');
     await user.type(search, 'baqarah');
 
     expect(screen.getByRole('link', { name: /Al-Baqarah/i })).toBeInTheDocument();
@@ -72,6 +72,35 @@ describe('Surah library', () => {
 
     expect(screen.getByRole('link', { name: /Al-Baqarah/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Al-Fatihah/i })).not.toBeInTheDocument();
+  });
+
+  it('clears the search and returns focus to the field', async () => {
+    const user = userEvent.setup();
+    renderLibrary({ surahs: mockSurahs });
+
+    const search = screen.getByRole('searchbox', { name: 'Search surahs' });
+    expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
+    await user.type(search, 'baqarah');
+    await user.click(screen.getByRole('button', { name: 'Clear search' }));
+
+    expect(search).toHaveValue('');
+    expect(search).toHaveFocus();
+    expect(screen.getByRole('link', { name: /Al-Fatihah/i })).toBeInTheDocument();
+  });
+
+  it('says when no surah matches', async () => {
+    const user = userEvent.setup();
+    renderLibrary({ surahs: mockSurahs });
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search surahs' }), 'zzz');
+
+    expect(screen.getByText('No surahs match')).toBeInTheDocument();
+    expect(screen.getByText('Try another name or clear the filter.')).toBeInTheDocument();
+  });
+
+  it('lays the page out edge to edge', () => {
+    const { container } = renderLibrary({ surahs: mockSurahs });
+    expect(container.firstElementChild).toHaveAttribute('data-full-bleed');
   });
 
   it('shows the All counter reflecting the total surah count', () => {
@@ -90,7 +119,7 @@ describe('Surah library', () => {
     // the error state so the user isn't presented with controls that
     // can't do anything until the underlying fetch succeeds.
     expect(
-      screen.queryByPlaceholderText('Search by surah name or number...')
+      screen.queryByPlaceholderText('Search by surah name or number…')
     ).not.toBeInTheDocument();
   });
 
