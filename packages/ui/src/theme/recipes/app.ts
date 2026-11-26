@@ -5,7 +5,7 @@ import type { RecipeConfig, SystemStyleObject } from '@pandacss/types';
 // colour roles of ADR 0026 at Material 3's default shapes and sizes. Each one
 // styles an element as it is (`button`, `a`, `select`, `progress`, a
 // container); the browser keeps its behaviour. Names start with `app`, like
-// the Android and iOS components, so they never clash with the old recipes.
+// the Android and iOS components.
 // Sizes are bracketed px: Panda's size properties do not read spacing tokens.
 
 /** Interaction feedback: a state layer in the content colour, and a focus ring. */

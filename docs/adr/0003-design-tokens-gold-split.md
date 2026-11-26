@@ -1,6 +1,6 @@
 # ADR 0003: Split `--color-gold` into surface / on-light / on-dark tokens
 
-- Status: Accepted
+- Status: Superseded by [ADR 0026](./0026-single-design-token-source.md) on 2026-11-26. The Web redesign (#673) moved Web to the generated Material 3 colour roles, where every role has a paired on-colour in light and dark, and removed the hand-written `gold.*` tokens.
 - Date: 2026-05-09
 - Author: motoshi.suzuki
 
