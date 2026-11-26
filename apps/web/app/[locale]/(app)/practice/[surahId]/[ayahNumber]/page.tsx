@@ -15,16 +15,7 @@ interface RouteParams {
   ayahNumber: string;
 }
 
-// The page paints its own surface, so it follows the system light or dark
-// setting while pages not yet rebuilt keep the old background (#673).
-const pageClass = css({
-  flex: '1',
-  display: 'flex',
-  flexDirection: 'column',
-  background: 'surface',
-  color: 'onSurface',
-  fontFamily: 'ui'
-});
+const pageClass = css({ flex: '1', display: 'flex', flexDirection: 'column' });
 
 // Compact: a top app bar (back, title, previous and next as icon buttons).
 // From medium: a back link above the title, previous and next as buttons.
@@ -159,7 +150,7 @@ export default async function PracticePage({ params }: { params: Promise<RoutePa
   const position = t('ayahOf', { ayah: currentAyah, total: totalAyahs });
 
   return (
-    <div className={pageClass} data-full-bleed>
+    <div className={pageClass}>
       <header className={headerClass}>
         <Link
           href="/"

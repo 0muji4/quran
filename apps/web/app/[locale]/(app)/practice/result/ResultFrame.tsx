@@ -12,16 +12,7 @@ interface Props {
   children: ReactNode;
 }
 
-// The page paints its own surface, so it follows the system light or dark
-// setting while pages not yet rebuilt keep the old background (#673).
-const pageClass = css({
-  flex: '1',
-  display: 'flex',
-  flexDirection: 'column',
-  background: 'surface',
-  color: 'onSurface',
-  fontFamily: 'ui'
-});
+const pageClass = css({ flex: '1', display: 'flex', flexDirection: 'column' });
 
 // Compact: a top app bar (back, title, the ayah). From medium: a back link
 // naming the ayah above the title.
@@ -104,7 +95,7 @@ export function ResultFrame({ surahId, surahName, ayahNumber, children }: Props)
   const ayahLabel = t('subtitle', { surah: surahName, ayah: ayahNumber });
 
   return (
-    <div className={pageClass} data-full-bleed>
+    <div className={pageClass}>
       <header className={headerClass}>
         <Link href={`/practice/${surahId}/${ayahNumber}`} className={backClass}>
           <ChevronIcon direction="back" size={24} />

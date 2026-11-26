@@ -98,11 +98,6 @@ describe('Surah library', () => {
     expect(screen.getByText('Try another name or clear the filter.')).toBeInTheDocument();
   });
 
-  it('lays the page out edge to edge', () => {
-    const { container } = renderLibrary({ surahs: mockSurahs });
-    expect(container.firstElementChild).toHaveAttribute('data-full-bleed');
-  });
-
   it('shows the All counter reflecting the total surah count', () => {
     renderLibrary({ surahs: mockSurahs });
     expect(screen.getByRole('button', { name: 'All 3' })).toBeInTheDocument();

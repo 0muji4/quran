@@ -1,13 +1,7 @@
-/* Legacy globals are wrapped in @layer base so Panda's @layer recipes
- * and utilities cleanly win the cascade — without it, unlayered
- * h2/h3/a rules below beat any @layer rule and trigger a11y contrast
- * regressions on dark surfaces (see PR 9a CI history). Design tokens
- * are NOT defined here any more; they live in
- * packages/ui/src/theme/tokens.ts and Panda emits them as
- * `--colors-*` / `--spacing-*` / `--radii-*` / `--shadows-*` /
- * `--fonts-*` CSS variables (still under :root). All references in
- * this file and in the SVG icon components resolve against those
- * Panda-emitted variables. */
+/* The reset and the page's surface, text colour and type. Everything else is
+ * styled with Panda (ADR 0032). The rules sit in @layer base so Panda's
+ * recipes and utilities, in later layers, always win. The variables are the
+ * Panda tokens: colour roles follow the system light or dark setting. */
 @layer base {
   * {
     box-sizing: border-box;
@@ -20,44 +14,29 @@
   }
 
   body {
-    background: var(--colors-bg-page);
-    color: var(--colors-ink-default);
-    font-family: var(--fonts-sans);
-    font-size: 16px;
+    background: var(--colors-surface);
+    color: var(--colors-on-surface);
+    font-family: var(--fonts-ui);
+    font-size: 1rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings take their size from the text style that the page gives them. */
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    margin: 0;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--fonts-serif);
-    color: var(--colors-ink-strong);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    margin: 0;
-  }
-
-  h1 {
-    font-size: clamp(40px, 5vw, 64px);
-    line-height: 1.05;
-    font-weight: 500;
-  }
-
-  h2 {
-    font-size: clamp(28px, 3vw, 36px);
-    line-height: 1.15;
-  }
-
-  h3 {
-    font-size: 22px;
-    line-height: 1.2;
-  }
-
-  p {
-    margin: 0;
+    font: inherit;
   }
 
   a {
@@ -65,16 +44,12 @@
     text-decoration: none;
   }
 
-  /* Baseline keyboard-focus indicator. The brand uses gold accents on cream
- * panels, so a green ring with a small offset stays visible on every surface.
- * Scoped to :focus-visible so mouse users are not affected. Programmatically
- * focused elements (e.g. the AutoFocusHeading at the top of the result page)
- * do not match :focus-visible, so they stay clean.
- */
+  /* A keyboard focus ring for anything a recipe does not draw one for.
+   * Programmatically focused elements (such as a heading focused on arrival)
+   * do not match :focus-visible, so they stay clean. */
   :focus-visible {
-    outline: 2px solid var(--colors-green);
+    outline: 3px solid var(--colors-secondary);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   button {
@@ -86,135 +61,4 @@
     font-size: inherit;
     padding: 0;
   }
-
-  button:disabled {
-    cursor: not-allowed;
-  }
-
-  .ar-text {
-    font-family: var(--fonts-arabic);
-    direction: rtl;
-    unicode-bidi: bidi-override;
-    font-feature-settings: 'liga', 'calt';
-  }
-
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: var(--colors-gold-on-light);
-  }
-
-  .muted {
-    color: var(--colors-ink-muted);
-  }
-
-  /* Skip link — visible only when focused. Sits above all other content
- * (z-index: 1000) so keyboard users can bypass the top nav from any
- * route. The link points at #main-content, which is the AppShell's
- * <main> element with tabIndex={-1} so focus lands there on Enter.
- * Phase 2.3-E. */
-  .skip-link {
-    position: absolute;
-    top: -100px;
-    left: var(--spacing-4);
-    z-index: 1000;
-    background: var(--colors-bg-paper);
-    color: var(--colors-ink-strong);
-    padding: var(--spacing-3) var(--spacing-5);
-    border-radius: var(--radii-pill);
-    font-weight: 600;
-    text-decoration: none;
-    box-shadow: var(--shadows-card-hover);
-  }
-
-  .skip-link:focus {
-    top: var(--spacing-4);
-  }
-
-  #main-content:focus {
-    outline: none;
-  }
-
-  /* Visually hidden, screen-reader only */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  /* Page shell */
-  .page-shell {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: var(--colors-bg-page);
-  }
-
-  .page-content {
-    flex: 1;
-    padding: var(--spacing-10) var(--spacing-6) var(--spacing-12);
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 720px) {
-    .page-content {
-      padding: var(--spacing-6) var(--spacing-4) var(--spacing-10);
-    }
-  }
-
-  /* A page rebuilt for the Web redesign (#673) lays itself out edge to edge
-   * and paints its own surface. This goes with .page-content once every
-   * page is rebuilt. */
-  .page-content:has(> [data-full-bleed]) {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    max-width: none;
-  }
-
-  /* Status / error banners reused across screens */
-  .status {
-    padding: var(--spacing-3) var(--spacing-4);
-    border-radius: var(--radii-sm);
-    background: rgba(45, 90, 79, 0.08);
-    border: 1px solid rgba(45, 90, 79, 0.18);
-    color: var(--colors-green);
-    font-size: 14px;
-  }
-
-  .status.error {
-    background: rgba(192, 57, 43, 0.08);
-    border-color: rgba(192, 57, 43, 0.25);
-    color: var(--colors-red);
-  }
-
-  /* Pills */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    padding: 6px 12px;
-    border-radius: var(--radii-pill);
-    font-weight: 600;
-    font-size: 13px;
-  }
-
-  /* Generic divider */
-  .divider {
-    border-top: 1px solid var(--colors-border);
-    margin: var(--spacing-5) 0;
-  }
-} /* end @layer base */
+}
