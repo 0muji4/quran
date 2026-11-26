@@ -1,9 +1,8 @@
 {
   "auth": {
     "signin": {
-      "eyebrow": "Welcome back",
-      "title": "Sign in to continue your practice",
-      "lede": "Your attempts and progress are saved across every device you sign in to.",
+      "title": "Sign in",
+      "lede": "Welcome back. Your attempts and progress are saved on every device you sign in to.",
       "submit": "Sign in",
       "submitPending": "Signing in…",
       "footerPrompt": "New to Tilawah?",
@@ -15,8 +14,7 @@
       "dismiss": "Dismiss"
     },
     "signup": {
-      "eyebrow": "Begin your journey",
-      "title": "Create your Tilawah account",
+      "title": "Create account",
       "lede": "Practise daily, track every attempt, and watch your recitation grow.",
       "submit": "Create account",
       "submitPending": "Creating account…",
@@ -26,29 +24,25 @@
     "field": {
       "email": "Email",
       "password": "Password",
-      "name": "Your name"
+      "name": "Display name",
+      "nameHelper": "Optional. How your name appears across the app."
     },
     "password": {
-      "show": "Show",
-      "hide": "Hide",
-      "a11ySuffix": "password",
-      "helper": "Use 8+ characters with a mix of letters and numbers.",
+      "show": "Show password",
+      "helper": "At least 8 characters.",
       "tooShort": "Password must be at least 8 characters."
     },
     "divider": {
-      "or": "Or",
-      "orWithEmail": "Or with email"
+      "or": "or"
     },
     "social": {
-      "googleFull": "Continue with Google",
-      "googleShort": "Google",
-      "appleFull": "Continue with Apple",
-      "appleShort": "Apple",
+      "google": "Continue with Google",
+      "apple": "Continue with Apple",
       "comingSoonSuffix": "— coming soon"
     },
     "level": {
-      "legend": "Your current level",
-      "legendHint": "(you can change this later)",
+      "legend": "Your level",
+      "helper": "You can change this later in your profile.",
       "beginner": {
         "label": "Beginner",
         "description": "Learning Arabic"
@@ -64,7 +58,7 @@
     },
     "terms": {
       "label": "I agree to the <tosLink>Terms of Service</tosLink> and <privacyLink>Privacy Policy</privacyLink>.",
-      "error": "Please accept the Terms of Service and Privacy Policy to continue."
+      "error": "Accept the Terms of Service and Privacy Policy to continue."
     },
     "error": {
       "unknown": "Something went wrong",
@@ -74,11 +68,9 @@
       "google_link_required": "This email is already registered. Sign in with your password to link Google.",
       "google_unavailable": "Google sign-in is currently unavailable. Please use your email and password."
     },
-    "brand": {
-      "wordmark": "Tilawah",
-      "kicker": "Recitation Practice",
-      "ayahTranslation": "And recite the Qur'an with measured recitation.",
-      "ayahCitation": "Al-Muzzammil · 73:4"
+    "ayah": {
+      "translation": "“And recite the Qur’an with measured recitation.”",
+      "citation": "Al-Muzzammil · 73:4"
     },
     "forgotPassword": "Forgot password?"
   },

@@ -11,100 +11,91 @@ interface Props {
 const groupClass = css({
   display: 'flex',
   flexDirection: 'column',
-  gap: '2',
-  margin: '[0]',
-  padding: '[0]',
-  borderWidth: '[0]'
+  gap: '1',
+  minWidth: '[0]',
+  margin: '0',
+  padding: '0',
+  borderWidth: '0',
+  _disabled: { opacity: 0.38 }
 });
 
 const legendClass = css({
+  padding: '0',
   marginBottom: '1',
-  padding: '[0]',
-  fontSize: '[13px]',
-  fontWeight: 600,
-  color: 'ink.default'
+  textStyle: 'labelLarge',
+  color: 'onSurface'
 });
 
-const legendHintClass = css({
-  fontSize: '[12px]',
-  fontWeight: 400,
-  color: 'ink.muted'
-});
-
-const gridClass = css({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '2',
-  '@media (max-width: 720px)': { gridTemplateColumns: '1fr' }
-});
-
-// :has(input:checked) drives the selected-state border / fill purely
-// from CSS, so no client component / React state is required for the
-// visual feedback.
-const cardClass = css({
-  position: 'relative',
+// The options as a filled card of radio list items.
+const listClass = css({
   display: 'flex',
   flexDirection: 'column',
-  padding: '3',
-  backgroundColor: 'bg.paper',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md',
+  borderRadius: 'medium',
+  background: 'surfaceContainerHighest',
+  overflow: 'hidden'
+});
+
+const optionClass = css({
+  position: 'relative',
+  isolation: 'isolate',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4',
+  minHeight: '[72px]',
+  paddingBlock: '2',
+  paddingInline: '4',
+  color: 'onSurface',
   cursor: 'pointer',
-  transition: '[border-color 0.15s ease, background 0.15s ease]',
-  '&:has(input:checked)': {
-    borderColor: 'green',
-    backgroundColor: 'mint.bg'
+  '& + &': { borderTopWidth: '1px', borderTopStyle: 'solid', borderTopColor: 'outlineVariant' },
+  _before: {
+    content: '""',
+    position: 'absolute',
+    inset: '0',
+    background: 'currentColor',
+    opacity: 0,
+    zIndex: -1,
+    transition: '[opacity 0.15s ease]'
   },
-  '&:has(input:focus-visible)': {
-    outline: '[2px solid var(--colors-green)]',
+  _hover: { _before: { opacity: 0.08 } },
+  'fieldset:disabled &': { cursor: 'default', _before: { opacity: 0 } }
+});
+
+const radioClass = css({
+  // The browser draws the control; it follows the system colour scheme.
+  colorScheme: 'light dark',
+  flexShrink: 0,
+  width: '[20px]',
+  height: '[20px]',
+  margin: '0',
+  accentColor: 'primary',
+  _focusVisible: {
+    outlineWidth: '[3px]',
+    outlineStyle: 'solid',
+    outlineColor: 'secondary',
     outlineOffset: '[2px]'
   }
 });
 
-const radioClass = css({
-  position: 'absolute',
-  top: '2',
-  right: '2',
-  margin: '[0]',
-  accentColor: 'green'
-});
+const textClass = css({ display: 'flex', flexDirection: 'column', minWidth: '[0]' });
 
-const cardTextClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '[2px]',
-  paddingRight: '4'
-});
+const titleClass = css({ textStyle: 'bodyLarge' });
 
-const cardTitleClass = css({
-  fontSize: '[13px]',
-  fontWeight: 600,
-  color: 'ink.strong'
-});
+const descriptionClass = css({ textStyle: 'bodyMedium', color: 'onSurfaceVariant' });
 
-const cardSubtitleClass = css({
-  fontSize: '[12px]',
-  lineHeight: '[1.3]',
-  color: 'ink.muted'
-});
+const helperClass = css({ textStyle: 'bodySmall', color: 'onSurfaceVariant' });
 
-// Sign-up "current level" picker. Native radios in a fieldset — the card
-// styling is driven entirely by CSS (:has(:checked)), so no React state
-// is needed; this only takes `'use client'` so AuthForm (`'use client'`)
-// can render it directly and so the translation hook works.
+// The sign-up level picker: native radios in a fieldset, posted through
+// `name="level"`. It takes `'use client'` so AuthForm (`'use client'`) can
+// render it directly and so the translation hook works.
 export function LevelSelector({ disabled }: Props) {
   const t = useTranslations('auth.level');
 
   return (
-    <fieldset className={groupClass} disabled={disabled}>
-      <legend className={legendClass}>
-        {t('legend')} <span className={legendHintClass}>{t('legendHint')}</span>
-      </legend>
-      <div className={gridClass}>
+    <fieldset className={groupClass} disabled={disabled} aria-describedby="auth-level-helper">
+      <legend className={legendClass}>{t('legend')}</legend>
+      <div className={listClass}>
         {LEVEL_VALUES.map((value, index) => (
-          <label key={value} className={cardClass}>
+          <label key={value} className={optionClass}>
             <input
               type="radio"
               name="level"
@@ -112,13 +103,16 @@ export function LevelSelector({ disabled }: Props) {
               defaultChecked={index === 0}
               className={radioClass}
             />
-            <span className={cardTextClass}>
-              <span className={cardTitleClass}>{t(`${value}.label`)}</span>
-              <span className={cardSubtitleClass}>{t(`${value}.description`)}</span>
+            <span className={textClass}>
+              <span className={titleClass}>{t(`${value}.label`)}</span>
+              <span className={descriptionClass}>{t(`${value}.description`)}</span>
             </span>
           </label>
         ))}
       </div>
+      <span id="auth-level-helper" className={helperClass}>
+        {t('helper')}
+      </span>
     </fieldset>
   );
 }
