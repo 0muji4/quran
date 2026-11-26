@@ -35,6 +35,19 @@ const arrowClass = css({
   color: 'onSurfaceVariant'
 });
 
+const trailingWrapClass = css({ position: 'relative', display: 'flex' });
+
+// Room for an icon button at the end: 40px, 4px from the edge, and a gap.
+const inputWithTrailingClass = cx(appTextField(), css({ paddingInlineEnd: '[52px]' }));
+
+const trailingClass = css({
+  position: 'absolute',
+  insetInlineEnd: '0',
+  top: '[50%]',
+  transform: 'translateY(-50%)',
+  display: 'flex'
+});
+
 const helperId = (id: string, helper: ReactNode): string | undefined =>
   helper === undefined ? undefined : `${id}-helper`;
 
@@ -54,18 +67,32 @@ function Field({ id, label, helper, children }: FieldProps & { children: ReactNo
   );
 }
 
-type TextFieldProps = FieldProps & Omit<ComponentProps<'input'>, 'className'>;
+type TextFieldProps = FieldProps &
+  Omit<ComponentProps<'input'>, 'className'> & {
+    /** An icon button inside the field's end, such as showing a password. */
+    trailing?: ReactNode;
+  };
 
 /** A labelled text input, drawn as a Material 3 outlined text field. */
-export function TextField({ id, label, helper, ...input }: TextFieldProps) {
+export function TextField({ id, label, helper, trailing, ...input }: TextFieldProps) {
+  const field = (
+    <input
+      id={id}
+      className={trailing === undefined ? appTextField() : inputWithTrailingClass}
+      aria-describedby={helperId(id, helper)}
+      {...input}
+    />
+  );
   return (
     <Field id={id} label={label} helper={helper}>
-      <input
-        id={id}
-        className={appTextField()}
-        aria-describedby={helperId(id, helper)}
-        {...input}
-      />
+      {trailing === undefined ? (
+        field
+      ) : (
+        <span className={trailingWrapClass}>
+          {field}
+          <span className={trailingClass}>{trailing}</span>
+        </span>
+      )}
     </Field>
   );
 }

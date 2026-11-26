@@ -206,6 +206,34 @@ test.describe('visual regression — desktop 1280x720', () => {
     await expect(page).toHaveScreenshot('history-compact.png', { maxDiffPixels: 200 });
   });
 
+  // Sign in and create account, in the app frame with Profile selected. In an
+  // expanded window the ayah panel sits beside the form.
+  test('sign-in page', async ({ page }) => {
+    await page.goto('/sign-in');
+    await page.getByRole('heading', { level: 1, name: 'Sign in' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('sign-in.png', { maxDiffPixels: 200 });
+  });
+
+  test('sign-in page in dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/sign-in');
+    await page.getByRole('heading', { level: 1, name: 'Sign in' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('sign-in-dark.png', { maxDiffPixels: 200 });
+  });
+
+  test('sign-up page in a compact window', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/sign-up');
+    await page.getByRole('heading', { level: 1, name: 'Create account' }).waitFor();
+    await stableSnapshot(page);
+
+    await expect(page).toHaveScreenshot('sign-up-compact.png', { maxDiffPixels: 200 });
+  });
+
   test('practice page in its idle ready state', async ({ page }) => {
     await page.goto('/practice/1/1');
     await page.getByRole('heading', { name: /now you recite/i }).waitFor();

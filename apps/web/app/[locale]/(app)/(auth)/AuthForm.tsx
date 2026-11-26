@@ -11,149 +11,86 @@ import { Divider } from './Divider';
 import { LevelSelector } from './LevelSelector';
 import { OAuthButtons } from './OAuthButtons';
 import { PasswordField } from './PasswordField';
-import { css } from '../../../../styled-system/css';
+import { TextField } from '../../../components/AppField';
+import { ErrorPanel } from '../../../components/ErrorPanel';
+import { css, cx } from '../../../../styled-system/css';
+import { appButton } from '../../../../styled-system/recipes';
 
 interface Props {
   mode: AuthMode;
   redirectTo?: string;
 }
 
-const formClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4',
-  marginTop: '6'
-});
+const formClass = css({ display: 'flex', flexDirection: 'column', gap: '5' });
 
-const errorClass = css({
-  backgroundColor: '[rgba(192, 57, 43, 0.08)]',
-  color: 'red',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '[rgba(192, 57, 43, 0.25)]',
-  borderRadius: 'md',
-  paddingBlock: '3',
-  paddingInline: '4',
-  fontSize: '[13px]'
-});
-
-const fieldClass = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2'
-});
-
-const labelClass = css({
-  fontSize: '[13px]',
-  fontWeight: 600,
-  color: 'ink.default'
-});
-
-const inputClass = css({
-  width: '[100%]',
-  font: '[inherit]',
-  fontSize: '[15px]',
-  paddingBlock: '3',
-  paddingInline: '4',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'border',
-  borderRadius: 'md',
-  backgroundColor: 'bg.paper',
-  color: 'ink.strong',
-  minHeight: '[44px]',
-  '&:focus-visible': { outlineColor: 'green' }
-});
+const termsClass = css({ display: 'flex', flexDirection: 'column', gap: '1' });
 
 const termsRowClass = css({
   display: 'flex',
   alignItems: 'flex-start',
-  gap: '2'
-});
-
-const termsCheckboxClass = css({
-  width: '[16px]',
-  height: '[16px]',
-  marginTop: '[2px]',
-  accentColor: 'green'
-});
-
-const termsLabelClass = css({
-  fontSize: '[13px]',
-  lineHeight: '[1.5]',
-  color: 'ink.default',
+  gap: '3',
+  paddingBlock: '1',
+  textStyle: 'bodyMedium',
+  color: 'onSurface',
   cursor: 'pointer',
-  '& a': {
-    color: 'green.deep',
-    textDecoration: 'underline'
+  '& a': { color: 'primary' }
+});
+
+const checkboxClass = css({
+  // The browser draws the control; it follows the system colour scheme.
+  colorScheme: 'light dark',
+  flexShrink: 0,
+  width: '[18px]',
+  height: '[18px]',
+  margin: '[3px]',
+  accentColor: 'primary',
+  _focusVisible: {
+    outlineWidth: '[3px]',
+    outlineStyle: 'solid',
+    outlineColor: 'secondary',
+    outlineOffset: '[2px]'
   }
 });
 
+// Under the terms, lined up with their text after the 24px checkbox and gap.
 const termsErrorClass = css({
-  marginTop: '[calc(var(--spacing-1) * -1)]',
-  fontSize: '[12px]',
-  color: 'red'
+  margin: '0',
+  paddingInlineStart: '[36px]',
+  textStyle: 'bodySmall',
+  color: 'error'
 });
 
-// .submit doesn't quite match button(tone:'green') — legacy submit uses
-// 12/20 padding, 15px font, 48px min-height, and tan-soft (not bg.paper)
-// text. Keep inline so the auth CTA preserves its slightly larger
-// silhouette and the cream-on-green pairing the brand design asked for.
-const submitClass = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '2',
-  font: '[inherit]',
-  fontSize: '[15px]',
-  fontWeight: 600,
-  paddingBlock: '3',
-  paddingInline: '5',
-  backgroundColor: 'green',
-  color: 'tan.soft',
-  borderWidth: '[0]',
-  borderRadius: 'pill',
-  minHeight: '[48px]',
-  cursor: 'pointer',
-  transition: '[background 0.15s ease]',
-  '&:hover:not(:disabled)': { backgroundColor: 'green.deep' },
-  _disabled: { opacity: 0.6, cursor: 'progress' }
-});
+// Password reset is deferred per ADR 0010, so — like the apps and the Apple
+// button — Forgot password? shows disabled rather than linking to a route
+// that does not exist yet.
+const forgotRowClass = css({ display: 'flex', justifyContent: 'flex-end', marginTop: '[-12px]' });
 
-// Right-aligned "Forgot password?" shown on sign-in. Password reset is
-// deferred per ADR 0010, so — like iOS and the OAuth buttons — it is
-// rendered disabled/dimmed rather than linking to a route that does not
-// exist yet.
-const forgotRowClass = css({ display: 'flex', justifyContent: 'flex-end' });
+const forgotClass = cx(appButton({ variant: 'text' }), css({ marginInlineEnd: '[-12px]' }));
 
-const forgotLinkClass = css({
-  font: '[inherit]',
-  fontSize: '[13px]',
-  fontWeight: 600,
-  color: 'green.deep',
-  background: '[transparent]',
-  borderWidth: '[0]',
-  padding: '[0]',
-  cursor: 'not-allowed',
-  opacity: 0.55
+const submitClass = cx(appButton({ variant: 'filled' }), css({ width: '[100%]' }));
+
+// A Material 3 circular progress indicator.
+const spinnerClass = css({
+  flexShrink: 0,
+  animation: '[appSpin 1s linear infinite]',
+  _motionReduce: { animation: 'none' }
 });
 
 const footerClass = css({
-  marginTop: '6',
-  fontSize: '[13px]',
-  color: 'ink.muted',
-  textAlign: 'center',
-  '& a': {
-    color: 'green.deep',
-    fontWeight: 600,
-    textDecoration: 'underline'
-  }
+  margin: '0',
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'center',
+  columnGap: '1',
+  textStyle: 'bodyMedium',
+  color: 'onSurfaceVariant'
 });
 
-// The interactive island of the auth screen. AuthScreen renders the
-// eyebrow / title / lede around this; here we own the form fields, the
-// sign-up terms gate, and the existing BFF auth flow (server action →
-// cache migration → redirect).
+// The interactive island of the auth screen. AuthScreen renders the title and
+// lede around this; here we own the form fields, the sign-up terms gate, the
+// sign-in providers, and the BFF auth flow (server action → cache migration →
+// redirect).
 export function AuthForm({ mode, redirectTo = '/' }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -272,54 +209,28 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
   return (
     <>
       <form className={formClass} onSubmit={onSubmit} noValidate>
-        {error && (
-          <div className={errorClass} role="alert" aria-live="polite">
-            {error}
-          </div>
-        )}
-
         {mode === 'signup' && (
-          <>
-            <OAuthButtons
-              variant="full"
-              onGoogleResult={onGoogleResult}
-              onGoogleError={onGoogleError}
-            />
-            <Divider label={t('divider.orWithEmail')} />
-          </>
-        )}
-
-        {mode === 'signup' && (
-          <div className={fieldClass}>
-            <label className={labelClass} htmlFor="auth-display-name">
-              {t('field.name')}
-            </label>
-            <input
-              id="auth-display-name"
-              className={inputClass}
-              type="text"
-              name="displayName"
-              autoComplete="name"
-              maxLength={64}
-              disabled={pending}
-            />
-          </div>
-        )}
-
-        <div className={fieldClass}>
-          <label className={labelClass} htmlFor="auth-email">
-            {t('field.email')}
-          </label>
-          <input
-            id="auth-email"
-            className={inputClass}
-            type="email"
-            name="email"
-            autoComplete="email"
-            required
+          <TextField
+            id="auth-display-name"
+            label={t('field.name')}
+            helper={t('field.nameHelper')}
+            type="text"
+            name="displayName"
+            autoComplete="name"
+            maxLength={64}
             disabled={pending}
           />
-        </div>
+        )}
+
+        <TextField
+          id="auth-email"
+          label={t('field.email')}
+          type="email"
+          name="email"
+          autoComplete="email"
+          required
+          disabled={pending}
+        />
 
         <PasswordField
           id="auth-password"
@@ -333,7 +244,7 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
 
         {mode === 'signin' && (
           <div className={forgotRowClass}>
-            <button type="button" className={forgotLinkClass} disabled title="Coming soon">
+            <button type="button" className={forgotClass} disabled title="Coming soon">
               {t('forgotPassword')}
             </button>
           </div>
@@ -342,13 +253,13 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
         {mode === 'signup' && <LevelSelector disabled={pending} />}
 
         {mode === 'signup' && (
-          <div className={fieldClass}>
-            <div className={termsRowClass}>
+          <div className={termsClass}>
+            <label className={termsRowClass}>
               <input
                 ref={termsRef}
                 id="auth-terms"
                 type="checkbox"
-                className={termsCheckboxClass}
+                className={checkboxClass}
                 checked={agreedToTerms}
                 onChange={(event) => {
                   setAgreedToTerms(event.target.checked);
@@ -360,13 +271,13 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
                 aria-invalid={termsError ? true : undefined}
                 aria-describedby={termsError ? 'auth-terms-error' : undefined}
               />
-              <label className={termsLabelClass} htmlFor="auth-terms">
+              <span>
                 {t.rich('terms.label', {
                   tosLink: (chunks) => <a href="/terms">{chunks}</a>,
                   privacyLink: (chunks) => <a href="/privacy">{chunks}</a>
                 })}
-              </label>
-            </div>
+              </span>
+            </label>
             {termsError && (
               <p id="auth-terms-error" className={termsErrorClass} role="alert">
                 {termsError}
@@ -375,33 +286,39 @@ export function AuthForm({ mode, redirectTo = '/' }: Props) {
           </div>
         )}
 
+        {error && <ErrorPanel>{error}</ErrorPanel>}
+
         <button className={submitClass} type="submit" disabled={pending}>
-          <span aria-hidden="true">→</span>
+          {pending && (
+            <svg
+              className={spinnerClass}
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" strokeDasharray="18 60" />
+            </svg>
+          )}
           {pending ? modeT('submitPending') : modeT('submit')}
         </button>
-
-        {mode === 'signin' && (
-          <>
-            <Divider label={t('divider.or')} />
-            <OAuthButtons
-              variant="compact"
-              onGoogleResult={onGoogleResult}
-              onGoogleError={onGoogleError}
-            />
-          </>
-        )}
       </form>
 
+      <Divider label={t('divider.or')} />
+      <OAuthButtons onGoogleResult={onGoogleResult} onGoogleError={onGoogleError} />
+
       <p className={footerClass}>
-        {mode === 'signin' ? (
-          <>
-            {modeT('footerPrompt')} <Link href="/sign-up">{modeT('footerAction')}</Link>
-          </>
-        ) : (
-          <>
-            {modeT('footerPrompt')} <Link href="/sign-in">{modeT('footerAction')}</Link>
-          </>
-        )}
+        {modeT('footerPrompt')}
+        <Link
+          className={appButton({ variant: 'text' })}
+          href={mode === 'signin' ? '/sign-up' : '/sign-in'}
+        >
+          {modeT('footerAction')}
+        </Link>
       </p>
     </>
   );

@@ -160,7 +160,7 @@ describe('AuthForm', () => {
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'hunter2hunter2' } });
-    fireEvent.change(screen.getByLabelText('Your name'), {
+    fireEvent.change(screen.getByLabelText('Display name'), {
       target: { value: 'Aisha' }
     });
     acceptTerms();
@@ -242,7 +242,7 @@ describe('AuthForm', () => {
     await waitFor(() => expect(signUpActionMock).toHaveBeenCalledTimes(1));
   });
 
-  it('toggles password visibility with the Show / Hide control', () => {
+  it('toggles password visibility with the Show password toggle button', () => {
     renderForm({ mode: 'signin' });
 
     const password = screen.getByLabelText('Password');
@@ -253,9 +253,21 @@ describe('AuthForm', () => {
 
     fireEvent.click(toggle);
     expect(password).toHaveAttribute('type', 'text');
-    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
-      'aria-pressed',
-      'true'
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(toggle);
+    expect(password).toHaveAttribute('type', 'password');
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('ties the help to its field on sign-up', () => {
+    renderForm({ mode: 'signup' });
+    expect(screen.getByLabelText('Display name')).toHaveAccessibleDescription(
+      'Optional. How your name appears across the app.'
+    );
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('At least 8 characters.');
+    expect(screen.getByRole('group', { name: 'Your level' })).toHaveAccessibleDescription(
+      'You can change this later in your profile.'
     );
   });
 
