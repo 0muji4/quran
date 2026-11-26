@@ -6,13 +6,14 @@ import { describe, expect, it } from 'vitest';
 // strictTokens rejects an old token name in css(), but a CSS variable in a
 // stylesheet or a string, such as `var(--colors-bg-page)`, gets past it.
 // This test fails when a source names a token of the hand-written set that
-// the redesign removed.
+// the redesign removed, or the font variable of Cormorant Garamond or Inter,
+// whose files went with it.
 // Vitest gives each test file its own __dirname.
 const repoRoot = join(__dirname, '..', '..', '..');
 const roots = ['apps/web/app', 'apps/web/i18n', 'packages/ui/src'];
 
 const OLD_TOKEN =
-  /--(colors-(gold|bg|ink|green|mint|tan|red|border|score)|fonts-(serif|sans|arabic)|radii-(xs|sm|md|lg|pill)|shadows-card)\b|theme\/tokens['"]/;
+  /--(colors-(gold|bg|ink|green|mint|tan|red|border|score)|fonts-(serif|sans|arabic)|radii-(xs|sm|md|lg|pill)|shadows-card|font-(cormorant|inter))\b|theme\/tokens['"]/;
 
 const sources = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
