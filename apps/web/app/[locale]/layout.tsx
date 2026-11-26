@@ -10,21 +10,8 @@ import { WebTelemetryInit } from '../telemetry/WebTelemetryInit';
 import '../../styled-system/styles.css';
 import '../globals.css';
 
-// Self-hosted so the build does not depend on fonts.googleapis.com.
-const cormorant = localFont({
-  src: [
-    { path: '../fonts/cormorant-garamond-latin-variable.woff2', weight: '500 700', style: 'normal' }
-  ],
-  variable: '--font-cormorant',
-  display: 'swap'
-});
-
-const inter = localFont({
-  src: [{ path: '../fonts/inter-latin-variable.woff2', weight: '100 900', style: 'normal' }],
-  variable: '--font-inter',
-  display: 'swap'
-});
-
+// Amiri for Quran text, self-hosted so the build does not depend on
+// fonts.googleapis.com. UI text uses the system font (ADR 0032).
 // Phase 4.3-D / ADR 0020. Amiri Regular + Bold pre-subsetted to the
 // Quran corpus (91 unique codepoints from db/seed_quran.sql + a UI
 // allow-list) and renamed per OFL §"Reserved Font Name". Halves the
@@ -65,11 +52,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html
-      lang={locale}
-      dir={locale === 'ar' ? 'rtl' : 'ltr'}
-      className={`${cormorant.variable} ${inter.variable} ${amiri.variable}`}
-    >
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} className={amiri.variable}>
       <body suppressHydrationWarning>
         <WebTelemetryInit />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
