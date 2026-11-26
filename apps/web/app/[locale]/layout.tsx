@@ -6,9 +6,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { routing } from '../../i18n/routing';
 import { WebTelemetryInit } from '../telemetry/WebTelemetryInit';
-// Panda's emitted stylesheet has to be imported before globals.css so
-// the legacy :root vars in globals.css win on shared properties during
-// the migration. Removed in PR 11 once globals.css's token block is gone.
+// Panda's stylesheet declares the cascade layers, so it comes first.
 import '../../styled-system/styles.css';
 import '../globals.css';
 

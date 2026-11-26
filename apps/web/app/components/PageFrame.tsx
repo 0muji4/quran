@@ -8,16 +8,7 @@ interface Props {
   children: ReactNode;
 }
 
-// The page paints its own surface, so it follows the system light or dark
-// setting while pages not yet rebuilt keep the old background (#673).
-const pageClass = css({
-  flex: '1',
-  display: 'flex',
-  flexDirection: 'column',
-  background: 'surface',
-  color: 'onSurface',
-  fontFamily: 'ui'
-});
+const pageClass = css({ flex: '1', display: 'flex', flexDirection: 'column' });
 
 // The header and the body share one column, centred in wide windows.
 const columnClass = {
@@ -64,7 +55,7 @@ const narrowBodyClass = css(columnClass, bodyStyles, narrowColumn);
 /** A top-level page's surface, title and content column. */
 export function PageFrame({ title, narrow = false, children }: Props) {
   return (
-    <div className={pageClass} data-full-bleed>
+    <div className={pageClass}>
       <header className={narrow ? narrowHeaderClass : headerClass}>
         <h1 className={titleClass}>{title}</h1>
       </header>

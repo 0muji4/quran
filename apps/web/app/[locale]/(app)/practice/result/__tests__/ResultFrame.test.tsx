@@ -25,15 +25,4 @@ describe('ResultFrame', () => {
     expect(back).toHaveAttribute('href', '/practice/1/2');
     expect(screen.getByText('content')).toBeInTheDocument();
   });
-
-  it('marks the page as painting its own surface', () => {
-    const { container } = render(
-      <NextIntlClientProvider locale="en" messages={messages}>
-        <ResultFrame surahId="1" surahName="Al-Fatihah" ayahNumber={2}>
-          <p>content</p>
-        </ResultFrame>
-      </NextIntlClientProvider>
-    );
-    expect(container.firstElementChild).toHaveAttribute('data-full-bleed');
-  });
 });

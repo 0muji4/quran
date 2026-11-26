@@ -49,6 +49,9 @@ const textClass = css({ flex: '1', minWidth: '[0]', display: 'flex', flexDirecti
 
 const titleClass = css({ textStyle: 'bodyLarge' });
 
+// Read by screen readers only: the separators between the row's parts.
+const srOnlyClass = css({ srOnly: true });
+
 const metaClass = css({
   textStyle: 'bodyMedium',
   color: 'onSurfaceVariant',
@@ -149,7 +152,7 @@ export function HistoryRow({ attempt, meta, trend, playback, onPlay }: Props) {
           <span className={titleClass}>
             {t('title', { name: attempt.surahNameEn, ayah: attempt.ayahNumber })}
           </span>
-          <span className="sr-only">, </span>
+          <span className={srOnlyClass}>, </span>
           <span className={metaClass} data-error={isError ? '' : undefined}>
             {/* Isolated, so a date keeps its order in right-to-left text. */}
             <bdi>{isError ? t('recordingUnavailable') : meta}</bdi>
@@ -159,7 +162,7 @@ export function HistoryRow({ attempt, meta, trend, playback, onPlay }: Props) {
           <Sparkline values={trend} />
         </span>
         <span className={scoreClass}>
-          <span className="sr-only">
+          <span className={srOnlyClass}>
             , {score !== null ? t('scoreAriaLabel', { score }) : t('failedAriaLabel')}
           </span>
           {score !== null ? (

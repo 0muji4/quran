@@ -29,6 +29,9 @@ const numberClass = css({
 
 const textClass = css({ flex: '1', minWidth: '[0]', display: 'flex', flexDirection: 'column' });
 
+// Read by screen readers only: the separators between the row's parts.
+const srOnlyClass = css({ srOnly: true });
+
 const nameClass = css({ display: 'flex', alignItems: 'center', gap: '1', textStyle: 'bodyLarge' });
 
 const bookmarkClass = css({ flexShrink: 0, color: 'primary' });
@@ -46,7 +49,7 @@ const metaClass = css({
 function Separator() {
   return (
     <>
-      <span className="sr-only">, </span>
+      <span className={srOnlyClass}>, </span>
       <span aria-hidden="true">·</span>
     </>
   );
@@ -69,11 +72,11 @@ export function SurahRow({ surah, bestScore, isLastPracticed }: Props) {
           {isLastPracticed && (
             <>
               <BookmarkIcon className={bookmarkClass} />
-              <span className="sr-only">, {t('lastPracticed')}</span>
+              <span className={srOnlyClass}>, {t('lastPracticed')}</span>
             </>
           )}
         </span>
-        <span className="sr-only">, </span>
+        <span className={srOnlyClass}>, </span>
         <span className={metaClass}>
           <span>{surah.revelationPlace}</span>
           <Separator />
