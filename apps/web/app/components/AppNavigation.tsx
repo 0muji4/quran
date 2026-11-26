@@ -23,7 +23,13 @@ const ITEMS: Item[] = [
   { key: 'library', href: '/', match: (p) => p === '/' || p.startsWith('/library') },
   { key: 'practice', href: DEFAULT_PRACTICE_HREF, match: (p) => p.startsWith('/practice') },
   { key: 'history', href: '/history', match: (p) => p.startsWith('/history') },
-  { key: 'profile', href: '/profile', match: (p) => p.startsWith('/profile') }
+  // Signed out, Profile leads to sign-in, so the sign-in and sign-up pages
+  // belong to it.
+  {
+    key: 'profile',
+    href: '/profile',
+    match: (p) => p.startsWith('/profile') || p === '/sign-in' || p === '/sign-up'
+  }
 ];
 
 // A Material 3 navigation bar below the medium window size class (600px), and

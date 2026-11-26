@@ -3,15 +3,15 @@
 import type { FormEvent } from 'react';
 import { useRef, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link, useRouter } from '../../../i18n/navigation';
-import { signInAction, signUpAction, type SignInWithGoogleResult } from '../../actions';
-import { clearLocalCache, refreshAllFromBff } from '../../lib/storage';
+import { Link, useRouter } from '../../../../i18n/navigation';
+import { signInAction, signUpAction, type SignInWithGoogleResult } from '../../../actions';
+import { clearLocalCache, refreshAllFromBff } from '../../../lib/storage';
 import type { AuthMode } from './copy';
 import { Divider } from './Divider';
 import { LevelSelector } from './LevelSelector';
 import { OAuthButtons } from './OAuthButtons';
 import { PasswordField } from './PasswordField';
-import { css } from '../../../styled-system/css';
+import { css } from '../../../../styled-system/css';
 
 interface Props {
   mode: AuthMode;

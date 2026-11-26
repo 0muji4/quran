@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { LEVEL_VALUES } from './copy';
-import { css } from '../../../styled-system/css';
+import { css } from '../../../../styled-system/css';
 
 interface Props {
   disabled?: boolean;

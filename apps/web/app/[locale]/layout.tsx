@@ -51,8 +51,7 @@ export function generateStaticParams() {
 }
 
 // Root layout is intentionally thin: <html>/<body>, fonts, telemetry. The
-// persistent chrome (AppShell + session) lives in the (app) route group so
-// the (auth) group can render full-bleed without it.
+// persistent chrome (AppShell + session) lives in the (app) route group.
 export default async function LocaleLayout({
   children,
   params

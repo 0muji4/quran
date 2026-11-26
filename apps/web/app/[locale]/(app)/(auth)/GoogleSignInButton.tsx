@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useTransition } from 'react';
 import { GoogleIcon } from './icons/GoogleIcon';
-import { signInWithGoogleAction, type SignInWithGoogleResult } from '../../actions';
+import { signInWithGoogleAction, type SignInWithGoogleResult } from '../../../actions';
 
 interface CodeResponse {
   code?: string;
