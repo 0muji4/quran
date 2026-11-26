@@ -3,14 +3,14 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { AuthForm } from '../AuthForm';
-import messages from '../../../../messages/en.json';
+import messages from '../../../../../messages/en.json';
 
 afterEach(() => cleanup());
 
 const replace = vi.fn();
 const refresh = vi.fn();
 
-vi.mock('../../../../i18n/navigation', () => ({
+vi.mock('../../../../../i18n/navigation', () => ({
   Link: ({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) =>
     React.createElement('a', props, children),
   useRouter: () => ({ replace, refresh })
@@ -19,7 +19,7 @@ vi.mock('../../../../i18n/navigation', () => ({
 const signInActionMock = vi.fn();
 const signUpActionMock = vi.fn();
 
-vi.mock('../../../actions', () => ({
+vi.mock('../../../../actions', () => ({
   signInAction: (...args: unknown[]) => signInActionMock(...args),
   signUpAction: (...args: unknown[]) => signUpActionMock(...args)
 }));
@@ -27,7 +27,7 @@ vi.mock('../../../actions', () => ({
 const clearLocalCacheMock = vi.fn();
 const refreshAllFromBffMock = vi.fn(async () => {});
 
-vi.mock('../../../lib/storage', () => ({
+vi.mock('../../../../lib/storage', () => ({
   clearLocalCache: () => clearLocalCacheMock(),
   refreshAllFromBff: () => refreshAllFromBffMock()
 }));

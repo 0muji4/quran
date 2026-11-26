@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { AppleIcon } from './icons/AppleIcon';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import type { SignInWithGoogleResult } from '../../actions';
-import { css } from '../../../styled-system/css';
+import type { SignInWithGoogleResult } from '../../../actions';
+import { css } from '../../../../styled-system/css';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID;
 

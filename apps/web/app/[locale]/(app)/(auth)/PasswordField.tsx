@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { css, cx } from '../../../styled-system/css';
+import { css, cx } from '../../../../styled-system/css';
 
 interface Props {
   id: string;

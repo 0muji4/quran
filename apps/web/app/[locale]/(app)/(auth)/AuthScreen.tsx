@@ -2,12 +2,22 @@ import { getTranslations } from 'next-intl/server';
 import { AuthBrandPanel } from './AuthBrandPanel';
 import { AuthForm } from './AuthForm';
 import type { AuthMode } from './copy';
-import { css, cx } from '../../../styled-system/css';
+import { css, cx } from '../../../../styled-system/css';
 
 interface Props {
   mode: AuthMode;
   redirectTo?: string;
 }
+
+// The brand panel beside the form, edge to edge in the page area beside the
+// navigation. Below 720px the brand panel is hidden and the form fills it.
+const screenClass = css({
+  flex: '1',
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  backgroundColor: 'bg.page',
+  '@media (max-width: 720px)': { gridTemplateColumns: '1fr' }
+});
 
 const formPanelClass = css({
   display: 'flex',
@@ -53,7 +63,7 @@ export async function AuthScreen({ mode, redirectTo }: Props) {
   const t = await getTranslations(`auth.${mode}`);
 
   return (
-    <>
+    <div className={screenClass} data-full-bleed>
       <AuthBrandPanel />
       <div className={formPanelClass}>
         <section className={formColumnClass} aria-labelledby="auth-title">
@@ -67,6 +77,6 @@ export async function AuthScreen({ mode, redirectTo }: Props) {
           <AuthForm mode={mode} redirectTo={redirectTo} />
         </section>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
-import { BookIcon } from '../../components/icons/BookIcon';
+import { BookIcon } from '../../../components/icons/BookIcon';
 import { MihrabIllustration } from './icons/MihrabIllustration';
-import { css, cx } from '../../../styled-system/css';
+import { css, cx } from '../../../../styled-system/css';
 
 // The Al-Muzzammil 73:4 ayah the app is named after. The Arabic source
 // text is universal across UI locales, so it stays inline instead of
